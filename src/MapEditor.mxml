@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" 
+					   creationComplete="init()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			
+			private var editView:EditView;
+			
+			private function init():void
+			{
+				Data.getInstance().init();
+				Data.getInstance().addEventListener(Event.COMPLETE, onDataReady);
+			}
+			
+			private function onDataReady(e:Event):void
+			{
+				levelTree.dataProvider = Data.getInstance().levelXML;
+				
+				editView = new EditView(mapView);
+				mapView.addElement(editView);
+				editView.init(Data.getInstance().levelXML.level[0].@label);
+				matsPanel.addElement(MatsView.getInstance());
+			}
+			
+			private function onLevelClick(e:Event):void{
+				var selectedNode = (e.target as Tree).selectedItem as XML;
+				var label:String=selectedNode.@label;
+				editView.init(label);
+			}	
+			
+			private function newLevel(e:Event):void
+			{
+				var levelLength:int = Data.getInstance().levelXML.level.length()+1;
+				Data.getInstance().makeNewLevel("level"+levelLength);
+				editView.init("level"+levelLength);
+			}
+			private function save(event:Event):void
+			{
+				editView.save();
+				Data.getInstance().export();
+			}
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:HorizontalLayout verticalAlign="middle" horizontalAlign="left"/>
+	</s:layout>
+	<s:VGroup  width="200" height="100%" paddingTop="5" horizontalAlign="center">
+		<s:HGroup width="100%" height="30" verticalAlign="middle" horizontalAlign="center">
+			<s:Button label="新建关卡" width="80" height="30" click="newLevel(event)"/>
+			<s:Button label="保存" width="70" height="30" click="save(event)"/>
+		</s:HGroup>
+		<s:Panel width="100%" height="100%" title="关卡">
+			<mx:Tree id="levelTree" enabled="true" labelField="@label" 
+					 width="100%" height="100%" showRoot="false" itemClick="onLevelClick(event)">
+			</mx:Tree>
+		</s:Panel>
+	</s:VGroup>
+	<mx:Canvas id="mapView" height="100%" width="100%">
+	</mx:Canvas>
+	<s:Panel id="matsPanel" title="资源" width="250" height="100%" backgroundColor="0xE0FFFF" >
+	</s:Panel>
+		
+		
+		
+		
+</s:WindowedApplication>

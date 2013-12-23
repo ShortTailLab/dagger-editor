@@ -1,0 +1,18 @@
+<entities>
+	<item>
+		<type>boss</type>
+		<path>boss_1.png</path>
+	</item>
+	<item>
+		<type>enemy1</type>
+		<path>enemy_1.png</path>
+	</item>
+	<item>
+		<type>enemy2</type>
+		<path>enemy_2.png</path>
+	</item>
+	<item>
+		<type>enemy3</type>
+		<path>enemy_3.png</path>
+	</item>
+</entities>
