@@ -59,7 +59,7 @@ package
 			
 			timeLine = new TimeLine(speed, 5);
 			timeLine.x = 0;
-			timeLine.setGridSize(10);
+			timeLine.setGridSize(16);
 			timeLine.addEventListener("gridClick", onGridClick);
 			map.addChild(timeLine);
 			
@@ -120,7 +120,7 @@ package
 		
 		private function onGridClick(e:TimeLineEvent):void
 		{
-			trace(e.data.x+" "+e.data.y);
+			
 			if(MatsView.getInstance().selected)
 			{
 				var type:String = MatsView.getInstance().selected.type;

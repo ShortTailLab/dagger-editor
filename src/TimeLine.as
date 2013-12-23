@@ -26,7 +26,7 @@ package
 			var currHeight:int = 0;
 			graphics.lineStyle(2);
 			graphics.moveTo(0, currHeight);
-			while(this.height < 1000)
+			while(this.height < 1500)
 			{
 				var mark:TextField = new TextField();
 				mark.defaultTextFormat = new TextFormat(null, 20);
@@ -42,7 +42,7 @@ package
 				currHeight+=interval;
 				graphics.lineTo(0, -currHeight);
 			}
-			gridYNum = 1000/heightPerUnit;
+			gridYNum = 1500/heightPerUnit;
 		}
 		
 		public function setGridSize(num:int):void

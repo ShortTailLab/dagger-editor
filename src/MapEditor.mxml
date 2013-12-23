@@ -10,7 +10,7 @@
 	<fx:Script>
 		<![CDATA[
 			import mx.controls.Alert;
-			
+			import mx.events.CloseEvent;
 			private var editView:EditView;
 			
 			private function init():void
@@ -41,34 +41,63 @@
 				Data.getInstance().makeNewLevel("level"+levelLength);
 				editView.init("level"+levelLength);
 			}
+			private function deleteLevel(e:Event):void
+			{
+				Alert.okLabel = "确定";
+				Alert.cancelLabel = "取消";
+				var selectedNode = levelTree.selectedItem as XML;
+				if(selectedNode)
+					Alert.show("确定删除？", "tips", Alert.OK|Alert.CANCEL, this, alertClose);
+				else 
+					Alert.show("选择关卡");
+			}
+			private function alertClose(e:CloseEvent):void
+			{
+				if(e.detail == Alert.OK)
+				{
+					var selectedNode = levelTree.selectedItem as XML;
+					if(selectedNode)
+					{
+						var label:String=selectedNode.@label;
+						Data.getInstance().deleteLevel(label);
+					}
+				}
+			}
 			private function save(event:Event):void
 			{
 				editView.save();
 				Data.getInstance().export();
 			}
+			private function export(event:Event):void
+			{
+				Data.getInstance().exportJS();
+			}
 		]]>
 	</fx:Script>
 	
 	<s:layout>
-		<s:HorizontalLayout verticalAlign="middle" horizontalAlign="left"/>
+		<s:HorizontalLayout verticalAlign="middle" horizontalAlign="center"/>
 	</s:layout>
 	<s:VGroup  width="200" height="100%" paddingTop="5" horizontalAlign="center">
-		<s:HGroup width="100%" height="30" verticalAlign="middle" horizontalAlign="center">
-			<s:Button label="新建关卡" width="80" height="30" click="newLevel(event)"/>
+		<s:HGroup width="100%" height="30" verticalAlign="middle" horizontalAlign="left">
 			<s:Button label="保存" width="70" height="30" click="save(event)"/>
+			<s:Button label="导出" width="70" height="30" click="export(event)"/>
 		</s:HGroup>
 		<s:Panel width="100%" height="100%" title="关卡">
-			<mx:Tree id="levelTree" enabled="true" labelField="@label" 
-					 width="100%" height="100%" showRoot="false" itemClick="onLevelClick(event)">
-			</mx:Tree>
+			<s:VGroup width="100%" height="100%">
+				<s:HGroup width="100%" height="30" paddingTop="5" verticalAlign="middle" horizontalAlign="center">
+					<s:Button label="新建" width="70" height="30" click="newLevel(event)"/>
+					<s:Button label="删除当前" width="70" height="30" click="deleteLevel(event)"/>
+				</s:HGroup>
+				<mx:Tree id="levelTree" enabled="true" labelField="@label" 
+						 width="100%" height="100%" showRoot="false" itemClick="onLevelClick(event)">
+				</mx:Tree>
+			</s:VGroup>
 		</s:Panel>
 	</s:VGroup>
 	<mx:Canvas id="mapView" height="100%" width="100%">
 	</mx:Canvas>
 	<s:Panel id="matsPanel" title="资源" width="250" height="100%" backgroundColor="0xE0FFFF" >
 	</s:Panel>
-		
-		
-		
 		
 </s:WindowedApplication>
