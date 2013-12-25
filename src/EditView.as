@@ -183,14 +183,25 @@ package
 		private function onMouseUp(e:MouseEvent):void{
 		 	
 		}
-		private function onMatClick(e:MouseEvent):void
+		private function onMatMouseDown(e:MouseEvent):void
 		{
+			_draggingMat = e.target as MatSprite;
+			_draggingMat.startDrag();
+			this.stage.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
+		}
+		private var _draggingMat:MatSprite;
+		private function onMatMouseUp(e:MouseEvent):void {
+			_draggingMat.stopDrag();
+			this.stage.removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
+		}
+		private function onMatMiddleClick(e:MouseEvent):void {
 			e.stopPropagation();
 			removeMat(e.target as MatSprite);
 		}
 		private function display(mat:MatSprite, px:Number, py:Number):void
 		{
-			mat.addEventListener(MouseEvent.CLICK, onMatClick);
+			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
+			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
 			mat.x = px;
 			mat.y = py;
 			map.addChild(mat);
@@ -200,7 +211,7 @@ package
 		{
 			if(!mat)
 				return;
-			mat.removeEventListener(MouseEvent.CLICK, onMatClick);
+			mat.removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
 			map.removeChild(mat);
 			for(var i:int = 0; i < displayMats.length; i++)
 				if(displayMats[i] == mat)
