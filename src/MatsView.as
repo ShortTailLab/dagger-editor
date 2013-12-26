@@ -11,7 +11,7 @@ package
 		
 		private var mats:Array = null;
 		
-		private var grid_width:int = 120;
+		private var grid_width:int = 110;
 		private var grid_height:int = 150;
 		
 		private static var instance:MatsView = null;
@@ -29,14 +29,14 @@ package
 			var data:Object = Data.getInstance().matsData;
 			for(var item in data)
 			{
-				trace(item);
 				var view:MatSprite = new MatSprite(item, 100);
 				view.addEventListener(MouseEvent.CLICK, onMatClick);
 				this.addChild(view);
 				mats.push(view);
 			}
-			resize(220, 0);
+			resize(2);
 		}
+		
 		
 		public function onMatClick(e:MouseEvent):void
 		{
@@ -53,14 +53,14 @@ package
 			}
 		}
 		
-		public function resize(width:Number, height:Number):void
+		public function resize(cols:int):void
 		{
-			var cols:int = width/grid_width+1;
 			for(var i:int = 0; i < mats.length; i++)
 			{
 				mats[i].x = 60+i%cols*grid_width;
 				mats[i].y = 130+int(i/cols)*grid_height;
 			}
+			this.height = mats[mats.length-1].y+130;
 		}
 	}
 }
