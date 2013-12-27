@@ -21,6 +21,7 @@ package
 		public var displayData:Object = null;
 		public var levelXML:XML = null;
 		
+		private var _excelReader:ExcelReader;
 		private static var instance:Data = null;
 		public static function getInstance():Data
 		{
@@ -61,6 +62,13 @@ package
 			var loader:URLLoader = new URLLoader;
 			loader.addEventListener(Event.COMPLETE, onLoadMatsData);
 			loader.load(new URLRequest("Resource/enemyData.xml"));
+			
+			_excelReader = new ExcelReader();
+			_excelReader.init(
+				function ():void {
+					// do sth.
+				}
+			);
 		}
 		
 		public function exportJS():void
@@ -77,18 +85,23 @@ package
 			var sheet:Sheet = excel.sheets[3];*/
 			
 			var source:Array = displayData[0].data;
-			var exportData:Array = new Array;
+			var positions:Array = new Array;
 			for each(var item:Object in source)
 			{
 				var data:Object = new Object;
 				data.type = item.type;
 				data.x = item.x*2;
 				data.y = -item.y/20;
-				exportData.push(data);
+				positions.push(data);
+			}
+			var exportData:Object = new Object();
+			exportData["pos"] = positions;
+			if (_excelReader.enemyData) {
+				exportData["defs"] = _excelReader.enemyData;
 			}
 			
-			var js:String = "module('level_data', function(){ var Level = {};Level.demo = {" +
-				""+JSON.stringify(exportData)+"};return {Level : Level}})"; 
+			var js:String = "module('level_data', function(){ var Level = {};Level.demo = " +
+				""+JSON.stringify(exportData)+";return {Level : Level}})"; 
 			
 			var file:File = File.desktopDirectory.resolvePath("dataDemo.js");
 			var stream:FileStream = new FileStream;
@@ -111,7 +124,7 @@ package
 				data.y = -item.y/20;
 				exportData.push(data);
 			}
-			
+
 			var js:String = "module('level_data', function(){ var Level = {};Level.demo = {" +
 				""+JSON.stringify(exportData)+"};return {Level : Level}})"; 
 			

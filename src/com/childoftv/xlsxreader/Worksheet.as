@@ -98,7 +98,7 @@ package com.childoftv.xlsxreader
 			cellRef=cellRef.toUpperCase();
 			var row:Number=Number(cellRef.match(/[0-9]+/)[0]);
 			var column:String=cellRef.match(/[A-Z]+/)[0];
-			trace("getCell:"+cellRef, row, column);
+//			trace("getCell:"+cellRef, row, column);
 			
 			return getRows(column,row,row);
 		}
