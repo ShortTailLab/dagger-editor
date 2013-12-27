@@ -1,8 +1,12 @@
 package
 {
+	import flash.events.ContextMenuEvent;
 	import flash.events.MouseEvent;
+	import flash.ui.ContextMenu;
+	import flash.ui.ContextMenuItem;
 	
 	import mx.core.UIComponent;
+	import mx.managers.PopUpManager;
 	
 	public class MatsView extends UIComponent
 	{
@@ -29,12 +33,32 @@ package
 			var data:Object = Data.getInstance().matsData;
 			for(var item in data)
 			{
-				var view:MatSprite = new MatSprite(item, 100);
+				var view:MatSprite = new MatSprite(item, 100, true);
 				view.addEventListener(MouseEvent.CLICK, onMatClick);
 				this.addChild(view);
 				mats.push(view);
+				
+				var menu:ContextMenu = new ContextMenu;
+				var btn:ContextMenuItem = new ContextMenuItem("编辑");
+				btn.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+					edit(new Array(e.contextMenuOwner as MatSprite));
+				});
+				menu.addItem(btn);
+				
+				view.contextMenu = menu;
+				
 			}
 			resize(2);
+		}
+		
+		private function edit(target:Array):void
+		{
+			if(target.length > 0)
+			{
+				var win:EditPanel = new EditPanel(target);
+				PopUpManager.addPopUp(win, this, true);
+				PopUpManager.centerPopUp(win);
+			}
 		}
 		
 		

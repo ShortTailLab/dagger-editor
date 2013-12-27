@@ -18,9 +18,11 @@ package
 	public class Data extends EventDispatcher
 	{
 		public var matsData:Object = null;
+		public var enemyData:Object = null;
 		public var displayData:Object = null;
 		public var levelXML:XML = null;
 		
+		private var _excelReader:ExcelReader;
 		private static var instance:Data = null;
 		public static function getInstance():Data
 		{
@@ -58,15 +60,21 @@ package
 			}
 			levelXML = parseLevelXML(displayData);
 			
-			var loader:URLLoader = new URLLoader;
-			loader.addEventListener(Event.COMPLETE, onLoadMatsData);
-			loader.load(new URLRequest("Resource/enemyData.xml"));
+			
+			_excelReader = new ExcelReader();
+			_excelReader.init(
+				function ():void {
+					// do sth.
+					enemyData = _excelReader.enemyData
+					addAtkMsg(enemyData);
+				}
+			);
 		}
 		
 		public function exportJS():void
 		{
 			var source:Array = displayData[0].data;
-			var exportData:Array = new Array;
+			var positions:Array = new Array;
 			for each(var item:Object in source)
 			{
 				var data:Object = new Object;
@@ -75,9 +83,14 @@ package
 				data.y = item.y;
 				exportData.push(data);
 			}
+			var exportData:Object = new Object();
+			exportData["pos"] = positions;
+			if (_excelReader.enemyData) {
+				exportData["defs"] = _excelReader.enemyData;
+			}
 			
-			var js:String = "module('level_data', function(){ var Level = {};Level.demo = {" +
-				""+JSON.stringify(exportData)+"};return {Level : Level}})"; 
+			var js:String = "module('level_data', function(){ var Level = {};Level.demo = " +
+				""+JSON.stringify(exportData)+";return {Level : Level}})"; 
 			
 			var file:File = File.desktopDirectory.resolvePath("dataDemo.js");
 			var stream:FileStream = new FileStream;
@@ -145,14 +158,36 @@ package
 			Alert.show("保存成功！");
 		}
 		
-		private function onLoadMatsData(e:Event):void
+		private function addAtkMsg(data:Object):void
 		{
-			var matsXML:XML = XML((e.target as URLLoader).data);
-			
-			for each(var item:XML in matsXML.item)
+			var enemyDataPart:Object;
+			var file:File = File.desktopDirectory.resolvePath("enemyAtk.json");
+			if(file.exists)
 			{
-				matsData[item.type] = new Object;
-				matsData[item.type].sourcePath = item.path;
+				var stream:FileStream = new FileStream;
+				stream.open(file, FileMode.READ);
+				enemyDataPart = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			else 
+			{
+				
+			}
+			
+			for(var type in data)
+			{
+				data[type]["move"] = enemyDataPart[type]["move"];
+				data[type]["move_type"] = enemyDataPart[type]["move_type"];
+			}
+		}
+		
+		private function onLoadMatsData(data:Object):void
+		{
+			
+			for(var item in data)
+			{
+				matsData[item] = new Object;
+				matsData[item].sourcePath = data[item].face+".png";
 			}
 			this.dispatchEvent(new Event(Event.COMPLETE));
 		}

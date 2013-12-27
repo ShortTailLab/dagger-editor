@@ -39,8 +39,8 @@ package
 		private var scale:Number = 0.0;
 		
 		private var speed:Number = 20;//pixel per second
-		private var endTime:int = -1;
-		private var currTime:int = -1;
+		private var endTime:Number = -1;
+		private var currTime:Number = -1;
 		private var levelName:String = "";
 		
 		private var displayMats:Array;
@@ -243,14 +243,7 @@ package
 		}
 		private function display(mat:MatSprite, px:Number, py:Number):void
 		{
-			var menu:ContextMenu = new ContextMenu;
-			var item:ContextMenuItem = new ContextMenuItem("编辑");
-			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
-				edit(new Array(e.contextMenuOwner as MatSprite));
-			});
-			menu.addItem(item);
-			
-			mat.contextMenu = menu;
+
 			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
 			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
 			mat.x = px;
@@ -258,21 +251,14 @@ package
 			map.addChild(mat);
 			displayMats.push(mat);
 		}
-		private function edit(target:Array):void
-		{
-			if(target.length > 0)
-			{
-				var win:EditPanel = new EditPanel(target);
-				PopUpManager.addPopUp(win, canvas, true);
-				PopUpManager.centerPopUp(win);
-			}
-		}
+
 		
 		private function removeMat(mat:MatSprite):void
 		{
 			if(!mat)
 				return;
 			mat.removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
+			mat.removeEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
 			map.removeChild(mat);
 			for(var i:int = 0; i < displayMats.length; i++)
 				if(displayMats[i] == mat)
@@ -329,7 +315,7 @@ package
 			slider.maximum = endTime;
 			slider.value = currTime;
 			slider.tickInterval = 10;
-			slider.labels = ["0s", endTime+"s"];
+			slider.labels = ["0", String(endTime)];
 		}
 		
 		private function updateSelectRect():void

@@ -102,7 +102,7 @@ package
 			
 			for each(var m:TextField in marks)
 			{
-				m.text = (t*0.1)+"s";
+				m.text = String(t);
 				t+=timeInterval;
 			}
 		}
