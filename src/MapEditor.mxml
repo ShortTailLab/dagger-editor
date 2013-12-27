@@ -85,7 +85,7 @@
 			private function save(event:Event):void
 			{
 				editView.save();
-				Data.getInstance().export();
+				Data.getInstance().saveLocal();
 			}
 			private function export(event:Event):void
 			{

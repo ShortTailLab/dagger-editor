@@ -3,18 +3,25 @@ package
 	import flash.display.Bitmap;
 	import flash.display.Shape;
 	import flash.display.Sprite;
+	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
+	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
+	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
+	import flash.ui.ContextMenu;
+	import flash.ui.ContextMenuItem;
+	import flash.ui.Keyboard;
 	import flash.utils.Dictionary;
 	
-	import mx.charts.BubbleChart;
 	import mx.containers.Canvas;
 	import mx.controls.VSlider;
 	import mx.core.UIComponent;
 	import mx.events.ResizeEvent;
 	import mx.events.SliderEvent;
+	import mx.managers.PopUpManager;
 	
 	import spark.components.Button;
 	import spark.components.TextInput;
@@ -40,8 +47,11 @@ package
 		
 		private var mapPieces:Dictionary;
 		
+		private var selectRect:Rectangle;
+		private var selectRectShape:Shape;
+		
 		[Embed(source="background.jpg")]
-		private var BgImage:Class;
+		static public var BgImage:Class;
 		
 		public function EditView(_container:Canvas)
 		{
@@ -57,9 +67,8 @@ package
 			map.addChild(mapBg);
 			mapPieces = new Dictionary;
 			
-			timeLine = new TimeLine(speed, 5);
+			timeLine = new TimeLine(speed, 5, 9);
 			timeLine.x = 0;
-			timeLine.setGridSize(16);
 			timeLine.addEventListener("gridClick", onGridClick);
 			map.addChild(timeLine);
 			
@@ -85,16 +94,19 @@ package
 			slider.addEventListener(SliderEvent.CHANGE, onsliderChange);
 			this.addChild(slider);
 			
+			selectRect = new Rectangle(0, 0, 0, 0);
+			selectRectShape = null;
+			
 			setEndTime(canvas.height/speed);
 			setCurrTime(0);
 			
 			onResize();
 			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
 			this.addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
-			this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
-			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-			//map.addEventListener(MouseEvent.CLICK, onClick);
+			this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
+			map.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+			map.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			map.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 		}
 		
 		public function init(_levelName:String):void
@@ -111,22 +123,11 @@ package
 			for each(var item in level.data)
 			{
 				var mat:MatSprite = new MatSprite(item.type);
-				display(mat, item.x, item.y);
+				display(mat, item.x/2, -item.y*speed/100);
 			}
 			var end:int = level.endTime != 0? level.endTime : canvas.height/speed;
 			setEndTime(end);
 			setCurrTime(0);
-		}
-		
-		private function onGridClick(e:TimeLineEvent):void
-		{
-			
-			if(MatsView.getInstance().selected)
-			{
-				var type:String = MatsView.getInstance().selected.type;
-				var mat:MatSprite = new MatSprite(type);
-				display(mat, e.data.x, -map.y-e.data.y);
-			}
 		}
 		
 		public function save():void
@@ -136,13 +137,16 @@ package
 			{
 				var obj:Object = new Object;
 				obj.type = m.type;
-				obj.x = m.x;
-				obj.y = m.y;
+				obj.x = m.x*2;
+				obj.y = -m.y/speed*100;
 				data.push(obj);
 			}
 			Data.getInstance().updateLevelData(levelName, data, endTime);
 		}
-		
+		private function onAddToStage(e:Event):void
+		{
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+		}
 		
 		private function onSubmit(e:MouseEvent):void
 		{
@@ -164,6 +168,11 @@ package
 		private function onWheel(e:MouseEvent):void{
 			setCurrTime(currTime+e.delta);
 		}
+		private function onKeyDown(e:KeyboardEvent):void
+		{
+			if(e.keyCode == Keyboard.ENTER)
+				onSubmit(null);
+		}
 		private function onClick(e:MouseEvent):void
 		{
 			if(MatsView.getInstance().selected)
@@ -174,17 +183,51 @@ package
 				display(mat, e.localX, e.localY);
 			}
 		}
+		private function onGridClick(e:TimeLineEvent):void
+		{
+			if(MatsView.getInstance().selected && !selectRectShape)
+			{
+				var type:String = MatsView.getInstance().selected.type;
+				var mat:MatSprite = new MatSprite(type);
+				display(mat, e.data.x, -map.y-e.data.y);
+			}
+		}
+		
+		private var isSelecting:Boolean = false;
 		private function onMouseDown(e:MouseEvent):void{
-			
+			var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
+			selectRect.x = localPoint.x;
+			selectRect.y = localPoint.y;
+			isSelecting = true;
 		}
 		private function onMouseMove(e:MouseEvent):void{
-			
+			if(isSelecting)
+			{
+				var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
+				if(!selectRectShape)
+				{
+					selectRectShape = new Shape;
+					map.addChild(selectRectShape);
+				}
+				selectRect.width = localPoint.x - selectRect.x;
+				selectRect.height = localPoint.y - selectRect.y;
+				updateSelectRect();
+			}
 		}
 		private function onMouseUp(e:MouseEvent):void{
-		 	
+			isSelecting = false;
+			if(selectRectShape)
+			{
+				map.removeChild(selectRectShape);
+				selectRectShape = null;
+				
+			}
 		}
+		
+		
 		private function onMatMouseDown(e:MouseEvent):void
 		{
+			e.stopPropagation();
 			_draggingMat = e.target as MatSprite;
 			_draggingMat.startDrag();
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
@@ -200,6 +243,14 @@ package
 		}
 		private function display(mat:MatSprite, px:Number, py:Number):void
 		{
+			var menu:ContextMenu = new ContextMenu;
+			var item:ContextMenuItem = new ContextMenuItem("编辑");
+			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+				edit(new Array(e.contextMenuOwner as MatSprite));
+			});
+			menu.addItem(item);
+			
+			mat.contextMenu = menu;
 			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
 			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
 			mat.x = px;
@@ -207,6 +258,16 @@ package
 			map.addChild(mat);
 			displayMats.push(mat);
 		}
+		private function edit(target:Array):void
+		{
+			if(target.length > 0)
+			{
+				var win:EditPanel = new EditPanel(target);
+				PopUpManager.addPopUp(win, canvas, true);
+				PopUpManager.centerPopUp(win);
+			}
+		}
+		
 		private function removeMat(mat:MatSprite):void
 		{
 			if(!mat)
@@ -232,7 +293,8 @@ package
 			inputField.y = -canvas.height+30;
 			submitBtn.x = -canvas.width*0.5+120;
 			submitBtn.y = -canvas.height+30;
-			//timeLine.resize(canvas.height);
+			timeLine.resize(canvas.height);
+			timeLine.setCurrTime(currTime);
 		}
 		
 		
@@ -268,6 +330,19 @@ package
 			slider.value = currTime;
 			slider.tickInterval = 10;
 			slider.labels = ["0s", endTime+"s"];
+		}
+		
+		private function updateSelectRect():void
+		{
+			selectRectShape.graphics.clear();
+			if(isSelecting && selectRect)
+			{
+				selectRectShape.x = selectRect.x;
+				selectRectShape.y = selectRect.y;
+				selectRectShape.graphics.lineStyle(1);
+				selectRectShape.graphics.drawRect(0, 0, selectRect.width, selectRect.height);
+			}
+				
 		}
 		
 		//this called when endTime changed

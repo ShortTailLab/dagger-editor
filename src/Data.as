@@ -65,25 +65,14 @@ package
 		
 		public function exportJS():void
 		{
-			/*var xlsBytes:ByteArray = new ByteArray;
-			var file:File = File.desktopDirectory.resolvePath("data.xlsx");
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.READ);
-			stream.readBytes(xlsBytes);
-			stream.close();
-			
-			var excel:ExcelFile =new ExcelFile;
-			excel.loadFromByteArray(xlsBytes);
-			var sheet:Sheet = excel.sheets[3];*/
-			
 			var source:Array = displayData[0].data;
 			var exportData:Array = new Array;
 			for each(var item:Object in source)
 			{
 				var data:Object = new Object;
 				data.type = item.type;
-				data.x = item.x*2;
-				data.y = -item.y/20;
+				data.x = item.x;
+				data.y = item.y;
 				exportData.push(data);
 			}
 			
@@ -98,30 +87,6 @@ package
 			
 			Alert.show("导出成功！");
 		}
-		
-		public function onLoadXLS():void
-		{
-			var source:Array = displayData[0].data;
-			var exportData:Array = new Array;
-			for each(var item:Object in source)
-			{
-				var data:Object = new Object;
-				data.type = item.type;
-				data.x = item.x*2;
-				data.y = -item.y/20;
-				exportData.push(data);
-			}
-			
-			var js:String = "module('level_data', function(){ var Level = {};Level.demo = {" +
-				""+JSON.stringify(exportData)+"};return {Level : Level}})"; 
-			
-			var file:File = File.desktopDirectory.resolvePath("dataDemo.js");
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(js);
-			stream.close();
-		}
-		
 		
 		public function makeNewLevel(name:String):void
 		{
@@ -170,7 +135,7 @@ package
 			return null;
 		}
 		
-		public function export():void
+		public function saveLocal():void
 		{
 			var file:File = File.desktopDirectory.resolvePath("data.json");
 			var stream:FileStream = new FileStream;

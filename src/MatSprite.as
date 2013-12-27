@@ -6,16 +6,17 @@ package
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.net.URLRequest;
-	
 	public class MatSprite extends Sprite
 	{
 		public var type:String;
 		public var trimWidth:Number;
+		public var route:Array = null;
 		
 		public function MatSprite(_type:String, width:Number = -1)
 		{
 			this.type = _type;
 			this.trimWidth = width;
+			
 			var path:String = Data.getInstance().matsData[_type].sourcePath;
 			var loader = new Loader;
 			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadSkin);
