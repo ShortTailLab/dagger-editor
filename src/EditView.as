@@ -212,6 +212,7 @@ package
 			if(!mat)
 				return;
 			mat.removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
+			mat.removeEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
 			map.removeChild(mat);
 			for(var i:int = 0; i < displayMats.length; i++)
 				if(displayMats[i] == mat)
