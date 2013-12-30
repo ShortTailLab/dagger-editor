@@ -72,13 +72,13 @@ package
 			var target:MatSprite = e.currentTarget as MatSprite;
 			if(selected)
 			{
-				selected.alpha = 1;
+				selected.select(false);
 				selected = null;
 			}
 			if(target != selected)
 			{
-				target.alpha = 0.5;
 				selected = target;
+				selected.select(true);
 			}
 		}
 		

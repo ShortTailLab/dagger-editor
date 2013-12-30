@@ -228,7 +228,7 @@ package
 		private function onMatMouseDown(e:MouseEvent):void
 		{
 			e.stopPropagation();
-			_draggingMat = e.target as MatSprite;
+			_draggingMat = e.currentTarget as MatSprite;
 			_draggingMat.startDrag();
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
 		}
@@ -239,7 +239,7 @@ package
 		}
 		private function onMatMiddleClick(e:MouseEvent):void {
 			e.stopPropagation();
-			removeMat(e.target as MatSprite);
+			removeMat(e.currentTarget as MatSprite);
 		}
 		private function display(mat:MatSprite, px:Number, py:Number):void
 		{

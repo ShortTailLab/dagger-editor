@@ -56,8 +56,9 @@ package
 				{label:"定点",data:1},
 				{label:"循环",data:2},
 				{label:"追踪英雄",data:3},
-				{label:"自定义",data:4},
-				{label:"追踪当前",data:5}
+				{label:"直线",data:4},
+				{label:"自定义",data:5},
+				{label:"追踪当前",data:6}
 			]); 
 			
 			mapContain.addChild(getLabel("行动方式:", 20, 130));
@@ -116,7 +117,7 @@ package
 					recordDots = Data.getInstance().enemyMoveData[target.type]["move"].dir;
 				else if(moveType == 2)
 					recordDots = Data.getInstance().enemyMoveData[target.type]["move"].loops;
-				else if(moveType == 4)
+				else if(moveType == 5)
 					recordDots = Data.getInstance().enemyMoveData[target.type]["move"].route;
 				if(recordDots)
 					for(var d in recordDots)
@@ -163,7 +164,7 @@ package
 			{
 				
 			}
-			else if(type == 4)
+			else if(type == 5)
 			{
 				if(dots.length > 0)
 				{
@@ -229,7 +230,7 @@ package
 			var type:int = moveTypeBox.selectedItem.data;
 			for(var i:int = 0; i < dots.length; i++)
 				if(dots[i] == event.contextMenuOwner)
-					if(type == 4)
+					if(type == 5)
 					{
 						var start:int = i%2==0 ? i-1: i;
 						if(start>=0)
