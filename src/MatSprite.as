@@ -17,6 +17,7 @@ package
 		public var trimWidth:Number;
 		public var route:Array = null;
 		
+		private var skin:Bitmap;
 		private var isShowType:Boolean = false;
 		
 		public function MatSprite(_type:String, width:Number = -1, showType:Boolean = false)
@@ -33,7 +34,7 @@ package
 		
 		private function onLoadSkin(e:Event):void
 		{
-			var skin:Bitmap = Bitmap((e.target as LoaderInfo).loader.content);
+			skin = Bitmap((e.target as LoaderInfo).loader.content);
 			skin.scaleX = skin.scaleY = 0.5;
 			skin.x = -skin.width*0.5;
 			skin.y = -skin.height;
