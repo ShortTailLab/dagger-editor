@@ -85,10 +85,7 @@
 			private function save(event:Event):void
 			{
 				editView.save();
-				Data.getInstance().export();
-			}
-			private function export(event:Event):void
-			{
+				Data.getInstance().saveLocal();
 				Data.getInstance().exportJS();
 			}
 		]]>
@@ -100,7 +97,6 @@
 	<s:VGroup  width="200" height="100%" paddingTop="5" horizontalAlign="center">
 		<s:HGroup width="100%" height="30" verticalAlign="middle" horizontalAlign="center">
 			<s:Button label="保存" width="70" height="30" click="save(event)"/>
-			<s:Button label="导出" width="70" height="30" click="export(event)"/>
 		</s:HGroup>
 		<s:Panel width="100%" height="100%" title="关卡">
 			<mx:Tree id="levelTree" enabled="true" labelField="@label" 

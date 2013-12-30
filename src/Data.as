@@ -18,9 +18,12 @@ package
 	public class Data extends EventDispatcher
 	{
 		public var matsData:Object = null;
+		public var enemyData:Object = null;
+		public var enemyMoveData:Object = null;
 		public var displayData:Object = null;
 		public var levelXML:XML = null;
 		
+		private var _excelReader:ExcelReader;
 		private static var instance:Data = null;
 		public static function getInstance():Data
 		{
@@ -58,37 +61,68 @@ package
 			}
 			levelXML = parseLevelXML(displayData);
 			
-			var loader:URLLoader = new URLLoader;
-			loader.addEventListener(Event.COMPLETE, onLoadMatsData);
-			loader.load(new URLRequest("Resource/enemyData.xml"));
+			file = File.desktopDirectory.resolvePath("enemyMoveData.json");
+			if(file.exists)
+			{
+				stream = new FileStream;
+				stream.open(file, FileMode.READ);
+				enemyMoveData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			else
+				enemyMoveData = new Object;
+			
+			_excelReader = new ExcelReader();
+			_excelReader.init(onDataComplete);
+		}
+		private function onDataComplete():void
+		{
+			// do sth.
+			enemyData = _excelReader.enemyData
+			this.dispatchEvent(new Event(Event.COMPLETE));
+		}
+		
+		public function saveLocal():void
+		{
+			var file:File = File.desktopDirectory.resolvePath("data.json");
+			var stream:FileStream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes(JSON.stringify(displayData));
+			stream.close();
+			
+			file = File.desktopDirectory.resolvePath("enemyMoveData.json");
+			stream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes(JSON.stringify(enemyMoveData));
+			stream.close();
 		}
 		
 		public function exportJS():void
 		{
-			/*var xlsBytes:ByteArray = new ByteArray;
-			var file:File = File.desktopDirectory.resolvePath("data.xlsx");
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.READ);
-			stream.readBytes(xlsBytes);
-			stream.close();
-			
-			var excel:ExcelFile =new ExcelFile;
-			excel.loadFromByteArray(xlsBytes);
-			var sheet:Sheet = excel.sheets[3];*/
+			for(var type in enemyMoveData)
+			{
+				enemyData[type]["move_type"] = enemyMoveData[type]["move_type"];
+				enemyData[type]["move"] = enemyMoveData[type]["move"];
+			}
 			
 			var source:Array = displayData[0].data;
-			var exportData:Array = new Array;
+			var positions:Array = new Array;
 			for each(var item:Object in source)
 			{
 				var data:Object = new Object;
 				data.type = item.type;
-				data.x = item.x*2;
-				data.y = -item.y/20;
+				data.x = item.x;
+				data.y = item.y;
 				exportData.push(data);
 			}
+			var exportData:Object = new Object();
+			exportData["pos"] = positions;
+			if (enemyData) {
+				exportData["defs"] = enemyData;
+			}
 			
-			var js:String = "module('level_data', function(){ var Level = {};Level.demo = {" +
-				""+JSON.stringify(exportData)+"};return {Level : Level}})"; 
+			var js:String = "module('level_data', function(){ var Level = {};Level.demo = "+
+				""+JSON.stringify(exportData)+";return {Level : Level}})"; 
 			
 			var file:File = File.desktopDirectory.resolvePath("dataDemo.js");
 			var stream:FileStream = new FileStream;
@@ -96,32 +130,8 @@ package
 			stream.writeUTFBytes(js);
 			stream.close();
 			
-			Alert.show("导出成功！");
+			Alert.show("保存成功！");
 		}
-		
-		public function onLoadXLS():void
-		{
-			var source:Array = displayData[0].data;
-			var exportData:Array = new Array;
-			for each(var item:Object in source)
-			{
-				var data:Object = new Object;
-				data.type = item.type;
-				data.x = item.x*2;
-				data.y = -item.y/20;
-				exportData.push(data);
-			}
-			
-			var js:String = "module('level_data', function(){ var Level = {};Level.demo = {" +
-				""+JSON.stringify(exportData)+"};return {Level : Level}})"; 
-			
-			var file:File = File.desktopDirectory.resolvePath("dataDemo.js");
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(js);
-			stream.close();
-		}
-		
 		
 		public function makeNewLevel(name:String):void
 		{
@@ -170,24 +180,14 @@ package
 			return null;
 		}
 		
-		public function export():void
-		{
-			var file:File = File.desktopDirectory.resolvePath("data.json");
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(JSON.stringify(displayData));
-			stream.close();
-			Alert.show("保存成功！");
-		}
 		
-		private function onLoadMatsData(e:Event):void
+		private function onLoadMatsData(data:Object):void
 		{
-			var matsXML:XML = XML((e.target as URLLoader).data);
 			
-			for each(var item:XML in matsXML.item)
+			for(var item in data)
 			{
-				matsData[item.type] = new Object;
-				matsData[item.type].sourcePath = item.path;
+				matsData[item] = new Object;
+				matsData[item].sourcePath = data[item].face+".png";
 			}
 			this.dispatchEvent(new Event(Event.COMPLETE));
 		}
