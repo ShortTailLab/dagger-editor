@@ -11,7 +11,6 @@ package
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
 	
-	import mx.controls.Text;
 
 	public class MatSprite extends Sprite
 	{
@@ -76,7 +75,7 @@ package
 			if(value && !selectFrame)
 			{
 				selectFrame = new Shape;
-				selectFrame.graphics.lineStyle(1);
+				selectFrame.graphics.lineStyle(1, 0xff0000);
 				selectFrame.graphics.drawRect(-skin.width*0.5, -skin.height, skin.width, skin.height);
 				this.addChild(selectFrame);
 			}
