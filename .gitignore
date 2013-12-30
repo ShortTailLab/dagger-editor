@@ -1,0 +1,7 @@
+Thumbs.db
+
+bin-debug/*
+.actionScriptProperties
+.flexProperties
+.project
+.settings/
