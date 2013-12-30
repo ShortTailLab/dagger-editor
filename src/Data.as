@@ -61,16 +61,6 @@ package
 			}
 			levelXML = parseLevelXML(displayData);
 			
-			file = File.desktopDirectory.resolvePath("enemyMoveData.json");
-			if(file.exists)
-			{
-				stream = new FileStream;
-				stream.open(file, FileMode.READ);
-				enemyMoveData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-				stream.close();
-			}
-			else
-				enemyMoveData = new Object;
 			
 			_excelReader = new ExcelReader();
 			_excelReader.init(onDataComplete);
@@ -79,6 +69,31 @@ package
 		{
 			// do sth.
 			enemyData = _excelReader.enemyData
+				
+			var file:File = File.desktopDirectory.resolvePath("enemyMoveData.json");
+			if(file.exists)
+			{
+				var stream:FileStream = new FileStream;
+				stream.open(file, FileMode.READ);
+				enemyMoveData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			else
+			{
+				enemyMoveData = new Object;
+				for(var item in enemyData)
+					if(enemyData[item].hasOwnProperty("move_type"))
+					{
+						enemyMoveData[item] = new Object;
+						enemyMoveData[item]["move_type"] = enemyData[item]["move_type"]; 
+						enemyMoveData[item]["move"] = new Object;
+						for(var moveItem in enemyData[item]["move"])
+						{
+							enemyMoveData[item]["move"][moveItem] = enemyData[item]["move"][moveItem];
+						}
+					}
+			}
+				
 			this.dispatchEvent(new Event(Event.COMPLETE));
 		}
 		
@@ -90,8 +105,13 @@ package
 			stream.writeUTFBytes(JSON.stringify(displayData));
 			stream.close();
 			
-			file = File.desktopDirectory.resolvePath("enemyMoveData.json");
-			stream = new FileStream;
+			saveEnemyData();
+		}
+		
+		public function saveEnemyData():void
+		{
+			var file:File = File.desktopDirectory.resolvePath("enemyMoveData.json");
+			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
 			stream.writeUTFBytes(JSON.stringify(enemyMoveData));
 			stream.close();

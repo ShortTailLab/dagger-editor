@@ -35,6 +35,7 @@ package
 			for(var item in data)
 			{
 				var view:MatSprite = new MatSprite(item, 100, true);
+				view.doubleClickEnabled = true;
 				view.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
 				view.addEventListener(MouseEvent.CLICK, onMatClick);
 				this.addChild(view);
@@ -58,7 +59,7 @@ package
 			if(target)
 			{ 
 				var win:EditPanel = new EditPanel(target);
-				PopUpManager.addPopUp(win, this, true);
+				PopUpManager.addPopUp(win, this);
 				PopUpManager.centerPopUp(win);
 				win.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-win.width/2;
 				win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
@@ -68,7 +69,7 @@ package
 		
 		public function onMatClick(e:MouseEvent):void
 		{
-			var target:MatSprite = e.target as MatSprite;
+			var target:MatSprite = e.currentTarget as MatSprite;
 			if(selected)
 			{
 				selected.alpha = 1;
@@ -83,8 +84,7 @@ package
 		
 		public function onMatDoubleClick(e:MouseEvent):void
 		{
-			trace("doule click");
-			edit(e.target as MatSprite);
+			edit(e.currentTarget as MatSprite);
 		}
 		
 		public function resize(cols:int):void

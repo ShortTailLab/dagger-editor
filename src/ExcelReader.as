@@ -39,6 +39,7 @@ package
 					enemy["move_type"] = 0;
 				}
 				else {
+					enemy["move_type"] = int(workSheet.getCellValue("E"+i));
 					enemy["move"] = JSON.parse(workSheet.getCellValue("F"+i));
 				}
 				enemy["level"] = int(workSheet.getCellValue("L"+i));
