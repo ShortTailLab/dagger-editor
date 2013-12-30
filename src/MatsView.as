@@ -5,6 +5,7 @@ package
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
+	import mx.core.FlexGlobals;
 	import mx.core.UIComponent;
 	import mx.managers.PopUpManager;
 	
@@ -30,7 +31,7 @@ package
 		{
 			mats = new Array;
 			
-			var data:Object = Data.getInstance().matsData;
+			var data:Object = Data.getInstance().enemyData;
 			for(var item in data)
 			{
 				var view:MatSprite = new MatSprite(item, 100, true);
@@ -41,7 +42,7 @@ package
 				var menu:ContextMenu = new ContextMenu;
 				var btn:ContextMenuItem = new ContextMenuItem("编辑");
 				btn.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
-					edit(new Array(e.contextMenuOwner as MatSprite));
+					edit(e.contextMenuOwner as MatSprite);
 				});
 				menu.addItem(btn);
 				
@@ -51,13 +52,15 @@ package
 			resize(2);
 		}
 		
-		private function edit(target:Array):void
+		private function edit(target:MatSprite):void
 		{
-			if(target.length > 0)
-			{
+			if(target)
+			{ 
 				var win:EditPanel = new EditPanel(target);
 				PopUpManager.addPopUp(win, this, true);
 				PopUpManager.centerPopUp(win);
+				win.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-win.width/2;
+				win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
 			}
 		}
 		

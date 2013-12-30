@@ -19,6 +19,7 @@ package
 	{
 		public var matsData:Object = null;
 		public var enemyData:Object = null;
+		public var enemyMoveData:Object = null;
 		public var displayData:Object = null;
 		public var levelXML:XML = null;
 		
@@ -60,19 +61,50 @@ package
 			}
 			levelXML = parseLevelXML(displayData);
 			
+			file = File.desktopDirectory.resolvePath("enemyMoveData.json");
+			if(file.exists)
+			{
+				stream = new FileStream;
+				stream.open(file, FileMode.READ);
+				enemyMoveData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			else
+				enemyMoveData = new Object;
 			
 			_excelReader = new ExcelReader();
-			_excelReader.init(
-				function ():void {
-					// do sth.
-					enemyData = _excelReader.enemyData
-					addAtkMsg(enemyData);
-				}
-			);
+			_excelReader.init(onDataComplete);
+		}
+		private function onDataComplete():void
+		{
+			// do sth.
+			enemyData = _excelReader.enemyData
+			this.dispatchEvent(new Event(Event.COMPLETE));
+		}
+		
+		public function saveLocal():void
+		{
+			var file:File = File.desktopDirectory.resolvePath("data.json");
+			var stream:FileStream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes(JSON.stringify(displayData));
+			stream.close();
+			
+			file = File.desktopDirectory.resolvePath("enemyMoveData.json");
+			stream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes(JSON.stringify(enemyMoveData));
+			stream.close();
 		}
 		
 		public function exportJS():void
 		{
+			for(var type in enemyMoveData)
+			{
+				enemyData[type]["move_type"] = enemyMoveData[type]["move_type"];
+				enemyData[type]["move"] = enemyMoveData[type]["move"];
+			}
+			
 			var source:Array = displayData[0].data;
 			var positions:Array = new Array;
 			for each(var item:Object in source)
@@ -85,11 +117,11 @@ package
 			}
 			var exportData:Object = new Object();
 			exportData["pos"] = positions;
-			if (_excelReader.enemyData) {
-				exportData["defs"] = _excelReader.enemyData;
+			if (enemyData) {
+				exportData["defs"] = enemyData;
 			}
 			
-			var js:String = "module('level_data', function(){ var Level = {};Level.demo = " +
+			var js:String = "module('level_data', function(){ var Level = {};Level.demo = "+
 				""+JSON.stringify(exportData)+";return {Level : Level}})"; 
 			
 			var file:File = File.desktopDirectory.resolvePath("dataDemo.js");
@@ -98,7 +130,7 @@ package
 			stream.writeUTFBytes(js);
 			stream.close();
 			
-			Alert.show("导出成功！");
+			Alert.show("保存成功！");
 		}
 		
 		public function makeNewLevel(name:String):void
@@ -148,38 +180,6 @@ package
 			return null;
 		}
 		
-		public function saveLocal():void
-		{
-			var file:File = File.desktopDirectory.resolvePath("data.json");
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(JSON.stringify(displayData));
-			stream.close();
-			Alert.show("保存成功！");
-		}
-		
-		private function addAtkMsg(data:Object):void
-		{
-			var enemyDataPart:Object;
-			var file:File = File.desktopDirectory.resolvePath("enemyAtk.json");
-			if(file.exists)
-			{
-				var stream:FileStream = new FileStream;
-				stream.open(file, FileMode.READ);
-				enemyDataPart = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-				stream.close();
-			}
-			else 
-			{
-				
-			}
-			
-			for(var type in data)
-			{
-				data[type]["move"] = enemyDataPart[type]["move"];
-				data[type]["move_type"] = enemyDataPart[type]["move_type"];
-			}
-		}
 		
 		private function onLoadMatsData(data:Object):void
 		{

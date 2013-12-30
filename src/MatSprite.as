@@ -25,7 +25,7 @@ package
 			this.trimWidth = width;
 			this.isShowType = showType;
 			
-			var path:String = Data.getInstance().matsData[_type].sourcePath;
+			var path:String = Data.getInstance().enemyData[_type].face+".png";
 			var loader = new Loader;
 			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadSkin);
 			loader.load(new URLRequest("Resource/"+path));
