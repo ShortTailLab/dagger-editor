@@ -68,7 +68,7 @@ package
 			moveTypeBox.addEventListener(Event.CHANGE, function(){
 				line.graphics.clear();
 				while(dots.length > 0)
-					map.removeChild(dots.shift());
+					map.removeChild(dots.pop());
 			});
 			mapContain.addChild(moveTypeBox);
 			

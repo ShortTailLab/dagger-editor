@@ -16,7 +16,7 @@ package
 			_onComplete = onComplete;
 			_excelLoader = new XLSXLoader();
 			_excelLoader.addEventListener(Event.COMPLETE, onExcelLoad);
-			_excelLoader.load("Resource/关卡导表.xlsx");
+			_excelLoader.load("Resource/levelData.xlsx");
 		}
 		
 		private function onExcelLoad(e:Event):void {

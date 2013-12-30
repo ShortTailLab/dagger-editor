@@ -35,6 +35,7 @@ package
 			for(var item in data)
 			{
 				var view:MatSprite = new MatSprite(item, 100, true);
+				view.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
 				view.addEventListener(MouseEvent.CLICK, onMatClick);
 				this.addChild(view);
 				mats.push(view);
@@ -78,6 +79,12 @@ package
 				target.alpha = 0.5;
 				selected = target;
 			}
+		}
+		
+		public function onMatDoubleClick(e:MouseEvent):void
+		{
+			trace("doule click");
+			edit(e.target as MatSprite);
 		}
 		
 		public function resize(cols:int):void

@@ -113,7 +113,7 @@ package
 				data.type = item.type;
 				data.x = item.x;
 				data.y = item.y;
-				exportData.push(data);
+				positions.push(data);
 			}
 			var exportData:Object = new Object();
 			exportData["pos"] = positions;

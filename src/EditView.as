@@ -107,6 +107,7 @@ package
 			map.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			map.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 			map.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			
 		}
 		
 		public function init(_levelName:String):void
