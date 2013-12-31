@@ -47,6 +47,7 @@ package
 		
 		private var mapPieces:Dictionary;
 		
+		private var selectedMats:Array;
 		private var selectRect:Rectangle;
 		private var selectRectShape:Shape;
 		

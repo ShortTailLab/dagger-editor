@@ -22,22 +22,24 @@ package
 		private var skin:Sprite = null;
 		private var selectFrame:Shape = null;
 		
-		public function MatSprite(_type:String, width:Number = -1, showType:Boolean = false)
+		public function MatSprite(_type:String,  showType:Boolean = false)
 		{
 			this.type = _type;
-			this.trimWidth = width;
 			this.isShowType = showType;
 			
-			var typeText:TextField = new TextField;
-			typeText.defaultTextFormat = new TextFormat(null, 20);
-			typeText.autoSize = TextFieldAutoSize.CENTER;
-			typeText.selectable = false;
-			typeText.width = width;
-			typeText.height = 20;
-			typeText.x = -typeText.textWidth*0.5;
-			typeText.y = -typeText.textHeight*0.5;
-			typeText.text = this.type;
-			this.addChild(typeText);
+			if(isShowType)
+			{
+				var typeText:TextField = new TextField;
+				typeText.defaultTextFormat = new TextFormat(null, 20);
+				typeText.autoSize = TextFieldAutoSize.CENTER;
+				typeText.selectable = false;
+				typeText.width = width;
+				typeText.height = 20;
+				typeText.x = -typeText.textWidth*0.5;
+				typeText.y = -typeText.textHeight*0.5;
+				typeText.text = this.type;
+				this.addChild(typeText);
+			}
 			
 			var path:String = Data.getInstance().enemyData[_type].face+".png";
 			var loader = new Loader;
@@ -56,18 +58,6 @@ package
 			skin.addChild(skinBmp);
 			if(trimWidth > 0)
 				trim(trimWidth);
-			
-			/*if(isShowType)
-			{
-				var typeText:TextField = new TextField;
-				typeText.defaultTextFormat = new TextFormat(null, 8);
-				typeText.text = type;
-				typeText.width = skin.width;
-				typeText.height = 10;
-				typeText.x = -skin.width*0.5;
-				typeText.y = 0;
-				addChild(typeText);
-			}*/
 		}
 		
 		public function select(value:Boolean):void
@@ -86,13 +76,13 @@ package
 			}
 		}
 		
-		public function trim(w:Number):void
+		public function trim(w:Number, h:Number = -1):void
 		{
-			if(skin.width != w)
-			{
-				var scale:Number = w/skin.width;
-				skin.scaleX = skin.scaleY = scale;
-			}
+			var scale:Number = w/skin.width;
+			if(skin.height*scale > h)
+				scale = h/skin.height;
+			skin.scaleX = skin.scaleY = scale;
+			
 		}
 	}
 }
