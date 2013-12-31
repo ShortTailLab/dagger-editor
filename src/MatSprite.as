@@ -17,29 +17,32 @@ package
 		public var type:String;
 		public var triggerTime:int = -1;
 		
-		public var trimWidth:Number;
+		public var trimSize:Number;
 		public var route:Array = null;
 		
 		private var isShowType:Boolean = false;
 		private var skin:Sprite = null;
 		private var selectFrame:Shape = null;
 		
-		public function MatSprite(_type:String, width:Number = -1, showType:Boolean = false)
+		public function MatSprite(_type:String, size:int = -1, showType:Boolean = false)
 		{
 			this.type = _type;
-			this.trimWidth = width;
 			this.isShowType = showType;
+			this.trimSize = size;
 			
-			var typeText:TextField = new TextField;
-			typeText.defaultTextFormat = new TextFormat(null, 20);
-			typeText.autoSize = TextFieldAutoSize.CENTER;
-			typeText.selectable = false;
-			typeText.width = width;
-			typeText.height = 20;
-			typeText.x = -typeText.textWidth*0.5;
-			typeText.y = -typeText.textHeight*0.5;
-			typeText.text = this.type;
-			this.addChild(typeText);
+			if(isShowType)
+			{
+				var typeText:TextField = new TextField;
+				typeText.defaultTextFormat = new TextFormat(null, 20);
+				typeText.autoSize = TextFieldAutoSize.CENTER;
+				typeText.selectable = false;
+				typeText.width = width;
+				typeText.height = 20;
+				typeText.x = -typeText.textWidth*0.5;
+				typeText.y = -typeText.textHeight*0.5;
+				typeText.text = this.type;
+				this.addChild(typeText);
+			}
 			
 			var path:String = Data.getInstance().enemyData[_type].face+".png";
 			var loader = new Loader;
@@ -56,20 +59,8 @@ package
 			skin = new Sprite;
 			this.addChild(skin);
 			skin.addChild(skinBmp);
-			if(trimWidth > 0)
-				trim(trimWidth);
-			
-			/*if(isShowType)
-			{
-				var typeText:TextField = new TextField;
-				typeText.defaultTextFormat = new TextFormat(null, 8);
-				typeText.text = type;
-				typeText.width = skin.width;
-				typeText.height = 10;
-				typeText.x = -skin.width*0.5;
-				typeText.y = 0;
-				addChild(typeText);
-			}*/
+			if(trimSize > 0)
+				trim(trimSize);
 		}
 		
 		public function select(value:Boolean):void
@@ -88,13 +79,10 @@ package
 			}
 		}
 		
-		public function trim(w:Number):void
+		public function trim(size:Number):void
 		{
-			if(skin.width != w)
-			{
-				var scale:Number = w/skin.width;
-				skin.scaleX = skin.scaleY = scale;
-			}
+			var scale:Number = Math.min(size/skin.width, size/skin.height);
+			skin.scaleX = skin.scaleY = scale;
 		}
 	}
 }
