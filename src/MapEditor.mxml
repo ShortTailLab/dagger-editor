@@ -10,71 +10,160 @@
 	<fx:Script>
 		<![CDATA[
 			import mx.controls.Alert;
+			import mx.controls.Tree;
 			import mx.events.CloseEvent;
-			private var editView:EditView;
+			
+			import spark.components.Group;
+			import spark.components.List;
+			import spark.components.VScrollBar;
+			
+			import bgedit.BgEditView;
+			import bgedit.BgModel;
+			import bgedit.BgSelectView;
+			
+			import manager.EventManager;
+			import manager.EventType;
+			import manager.GameEvent;
+			
+			
+			
 			
 			private function init():void
 			{
-				Data.getInstance().init();
+				_instance = this;
+				
+				var menu:ContextMenu = new ContextMenu;
+				var item:ContextMenuItem = new ContextMenuItem("新建");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCreateNew);
+				var item2:ContextMenuItem = new ContextMenuItem("重命名");
+				item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onRename);
+				var item3:ContextMenuItem = new ContextMenuItem("删除");
+				item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDelete);
+				menu.addItem(item);
+				menu.addItem(item2);
+				menu.addItem(item3);
+				accordion.contextMenu = menu;
+				
 				Data.getInstance().addEventListener(Event.COMPLETE, onDataReady);
+				Data.getInstance().init();
+				
+				EventManager.getInstance().addEventListener(EventType.INIT_BG_DATA_COMPLETE, onBgDataInit);
+				BgModel.getInstance().init();
 			}
 			
 			private function onDataReady(e:Event):void
 			{
-				var menu:ContextMenu = new ContextMenu;
-				var item:ContextMenuItem = new ContextMenuItem("新建");
-				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, newLevel);
-				var item2:ContextMenuItem = new ContextMenuItem("删除");
-				item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, deleteLevel);
-				menu.addItem(item);
-				menu.addItem(item2);
-				levelTree.contextMenu = menu;
+				_tree = new Tree();
+				_tree.dataProvider = Data.getInstance().levelXML;
+				_tree.enabled = true;
+				_tree.labelField = "@label";
+				_tree.percentWidth = 100;
+				_tree.percentHeight = 100;
+				_tree.showRoot = false;
+				_tree.addEventListener(MouseEvent.CLICK, onLevelClick);
+				enemyEdit.addElement(_tree);
 				
-				levelTree.dataProvider = Data.getInstance().levelXML;
+				_enemyEditView = new EditView(middleArea);
+				_enemyEditView.init(Data.getInstance().levelXML.level[0].@label);
 				
-				editView = new EditView(mapView);
-				mapView.addElement(editView);
-				editView.init(Data.getInstance().levelXML.level[0].@label);
-				matsGroup.addElement(MatsView.getInstance());
+				var modelView:Panel = new Panel();
+				modelView.percentHeight = 100;
+				modelView.percentWidth = 100;
+				modelView.title = "模型";
+				
+				var matsPanel:Panel = new Panel();
+				matsPanel.title = "资源";
+				matsPanel.height = 600;
+				matsPanel.percentWidth = 100;
+				var hgroup:HGroup = new HGroup();
+				hgroup.percentWidth = 100;
+				hgroup.horizontalAlign = "left";
+				var group:Group = new Group();
+				group.clipAndEnableScrolling = true;
+				group.percentWidth = 100;
+				group.percentHeight = 100;
+				var vscrollbar:VScrollBar = new VScrollBar();
+				vscrollbar.percentHeight = 100;
+				vscrollbar.viewport = group;
+				hgroup.addElement(group);
+				hgroup.addElement(vscrollbar);
+				matsPanel.addElement(hgroup);
+				MatsView.getInstance().percentWidth = 100;
+				group.addElement(MatsView.getInstance());
+				
+				_enemyEditVGroup = new VGroup();
+				_enemyEditVGroup.percentHeight = 100;
+				_enemyEditVGroup.percentWidth = 100;
+				_enemyEditVGroup.verticalAlign = "top";
+				_enemyEditVGroup.horizontalAlign = "center";
+				_enemyEditVGroup.addElement(modelView);
+				_enemyEditVGroup.addElement(matsPanel);
+				
+				changeEditType(0);
 			}
 			
-			private function onNewClick(e:ContextMenuEvent):void
-			{
-				
+			public function changeEditType( type:int ):void {
+				accordion.selectedIndex = type;
+				middleArea.removeAllElements();
+				rightArea.removeAllElements();
+				if (type == 0) {
+					middleArea.addElement(_enemyEditView);
+					rightArea.addElement(_enemyEditVGroup);
+				}
+				else {
+					middleArea.addElement(_bgEditView);
+					rightArea.addElement(_bgSelectView);
+				}
 			}
 			
-			private function onDeleteClick(e:ContextMenuEvent):void
-			{
+			private function onBgDataInit(event:GameEvent):void {
+				EventManager.getInstance().removeEventListener(EventType.INIT_BG_DATA_COMPLETE, onBgDataInit);
+				var list:List = new List();
+				list.percentWidth = 100;
+				list.percentHeight = 100;
+				list.dataProvider = BgModel.getInstance().bgNameArray;
+				list.addEventListener(MouseEvent.CLICK, function (e:Event):void {
+					EventManager.getInstance().dispatchEvent(new GameEvent(EventType.BG_SELECT_CHANGE, (e.currentTarget as List).selectedIndex));
+				});
+				bgEdit.addElement(list);
 				
+				_bgEditView = new BgEditView();
+				_bgSelectView = new BgSelectView();
 			}
 			
 			private function onLevelClick(e:Event):void{
-				var selectedNode = (e.target as Tree).selectedItem as XML;
+				var selectedNode:XML = (e.currentTarget as Tree).selectedItem as XML;
 				var label:String=selectedNode.@label;
-				editView.init(label);
+				_enemyEditView.init(label);
 			}	
 			
-			private function newLevel(e:ContextMenuEvent):void
+			private function onCreateNew(e:ContextMenuEvent):void
 			{
 				var levelLength:int = Data.getInstance().levelXML.level.length()+1;
 				Data.getInstance().makeNewLevel("level"+levelLength);
-				editView.init("level"+levelLength);
+				_enemyEditView.init("level"+levelLength);
 			}
-			private function deleteLevel(e:ContextMenuEvent):void
+			
+			private function onRename(e:ContextMenuEvent):void {
+				
+			}
+			
+			private function onDelete(e:ContextMenuEvent):void
 			{
 				Alert.okLabel = "确定";
 				Alert.cancelLabel = "取消";
-				var selectedNode = levelTree.selectedItem as XML;
+				var selectedNode:XML = _tree.selectedItem as XML;
 				if(selectedNode)
 					Alert.show("确定删除？", "tips", Alert.OK|Alert.CANCEL, this, alertClose);
 				else 
 					Alert.show("选择关卡");
 			}
+			
 			private function alertClose(e:CloseEvent):void
 			{
 				if(e.detail == Alert.OK)
 				{
-					var selectedNode = levelTree.selectedItem as XML;
+					var selectedNode:XML = _tree.selectedItem as XML;
 					if(selectedNode)
 					{
 						var label:String=selectedNode.@label;
@@ -82,42 +171,83 @@
 					}
 				}
 			}
-			private function save(event:Event):void
+			private function saveFile(event:Event):void
 			{
-				editView.save();
+				_enemyEditView.save();
 				Data.getInstance().saveLocal();
 				Data.getInstance().exportJS();
 			}
+			
+			private function openLevelFile(event:Event):void {
+				var file:File = File.desktopDirectory;
+				var tip:String = "请选择关卡配置文件";
+				var filter:FileFilter = new FileFilter("JSON","*.json;*.txt");
+				file.browseForOpen(tip, [filter]);
+				file.addEventListener(Event.SELECT, function (e:Event):void {
+					var file:File = e.target as File;
+					var fileStream:FileStream = new FileStream();
+					fileStream.open(file, FileMode.READ);
+					var config:Object = JSON.parse(fileStream.readUTFBytes(fileStream.bytesAvailable));
+					// add to Data.getInstance();
+				});
+			}
+			
+			private function openBgFile(event:Event):void {
+				
+			}
+			
+			private function openExcelFile(event:Event):void {
+				
+			}
+			
+			private function onAccordionClick(e:Event):void {
+				changeEditType((e.currentTarget as Accordion).selectedIndex);
+			}
+			
+			public function get getInstance():MapEditor { return _instance; }
+			
+			private var _instance:MapEditor;
+			
+			private var _enemyEditView:EditView;
+			private var _enemyEditVGroup:VGroup;
+			private var _tree:Tree;
+			
+			private var _bgEditView:BgEditView;
+			private var _bgSelectView:BgSelectView;
 		]]>
 	</fx:Script>
 	
 	<s:layout>
 		<s:HorizontalLayout verticalAlign="middle" horizontalAlign="center"/>
 	</s:layout>
-	<s:VGroup  width="200" height="100%" paddingTop="5" horizontalAlign="center">
-		<s:HGroup width="100%" height="30" verticalAlign="middle" horizontalAlign="center">
-			<s:Button label="保存" width="70" height="30" click="save(event)"/>
+	<s:VGroup height="100%" width="100%" paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="5">
+		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
+				<s:Button id="openBtn" label="打开关卡配置" click="openLevelFile(event)"/>
+				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
+				<s:Button id="openBgBtn" label="打开背景配置" click="openBgFile(event)"/>
+				<s:Button id="openExcelBtn" label="打开怪物Excel" click="openExcelFile(event)"/>
 		</s:HGroup>
-		<s:Panel width="100%" height="100%" title="关卡">
-			<mx:Tree id="levelTree" enabled="true" labelField="@label" 
-					 width="100%" height="100%" showRoot="false" itemClick="onLevelClick(event)">
-			</mx:Tree>
-		</s:Panel>
-	</s:VGroup>
-	<mx:Canvas id="mapView" height="100%" width="100%">
-	</mx:Canvas>
-	<s:VGroup height="100%" verticalAlign="top" horizontalAlign="center">
-		<s:Panel title="模型" width="100%" height="100%">
+		
+		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
+			<s:Panel height="100%" title="选择编辑类别">
+				<mx:Accordion id="accordion" height="100%" width="100%" click="onAccordionClick(event)">
+					<s:NavigatorContent width="100%" height="100%" label="怪物编辑" id="enemyEdit">
+					</s:NavigatorContent> 
+					<s:NavigatorContent width="100%" height="100%" label="背景编辑" id="bgEdit">
+					</s:NavigatorContent> 
+				</mx:Accordion>
+			</s:Panel>
 			
-		</s:Panel>
-		<s:Panel id="matsPanel" title="资源" width="250" height="600" backgroundColor="0xE0FFFF" >
-			<s:HGroup width="100%" horizontalAlign="left">
-				<s:Group id="matsGroup" clipAndEnableScrolling="true" width="100%" height="600"/>
-				<s:VScrollBar viewport="{matsGroup}" height="100%"/>
-			</s:HGroup>
-		</s:Panel>
+			<s:BorderContainer height="100%" width="100%">
+				<mx:Canvas id="middleArea" height="100%" width="100%">
+				</mx:Canvas>
+			</s:BorderContainer>
+		</s:HGroup>
 	</s:VGroup>
 	
-	
+	<s:VGroup height="100%" width="280" verticalAlign="top" horizontalAlign="right" paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="5">
+		<s:BorderContainer id="rightArea" height="100%" width="100%">
+		</s:BorderContainer>
+	</s:VGroup>
 		
 </s:WindowedApplication>

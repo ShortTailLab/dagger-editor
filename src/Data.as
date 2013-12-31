@@ -14,6 +14,7 @@ package
 	import flash.utils.ByteArray;
 	
 	import mx.controls.Alert;
+	import excel.ExcelReader;
 	
 	public class Data extends EventDispatcher
 	{
