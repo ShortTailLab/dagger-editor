@@ -8,7 +8,9 @@ package
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.text.TextField;
+	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
+	import flash.text.TextFormatAlign;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
@@ -46,7 +48,7 @@ package
 			
 			var icon:MatSprite = new MatSprite(target.type, 100);
 			icon.x = 70;
-			icon.y = 120;
+			icon.y = 110;
 			mapContain.addChild(icon);
 			
 			var user1:ArrayCollection = new ArrayCollection([
@@ -54,8 +56,9 @@ package
 				{label:"定点",data:1},
 				{label:"循环",data:2},
 				{label:"追踪英雄",data:3},
-				{label:"自定义",data:4},
-				{label:"追踪当前",data:5}
+				{label:"直线",data:4},
+				{label:"自定义",data:5},
+				{label:"追踪当前",data:6}
 			]); 
 			
 			mapContain.addChild(getLabel("行动方式:", 20, 130));
@@ -68,7 +71,7 @@ package
 			moveTypeBox.addEventListener(Event.CHANGE, function(){
 				line.graphics.clear();
 				while(dots.length > 0)
-					map.removeChild(dots.shift());
+					map.removeChild(dots.pop());
 			});
 			mapContain.addChild(moveTypeBox);
 			
@@ -104,14 +107,36 @@ package
 			line = new Shape;
 			map.addChild(line);
 			
+			if(Data.getInstance().enemyMoveData.hasOwnProperty(target.type))
+			{
+				var moveType:int = Data.getInstance().enemyMoveData[target.type]["move_type"]
+				moveTypeBox.selectedIndex = moveType;
+				speedInput.text = Data.getInstance().enemyMoveData[target.type]["move"]["speed"];
+				var recordDots:Array = null;
+				if(moveType == 1)
+					recordDots = Data.getInstance().enemyMoveData[target.type]["move"].dir;
+				else if(moveType == 2)
+					recordDots = Data.getInstance().enemyMoveData[target.type]["move"].loops;
+				else if(moveType == 5)
+					recordDots = Data.getInstance().enemyMoveData[target.type]["move"].route;
+				if(recordDots)
+					for(var d in recordDots)
+					{
+						var pos:Array = new Array;
+						for(var n in recordDots[d])
+							pos.push(recordDots[d][n]);
+						addDot(pos[0]*0.5, 480-pos[1]*0.5);
+					}
+			}
+			
 			this.addEventListener(CloseEvent.CLOSE, onClose);
 		}
 		
-		private function getLabel(label:String, px:int, py:int):TextField
+		private function getLabel(label:String, px:int = 0, py:int=0, size:int = 10):TextField
 		{
 			var t:TextField = new TextField;
+			t.defaultTextFormat = new TextFormat(null, size);
 			t.text = label;
-			t.defaultTextFormat = new TextFormat(null, 10);
 			t.x = px;
 			t.y = py;
 			return t;
@@ -120,33 +145,36 @@ package
 		
 		private function onMapClick(e:MouseEvent):void
 		{
+			addDot(e.localX, e.localY)
+		}
+		
+		private function addDot(px:int, py:int):void
+		{
 			var type:int = moveTypeBox.selectedItem.data;
 			if(type == 1)
 			{
 				if(dots.length == 0)
-					makeDot(0xff0000, e.localX, e.localY);
+					makeDot(0xff0000, px, py);
 			}
 			else if(type == 2)
 			{
-				makeDot(0xff0000, e.localX, e.localY);
+				makeDot(0xff0000, px, py);
 			}
 			else if(type == 3)
 			{
 				
 			}
-			else if(type == 4)
+			else if(type == 5)
 			{
 				if(dots.length > 0)
 				{
-					var px:Number = (e.localX + dots[dots.length-1].x)*0.5;
-					var py:Number = (e.localY + dots[dots.length-1].y)*0.5;
-					makeDot(0x00ff00, px, py);
+					var px1:Number = (px + dots[dots.length-1].x)*0.5;
+					var py1:Number = (py + dots[dots.length-1].y)*0.5;
+					makeDot(0x00ff00, px1, py1);
 				}
-				makeDot(0xff0000, e.localX, e.localY);
+				makeDot(0xff0000, px, py);
 				render();
 			}
-			
-			
 		}
 		
 		private function makeDot(color:uint, px:int, py:int):Sprite
@@ -158,6 +186,13 @@ package
 			dot.addEventListener(MouseEvent.MOUSE_DOWN, onDotMouseDown);
 			dot.addEventListener(MouseEvent.MOUSE_MOVE, onDotMove);
 			dot.addEventListener(MouseEvent.MOUSE_UP, onDotMouseUp);
+			
+			var label:TextField = getLabel(String(dots.length), 0, 0, 20);
+			label.selectable = false;
+			label.width = label.height = 20;
+			label.x = -label.textWidth*0.5;
+			label.y = -label.textHeight*0.5;
+			dot.addChild(label);
 			
 			var menu:ContextMenu = new ContextMenu;
 			var item:ContextMenuItem = new ContextMenuItem("删除");
@@ -174,8 +209,9 @@ package
 		
 		private function onDotMouseDown(event:MouseEvent):void
 		{
+			
 			event.stopPropagation();
-			(event.target as Sprite).startDrag();
+			(event.currentTarget as Sprite).startDrag();
 		}
 		private function onDotMove(event:MouseEvent):void
 		{
@@ -186,7 +222,7 @@ package
 		private function onDotMouseUp(event:MouseEvent):void
 		{
 			event.stopPropagation();
-			(event.target as Sprite).stopDrag();
+			(event.currentTarget as Sprite).stopDrag();
 		}
 		
 		private function onDelete(event:ContextMenuEvent):void
@@ -194,7 +230,7 @@ package
 			var type:int = moveTypeBox.selectedItem.data;
 			for(var i:int = 0; i < dots.length; i++)
 				if(dots[i] == event.contextMenuOwner)
-					if(type == 4)
+					if(type == 5)
 					{
 						var start:int = i%2==0 ? i-1: i;
 						if(start>=0)
@@ -223,19 +259,17 @@ package
 			var route:Array = new Array;
 			for(var i:int = 0; i < dots.length; i++)
 			{
-				var pos:Object = new Object;
+				var pos:Array = new Array;
 				if(type == 4)
 				{
-					pos.x = dots[i].x - dots[0].x;
-					pos.y = dots[i].y - dots[0].y;
+					pos.push((dots[i].x - dots[0].x)*2);
+					pos.push((dots[i].y - dots[0].y)*2);
 				}
 				else
 				{
-					pos.x = dots[i].x;
-					pos.y = 480-dots[i].y;
+					pos.push((dots[i].x*2));
+					pos.push((480-dots[i].y)*2);
 				}
-				pos.x *= 2;
-				pos.y *= 2;
 				route.push(pos);
 			}
 			
@@ -250,6 +284,7 @@ package
 			else if(type == 4)
 				Data.getInstance().enemyMoveData[editTarget.type]["move"].route = route;
 			
+			Data.getInstance().saveEnemyData();
 			Alert.show("保存成功");
 		}
 		
