@@ -15,6 +15,8 @@ package
 	public class MatSprite extends Sprite
 	{
 		public var type:String;
+		public var triggerTime:int = -1;
+		
 		public var trimWidth:Number;
 		public var route:Array = null;
 		

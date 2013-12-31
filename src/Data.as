@@ -141,10 +141,10 @@ package
 				exportData["defs"] = enemyData;
 			}
 			
-			var js:String = "module('level_data', function(){ var Level = {};Level.demo = "+
-				""+JSON.stringify(exportData)+";return {Level : Level}})"; 
+			var js:String = "function MAKE_LEVEL(){ var level = " +
+				"" + JSON.stringify(exportData) + "; return level; }"; 
 			
-			var file:File = File.desktopDirectory.resolvePath("dataDemo.js");
+			var file:File = File.desktopDirectory.resolvePath("demo.js");
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
 			stream.writeUTFBytes(js);
