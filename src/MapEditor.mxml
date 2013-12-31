@@ -210,7 +210,7 @@
 			
 			private function openExcelFile(event:Event):void {
 				var file:File = File.desktopDirectory;
-				var tip:String = "请选择关卡配置文件";
+				var tip:String = "请选择怪物Excel配置文件";
 				var filter:FileFilter = new FileFilter("JSON","*.xlsx");
 				file.browseForOpen(tip, [filter]);
 				file.addEventListener(Event.SELECT, function (e:Event):void {

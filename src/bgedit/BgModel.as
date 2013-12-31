@@ -6,6 +6,8 @@ package bgedit
 	
 	import mx.collections.ArrayCollection;
 	
+	import spark.collections.Sort;
+	
 	import manager.EventManager;
 	import manager.EventType;
 	import manager.GameEvent;
@@ -26,19 +28,22 @@ package bgedit
 		public function init():void {
 			_bgDict = new Object();
 			_bgNameArray = new ArrayCollection();
-			var directory:File = File.desktopDirectory.resolvePath("levelConfigs");
-			if (directory.exists && directory.isDirectory) {
-				var list:Array = directory.getDirectoryListing();
-				for each(var file:File in list) {
-					if (!file.isDirectory && file.name.indexOf(".json") != -1) {
-						var fileStream:FileStream = new FileStream();
-						fileStream.open(file, FileMode.READ);
-						var data:Object = JSON.parse(fileStream.readUTFBytes(fileStream.bytesAvailable));
-						_bgDict[file.name] = data;
-						_bgNameArray.addItem(file.name);
-					}
+			
+			var file:File = File.desktopDirectory.resolvePath("bgConfig.json");
+			if (!file.exists) {
+				file = File.applicationDirectory.resolvePath("Resource/bgConfig.json");
+			}
+			if (file.exists) {
+				var fileStream:FileStream = new FileStream();
+				fileStream.open(file, FileMode.READ);
+				var data:Object = JSON.parse(fileStream.readUTFBytes(fileStream.bytesAvailable));
+				_bgDict = data;
+				for (var bgName:String in _bgDict) {
+					_bgNameArray.addItem(bgName);
 				}
 			}
+			_bgNameArray.sort = new Sort();
+			_bgNameArray.refresh();
 			
 			EventManager.getInstance().dispatchEvent(new GameEvent(EventType.INIT_BG_DATA_COMPLETE));
 		}

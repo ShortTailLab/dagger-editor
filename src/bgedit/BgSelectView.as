@@ -1,8 +1,8 @@
 package bgedit
 {
-	import mx.core.UIComponent;
+	import spark.components.HGroup;
 
-	public class BgSelectView extends UIComponent
+	public class BgSelectView extends HGroup
 	{
 		public function BgSelectView()
 		{

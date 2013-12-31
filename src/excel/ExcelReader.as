@@ -58,6 +58,7 @@ package excel
 			var byteArray:ByteArray = new ByteArray();
 			fileStream.readBytes(byteArray,0,fileStream.bytesAvailable);
 			
+			_excelLoader = new XLSXLoader();
 			_excelLoader.addEventListener(Event.COMPLETE, onExcelLoad);
 			_excelLoader.loadFromByteArray(byteArray);
 		}
@@ -112,6 +113,7 @@ package excel
 				enemy["bonus"] = int(workSheet.getCellValue("P"+i));
 				enemy["rbonus"] = int(workSheet.getCellValue("Q"+i));				
 			}
+			_excelLoader.close();
 
 			if (_onComplete != null) {
 				_onComplete.apply();
