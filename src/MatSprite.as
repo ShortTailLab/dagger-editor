@@ -17,17 +17,18 @@ package
 		public var type:String;
 		public var triggerTime:int = -1;
 		
-		public var trimWidth:Number;
+		public var trimSize:Number;
 		public var route:Array = null;
 		
 		private var isShowType:Boolean = false;
 		private var skin:Sprite = null;
 		private var selectFrame:Shape = null;
 		
-		public function MatSprite(_type:String,  showType:Boolean = false)
+		public function MatSprite(_type:String, size:int = -1, showType:Boolean = false)
 		{
 			this.type = _type;
 			this.isShowType = showType;
+			this.trimSize = size;
 			
 			if(isShowType)
 			{
@@ -58,8 +59,8 @@ package
 			skin = new Sprite;
 			this.addChild(skin);
 			skin.addChild(skinBmp);
-			if(trimWidth > 0)
-				trim(trimWidth);
+			if(trimSize > 0)
+				trim(trimSize);
 		}
 		
 		public function select(value:Boolean):void
@@ -78,13 +79,10 @@ package
 			}
 		}
 		
-		public function trim(w:Number, h:Number = -1):void
+		public function trim(size:Number):void
 		{
-			var scale:Number = w/skin.width;
-			if(skin.height*scale > h)
-				scale = h/skin.height;
+			var scale:Number = Math.min(size/skin.width, size/skin.height);
 			skin.scaleX = skin.scaleY = scale;
-			
 		}
 	}
 }

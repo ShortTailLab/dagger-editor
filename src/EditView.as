@@ -96,7 +96,7 @@ package
 			slider.addEventListener(SliderEvent.CHANGE, onsliderChange);
 			this.addChild(slider);
 			
-			selectMats = new Array;
+			selectedMats = new Array;
 			selectRect = new Rectangle(0, 0, 0, 0);
 			selectRectShape = null;
 			
@@ -292,7 +292,7 @@ package
 			timeLine.resize(canvas.height);
 			timeLine.setCurrTime(currTime);
 			selectBoard.x = -canvas.width*0.5+30;
-			selectBoard.y = -canvas.height+620;
+			selectBoard.y = -canvas.height+600;
 		}
 		
 		
