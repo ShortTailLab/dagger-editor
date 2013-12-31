@@ -21,6 +21,8 @@
 			import bgedit.BgModel;
 			import bgedit.BgSelectView;
 			
+			import excel.ExcelReader;
+			
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.GameEvent;
@@ -193,11 +195,28 @@
 			}
 			
 			private function openBgFile(event:Event):void {
-				
+				var file:File = File.desktopDirectory;
+				var tip:String = "请选择背景配置文件";
+				var filter:FileFilter = new FileFilter("JSON","*.json");
+				file.browseForOpen(tip, [filter]);
+				file.addEventListener(Event.SELECT, function (e:Event):void {
+					var file:File = e.target as File;
+					var fileStream:FileStream = new FileStream();
+					fileStream.open(file, FileMode.READ);
+					var config:Object = JSON.parse(fileStream.readUTFBytes(fileStream.bytesAvailable));
+					BgModel.getInstance().initWithData(config);
+				});
 			}
 			
 			private function openExcelFile(event:Event):void {
-				
+				var file:File = File.desktopDirectory;
+				var tip:String = "请选择关卡配置文件";
+				var filter:FileFilter = new FileFilter("JSON","*.xlsx");
+				file.browseForOpen(tip, [filter]);
+				file.addEventListener(Event.SELECT, function (e:Event):void {
+					var file:File = e.target as File;
+					ExcelReader.getInstance().initWithNativePath(file.nativePath);
+				});
 			}
 			
 			private function onAccordionClick(e:Event):void {

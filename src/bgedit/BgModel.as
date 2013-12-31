@@ -43,6 +43,10 @@ package bgedit
 			EventManager.getInstance().dispatchEvent(new GameEvent(EventType.INIT_BG_DATA_COMPLETE));
 		}
 		
+		public function initWithData(data:Object):void {
+			
+		}
+		
 		public function get bgNameArray():ArrayCollection { return _bgNameArray; }
 
 		/** bgName -> {bgConfig} */

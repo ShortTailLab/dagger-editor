@@ -14,6 +14,7 @@ package
 	import flash.utils.ByteArray;
 	
 	import mx.controls.Alert;
+	
 	import excel.ExcelReader;
 	
 	public class Data extends EventDispatcher
@@ -24,7 +25,7 @@ package
 		public var displayData:Object = null;
 		public var levelXML:XML = null;
 		
-		private var _excelReader:ExcelReader;
+		
 		private static var instance:Data = null;
 		public static function getInstance():Data
 		{
@@ -63,13 +64,12 @@ package
 			levelXML = parseLevelXML(displayData);
 			
 			
-			_excelReader = new ExcelReader();
-			_excelReader.init(onDataComplete);
+			ExcelReader.getInstance().initWithRelativePath("Resource/levelData.xlsx", onDataComplete);
 		}
 		private function onDataComplete():void
 		{
 			// do sth.
-			enemyData = _excelReader.enemyData
+			enemyData = ExcelReader.getInstance().enemyData
 				
 			var file:File = File.desktopDirectory.resolvePath("enemyMoveData.json");
 			if(file.exists)

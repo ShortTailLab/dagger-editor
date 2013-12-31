@@ -4,6 +4,16 @@ package excel
 	import com.childoftv.xlsxreader.XLSXLoader;
 	
 	import flash.events.Event;
+	import flash.events.TimerEvent;
+	import flash.filesystem.File;
+	import flash.filesystem.FileMode;
+	import flash.filesystem.FileStream;
+	import flash.utils.ByteArray;
+	import flash.utils.Timer;
+	
+	import manager.EventManager;
+	import manager.EventType;
+	import manager.GameEvent;
 
 	public class ExcelReader
 	{
@@ -12,19 +22,72 @@ package excel
 			
 		}
 		
-		public function init(onComplete:Function=null):void {
+		public static function getInstance():ExcelReader {
+			if (!_instance) {
+				_instance = new ExcelReader();
+			}
+			return _instance;
+		}
+		
+		public function initWithRelativePath( relativePath:String, onComplete:Function=null):void {
+			_path = relativePath;
+			_isPathNative = false;
+			var file:File = new File(File.applicationDirectory.nativePath+"/"+relativePath);
+			_lastModifiedDate = file.modificationDate;
+			
 			_onComplete = onComplete;
 			_excelLoader = new XLSXLoader();
 			_excelLoader.addEventListener(Event.COMPLETE, onExcelLoad);
-			_excelLoader.load("Resource/levelData.xlsx");
+			_excelLoader.load(relativePath);
+			
+			if (!_timer) {
+				_timer = new Timer(5000);
+				_timer.addEventListener(TimerEvent.TIMER, onTimer);
+				_timer.start();
+			}
+		}
+		
+		public function initWithNativePath( nativePath:String ):void {
+			_path = nativePath;
+			_isPathNative = true;
+			var file:File = new File(nativePath);
+			_lastModifiedDate = file.modificationDate;
+
+			var fileStream:FileStream = new FileStream();
+			fileStream.open(file, FileMode.READ);
+			var byteArray:ByteArray = new ByteArray();
+			fileStream.readBytes(byteArray,0,fileStream.bytesAvailable);
+			
+			_excelLoader.addEventListener(Event.COMPLETE, onExcelLoad);
+			_excelLoader.loadFromByteArray(byteArray);
+		}
+		
+		private function onTimer(e:TimerEvent):void {
+			var file:File;
+			if (_isPathNative) {
+				file = new File(_path);
+				if (file.exists && file.modificationDate.getTime() != _lastModifiedDate.getTime()) {
+					trace("refreshing excel data from "+file.nativePath);
+					initWithNativePath(_path);
+				}
+			}
+			else {
+				file = new File(File.applicationDirectory.nativePath+"/"+_path);
+				if (file.exists && file.modificationDate.getTime() != _lastModifiedDate.getTime()) {
+					trace("refreshing excel data from "+file.nativePath);
+					initWithRelativePath(_path);
+				}
+			}
 		}
 		
 		private function onExcelLoad(e:Event):void {
+			_excelLoader.removeEventListener(Event.COMPLETE, onExcelLoad);
+
 			_enemyData = new Object();
 			var workSheet:Worksheet = _excelLoader.worksheet("怪物表");
 			
 			for (var i:int = 3; ; i++) {
-				trace("A"+i+" value: " + workSheet.getCellValue("A"+i));
+//				trace("A"+i+" value: " + workSheet.getCellValue("A"+i));
 				if (workSheet.getCellValue("A"+i) == "") {
 					break;
 				}
@@ -49,11 +112,13 @@ package excel
 				enemy["bonus"] = int(workSheet.getCellValue("P"+i));
 				enemy["rbonus"] = int(workSheet.getCellValue("Q"+i));				
 			}
-			
+
 			if (_onComplete != null) {
 				_onComplete.apply();
 				_onComplete = null;
 			}
+			
+			EventManager.getInstance().dispatchEvent(new GameEvent(EventType.EXCEL_DATA_CHANGE));
 		}
 		
 		public function get enemyData():Object {
@@ -62,7 +127,12 @@ package excel
 		
 		private var _excelLoader:XLSXLoader;
 		private var _onComplete:Function;
+		private var _enemyData:Object;
+		private var _timer:Timer;
+		private var _lastModifiedDate:Date;
+		private var _path:String;
+		private var _isPathNative:Boolean;
 		
-		private var _enemyData:Object;		
+		private static var _instance:ExcelReader;
 	}
 }
