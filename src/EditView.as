@@ -47,8 +47,10 @@ package
 		
 		private var mapPieces:Dictionary;
 		
+		private var selectMats:Array;
 		private var selectRect:Rectangle;
 		private var selectRectShape:Shape;
+		private var selectBoard:SelectBoard;
 		
 		[Embed(source="background.jpg")]
 		static public var BgImage:Class;
@@ -94,8 +96,12 @@ package
 			slider.addEventListener(SliderEvent.CHANGE, onsliderChange);
 			this.addChild(slider);
 			
+			selectMats = new Array;
 			selectRect = new Rectangle(0, 0, 0, 0);
 			selectRectShape = null;
+			
+			selectBoard = new SelectBoard;
+			this.addChild(selectBoard);
 			
 			setEndTime(canvas.height/speed);
 			setCurrTime(0);
@@ -120,9 +126,11 @@ package
 			
 			this.levelName = _levelName;
 			var level = Data.getInstance().getLevelData(levelName);
-			for each(var item in level.data)
+			for each(var item:Object in level.data)
 			{
 				var mat:MatSprite = new MatSprite(item.type);
+				if(item.hasOwnProperty("triggerTime"))
+					mat.triggerTime = item.triggerTime;
 				display(mat, item.x/2, -item.y*speed/100);
 			}
 			var end:int = level.endTime != 0? level.endTime : canvas.height/speed;
@@ -139,6 +147,8 @@ package
 				obj.type = m.type;
 				obj.x = m.x*2;
 				obj.y = -m.y/speed*100;
+				if(m.triggerTime != -1)
+					obj.triggerTime = m.triggerTime;
 				data.push(obj);
 			}
 			Data.getInstance().updateLevelData(levelName, data, endTime);
@@ -281,6 +291,8 @@ package
 			submitBtn.y = -canvas.height+30;
 			timeLine.resize(canvas.height);
 			timeLine.setCurrTime(currTime);
+			selectBoard.x = -canvas.width*0.5+30;
+			selectBoard.y = -canvas.height+620;
 		}
 		
 		
