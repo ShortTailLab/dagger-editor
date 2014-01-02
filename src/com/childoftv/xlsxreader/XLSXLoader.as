@@ -306,7 +306,7 @@ package com.childoftv.xlsxreader
 				
 				removeEventHandlers();
 				zipProcessor.close();
-				zipProcessor=null();
+				zipProcessor=null;
 				manifestCache=null;
 				worksheetCache=null;
 			}

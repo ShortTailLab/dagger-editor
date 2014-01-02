@@ -4,7 +4,6 @@ package
 	import flash.display.DisplayObject;
 	import flash.display.Shape;
 	import flash.display.Sprite;
-	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
@@ -32,6 +31,7 @@ package
 		static public var speed:Number = 20;//pixel per second
 		
 		private var map:Sprite = null;
+		private var mapMask:Sprite = null;
 		private var mapBg:Sprite = null;
 		private var timeLine:TimeLine = null;
 		private var slider:VSlider = null;
@@ -62,9 +62,13 @@ package
 			this.canvas.addEventListener(ResizeEvent.RESIZE, onResize);
 			
 			displayMats = new Array;
+			
 			map = new Sprite;
 			map.x = -60;
 			this.addChild(map);
+			mapMask = new Sprite;
+			this.addChild(mapMask);
+			this.mask = mapMask;
 			
 			mapBg = new Sprite;
 			map.addChild(mapBg);
@@ -322,6 +326,11 @@ package
 		
 		//adjust views pos when the canvas size change
 		private function onResize(e:ResizeEvent = null):void{
+			mapMask.graphics.clear();
+			mapMask.graphics.beginFill(0xffffff);
+			mapMask.graphics.drawRect(-canvas.width*0.5, -canvas.height, canvas.width, canvas.height);
+			mapMask.graphics.endFill();
+			
 			this.x = canvas.width*0.5;
 			this.y = canvas.height;
 			slider.x = -canvas.width*0.5+50;
@@ -416,4 +425,4 @@ package
 
 		
 	}
-}
+} 

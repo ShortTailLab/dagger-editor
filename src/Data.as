@@ -19,6 +19,8 @@ package
 	
 	import mx.controls.Alert;
 	
+	import excel.ExcelReader;
+	
 	public class Data extends EventDispatcher
 	{
 		public var matsData:Object = null;
@@ -28,7 +30,7 @@ package
 		public var levelXML:XML = null;
 		public var enemySkinDic:Dictionary;
 		
-		private var _excelReader:ExcelReader;
+		
 		private static var instance:Data = null;
 		public static function getInstance():Data
 		{
@@ -67,8 +69,7 @@ package
 			levelXML = parseLevelXML(displayData);
 			
 			
-			_excelReader = new ExcelReader();
-			_excelReader.init(onDataComplete);
+			ExcelReader.getInstance().initWithRelativePath("Resource/levelData.xlsx", onDataComplete);
 		}
 		
 		private var loaderDic:Dictionary;
@@ -76,7 +77,7 @@ package
 		private function onDataComplete():void
 		{
 			// do sth.
-			enemyData = _excelReader.enemyData;
+			enemyData = ExcelReader.getInstance().enemyData;
 			loaderDic = new Dictionary;
 			for(var i in enemyData)
 				skinLength++;
