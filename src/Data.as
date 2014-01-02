@@ -3,6 +3,9 @@ package
 	import com.as3xls.xls.ExcelFile;
 	import com.as3xls.xls.Sheet;
 	
+	import flash.display.Bitmap;
+	import flash.display.Loader;
+	import flash.display.LoaderInfo;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IEventDispatcher;
@@ -12,6 +15,7 @@ package
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
+	import flash.utils.Dictionary;
 	
 	import mx.controls.Alert;
 	
@@ -22,6 +26,7 @@ package
 		public var enemyMoveData:Object = null;
 		public var displayData:Object = null;
 		public var levelXML:XML = null;
+		public var enemySkinDic:Dictionary;
 		
 		private var _excelReader:ExcelReader;
 		private static var instance:Data = null;
@@ -37,7 +42,7 @@ package
 			super(target);
 			
 			matsData = new Object;
-			
+			enemySkinDic = new Dictionary;
 		}
 		
 		public function init():void
@@ -65,10 +70,26 @@ package
 			_excelReader = new ExcelReader();
 			_excelReader.init(onDataComplete);
 		}
+		
+		private var loaderDic:Dictionary;
+		private var skinLength:int = 0;
 		private function onDataComplete():void
 		{
 			// do sth.
-			enemyData = _excelReader.enemyData
+			enemyData = _excelReader.enemyData;
+			loaderDic = new Dictionary;
+			for(var i in enemyData)
+				skinLength++;
+			
+			for(var item in enemyData)
+			{
+				var path:String = enemyData[item].face+".png";
+				var loader = new Loader;
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadSkin);
+				loader.load(new URLRequest("Resource/"+path));
+				loaderDic[loader] = item;
+			}
+			
 				
 			var file:File = File.desktopDirectory.resolvePath("enemyMoveData.json");
 			if(file.exists)
@@ -93,8 +114,15 @@ package
 						}
 					}
 			}
-				
-			this.dispatchEvent(new Event(Event.COMPLETE));
+			
+		}
+		private var loadCount:int = 0;
+		private function onLoadSkin(e:Event):void
+		{
+			var loader:Loader = (e.target as LoaderInfo).loader;
+			enemySkinDic[loaderDic[loader]] = Bitmap(loader.content).bitmapData; 
+			if(++loadCount >= skinLength)
+				this.dispatchEvent(new Event(Event.COMPLETE));
 		}
 		
 		public function saveLocal():void
@@ -142,7 +170,7 @@ package
 			}
 			
 			var js:String = "function MAKE_LEVEL(){ var level = " +
-				"" + JSON.stringify(exportData) + "; return level; }"; 
+				"" + JSON.stringify(exportData, null, "\t") + "; return level; }"; 
 			
 			var file:File = File.desktopDirectory.resolvePath("demo.js");
 			var stream:FileStream = new FileStream;

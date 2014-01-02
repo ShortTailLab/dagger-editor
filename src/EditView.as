@@ -1,6 +1,7 @@
 package
 {
 	import flash.display.Bitmap;
+	import flash.display.DisplayObject;
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
@@ -10,7 +11,6 @@ package
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.text.TextField;
-	import flash.text.TextFormat;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.ui.Keyboard;
@@ -29,6 +29,8 @@ package
 	
 	public class EditView extends UIComponent
 	{
+		static public var speed:Number = 20;//pixel per second
+		
 		private var map:Sprite = null;
 		private var mapBg:Sprite = null;
 		private var timeLine:TimeLine = null;
@@ -38,7 +40,6 @@ package
 		private var canvas:Canvas;
 		private var scale:Number = 0.0;
 		
-		private var speed:Number = 20;//pixel per second
 		private var endTime:Number = -1;
 		private var currTime:Number = -1;
 		private var levelName:String = "";
@@ -47,7 +48,7 @@ package
 		
 		private var mapPieces:Dictionary;
 		
-		private var selectedMats:Array;
+		private var selectControl:SelectControl;
 		private var selectRect:Rectangle;
 		private var selectRectShape:Shape;
 		private var selectBoard:SelectBoard;
@@ -96,11 +97,11 @@ package
 			slider.addEventListener(SliderEvent.CHANGE, onsliderChange);
 			this.addChild(slider);
 			
-			selectedMats = new Array;
+			selectControl = new SelectControl(this);
 			selectRect = new Rectangle(0, 0, 0, 0);
 			selectRectShape = null;
 			
-			selectBoard = new SelectBoard;
+			selectBoard = new SelectBoard(selectControl);
 			this.addChild(selectBoard);
 			
 			setEndTime(canvas.height/speed);
@@ -110,9 +111,9 @@ package
 			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
 			this.addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
 			this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
-			map.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-			map.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
-			map.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 		}
 		
 		public function init(_levelName:String):void
@@ -129,9 +130,8 @@ package
 			for each(var item:Object in level.data)
 			{
 				var mat:MatSprite = new MatSprite(item.type);
-				if(item.hasOwnProperty("triggerTime"))
-					mat.triggerTime = item.triggerTime;
-				display(mat, item.x/2, -item.y*speed/100);
+				mat.initFromData(item);
+				display(mat, mat.x, mat.y);
 			}
 			var end:int = level.endTime != 0? level.endTime : canvas.height/speed;
 			setEndTime(end);
@@ -142,15 +142,7 @@ package
 		{
 			var data:Array = new Array;
 			for each(var m:MatSprite in displayMats)
-			{
-				var obj:Object = new Object;
-				obj.type = m.type;
-				obj.x = m.x*2;
-				obj.y = -m.y/speed*100;
-				if(m.triggerTime != -1)
-					obj.triggerTime = m.triggerTime;
-				data.push(obj);
-			}
+				data.push(m.toExportData());
 			Data.getInstance().updateLevelData(levelName, data, endTime);
 		}
 		private function onAddToStage(e:Event):void
@@ -168,11 +160,26 @@ package
 			setCurrTime(e.value);
 		}
 		
-		
 		private function onEnterFrame(e:Event):void{
 			map.y = currTime*speed;
 			timeLine.y = -map.y;
 			updateMapSize();
+			
+			if(draggingMats && draggingMats.length > 0)
+			{
+				var dx:Number = map.mouseX - currDragPoint.x;
+				var dy:Number = map.mouseY - currDragPoint.y;
+				if(dx != 0 || dy != 0)
+				{
+					for each(var m:MatSprite in draggingMats)
+					{
+						m.x += dx;
+						m.y += dy;
+					}
+					currDragPoint.x = map.mouseX;
+					currDragPoint.y = map.mouseY;
+				}
+			}
 		}
 		
 		private function onWheel(e:MouseEvent):void{
@@ -180,8 +187,10 @@ package
 		}
 		private function onKeyDown(e:KeyboardEvent):void
 		{
-			if(e.keyCode == Keyboard.ENTER)
+			var code:uint = e.keyCode;
+			if(code == Keyboard.ENTER)
 				onSubmit(null);
+			
 		}
 		private function onClick(e:MouseEvent):void
 		{
@@ -195,6 +204,7 @@ package
 		}
 		private function onGridClick(e:TimeLineEvent):void
 		{
+			selectControl.unselect();
 			if(MatsView.getInstance().selected && !selectRectShape)
 			{
 				var type:String = MatsView.getInstance().selected.type;
@@ -228,40 +238,71 @@ package
 			isSelecting = false;
 			if(selectRectShape)
 			{
+				selectControl.selectMul(getSelectMats(selectRectShape));
 				map.removeChild(selectRectShape);
 				selectRectShape = null;
-				
 			}
 		}
+		private function getSelectMats(frame:DisplayObject):Array
+		{
+			var result:Array = new Array;
+			for each(var m:MatSprite in displayMats)
+				if(m.hitTestObject(frame))
+					result.push(m);
+			return result;
+		}
 		
-		
+		private var draggingMats:Array = null;
+		private var currDragPoint:Point;
 		private function onMatMouseDown(e:MouseEvent):void
 		{
 			e.stopPropagation();
-			_draggingMat = e.currentTarget as MatSprite;
-			_draggingMat.startDrag();
+			currDragPoint = new Point(map.mouseX, map.mouseY);
+			var _draggingMat:MatSprite = e.currentTarget as MatSprite;
+			if(_draggingMat.isSelected)
+				draggingMats = selectControl.targets;
+			else
+				draggingMats = new Array(e.currentTarget as MatSprite);
+			
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
 		}
-		private var _draggingMat:MatSprite;
+		
 		private function onMatMouseUp(e:MouseEvent):void {
-			_draggingMat.stopDrag();
+			draggingMats = null;
 			this.stage.removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
 		}
 		private function onMatMiddleClick(e:MouseEvent):void {
 			e.stopPropagation();
 			removeMat(e.currentTarget as MatSprite);
 		}
+		private function onMatClick(e:MouseEvent):void
+		{
+			e.stopPropagation();
+
+			var target:MatSprite = e.currentTarget as MatSprite;
+			selectControl.select(target);
+		}
 		private function display(mat:MatSprite, px:Number, py:Number):void
 		{
-
 			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
 			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
+			mat.addEventListener(MouseEvent.CLICK, onMatClick);
 			mat.x = px;
 			mat.y = py;
 			map.addChild(mat);
 			displayMats.push(mat);
 		}
-
+		public function copySelect():void
+		{
+			var newMats:Array = new Array;
+			for each(var m:MatSprite in selectControl.targets)
+			{
+				var newM:MatSprite = new MatSprite(m.type);
+				display(newM, m.x+30, m.y+30);
+				newMats.push(newM);
+			}
+			selectControl.selectMul(newMats);
+		}
 		
 		private function removeMat(mat:MatSprite):void
 		{
@@ -340,7 +381,6 @@ package
 				selectRectShape.graphics.lineStyle(1);
 				selectRectShape.graphics.drawRect(0, 0, selectRect.width, selectRect.height);
 			}
-				
 		}
 		
 		//this called when endTime changed
