@@ -1,6 +1,8 @@
 package
 {
-	public class Formation
+	import flash.events.EventDispatcher;
+
+	public class Formation extends EventDispatcher
 	{
 		public  var formations:Object;
 		
@@ -20,6 +22,7 @@ package
 		public function add(name:String, mats:Array):void
 		{
 			formations[name] = format(mats);
+			this.dispatchEvent(new MsgEvent(MsgEvent.ADD_FORMATION, name));
 		}
 		
 		public function remove(name:String):void
@@ -30,8 +33,8 @@ package
 		private function format(mats:Array):Array
 		{
 			var data:Array = new Array;
-			var minX:Number = Number.MAX_VALUE;
-			var minY:Number = Number.MIN_VALUE;
+			var minX:Number = mats[0].x;
+			var minY:Number = mats[0].y;
 			for each(var m:MatSprite in mats)
 			{
 				minX = Math.min(m.x, minX);

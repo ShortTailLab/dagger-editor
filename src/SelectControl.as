@@ -33,8 +33,12 @@ package
 			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
 				view.copySelect();
 			});
-			var item2:ContextMenuItem = new ContextMenuItem("删除");
+			var item2:ContextMenuItem = new ContextMenuItem("设为阵型");
 			item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+				Formation.getInstance().add("f1", targets);
+			});
+			var item3:ContextMenuItem = new ContextMenuItem("删除");
+			item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
 				var copy:Array = targets.slice(0, targets.length);
 				for each(var m:MatSprite in copy)
 				{
@@ -43,6 +47,7 @@ package
 			});
 			menu.addItem(item);
 			menu.addItem(item2);
+			menu.addItem(item3);
 			target.contextMenu = menu;
 			target.select(true);
 			target.enablePosChangeDispatch(true);

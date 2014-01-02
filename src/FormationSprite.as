@@ -1,5 +1,6 @@
 package
 {
+	import flash.display.Shape;
 	import flash.display.Sprite;
 	
 	public class FormationSprite extends Sprite
@@ -13,16 +14,22 @@ package
 			graphics.lineStyle(1);
 			for each(var pos in posData)
 			{
-				graphics.beginFill(0xffffff);
-				graphics.drawCircle(pos.x, pos.y, 8);
-				graphics.endFill();
+				var dot:Shape = new Shape;
+				dot.graphics.beginFill(0xff0000);
+				dot.graphics.drawCircle(pos.x, pos.y, 8);
+				dot.graphics.endFill();
+				addChild(dot);
 			}
 		}
 		
 		public function trim(size:int):void
 		{
+			
 			var scale:Number = Math.min(size/width, size/height);
 			this.scaleX = this.scaleY = scale;
+			
+			//this.graphics.lineStyle(1);
+			//this.graphics.drawRect(0, size, size, size);
 		}
 	}
 }

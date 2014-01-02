@@ -74,6 +74,7 @@
 				modelView.percentHeight = 100;
 				modelView.percentWidth = 100;
 				modelView.title = "模型";
+				modelView.addElement(new FormationsView);
 				
 				var matsPanel:Panel = new Panel();
 				matsPanel.title = "资源";

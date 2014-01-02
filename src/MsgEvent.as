@@ -5,10 +5,13 @@ package
 	public class MsgEvent extends Event
 	{
 		static public var POS_CHANGE:String = "x_change";
+		static public var ADD_FORMATION:String = "add_formation";
+		public var hintMsg:String = "";
 		
-		public function MsgEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false)
+		public function MsgEvent(type:String, msg:String = "")
 		{
-			super(type, bubbles, cancelable);
+			super(type);
+			hintMsg = msg;
 		}
 	}
 }
