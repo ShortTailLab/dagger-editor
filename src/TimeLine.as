@@ -27,14 +27,17 @@ package
 		
 		private function onClick(e:MouseEvent):void
 		{
-			var gX:int = e.localX/unitWidth;
-			var gY:int = -e.localY/heightPerUnit;
-			if(gX>=0 && gX<=gridCols && gY>=0 && gY<=gridRows)
+			if(e.target == this)
 			{
-				var evt:TimeLineEvent = new TimeLineEvent("gridClick");
-				evt.data.x = gX*unitWidth+unitWidth*0.5;
-				evt.data.y = gY*heightPerUnit;
-				this.dispatchEvent(evt);
+				var gX:int = e.localX/unitWidth;
+				var gY:int = -e.localY/heightPerUnit;
+				if(gX>=0 && gX<=gridCols && gY>=0 && gY<=gridRows)
+				{
+					var evt:TimeLineEvent = new TimeLineEvent("gridClick");
+					evt.data.x = gX*unitWidth+unitWidth*0.5;
+					evt.data.y = gY*heightPerUnit;
+					this.dispatchEvent(evt);
+				}
 			}
 		}
 		

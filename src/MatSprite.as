@@ -13,8 +13,6 @@ package
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
 	
-	import org.osmf.media.LoadableElementBase;
-	
 
 	public class MatSprite extends Sprite
 	{
@@ -49,26 +47,16 @@ package
 				this.addChild(typeText);
 			}
 			
-			if(Data.getInstance().enemySkinDic.hasOwnProperty(type))
-			{
-				var bmpd:BitmapData = Data.getInstance().enemySkinDic[type];
-				var skinBmp:Bitmap = new Bitmap(bmpd);
-				skinBmp.scaleX = skinBmp.scaleY = 0.5;
-				skinBmp.x = -skinBmp.width*0.5;
-				skinBmp.y = -skinBmp.height;
-				skin = new Sprite;
-				this.addChild(skin);
-				skin.addChild(skinBmp);
-				if(trimSize > 0)
-					trim(trimSize);
-			}
-			else
-			{
-				var path:String = Data.getInstance().enemyData[type].face+".png";
-				var loader = new Loader;
-				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadSkin);
-				loader.load(new URLRequest("Resource/"+path));
-			}
+			var bmpd:BitmapData = Data.getInstance().enemySkinDic[type];
+			var skinBmp:Bitmap = new Bitmap(bmpd);
+			skinBmp.scaleX = skinBmp.scaleY = 0.5;
+			skinBmp.x = -skinBmp.width*0.5;
+			skinBmp.y = -skinBmp.height;
+			skin = new Sprite;
+			this.addChild(skin);
+			skin.addChild(skinBmp);
+			if(trimSize > 0)
+				trim(trimSize);
 			
 		}
 		

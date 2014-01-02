@@ -3,7 +3,6 @@ package
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
-	import flash.events.IEventDispatcher;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
@@ -34,8 +33,16 @@ package
 			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
 				view.copySelect();
 			});
+			var item2:ContextMenuItem = new ContextMenuItem("删除");
+			item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+				var copy:Array = targets.slice(0, targets.length);
+				for each(var m:MatSprite in copy)
+				{
+					view.removeMat(m);
+				}
+			});
 			menu.addItem(item);
-			
+			menu.addItem(item2);
 			target.contextMenu = menu;
 			target.select(true);
 			target.enablePosChangeDispatch(true);

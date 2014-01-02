@@ -64,7 +64,6 @@ package
 			displayMats = new Array;
 			
 			map = new Sprite;
-			map.x = -60;
 			this.addChild(map);
 			mapMask = new Sprite;
 			this.addChild(mapMask);
@@ -99,6 +98,7 @@ package
 			slider.height = 500;
 			slider.liveDragging = true;
 			slider.addEventListener(SliderEvent.CHANGE, onsliderChange);
+			slider.addEventListener(MouseEvent.MOUSE_DOWN, onSliderMouseDown);
 			this.addChild(slider);
 			
 			selectControl = new SelectControl(this);
@@ -194,7 +194,11 @@ package
 			var code:uint = e.keyCode;
 			if(code == Keyboard.ENTER)
 				onSubmit(null);
-			
+			if(code == Keyboard.C && e.ctrlKey && selectControl.targets.length > 0)
+			{
+				this.copySelect();
+			}
+				
 		}
 		private function onClick(e:MouseEvent):void
 		{
@@ -246,6 +250,10 @@ package
 				map.removeChild(selectRectShape);
 				selectRectShape = null;
 			}
+		}
+		private function onSliderMouseDown(e:MouseEvent):void
+		{
+			e.stopPropagation();
 		}
 		private function getSelectMats(frame:DisplayObject):Array
 		{
@@ -308,7 +316,7 @@ package
 			selectControl.selectMul(newMats);
 		}
 		
-		private function removeMat(mat:MatSprite):void
+		public function removeMat(mat:MatSprite):void
 		{
 			if(!mat)
 				return;
@@ -326,13 +334,18 @@ package
 		
 		//adjust views pos when the canvas size change
 		private function onResize(e:ResizeEvent = null):void{
+			
+			
+			this.x = canvas.width*0.5;
+			this.y = canvas.height;
+			map.graphics.clear();
+			map.graphics.beginFill(0xffffff);
+			map.graphics.drawRect(-canvas.width*0.5, -canvas.height, canvas.width, canvas.height);
+			map.graphics.endFill();
 			mapMask.graphics.clear();
 			mapMask.graphics.beginFill(0xffffff);
 			mapMask.graphics.drawRect(-canvas.width*0.5, -canvas.height, canvas.width, canvas.height);
 			mapMask.graphics.endFill();
-			
-			this.x = canvas.width*0.5;
-			this.y = canvas.height;
 			slider.x = -canvas.width*0.5+50;
 			slider.y = -canvas.height+80;
 			inputField.x = -canvas.width*0.5+30;
