@@ -2,34 +2,55 @@ package
 {
 	import flash.display.Shape;
 	import flash.display.Sprite;
+	import flash.geom.ColorTransform;
 	
 	public class FormationSprite extends Sprite
 	{
 		public var fName:String;
 		
+		private var dots:Shape = null;
+		private var frame:Shape = null;
+		
 		public function FormationSprite(name:String)
 		{
 			fName = name;
+			frame = new Shape;
+			addChild(frame);
+			
 			var posData:Array = Formation.getInstance().formations[name];
-			graphics.lineStyle(1);
+			dots = new Shape;
+			this.addChild(dots);
+			dots.graphics.lineStyle(1);
 			for each(var pos in posData)
 			{
-				var dot:Shape = new Shape;
-				dot.graphics.beginFill(0xff0000);
-				dot.graphics.drawCircle(pos.x, pos.y, 8);
-				dot.graphics.endFill();
-				addChild(dot);
+				dots.graphics.beginFill(0xff0000);
+				dots.graphics.drawCircle(pos.x, pos.y, 8);
+				dots.graphics.endFill();
 			}
 		}
 		
 		public function trim(size:int):void
 		{
+			this.graphics.beginFill(0xffffff, 0.1);
+			this.graphics.drawRect(0, -size, size, size);
+			this.graphics.endFill();
+			
+			frame.graphics.clear();
+			frame.graphics.lineStyle(1);
+			frame.graphics.drawRect(0, -size, size, size);
+			frame.graphics.endFill();
+			
 			
 			var scale:Number = Math.min(size/width, size/height);
-			this.scaleX = this.scaleY = scale;
-			
-			//this.graphics.lineStyle(1);
-			//this.graphics.drawRect(0, size, size, size);
+			dots.scaleX = dots.scaleY = scale;
+		}
+		
+		public function select(value:Boolean):void
+		{
+			var color:uint = value ? 0xff0000 : 0x000000;
+			var transform:ColorTransform = new ColorTransform;
+			transform.color = color;
+			frame.transform.colorTransform = transform;
 		}
 	}
 }

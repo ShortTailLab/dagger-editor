@@ -19,14 +19,6 @@ package
 		private var grid_width:int = 110;
 		private var grid_height:int = 150;
 		
-		private static var instance:MatsView = null;
-		public static function getInstance():MatsView
-		{
-			if(!instance)
-				instance = new MatsView;
-			return instance;
-		}
-		
 		public function MatsView()
 		{
 			mats = new Array;
@@ -70,12 +62,13 @@ package
 		public function onMatClick(e:MouseEvent):void
 		{
 			var target:MatSprite = e.currentTarget as MatSprite;
+			var prev:MatSprite = selected;
 			if(selected)
 			{
 				selected.select(false);
 				selected = null;
 			}
-			if(target != selected)
+			if(target != prev)
 			{
 				selected = target;
 				selected.select(true);

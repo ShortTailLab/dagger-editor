@@ -53,11 +53,14 @@ package
 		private var selectRectShape:Shape;
 		private var selectBoard:SelectBoard;
 		
+		private var main:MapEditor = null;
+		
 		[Embed(source="background.jpg")]
 		static public var BgImage:Class;
 		
-		public function EditView(_container:Canvas)
+		public function EditView(_main:MapEditor, _container:Canvas)
 		{
+			this.main = _main;
 			this.canvas = _container;
 			this.canvas.addEventListener(ResizeEvent.RESIZE, onResize);
 			
@@ -125,9 +128,7 @@ package
 			if(levelName != "")
 				save();
 			
-			for each(var m:MatSprite in displayMats)
-				map.removeChild(m);
-			displayMats.splice(0, displayMats.length);
+			clear();
 			
 			this.levelName = _levelName;
 			var level = Data.getInstance().getLevelData(levelName);
@@ -140,6 +141,13 @@ package
 			var end:int = level.endTime != 0? level.endTime : canvas.height/speed;
 			setEndTime(end);
 			setCurrTime(0);
+		}
+		
+		public function clear():void
+		{
+			for each(var m:MatSprite in displayMats)
+				map.removeChild(m);
+			displayMats.splice(0, displayMats.length);
 		}
 		
 		public function save():void
@@ -198,13 +206,24 @@ package
 			{
 				this.copySelect();
 			}
-				
+			if(code == Keyboard.F && e.ctrlKey && selectControl.targets.length > 0)
+			{
+				Formation.getInstance().add(selectControl.targets);
+			}
+			if(code == Keyboard.DELETE && selectControl.targets.length > 0)
+			{
+				var copy:Array = selectControl.targets.slice(0, selectControl.targets.length);
+				for each(var m:MatSprite in copy)
+				{
+					removeMat(m);
+				}
+			}
 		}
 		private function onClick(e:MouseEvent):void
 		{
-			if(MatsView.getInstance().selected)
+			if(main.matsView.selected)
 			{
-				var type:String = MatsView.getInstance().selected.type;
+				var type:String = main.matsView.selected.type;
 				var mat:MatSprite = new MatSprite(type);
 				
 				display(mat, e.localX, e.localY);
@@ -213,12 +232,29 @@ package
 		private function onGridClick(e:TimeLineEvent):void
 		{
 			selectControl.unselect();
-			if(MatsView.getInstance().selected && !selectRectShape)
+			if(!selectRectShape)
 			{
-				var type:String = MatsView.getInstance().selected.type;
-				var mat:MatSprite = new MatSprite(type);
-				display(mat, e.data.x, -map.y-e.data.y);
+				if(main.fView.selected)
+				{
+					if(main.matsView.selected)
+					{
+						var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
+						for each(var p in posData)
+						{
+							var type:String = main.matsView.selected.type;
+							var mat:MatSprite = new MatSprite(type);
+							display(mat, e.data.x+p.x, -map.y-e.data.y+p.y);
+						}
+					}
+				}
+				else if(main.matsView.selected)
+				{
+					var type:String = main.matsView.selected.type;
+					var mat:MatSprite = new MatSprite(type);
+					display(mat, e.data.x, -map.y-e.data.y);
+				}
 			}
+			
 		}
 		
 		private var isSelecting:Boolean = false;
