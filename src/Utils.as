@@ -1,5 +1,7 @@
 package
 {
+	import flash.display.DisplayObject;
+	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 
@@ -13,6 +15,11 @@ package
 			t.x = px;
 			t.y = py;
 			return t;
+		}
+		
+		static public function makeGrid(startPoint:Point, gridSize:int, cols:int, index:int):Point
+		{
+			return new Point(startPoint.x + gridSize*(index%cols), startPoint.y + gridSize*int(index/cols));
 		}
 	}
 }
