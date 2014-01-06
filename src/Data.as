@@ -192,11 +192,11 @@ package
 			displayData.push(o);
 		}
 		
-		public function deleteLevel(name:String):void
+		public function deleteLevel(index:int):void
 		{
-			var x = levelXML.level.(@label=="level2");
-			return;
-			delete levelXML.level.(@label==name)[0];
+			var name:String = levelXML.level[index].@label;
+			trace(name);
+			delete levelXML.level[index];
 			for(var l in displayData)
 				if(displayData[l].levelName == name)
 				{

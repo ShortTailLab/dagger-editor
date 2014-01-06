@@ -35,6 +35,7 @@ package
 		private var mapBg:Sprite = null;
 		private var timeLine:TimeLine = null;
 		private var slider:VSlider = null;
+		private var snapBtn:StateBtn = null;
 		private var inputField:TextInput = null;
 		private var submitBtn:Button = null;
 		private var canvas:Canvas;
@@ -53,11 +54,14 @@ package
 		private var selectRectShape:Shape;
 		private var selectBoard:SelectBoard;
 		
+		private var main:MapEditor = null;
+		
 		[Embed(source="background.jpg")]
 		static public var BgImage:Class;
 		
-		public function EditView(_container:Canvas)
+		public function EditView(_main:MapEditor, _container:Canvas)
 		{
+			this.main = _main;
 			this.canvas = _container;
 			this.canvas.addEventListener(ResizeEvent.RESIZE, onResize);
 			
@@ -101,6 +105,9 @@ package
 			slider.addEventListener(MouseEvent.MOUSE_DOWN, onSliderMouseDown);
 			this.addChild(slider);
 			
+			snapBtn = new StateBtn("黏贴");
+			this.addChild(snapBtn);
+			
 			selectControl = new SelectControl(this);
 			selectRect = new Rectangle(0, 0, 0, 0);
 			selectRectShape = null;
@@ -125,9 +132,7 @@ package
 			if(levelName != "")
 				save();
 			
-			for each(var m:MatSprite in displayMats)
-				map.removeChild(m);
-			displayMats.splice(0, displayMats.length);
+			clear();
 			
 			this.levelName = _levelName;
 			var level = Data.getInstance().getLevelData(levelName);
@@ -140,6 +145,13 @@ package
 			var end:int = level.endTime != 0? level.endTime : canvas.height/speed;
 			setEndTime(end);
 			setCurrTime(0);
+		}
+		
+		public function clear():void
+		{
+			for each(var m:MatSprite in displayMats)
+				map.removeChild(m);
+			displayMats.splice(0, displayMats.length);
 		}
 		
 		public function save():void
@@ -198,13 +210,24 @@ package
 			{
 				this.copySelect();
 			}
-				
+			if(code == Keyboard.F && e.ctrlKey && selectControl.targets.length > 0)
+			{
+				Formation.getInstance().add(selectControl.targets);
+			}
+			if(code == Keyboard.DELETE && selectControl.targets.length > 0)
+			{
+				var copy:Array = selectControl.targets.slice(0, selectControl.targets.length);
+				for each(var m:MatSprite in copy)
+				{
+					removeMat(m);
+				}
+			}
 		}
 		private function onClick(e:MouseEvent):void
 		{
-			if(MatsView.getInstance().selected)
+			if(main.matsView.selected)
 			{
-				var type:String = MatsView.getInstance().selected.type;
+				var type:String = main.matsView.selected.type;
 				var mat:MatSprite = new MatSprite(type);
 				
 				display(mat, e.localX, e.localY);
@@ -213,12 +236,29 @@ package
 		private function onGridClick(e:TimeLineEvent):void
 		{
 			selectControl.unselect();
-			if(MatsView.getInstance().selected && !selectRectShape)
+			if(!selectRectShape)
 			{
-				var type:String = MatsView.getInstance().selected.type;
-				var mat:MatSprite = new MatSprite(type);
-				display(mat, e.data.x, -map.y-e.data.y);
+				if(main.fView.selected)
+				{
+					if(main.matsView.selected)
+					{
+						var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
+						for each(var p in posData)
+						{
+							var type:String = main.matsView.selected.type;
+							var mat:MatSprite = new MatSprite(type);
+							display(mat, e.data.x+p.x, -map.y-e.data.y+p.y);
+						}
+					}
+				}
+				else if(main.matsView.selected)
+				{
+					var type:String = main.matsView.selected.type;
+					var mat:MatSprite = new MatSprite(type);
+					display(mat, e.data.x, -map.y-e.data.y);
+				}
 			}
+			
 		}
 		
 		private var isSelecting:Boolean = false;
@@ -280,6 +320,9 @@ package
 		}
 		
 		private function onMatMouseUp(e:MouseEvent):void {
+			if(snapBtn.isOn)
+				snap(draggingMats);
+			
 			draggingMats = null;
 			this.stage.removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
 		}
@@ -293,6 +336,18 @@ package
 
 			var target:MatSprite = e.currentTarget as MatSprite;
 			selectControl.select(target);
+		}
+		
+		private function snap(mats:Array):void
+		{
+			for each(var m:MatSprite in mats)
+			{
+				var pos:Point = new Point(m.x, m.y);
+				var pointOnGrid:Point = timeLine.globalToLocal(map.localToGlobal(pos));
+				var p:Point = timeLine.getGridPos(pointOnGrid.x, pointOnGrid.y);
+				m.x = p.x;
+				m.y = -map.y-p.y;
+			}
 		}
 		private function display(mat:MatSprite, px:Number, py:Number):void
 		{
@@ -333,9 +388,8 @@ package
 		
 		
 		//adjust views pos when the canvas size change
-		private function onResize(e:ResizeEvent = null):void{
-			
-			
+		private function onResize(e:ResizeEvent = null):void
+		{
 			this.x = canvas.width*0.5;
 			this.y = canvas.height;
 			map.graphics.clear();
@@ -356,6 +410,8 @@ package
 			timeLine.setCurrTime(currTime);
 			selectBoard.x = -canvas.width*0.5+30;
 			selectBoard.y = -canvas.height+600;
+			snapBtn.x = -canvas.width*0.5+130;
+			snapBtn.y = -canvas.height+80;
 		}
 		
 		

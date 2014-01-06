@@ -35,7 +35,7 @@ package
 			});
 			var item2:ContextMenuItem = new ContextMenuItem("设为阵型");
 			item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
-				Formation.getInstance().add("f1", targets);
+				Formation.getInstance().add(targets);
 			});
 			var item3:ContextMenuItem = new ContextMenuItem("删除");
 			item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){

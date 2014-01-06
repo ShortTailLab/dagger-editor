@@ -30,7 +30,8 @@
 			import manager.GameEvent;
 			
 			
-			
+			public var fView:FormationsView = null;
+			public var matsView:MatsView = null;
 			
 			private function init():void
 			{
@@ -67,34 +68,53 @@
 				_tree.addEventListener(MouseEvent.CLICK, onLevelClick);
 				enemyEdit.addElement(_tree);
 				
-				_enemyEditView = new EditView(middleArea);
+				_enemyEditView = new EditView(this, middleArea);
 				_enemyEditView.init(Data.getInstance().levelXML.level[0].@label);
 				
 				var modelView:Panel = new Panel();
-				modelView.percentHeight = 100;
+				modelView.percentHeight = 40;
 				modelView.percentWidth = 100;
 				modelView.title = "模型";
-				modelView.addElement(new FormationsView);
-				
-				var matsPanel:Panel = new Panel();
-				matsPanel.title = "资源";
-				matsPanel.height = 600;
-				matsPanel.percentWidth = 100;
 				var hgroup:HGroup = new HGroup();
 				hgroup.percentWidth = 100;
+				hgroup.percentHeight = 100;
 				hgroup.horizontalAlign = "left";
 				var group:Group = new Group();
 				group.clipAndEnableScrolling = true;
 				group.percentWidth = 100;
 				group.percentHeight = 100;
+				fView = new FormationsView;
+				fView.percentWidth = 100;
+				group.addElement(fView);
 				var vscrollbar:VScrollBar = new VScrollBar();
 				vscrollbar.percentHeight = 100;
 				vscrollbar.viewport = group;
 				hgroup.addElement(group);
 				hgroup.addElement(vscrollbar);
+				modelView.addElement(hgroup);
+				
+				
+				var matsPanel:Panel = new Panel();
+				matsPanel.title = "资源";
+				matsPanel.percentHeight = 60;
+				matsPanel.percentWidth = 100;
+				hgroup = new HGroup();
+				hgroup.percentWidth = 100;
+				hgroup.percentHeight = 100;
+				hgroup.horizontalAlign = "left";
+				group = new Group();
+				group.clipAndEnableScrolling = true;
+				group.percentWidth = 100;
+				group.percentHeight = 100;
+				vscrollbar = new VScrollBar();
+				vscrollbar.percentHeight = 100;
+				vscrollbar.viewport = group;
+				hgroup.addElement(group);
+				hgroup.addElement(vscrollbar);
 				matsPanel.addElement(hgroup);
-				MatsView.getInstance().percentWidth = 100;
-				group.addElement(MatsView.getInstance());
+				matsView = new MatsView;
+				matsView.percentWidth = 100;
+				group.addElement(matsView);
 				
 				_enemyEditVGroup = new VGroup();
 				_enemyEditVGroup.percentHeight = 100;
@@ -162,17 +182,19 @@
 					Alert.show("确定删除？", "tips", Alert.OK|Alert.CANCEL, this, alertClose);
 				else 
 					Alert.show("选择关卡");
+				
 			}
 			
 			private function alertClose(e:CloseEvent):void
 			{
 				if(e.detail == Alert.OK)
 				{
-					var selectedNode:XML = _tree.selectedItem as XML;
-					if(selectedNode)
+					
+					var index:int = _tree.selectedIndex
+					if(index != -1)
 					{
-						var label:String=selectedNode.@label;
-						Data.getInstance().deleteLevel(label);
+						Data.getInstance().deleteLevel(index);
+						_enemyEditView.clear();
 					}
 				}
 			}
