@@ -137,7 +137,9 @@ package bgedit
 		}
 		
 		private function initContainer():void {
-			
+			var tmxMapView:TmxMapView = new TmxMapView();
+			addElement(tmxMapView);
+			tmxMapView.load("Resource/bg.tmx");
 		}
 		
 		private var _xAxis:BgAxisView;
