@@ -6,6 +6,7 @@ package
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
+	
 	public class SelectControl extends EventDispatcher
 	{
 		public var targets:Array = null;

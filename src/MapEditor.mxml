@@ -9,9 +9,14 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.collections.ArrayList;
+			import mx.containers.TitleWindow;
 			import mx.controls.Alert;
+			import mx.controls.TextInput;
 			import mx.controls.Tree;
 			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
 			
 			import spark.components.Group;
 			import spark.components.List;
@@ -19,6 +24,7 @@
 			
 			import bgedit.BgEditView;
 			import bgedit.BgModel;
+			import bgedit.TmxMapView;
 			
 			import excel.ExcelReader;
 			
@@ -143,13 +149,17 @@
 				var list:List = new List();
 				list.percentWidth = 100;
 				list.percentHeight = 100;
-				list.dataProvider = BgModel.getInstance().bgNameArray;
-				list.addEventListener(MouseEvent.CLICK, function (e:Event):void {
-					EventManager.getInstance().dispatchEvent(new GameEvent(EventType.BG_SELECT_CHANGE, (e.currentTarget as List).selectedIndex));
-				});
+				var pathList:Array = File.desktopDirectory.resolvePath("editor").getDirectoryListing();
+				var resultList:ArrayCollection = new ArrayCollection;
+				for (var i:uint = 0; i < pathList.length; i++) 
+				{
+					var path:String = String(pathList[i].nativePath).split("/").pop();
+					if(path.split(".").pop() == "tmx")
+						resultList.addItem(path);
+				}
+				list.dataProvider = resultList;
 				bgEdit.addElement(list);
-				
-				_bgEditView = new BgEditView();
+				list.addEventListener(MouseEvent.CLICK, onTMXClick);
 			}
 			
 			private function onLevelClick(e:Event):void{
@@ -157,6 +167,19 @@
 				var label:String=selectedNode.@label;
 				_enemyEditView.init(label);
 			}	
+			private function onTMXClick(e:MouseEvent):void
+			{
+				_enemyEditView.switchMap(List(e.currentTarget).selectedItem);
+				/*var file:File = File.desktopDirectory.resolvePath("editor/"+List(e.currentTarget).selectedItem);
+				var fileStream:FileStream = new FileStream();
+				fileStream.open(file, FileMode.READ);
+				var xml:XML = new XML(fileStream.readUTFBytes(fileStream.bytesAvailable));
+				var imagePath:String = file.url.substring(0,file.url.lastIndexOf("/")+1) + xml..image.@source;
+				var map:TmxMapView = new TmxMapView();
+				map.loadFromXml(xml, imagePath);
+				map.y = -500;
+				_enemyEditView.addChild(map);*/
+			}
 			
 			private function onCreateNew(e:ContextMenuEvent):void
 			{
@@ -165,8 +188,23 @@
 				_enemyEditView.init("level"+levelLength);
 			}
 			
-			private function onRename(e:ContextMenuEvent):void {
+			private function onRename(e:ContextMenuEvent):void 
+			{
+				var window:RenamePanel = new RenamePanel;
+				window.addEventListener(MsgEvent.RENAME_LEVEL, onRenameClick);
 				
+				PopUpManager.addPopUp(window, this, true);
+				PopUpManager.centerPopUp(window);
+			}
+			
+			private function onRenameClick(e:MsgEvent):void
+			{
+				
+				var index:int = _tree.selectedIndex;
+				if(index != -1)
+				{
+					Data.getInstance().renameLevel(index, e.hintMsg);
+				}
 			}
 			
 			private function onDelete(e:ContextMenuEvent):void
@@ -292,7 +330,7 @@
 			}
 			
 			private function onAccordionClick(e:Event):void {
-				changeEditType((e.currentTarget as Accordion).selectedIndex);
+				//changeEditType((e.currentTarget as Accordion).selectedIndex);
 			}
 			
 			public function get getInstance():MapEditor { return _instance; }

@@ -32,7 +32,7 @@ package
 		public var matsData:Object = null;
 		public var enemyData:Object = null;
 		public var enemyMoveData:Object = null;
-		public var displayData:Object = null;
+		public var displayData:Array = null;
 		public var levelXML:XML = null;
 		public var enemySkinDic:Dictionary;
 		
@@ -57,12 +57,13 @@ package
 		
 		public function init():void
 		{
+			1;
 			var file:File = File.desktopDirectory.resolvePath("data.json");
 			if(file.exists)
 			{
 				var stream:FileStream = new FileStream;
 				stream.open(file, FileMode.READ);
-				displayData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				displayData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable)) as Array;
 				stream.close();
 			}
 			else 
@@ -216,13 +217,20 @@ package
 		public function deleteLevel(index:int):void
 		{
 			var name:String = levelXML.level[index].@label;
-			trace(name);
 			delete levelXML.level[index];
 			for(var l in displayData)
 				if(displayData[l].levelName == name)
 				{
-					delete displayData[l];
+					displayData.splice(l, 1);
+					saveLocal();
+					break;
 				}
+		}
+		public function renameLevel(index:int, name:String):void
+		{
+			levelXML.level[index].@label = name;
+			displayData[index].levelName = name
+			saveLocal();
 		}
 		public function parseLevelXML(data:Object):XML
 		{

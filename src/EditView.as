@@ -7,11 +7,11 @@ package
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
+	import flash.filesystem.File;
+	import flash.filesystem.FileMode;
+	import flash.filesystem.FileStream;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
-	import flash.text.TextField;
-	import flash.ui.ContextMenu;
-	import flash.ui.ContextMenuItem;
 	import flash.ui.Keyboard;
 	import flash.utils.Dictionary;
 	
@@ -20,10 +20,12 @@ package
 	import mx.core.UIComponent;
 	import mx.events.ResizeEvent;
 	import mx.events.SliderEvent;
-	import mx.managers.PopUpManager;
 	
 	import spark.components.Button;
+	import spark.components.List;
 	import spark.components.TextInput;
+	
+	import bgedit.TmxMapView;
 	
 	
 	public class EditView extends UIComponent
@@ -104,7 +106,6 @@ package
 			slider.addEventListener(SliderEvent.CHANGE, onsliderChange);
 			slider.addEventListener(MouseEvent.MOUSE_DOWN, onSliderMouseDown);
 			this.addChild(slider);
-			
 			snapBtn = new StateBtn("黏贴");
 			this.addChild(snapBtn);
 			
@@ -481,17 +482,49 @@ package
 			for(var j:int = lowIndex; j <= highIndex; j++)
 				if(!mapPieces.hasOwnProperty(j))
 				{
-					var img:Bitmap = new BgImage as Bitmap;
+					var img:DisplayObject = getAMap();
 					img.scaleX = img.scaleY = 0.5;
 					img.x = 0;
-					img.y = -j*oneMapHigh-img.height;
-					//img.visible = false;
+					img.y = -j*oneMapHigh-oneMapHigh;
+					
 					mapBg.addChild(img);
 					mapPieces[j] = img;
 				}
 			
 		}
-
+		
+		public function switchMap(path:String):void
+		{
+			currMapPath = path;
+			if(currMapPath.length > 0)
+			{
+				for(var m in mapPieces)
+				{
+					mapBg.removeChild(mapPieces[m]);
+				}
+				mapPieces = new Dictionary;
+			}
+		}
+		
+		public var currMapPath:String = "";
+		private function getAMap():DisplayObject
+		{
+			var map:DisplayObject;
+			if(currMapPath.length > 0)
+			{
+				var file:File = File.desktopDirectory.resolvePath("editor/"+currMapPath);
+				var fileStream:FileStream = new FileStream();
+				fileStream.open(file, FileMode.READ);
+				var xml:XML = new XML(fileStream.readUTFBytes(fileStream.bytesAvailable));
+				var imagePath:String = file.url.substring(0,file.url.lastIndexOf("/")+1) + xml..image.@source;
+				map = new TmxMapView();
+				(map as TmxMapView).loadFromXml(xml, imagePath);
+			}
+			else
+				map = new BgImage as Bitmap;
+			
+			return map;
+		}
 		
 	}
 } 
