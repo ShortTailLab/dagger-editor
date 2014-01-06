@@ -71,6 +71,10 @@ package bgedit
 			loader.load(new URLRequest(imagePath));
 		}
 		
+		public function get tmxMap():TmxMap {
+			return _tmxMap;
+		}
+		
 		public static var tileSetName:String;
 		
 		private var _tmxPath:String;
