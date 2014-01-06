@@ -47,14 +47,29 @@ package
 				this.addChild(typeText);
 			}
 			
-			var bmpd:BitmapData = Data.getInstance().enemySkinDic[type];
-			var skinBmp:Bitmap = new Bitmap(bmpd);
-			skinBmp.scaleX = skinBmp.scaleY = 0.5;
-			skinBmp.x = -skinBmp.width*0.5;
-			skinBmp.y = -skinBmp.height;
 			skin = new Sprite;
 			this.addChild(skin);
-			skin.addChild(skinBmp);
+			if(Data.getInstance().enemySkinDic.hasOwnProperty(type))
+			{
+				var bmpd:BitmapData = Data.getInstance().enemySkinDic[type];
+				var skinBmp:Bitmap = new Bitmap(bmpd);
+				skinBmp.scaleX = skinBmp.scaleY = 0.5;
+				skinBmp.x = -skinBmp.width*0.5;
+				skinBmp.y = -skinBmp.height;
+				skin.addChild(skinBmp);
+			}
+			else
+			{
+				var empty:TextField = new TextField();
+				empty.defaultTextFormat = new TextFormat(null, 30, 0xff0000);
+				empty.text = "?";
+				empty.x = -empty.textWidth*0.5;
+				empty.y = -empty.textHeight;
+				empty.selectable = false;
+				skin.addChild(empty);
+			}
+			
+			
 			if(trimSize > 0)
 				trim(trimSize);
 			

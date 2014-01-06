@@ -3,6 +3,7 @@ package
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	
@@ -39,6 +40,15 @@ package
 					this.dispatchEvent(evt);
 				}
 			}
+		}
+		
+		public function getGridPos(x:int, y:int):Point
+		{
+			var gX:int = x/unitWidth;
+			var gY:int = -y/heightPerUnit;
+			if(gX>=0 && gX<=gridCols && gY>=0 && gY<=gridRows)
+				return new Point(gX*unitWidth+unitWidth*0.5, gY*heightPerUnit);
+			return null;
 		}
 		
 		public function resize(h:int):void

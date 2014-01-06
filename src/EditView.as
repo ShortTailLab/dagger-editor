@@ -35,6 +35,7 @@ package
 		private var mapBg:Sprite = null;
 		private var timeLine:TimeLine = null;
 		private var slider:VSlider = null;
+		private var snapBtn:StateBtn = null;
 		private var inputField:TextInput = null;
 		private var submitBtn:Button = null;
 		private var canvas:Canvas;
@@ -103,6 +104,9 @@ package
 			slider.addEventListener(SliderEvent.CHANGE, onsliderChange);
 			slider.addEventListener(MouseEvent.MOUSE_DOWN, onSliderMouseDown);
 			this.addChild(slider);
+			
+			snapBtn = new StateBtn("黏贴");
+			this.addChild(snapBtn);
 			
 			selectControl = new SelectControl(this);
 			selectRect = new Rectangle(0, 0, 0, 0);
@@ -316,6 +320,9 @@ package
 		}
 		
 		private function onMatMouseUp(e:MouseEvent):void {
+			if(snapBtn.isOn)
+				snap(draggingMats);
+			
 			draggingMats = null;
 			this.stage.removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
 		}
@@ -329,6 +336,18 @@ package
 
 			var target:MatSprite = e.currentTarget as MatSprite;
 			selectControl.select(target);
+		}
+		
+		private function snap(mats:Array):void
+		{
+			for each(var m:MatSprite in mats)
+			{
+				var pos:Point = new Point(m.x, m.y);
+				var pointOnGrid:Point = timeLine.globalToLocal(map.localToGlobal(pos));
+				var p:Point = timeLine.getGridPos(pointOnGrid.x, pointOnGrid.y);
+				m.x = p.x;
+				m.y = -map.y-p.y;
+			}
 		}
 		private function display(mat:MatSprite, px:Number, py:Number):void
 		{
@@ -369,9 +388,8 @@ package
 		
 		
 		//adjust views pos when the canvas size change
-		private function onResize(e:ResizeEvent = null):void{
-			
-			
+		private function onResize(e:ResizeEvent = null):void
+		{
 			this.x = canvas.width*0.5;
 			this.y = canvas.height;
 			map.graphics.clear();
@@ -392,6 +410,8 @@ package
 			timeLine.setCurrTime(currTime);
 			selectBoard.x = -canvas.width*0.5+30;
 			selectBoard.y = -canvas.height+600;
+			snapBtn.x = -canvas.width*0.5+130;
+			snapBtn.y = -canvas.height+80;
 		}
 		
 		

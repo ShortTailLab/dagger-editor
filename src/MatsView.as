@@ -9,6 +9,10 @@ package
 	import mx.core.UIComponent;
 	import mx.managers.PopUpManager;
 	
+	import manager.EventManager;
+	import manager.EventType;
+	import manager.GameEvent;
+	
 	public class MatsView extends UIComponent
 	{
 		
@@ -22,6 +26,20 @@ package
 		public function MatsView()
 		{
 			mats = new Array;
+			init();
+			
+			EventManager.getInstance().addEventListener(EventType.ENEMY_DATA_UPDATE, init);
+		}
+		
+		public function init(e:GameEvent = null):void
+		{
+			while(mats.length > 0)
+			{
+				var m:MatSprite = mats.pop();
+				m.removeEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
+				m.removeEventListener(MouseEvent.CLICK, onMatClick);
+			}
+			this.removeChildren();
 			
 			var data:Object = Data.getInstance().enemyData;
 			for(var item in data)

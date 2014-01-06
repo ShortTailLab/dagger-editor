@@ -9,17 +9,23 @@ package
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IEventDispatcher;
+	import flash.events.TimerEvent;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
-	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
+	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
 	
 	import excel.ExcelReader;
+	
+	import manager.EventManager;
+	import manager.EventType;
+	import manager.GameEvent;
+	
 	
 	public class Data extends EventDispatcher
 	{
@@ -30,7 +36,7 @@ package
 		public var levelXML:XML = null;
 		public var enemySkinDic:Dictionary;
 		
-		
+		private var autoSaveTimer:Timer;
 		private static var instance:Data = null;
 		public static function getInstance():Data
 		{
@@ -44,7 +50,9 @@ package
 			super(target);
 			
 			matsData = new Object;
-			enemySkinDic = new Dictionary;
+			autoSaveTimer = new Timer(5000, 1);
+			autoSaveTimer.addEventListener(TimerEvent.TIMER, onAutoSave);
+			autoSaveTimer.start();
 		}
 		
 		public function init():void
@@ -70,15 +78,19 @@ package
 			
 			
 			ExcelReader.getInstance().initWithRelativePath("Resource/levelData.xlsx", onDataComplete);
+			EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onDataComplete);
 		}
 		
 		private var loaderDic:Dictionary;
 		private var skinLength:int = 0;
-		private function onDataComplete():void
+		private function onDataComplete(e:GameEvent = null):void
 		{
 			// do sth.
 			enemyData = ExcelReader.getInstance().enemyData;
 			loaderDic = new Dictionary;
+			enemySkinDic = new Dictionary;
+			skinLength = 0;
+			loadCount = 0;
 			for(var i in enemyData)
 				skinLength++;
 			
@@ -115,7 +127,6 @@ package
 						}
 					}
 			}
-			
 		}
 		private var loadCount:int = 0;
 		private function onLoadSkin(e:Event):void
@@ -123,7 +134,10 @@ package
 			var loader:Loader = (e.target as LoaderInfo).loader;
 			enemySkinDic[loaderDic[loader]] = Bitmap(loader.content).bitmapData; 
 			if(++loadCount >= skinLength)
+			{
 				this.dispatchEvent(new Event(Event.COMPLETE));
+				EventManager.getInstance().dispatchEvent(new GameEvent(EventType.ENEMY_DATA_UPDATE));
+			}
 		}
 		
 		public function saveLocal():void
@@ -135,6 +149,8 @@ package
 			stream.close();
 			
 			saveEnemyData();
+			autoSaveTimer.reset();
+			autoSaveTimer.start();
 		}
 		
 		public function saveEnemyData():void
@@ -180,6 +196,11 @@ package
 			stream.close();
 			
 			Alert.show("保存成功！");
+		}
+		
+		private function onAutoSave(e:TimerEvent):void
+		{
+			saveLocal();
 		}
 		
 		public function makeNewLevel(name:String):void
