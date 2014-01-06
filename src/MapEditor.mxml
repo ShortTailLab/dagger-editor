@@ -244,6 +244,56 @@
 				});
 			}
 			
+			var process:NativeProcess;
+			private function sendToServer(e:Event):void
+			{
+				if(NativeProcess.isSupported)
+				{
+					var nativeProcessStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
+					var file:File = File.desktopDirectory.resolvePath("script/test.py");
+					nativeProcessStartupInfo.executable = file;
+					
+					var processArgs:Vector.<String> = new Vector.<String>();
+					processArgs[0] = "Resource/level";
+					//processArgs[1] = "zql";
+					nativeProcessStartupInfo.arguments = processArgs;
+					
+					process = new NativeProcess();
+					process.start(nativeProcessStartupInfo);
+					process.addEventListener(ProgressEvent.STANDARD_OUTPUT_DATA, onOutputData);
+					process.addEventListener(ProgressEvent.STANDARD_ERROR_DATA, onErrorData);
+					process.addEventListener(NativeProcessExitEvent.EXIT, onExit);
+					process.addEventListener(IOErrorEvent.STANDARD_OUTPUT_IO_ERROR, onIOError);
+					process.addEventListener(IOErrorEvent.STANDARD_ERROR_IO_ERROR, onIOError);
+				}
+				else
+				{
+					Alert.show("NativeProcess not supported.");
+				}
+				
+				
+			}
+			public function onOutputData(event:ProgressEvent):void
+			{
+			  	Alert.show("Got: "); 
+			}
+			
+			public function onErrorData(event:ProgressEvent):void
+			{
+				Alert.show("ERROR -"); 
+			}
+			
+			public function onExit(event:NativeProcessExitEvent):void
+			{
+				Alert.show("exit!");
+				//Alert.show("Process exited with ", event.exitCode);
+			}
+			
+			public function onIOError(event:IOErrorEvent):void
+			{
+				Alert.show(event.toString());
+			}
+			
 			private function onAccordionClick(e:Event):void {
 				changeEditType((e.currentTarget as Accordion).selectedIndex);
 			}
@@ -270,6 +320,7 @@
 				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
 				<s:Button id="openBgBtn" label="打开背景配置" click="openBgFile(event)"/>
 				<s:Button id="openExcelBtn" label="打开怪物Excel" click="openExcelFile(event)"/>
+				<s:Button id="sendBtn" label="上传" click="sendToServer(event)"/>
 		</s:HGroup>
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
