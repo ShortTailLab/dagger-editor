@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="staggered" width="7" height="42" tilewidth="100" tileheight="50">
+ <tileset firstgid="1" name="bg" tilewidth="100" tileheight="100">
+  <image source="bg.png" width="600" height="300"/>
+ </tileset>
+ <layer name="Tile Layer 1" width="7" height="42">
+  <data encoding="base64" compression="zlib">
+   eJxjYmBgYBpgzIhHnJAcujwjGXLo4sTI0UsPIT/hCwtCYYgv7EfxKB5IDACb6AIX
+  </data>
+ </layer>
+ <layer name="Tile Layer 2" width="7" height="42">
+  <data encoding="base64" compression="zlib">
+   eJx9U4ENwzAIs9RU6zJ1XT7YaT2lp+yUnjaQQGMI1xKqguPgkDIBmFCD5R8Sd4tW7FuKvK5niZtFK2rlnOdFdyzEi3JMt5lXpqvu5/Uq3RM4s05yh5/XiU7RLrw087oC75yvdLLv43zHf5/Fzx61E369Vf/OzaEG85T7s4X9mWN3c918wTMMcH/jotYI9bwfCv8nopcWYiQ+9m6zeAWdf3UOOuo7Zl2EzsFi+oxmfER892oehD/ZHCn0jdhMew8YF3XuA+BzW9Vb05kMqvsC+b0Mlw==
+  </data>
+ </layer>
+ <layer name="Tile Layer 3" width="7" height="42">
+  <data encoding="base64" compression="zlib">
+   eJxjYKAd4GNgSKCh8aOACoBvoB0wwIB3oB0wRAC98zIAPWYA+A==
+  </data>
+ </layer>
+</map>

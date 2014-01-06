@@ -13,6 +13,7 @@ package
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.ui.Keyboard;
+	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
 	import mx.containers.Canvas;
@@ -34,7 +35,7 @@ package
 		
 		private var map:Sprite = null;
 		private var mapMask:Sprite = null;
-		private var mapBg:Sprite = null;
+		public var mapBg:Sprite = null;
 		private var timeLine:TimeLine = null;
 		private var slider:VSlider = null;
 		private var snapBtn:StateBtn = null;
@@ -516,9 +517,18 @@ package
 				var fileStream:FileStream = new FileStream();
 				fileStream.open(file, FileMode.READ);
 				var xml:XML = new XML(fileStream.readUTFBytes(fileStream.bytesAvailable));
+				fileStream.close();
+				
 				var imagePath:String = file.url.substring(0,file.url.lastIndexOf("/")+1) + xml..image.@source;
+				file = new File(imagePath);
+				fileStream = new FileStream;
+				fileStream.open(file, FileMode.READ);
+				var imgBytes:ByteArray = new ByteArray;
+				fileStream.readBytes(imgBytes, 0, fileStream.bytesAvailable);
+				fileStream.close();
+				
 				map = new TmxMapView();
-				(map as TmxMapView).loadFromXml(xml, imagePath);
+				(map as TmxMapView).loadFromXmlAndImgBytes(xml, imgBytes);
 			}
 			else
 				map = new BgImage as Bitmap;
