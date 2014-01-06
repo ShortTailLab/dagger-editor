@@ -2,6 +2,7 @@ package bgedit
 {
 	import flash.display.Bitmap;
 	import flash.display.Loader;
+	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
@@ -19,7 +20,8 @@ package bgedit
 			
 		}
 		
-		public function load(tmxPath:String):void {
+		public function load(tmxPath:String, onComplete:Function=null):void {
+			_onComplete = onComplete;
 			_tmxPath = tmxPath;
 			var urlLoader:URLLoader = new URLLoader();
 			urlLoader.addEventListener(Event.COMPLETE, onTmxLoad);
@@ -52,18 +54,36 @@ package bgedit
 			
 			if (_layers) {
 				for (var i:int = 0; i < _layers.length; i++) {
-					removeChild(_layers[i]);
+					_layerContainer.removeChild(_layers[i]);
 				}
 			}
 			
+			_layerContainer = new Sprite();
+			addChild(_layerContainer);
 			_layers = new Vector.<TmxLayerView>();
 			for (i = 0; i < _tmxMap.layersNameArray.length; i++) {
 				var layer:TmxLayer = _tmxMap.getLayer(_tmxMap.layersNameArray[i]);
 				var tmxLayerView:TmxLayerView = new TmxLayerView();
 				tmxLayerView.init(layer);
 				_layers.push(tmxLayerView);
-				addChild(tmxLayerView);
+				_layerContainer.addChild(tmxLayerView);
 			}
+			
+			setMask();
+			
+			if (_onComplete != null) {
+				_onComplete.apply();
+				_onComplete = null;
+			}
+		}
+		
+		private function setMask():void {
+			var sprite:Sprite = new Sprite();
+			sprite.graphics.beginFill(0x000000);
+			sprite.graphics.drawRect(0, 0, tmxMap.totalWidth, tmxMap.totalHeight);
+			sprite.graphics.endFill();
+			addChild(sprite);
+			_layerContainer.mask = sprite;
 		}
 		
 		public function loadFromXmlAndImage(xml:XML, image:Bitmap):void {
@@ -85,5 +105,7 @@ package bgedit
 		private var _tmxMap:TmxMap;
 		private var _tileSetImage:Bitmap;
 		private var _layers:Vector.<TmxLayerView>;
+		private var _onComplete:Function;
+		private var _layerContainer:Sprite;
 	}
 }

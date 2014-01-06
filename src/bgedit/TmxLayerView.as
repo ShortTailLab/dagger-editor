@@ -47,7 +47,7 @@ package bgedit
 					tile.init(bitmapData, map.tileWidth, map.tileHeight, diagonal, flipX, flipY);
 					addChild(tile);
 					_tiles.push(tile);
-					tile.x = ((j*map.tileWidth)+map.tileWidth/2) + (i%2==0?0:1)*map.tileWidth/2;
+					tile.x = ((j*map.tileWidth)/*+map.tileWidth/2*/) + (i%2==0?0:1)*map.tileWidth/2;
 					tile.y = (i)*map.tileHeight/2;
 //					trace("adding tile gid:"+gid+" i:"+i+" j:"+j+" x:"+tile.x+" y:"+tile.y+" ");
 				}

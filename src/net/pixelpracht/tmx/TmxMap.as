@@ -19,6 +19,8 @@ package net.pixelpracht.tmx
 		public var layersNameArray:Array = [];
 		public var tileSets:Object = {};
 		public var objectGroups:Object = {};
+		private var _totalHeight:Number;
+		private var _totalWidth:Number;
 		
 		public function TmxMap(source:XML)
 		{
@@ -29,6 +31,8 @@ package net.pixelpracht.tmx
 			height = source.@height;
 			tileWidth = source.@tilewidth;
 			tileHeight= source.@tileheight;	
+			_totalHeight = calTotalHeight();
+			_totalWidth = calTotalWidth();
 			//read properties
 			for each(node in source.properties)
 				properties = properties ? properties.extend(node) : new TmxPropertySet(node);
@@ -72,5 +76,35 @@ package net.pixelpracht.tmx
 			}
 			return null;
 		}
+		
+		private function calTotalHeight():Number {
+			switch (orientation) {
+				case "staggered":
+				case "isometic":
+					return height/2*tileHeight+tileHeight;
+					break;
+				case "orthogonal":
+					return height*tileHeight;
+					break;
+			}
+			return 0;
+		}
+		
+		private function calTotalWidth():Number {
+			switch (orientation) {
+				case "staggered":
+					return (width-1)*tileWidth;
+					break;
+				case "isometic":
+					break;
+				case "orthogonal":
+					return width*tileWidth;
+					break;
+			}
+			return 0;
+		}
+		
+		public function get totalHeight():Number { return _totalHeight; }
+		public function get totalWidth():Number { return _totalWidth; }
 	}
 }

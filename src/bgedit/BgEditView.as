@@ -131,7 +131,11 @@ package bgedit
 		private function initContainer():void {
 			_tmxMapView = new TmxMapView();
 			addElement(_tmxMapView);
-//			_tmxMapView.load("Resource/bg.tmx");
+			_tmxMapView.load("Resource/bg.tmx", 
+				function():void {
+					trace("tmx inited",_tmxMapView.tmxMap.totalHeight, _tmxMapView.tmxMap.totalWidth); 
+				}
+			);
 		}
 		
 		public function get tmxMapView():TmxMapView {
