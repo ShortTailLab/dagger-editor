@@ -62,6 +62,19 @@ package bgedit
 			}
 		}
 		
+		public function loadFromXml(xml:XML, imagePath:String):void {
+			_xml = xml;
+			_tmxMap = new TmxMap(_xml);
+			
+			var loader:Loader = new Loader();
+			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoad);
+			loader.load(new URLRequest(imagePath));
+		}
+		
+		public function get tmxMap():TmxMap {
+			return _tmxMap;
+		}
+		
 		public static var tileSetName:String;
 		
 		private var _tmxPath:String;

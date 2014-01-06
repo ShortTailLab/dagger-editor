@@ -125,26 +125,19 @@ package bgedit
 		}
 		
 		private function initAxis():void {
-			_xAxis = new BgAxisView(true, 0, 640);
-			_yAxis = new BgAxisView(false, 0, 960);
 			
-			addElement(_xAxis);
-			addElement(_yAxis);
-			_xAxis.x = 90;
-			_xAxis.y = 780;
-			_yAxis.x = 90;
-			_yAxis.y = 780;
 		}
 		
 		private function initContainer():void {
-			var tmxMapView:TmxMapView = new TmxMapView();
-			addElement(tmxMapView);
-			tmxMapView.load("Resource/bg.tmx");
+			_tmxMapView = new TmxMapView();
+			addElement(_tmxMapView);
+			_tmxMapView.load("Resource/bg.tmx");
 		}
 		
-		private var _xAxis:BgAxisView;
-		private var _yAxis:BgAxisView;
+		public function get tmxMapView():TmxMapView {
+			return _tmxMapView;
+		}
 		
-		private var _container:BgContainerView;
+		private var _tmxMapView:TmxMapView;
 	}
 }

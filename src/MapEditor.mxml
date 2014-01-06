@@ -11,9 +11,7 @@
 		<![CDATA[
 			import mx.controls.Alert;
 			import mx.controls.Tree;
-			import mx.core.UIComponent;
 			import mx.events.CloseEvent;
-			import mx.events.ResizeEvent;
 			
 			import spark.components.Group;
 			import spark.components.List;
@@ -21,7 +19,6 @@
 			
 			import bgedit.BgEditView;
 			import bgedit.BgModel;
-			import bgedit.BgSelectView;
 			
 			import excel.ExcelReader;
 			
@@ -137,7 +134,7 @@
 				}
 				else {
 					middleArea.addElement(_bgEditView);
-					rightArea.addElement(_bgSelectView);
+//					rightArea.addElement(_bgSelectView);
 				}
 			}
 			
@@ -153,7 +150,6 @@
 				bgEdit.addElement(list);
 				
 				_bgEditView = new BgEditView();
-				_bgSelectView = new BgSelectView();
 			}
 			
 			private function onLevelClick(e:Event):void{
@@ -221,15 +217,16 @@
 			
 			private function openBgFile(event:Event):void {
 				var file:File = File.desktopDirectory;
-				var tip:String = "请选择背景配置文件";
-				var filter:FileFilter = new FileFilter("JSON","*.json");
+				var tip:String = "请选择背景地图文件(.tmx)";
+				var filter:FileFilter = new FileFilter("Tiled Map File","*.tmx");
 				file.browseForOpen(tip, [filter]);
 				file.addEventListener(Event.SELECT, function (e:Event):void {
 					var file:File = e.target as File;
 					var fileStream:FileStream = new FileStream();
 					fileStream.open(file, FileMode.READ);
-					var config:Object = JSON.parse(fileStream.readUTFBytes(fileStream.bytesAvailable));
-					BgModel.getInstance().initWithData(config);
+					var xml:XML = new XML(fileStream.readUTFBytes(fileStream.bytesAvailable));
+					var imagePath:String = file.url.substring(0,file.url.lastIndexOf("/")+1) + xml..image.@source;
+					_bgEditView.tmxMapView.loadFromXml(xml, imagePath);
 				});
 			}
 			
@@ -307,7 +304,6 @@
 			private var _tree:Tree;
 			
 			private var _bgEditView:BgEditView;
-			private var _bgSelectView:BgSelectView;
 		]]>
 	</fx:Script>
 	
@@ -318,7 +314,7 @@
 		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
 				<s:Button id="openBtn" label="打开关卡配置" click="openLevelFile(event)"/>
 				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
-				<s:Button id="openBgBtn" label="打开背景配置" click="openBgFile(event)"/>
+				<s:Button id="openBgBtn" label="打开背景地图" click="openBgFile(event)"/>
 				<s:Button id="openExcelBtn" label="打开怪物Excel" click="openExcelFile(event)"/>
 				<s:Button id="sendBtn" label="上传" click="sendToServer(event)"/>
 		</s:HGroup>

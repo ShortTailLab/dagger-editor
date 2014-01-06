@@ -34,7 +34,7 @@ package bgedit
 						diagonal = Boolean(gid & TMX_DIAGONAL_FLAG);
 						flipX = Boolean(gid & TMX_HORIZONTAL_FLAG);
 						flipY = Boolean(gid & TMX_VERTICAL_FLAG);
-						trace(i, j, gid.toString(2), diagonal, flipX, flipY);
+//						trace(i, j, gid.toString(2), diagonal, flipX, flipY);
 						gid &= ~(TMX_HORIZONTAL_FLAG | TMX_VERTICAL_FLAG | TMX_DIAGONAL_FLAG);
 					}
 					var tile:TmxTileView = new TmxTileView();
