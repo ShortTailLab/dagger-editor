@@ -140,14 +140,16 @@
 			
 			private function onBgDataInit(event:GameEvent):void {
 				EventManager.getInstance().removeEventListener(EventType.INIT_BG_DATA_COMPLETE, onBgDataInit);
-				var list:List = new List();
-				list.percentWidth = 100;
-				list.percentHeight = 100;
-				list.dataProvider = BgModel.getInstance().bgNameArray;
-				list.addEventListener(MouseEvent.CLICK, function (e:Event):void {
-					EventManager.getInstance().dispatchEvent(new GameEvent(EventType.BG_SELECT_CHANGE, (e.currentTarget as List).selectedIndex));
+				_bgList = new List();
+				_bgList.percentWidth = 100;
+				_bgList.percentHeight = 100;
+				_bgList.dataProvider = BgModel.getInstance().bgNameArray;
+				_bgList.addEventListener(MouseEvent.CLICK, function (e:Event):void {
+					if ((e.currentTarget as List).selectedIndex >= 0) {
+						_bgEditView.tmxMapView.load(BgModel.getInstance().bgDict[BgModel.getInstance().bgNameArray[(e.currentTarget as List).selectedIndex]]);
+					}
 				});
-				bgEdit.addElement(list);
+				bgEdit.addElement(_bgList);
 				
 				_bgEditView = new BgEditView();
 			}
@@ -171,14 +173,21 @@
 			
 			private function onDelete(e:ContextMenuEvent):void
 			{
-				Alert.okLabel = "确定";
-				Alert.cancelLabel = "取消";
-				var selectedNode:XML = _tree.selectedItem as XML;
-				if(selectedNode)
-					Alert.show("确定删除？", "tips", Alert.OK|Alert.CANCEL, this, alertClose);
-				else 
-					Alert.show("选择关卡");
-				
+				if (accordion.selectedIndex == 0) {
+					Alert.okLabel = "确定";
+					Alert.cancelLabel = "取消";
+					var selectedNode:XML = _tree.selectedItem as XML;
+					if(selectedNode)
+						Alert.show("确定删除？", "tips", Alert.OK|Alert.CANCEL, this, alertClose);
+					else 
+						Alert.show("选择关卡");
+				}
+				else {
+					if (_bgList.selectedIndex >= 0) {
+						BgModel.getInstance().removePair(_bgList.selectedIndex);
+						_bgEditView.tmxMapView.load(BgModel.getInstance().bgDict[BgModel.getInstance().bgNameArray[0]]);
+					}
+				}
 			}
 			
 			private function alertClose(e:CloseEvent):void
@@ -216,24 +225,21 @@
 			}
 			
 			private function openBgFile(event:Event):void {
-				var file:File = File.desktopDirectory;
+				var browseForOpenFile:File = File.desktopDirectory;
 				var tip:String = "请选择背景地图文件(.tmx)";
 				var filter:FileFilter = new FileFilter("Tiled Map File","*.tmx");
-				file.browseForOpen(tip, [filter]);
-				file.addEventListener(Event.SELECT, function (e:Event):void {
+				browseForOpenFile.browseForOpen(tip, [filter]);
+				browseForOpenFile.addEventListener(Event.SELECT, function (e:Event):void {
 					var file:File = e.target as File;
-					var fileStream:FileStream = new FileStream();
-					fileStream.open(file, FileMode.READ);
-					var xml:XML = new XML(fileStream.readUTFBytes(fileStream.bytesAvailable));
-					var imagePath:String = file.url.substring(0,file.url.lastIndexOf("/")+1) + xml..image.@source;
-					_bgEditView.tmxMapView.loadFromXml(xml, imagePath);
+					_bgEditView.tmxMapView.load(file.url);
+					BgModel.getInstance().addPair(file.name, file.url);
 				});
 			}
 			
 			private function openExcelFile(event:Event):void {
 				var file:File = File.desktopDirectory;
 				var tip:String = "请选择怪物Excel配置文件";
-				var filter:FileFilter = new FileFilter("JSON","*.xlsx");
+				var filter:FileFilter = new FileFilter("XLSX","*.xlsx");
 				file.browseForOpen(tip, [filter]);
 				file.addEventListener(Event.SELECT, function (e:Event):void {
 					var file:File = e.target as File;
@@ -254,6 +260,7 @@
 			private var _tree:Tree;
 			
 			private var _bgEditView:BgEditView;
+			private var _bgList:List;
 		]]>
 	</fx:Script>
 	
@@ -264,7 +271,7 @@
 		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
 				<s:Button id="openBtn" label="打开关卡配置" click="openLevelFile(event)"/>
 				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
-				<s:Button id="openBgBtn" label="打开背景地图" click="openBgFile(event)"/>
+				<s:Button id="openBgBtn" label="添加背景地图" click="openBgFile(event)"/>
 				<s:Button id="openExcelBtn" label="打开怪物Excel" click="openExcelFile(event)"/>
 		</s:HGroup>
 		

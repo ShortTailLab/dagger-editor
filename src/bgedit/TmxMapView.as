@@ -38,6 +38,10 @@ package bgedit
 		
 		private function onImageLoad(e:Event):void {
 			_tileSetImage = new Bitmap((e.currentTarget.content as Bitmap).bitmapData);
+			loadLayers();
+		}
+		
+		private function loadLayers():void {
 			for (var name:String in _tmxMap.tileSets) {
 				tileSetName = name;
 				break;
@@ -62,13 +66,11 @@ package bgedit
 			}
 		}
 		
-		public function loadFromXml(xml:XML, imagePath:String):void {
+		public function loadFromXmlAndImage(xml:XML, image:Bitmap):void {
 			_xml = xml;
 			_tmxMap = new TmxMap(_xml);
-			
-			var loader:Loader = new Loader();
-			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoad);
-			loader.load(new URLRequest(imagePath));
+			_tileSetImage = image;
+			loadLayers();
 		}
 		
 		public function get tmxMap():TmxMap {
