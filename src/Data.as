@@ -190,7 +190,7 @@ package
 			var js:String = "function MAKE_LEVEL(){ var level = " +
 				"" + JSON.stringify(exportData, null, "\t") + "; return level; }"; 
 			
-			var file:File = File.desktopDirectory.resolvePath("demo.js");
+			var file:File = File.desktopDirectory.resolvePath("editor/Resources/level/demo.js");
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
 			stream.writeUTFBytes(js);

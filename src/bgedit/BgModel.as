@@ -39,7 +39,7 @@ package bgedit
 				_bgDict = data;
 				for (var bgName:String in _bgDict) {
 					var tmxFile:File;
-					if ((_bgDict[bgName] as String).indexOf("file:///") == 0) {
+					if ((_bgDict[bgName] as String).indexOf("file://") == 0) {
 						tmxFile = new File(_bgDict[bgName]);
 					}
 					else {
