@@ -145,7 +145,6 @@
 			}
 			
 			private function onBgDataInit(event:GameEvent):void {
-				return;
 				EventManager.getInstance().removeEventListener(EventType.INIT_BG_DATA_COMPLETE, onBgDataInit);
 				var list:List = new List();
 				list.percentWidth = 100;
@@ -154,7 +153,8 @@
 				var resultList:ArrayCollection = new ArrayCollection;
 				for (var i:uint = 0; i < pathList.length; i++) 
 				{
-					var path:String = String(pathList[i].nativePath).split("/").pop();
+					var splitStr:String = Capabilities.os.substring(0, 3) == "Mac" ? "/" : "\\";
+					var path:String = String(pathList[i].nativePath).split(splitStr).pop();
 					if(path.split(".").pop() == "tmx")
 						resultList.addItem(path);
 				}
@@ -184,27 +184,8 @@
 			private function onTMXClick(e:MouseEvent):void
 			{
 				var file:File = File.desktopDirectory.resolvePath("editor/"+List(e.currentTarget).selectedItem);
-				var fileStream:FileStream = new FileStream();
-				fileStream.open(file, FileMode.READ);
-				var xml:XML = new XML(fileStream.readUTFBytes(fileStream.bytesAvailable));
-				fileStream.close();
-				
-				var imagePath:String = file.url.substring(0,file.url.lastIndexOf("/")+1) + xml..image.@source;
-				file = new File(imagePath);
-				fileStream = new FileStream;
-				fileStream.open(file, FileMode.READ);
-				var imgBytes:ByteArray = new ByteArray;
-				fileStream.readBytes(imgBytes, 0, fileStream.bytesAvailable);
-				fileStream.close();
-				
-				var map:TmxMapView = new TmxMapView();
-				(map as TmxMapView).loadFromXmlAndImgBytes(xml, imgBytes);
-				map.y = -500;
-				_enemyEditView.mapBg.addChild(map);
-				
-				return;
-				
-				_enemyEditView.switchMap(List(e.currentTarget).selectedItem);
+				EditMapControl.getInstance().setMapTMX(file);
+				_enemyEditView.switchMap();
 			}
 			
 			private function onCreateNew(e:ContextMenuEvent):void
@@ -293,8 +274,8 @@
 				browseForOpenFile.browseForOpen(tip, [filter]);
 				browseForOpenFile.addEventListener(Event.SELECT, function (e:Event):void {
 					var file:File = e.target as File;
-					_bgEditView.tmxMapView.load(file.url);
-					BgModel.getInstance().addPair(file.name, file.url);
+					EditMapControl.getInstance().setMapTMX(file);
+					_enemyEditView.switchMap();
 				});
 			}
 			
@@ -315,21 +296,28 @@
 				if(NativeProcess.isSupported)
 				{
 					var nativeProcessStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
-					var file:File = File.desktopDirectory.resolvePath("script/test.py");
-					nativeProcessStartupInfo.executable = file;
+					var splitStr:String = Capabilities.os.substring(0, 3) == "Mac" ? "/" : "\\";
+					var file:File = File.desktopDirectory.resolvePath("editor"+splitStr+"makeDist.py");
+					if(file.exists)
+					{
+						nativeProcessStartupInfo.executable = file;
+						
+						var processArgs:Vector.<String> = new Vector.<String>();
+						processArgs[0] = file.url.substring(7, file.url.lastIndexOf(splitStr)+1)+"Resource"+splitStr+"level";
+						processArgs[1] = "zwf";
+						nativeProcessStartupInfo.arguments = processArgs;
+						
+						process = new NativeProcess();
+						process.start(nativeProcessStartupInfo);
+						process.addEventListener(ProgressEvent.STANDARD_OUTPUT_DATA, onOutputData);
+						process.addEventListener(ProgressEvent.STANDARD_ERROR_DATA, onErrorData);
+						process.addEventListener(NativeProcessExitEvent.EXIT, onExit);
+						process.addEventListener(IOErrorEvent.STANDARD_OUTPUT_IO_ERROR, onIOError);
+						process.addEventListener(IOErrorEvent.STANDARD_ERROR_IO_ERROR, onIOError);
+					}
+					else
+						Alert.show("File not exist");
 					
-					var processArgs:Vector.<String> = new Vector.<String>();
-					processArgs[0] = "Resource/level";
-					//processArgs[1] = "zql";
-					nativeProcessStartupInfo.arguments = processArgs;
-					
-					process = new NativeProcess();
-					process.start(nativeProcessStartupInfo);
-					process.addEventListener(ProgressEvent.STANDARD_OUTPUT_DATA, onOutputData);
-					process.addEventListener(ProgressEvent.STANDARD_ERROR_DATA, onErrorData);
-					process.addEventListener(NativeProcessExitEvent.EXIT, onExit);
-					process.addEventListener(IOErrorEvent.STANDARD_OUTPUT_IO_ERROR, onIOError);
-					process.addEventListener(IOErrorEvent.STANDARD_ERROR_IO_ERROR, onIOError);
 				}
 				else
 				{
@@ -340,12 +328,12 @@
 			}
 			public function onOutputData(event:ProgressEvent):void
 			{
-			  	Alert.show("Got: "); 
+			  	Alert.show("Got: "+process.standardOutput.readUTFBytes(process.standardOutput.bytesAvailable)); 
 			}
 			
 			public function onErrorData(event:ProgressEvent):void
 			{
-				Alert.show("ERROR -"); 
+				Alert.show("ERROR -"+ process.standardError.readUTFBytes(process.standardError.bytesAvailable)); 
 			}
 			
 			public function onExit(event:NativeProcessExitEvent):void

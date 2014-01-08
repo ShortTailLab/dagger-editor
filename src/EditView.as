@@ -28,14 +28,16 @@ package
 	
 	import bgedit.TmxMapView;
 	
+	import net.pixelpracht.tmx.TmxMap;
+	
 	
 	public class EditView extends UIComponent
 	{
 		static public var speed:Number = 20;//pixel per second
 		
-		private var map:Sprite = null;
+		private var map:UIComponent = null;
 		private var mapMask:Sprite = null;
-		public var mapBg:Sprite = null;
+		public var mapBg:UIComponent = null;
 		private var timeLine:TimeLine = null;
 		private var slider:VSlider = null;
 		private var snapBtn:StateBtn = null;
@@ -51,6 +53,7 @@ package
 		private var displayMats:Array;
 		
 		private var mapPieces:Dictionary;
+		private var mapFreePieces:Array;
 		
 		private var selectControl:SelectControl;
 		private var selectRect:Rectangle;
@@ -70,15 +73,16 @@ package
 			
 			displayMats = new Array;
 			
-			map = new Sprite;
+			map = new UIComponent;
 			this.addChild(map);
 			mapMask = new Sprite;
 			this.addChild(mapMask);
 			this.mask = mapMask;
 			
-			mapBg = new Sprite;
+			mapBg = new UIComponent;
 			map.addChild(mapBg);
 			mapPieces = new Dictionary;
+			mapFreePieces = new Array;
 			
 			timeLine = new TimeLine(speed, 5, 9);
 			timeLine.x = 0;
@@ -465,7 +469,7 @@ package
 		
 		//this called when endTime changed
 		var timeLineInterval:int = speed*5;
-		var oneMapHigh:int = 480;
+		var oneMapHigh:Number = 480;
 		private function updateMapSize():void
 		{
 			var clipLow:Number = map.y;
@@ -477,63 +481,34 @@ package
 				if(int(i) < lowIndex || int(i)>highIndex)
 				{
 					mapBg.removeChild(mapPieces[i]);
+					mapFreePieces.push(mapPieces[i]);
 					delete mapPieces[i];
 				}
 			
 			for(var j:int = lowIndex; j <= highIndex; j++)
 				if(!mapPieces.hasOwnProperty(j))
 				{
-					var img:DisplayObject = getAMap();
-					img.scaleX = img.scaleY = 0.5;
+					var img:DisplayObject = mapFreePieces.length == 0 ? 
+											EditMapControl.getInstance().getAMap() : mapFreePieces.pop();
 					img.x = 0;
 					img.y = -j*oneMapHigh-oneMapHigh;
 					
 					mapBg.addChild(img);
 					mapPieces[j] = img;
 				}
-			
 		}
 		
-		public function switchMap(path:String):void
+		public function switchMap():void
 		{
-			currMapPath = path;
-			if(currMapPath.length > 0)
+			for(var m in mapPieces)
 			{
-				for(var m in mapPieces)
-				{
-					mapBg.removeChild(mapPieces[m]);
-				}
-				mapPieces = new Dictionary;
+				mapBg.removeChild(mapPieces[m]);
 			}
-		}
-		
-		public var currMapPath:String = "";
-		private function getAMap():DisplayObject
-		{
-			var map:DisplayObject;
-			if(currMapPath.length > 0)
-			{
-				var file:File = File.desktopDirectory.resolvePath("editor/"+currMapPath);
-				var fileStream:FileStream = new FileStream();
-				fileStream.open(file, FileMode.READ);
-				var xml:XML = new XML(fileStream.readUTFBytes(fileStream.bytesAvailable));
-				fileStream.close();
-				
-				var imagePath:String = file.url.substring(0,file.url.lastIndexOf("/")+1) + xml..image.@source;
-				file = new File(imagePath);
-				fileStream = new FileStream;
-				fileStream.open(file, FileMode.READ);
-				var imgBytes:ByteArray = new ByteArray;
-				fileStream.readBytes(imgBytes, 0, fileStream.bytesAvailable);
-				fileStream.close();
-				
-				map = new TmxMapView();
-				(map as TmxMapView).loadFromXmlAndImgBytes(xml, imgBytes);
-			}
-			else
-				map = new BgImage as Bitmap;
+			mapPieces = new Dictionary;
+			while(mapFreePieces.length > 0)
+				mapFreePieces.pop();
 			
-			return map;
+			oneMapHigh = EditMapControl.getInstance().mapHeight;
 		}
 		
 	}

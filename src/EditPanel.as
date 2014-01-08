@@ -10,7 +10,6 @@ package
 	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
-	import flash.text.TextFormatAlign;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
@@ -118,13 +117,20 @@ package
 				else if(moveType == 2)
 					recordDots = Data.getInstance().enemyMoveData[target.type]["move"].loops;
 				else if(moveType == 5)
-					recordDots = Data.getInstance().enemyMoveData[target.type]["move"].route;
+				{
+					var route:Array = Data.getInstance().enemyMoveData[target.type]["move"].route;
+					for(var i:int = 0; i < route.length; i++)
+					{
+						var color:uint = i%2==0 ? 0xff0000 : 0x00ff00;
+						var pos:Array = route[i] as Array;
+						makeDot(color, pos[0]*0.5, 480-pos[1]*0.5);
+					}
+					render();
+				}
 				if(recordDots)
 					for(var d in recordDots)
 					{
-						var pos:Array = new Array;
-						for(var n in recordDots[d])
-							pos.push(recordDots[d][n]);
+						var pos:Array = recordDots[d] as Array;
 						addDot(pos[0]*0.5, 480-pos[1]*0.5);
 					}
 			}
@@ -215,7 +221,7 @@ package
 		}
 		private function onDotMove(event:MouseEvent):void
 		{
-			if(moveTypeBox.selectedItem.data == 4)
+			if(moveTypeBox.selectedItem.data == 5)
 				render();
 		}
 		
@@ -260,7 +266,7 @@ package
 			for(var i:int = 0; i < dots.length; i++)
 			{
 				var pos:Array = new Array;
-				if(type == 4)
+				if(type == 5)
 				{
 					pos.push((dots[i].x - dots[0].x)*2);
 					pos.push((dots[i].y - dots[0].y)*2);
@@ -281,7 +287,7 @@ package
 				Data.getInstance().enemyMoveData[editTarget.type]["move"].dir = route;
 			else if(type == 2)
 				Data.getInstance().enemyMoveData[editTarget.type]["move"].loops = route;
-			else if(type == 4)
+			else if(type == 5)
 				Data.getInstance().enemyMoveData[editTarget.type]["move"].route = route;
 			
 			Data.getInstance().saveEnemyData();
@@ -309,3 +315,5 @@ package
 		}
 	}
 }
+
+

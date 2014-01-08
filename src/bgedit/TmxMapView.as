@@ -97,6 +97,7 @@ package bgedit
 		
 		public function loadFromXmlAndImgBytes(xml:XML, imgBytes:ByteArray):void{
 			_xml = xml;
+			_tmxMap = new TmxMap(_xml);
 			var loader:Loader = new Loader;
 			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadImgBytes);
 			loader.loadBytes(imgBytes);
@@ -104,7 +105,8 @@ package bgedit
 		private function onLoadImgBytes(e:Event):void
 		{
 			var bmp:Bitmap = (e.target as LoaderInfo).content as Bitmap;
-			loadFromXmlAndImage(_xml, bmp);
+			_tileSetImage = bmp;
+			loadLayers();
 		}
 		
 		public function get tmxMap():TmxMap {
