@@ -28,7 +28,7 @@ package
 			mats = new Array;
 			init();
 			
-			EventManager.getInstance().addEventListener(EventType.ENEMY_DATA_UPDATE, init);
+			EventManager.getInstance().addEventListener(EventType.ENEMY_DATA_UPDATE, init); 
 		}
 		
 		public function init(e:GameEvent = null):void
@@ -59,7 +59,6 @@ package
 				menu.addItem(btn);
 				
 				view.contextMenu = menu;
-				
 			}
 			resize(2);
 		}

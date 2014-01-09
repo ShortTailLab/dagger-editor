@@ -24,7 +24,6 @@
 			
 			import bgedit.BgEditView;
 			import bgedit.BgModel;
-			import bgedit.TmxMapView;
 			
 			import excel.ExcelReader;
 			

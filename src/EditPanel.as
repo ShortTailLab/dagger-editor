@@ -34,9 +34,12 @@ package
 		private var moveTypeBox:ComboBox;
 		private var speedInput:TextInput;
 		
+		private var actions:ActionsCenter;
+		
 		public function EditPanel(target:MatSprite)
 		{
 			this.editTarget = target;
+			actions = new ActionsCenter(this);
 			dots = new Array;
 			this.title = "编辑";
 			this.width = 500;
@@ -71,6 +74,7 @@ package
 				line.graphics.clear();
 				while(dots.length > 0)
 					map.removeChild(dots.pop());
+				actions.setCurrId(moveTypeBox.selectedItem.data);
 			});
 			mapContain.addChild(moveTypeBox);
 			
@@ -106,10 +110,12 @@ package
 			line = new Shape;
 			map.addChild(line);
 			
+			initActions();
 			if(Data.getInstance().enemyMoveData.hasOwnProperty(target.type))
 			{
 				var moveType:int = Data.getInstance().enemyMoveData[target.type]["move_type"]
 				moveTypeBox.selectedIndex = moveType;
+				actions.setCurrId(moveTypeBox.selectedItem.data);
 				speedInput.text = Data.getInstance().enemyMoveData[target.type]["move"]["speed"];
 				var recordDots:Array = null;
 				if(moveType == 1)
@@ -136,6 +142,33 @@ package
 			}
 			
 			this.addEventListener(CloseEvent.CLOSE, onClose);
+			
+			
+		}
+		
+		private function initActions():void
+		{
+			
+			actions.register("addDots", "1", function(px:int, py:int):void{
+				if(this.dots.length == 0)
+					this.makeDot(0xff0000, px, py);
+			});
+			
+			actions.register("addDots", "2", function(px:int, py:int):void{
+					this.makeDot(0xff0000, px, py);
+			});
+			
+			
+			actions.register("addDots", "5", function(px:int, py:int):void{
+				if(this.dots.length > 0)
+				{
+					var px1:Number = (px + this.dots[dots.length-1].x)*0.5;
+					var py1:Number = (py + this.dots[dots.length-1].y)*0.5;
+					this.makeDot(0x00ff00, px1, py1);
+				}
+				this.makeDot(0xff0000, px, py);
+				this.render();
+			});
 		}
 		
 		private function getLabel(label:String, px:int = 0, py:int=0, size:int = 10):TextField
@@ -156,49 +189,15 @@ package
 		
 		private function addDot(px:int, py:int):void
 		{
-			var type:int = moveTypeBox.selectedItem.data;
-			if(type == 1)
-			{
-				if(dots.length == 0)
-					makeDot(0xff0000, px, py);
-			}
-			else if(type == 2)
-			{
-				makeDot(0xff0000, px, py);
-			}
-			else if(type == 3)
-			{
-				
-			}
-			else if(type == 5)
-			{
-				if(dots.length > 0)
-				{
-					var px1:Number = (px + dots[dots.length-1].x)*0.5;
-					var py1:Number = (py + dots[dots.length-1].y)*0.5;
-					makeDot(0x00ff00, px1, py1);
-				}
-				makeDot(0xff0000, px, py);
-				render();
-			}
+			actions.exec("addDots", px, py);
 		}
 		
 		private function makeDot(color:uint, px:int, py:int):Sprite
 		{
-			var dot:Sprite = new Sprite;
-			dot.graphics.beginFill(color);
-			dot.graphics.drawCircle(0, 0, 10);
-			dot.graphics.endFill();
+			var dot:Dot = new Dot(color);
 			dot.addEventListener(MouseEvent.MOUSE_DOWN, onDotMouseDown);
 			dot.addEventListener(MouseEvent.MOUSE_MOVE, onDotMove);
 			dot.addEventListener(MouseEvent.MOUSE_UP, onDotMouseUp);
-			
-			var label:TextField = getLabel(String(dots.length), 0, 0, 20);
-			label.selectable = false;
-			label.width = label.height = 20;
-			label.x = -label.textWidth*0.5;
-			label.y = -label.textHeight*0.5;
-			dot.addChild(label);
 			
 			var menu:ContextMenu = new ContextMenu;
 			var item:ContextMenuItem = new ContextMenuItem("删除");
@@ -206,6 +205,7 @@ package
 			menu.addItem(item);
 			dot.contextMenu = menu;
 			
+			dot.setNum(dots.length);
 			dot.x = px;
 			dot.y = py;
 			dots.push(dot);
@@ -213,9 +213,16 @@ package
 			return dot;
 		}
 		
+		private function orderDots():void
+		{
+			for(var i:int; i < dots.length; i++)
+			{
+				Dot(dots[i]).setNum(i);
+			}
+		}
+		
 		private function onDotMouseDown(event:MouseEvent):void
 		{
-			
 			event.stopPropagation();
 			(event.currentTarget as Sprite).startDrag();
 		}
@@ -238,20 +245,20 @@ package
 				if(dots[i] == event.contextMenuOwner)
 					if(type == 5)
 					{
-						var start:int = i%2==0 ? i-1: i;
-						if(start>=0)
-							map.removeChild(dots[start]);
-						map.removeChild(dots[start+1]);
-						dots.splice(start, 2);
+						var relatDotIndex:int = (i==0 || i%2 == 1) ? i : i-1;
+						map.removeChild(dots[relatDotIndex]);
+						map.removeChild(dots[relatDotIndex+1]);
+						dots.splice(relatDotIndex, 2);
 						render();
-						return;
+						break;
 					}
 					else
 					{
 						map.removeChild(dots[i]);
 						dots.splice(i, 1);
-						return;
+						break;
 					}
+			orderDots();
 		}
 		private function onSave(e:MouseEvent):void
 		{
@@ -266,7 +273,7 @@ package
 			for(var i:int = 0; i < dots.length; i++)
 			{
 				var pos:Array = new Array;
-				if(type == 5)
+				if(type == 4)
 				{
 					pos.push((dots[i].x - dots[0].x)*2);
 					pos.push((dots[i].y - dots[0].y)*2);
@@ -313,6 +320,87 @@ package
 		{
 			PopUpManager.removePopUp(this);
 		}
+	}
+}
+
+import flash.display.Sprite;
+import flash.text.TextField;
+import flash.text.TextFormat;
+import flash.utils.Dictionary;
+
+
+class Dot extends Sprite
+{
+	private var label:TextField;
+	
+	public function Dot(color:uint)
+	{
+		graphics.beginFill(color);
+		graphics.drawCircle(0, 0, 10);
+		graphics.endFill();
+		
+		label = new TextField;
+		label.defaultTextFormat = new TextFormat(null, 20);
+		label.selectable = false;
+		label.width = label.height = 20;
+		
+		addChild(label);
+	}
+	
+	public function setNum(num:int):void
+	{
+		label.text = String(num);
+		label.x = -label.textWidth*0.5;
+		label.y = -label.textHeight*0.5;
+	}
+}
+
+class ActionsCenter
+{
+	private var actions:Dictionary;
+	private var currId:String;
+	private var target:*;
+	
+	public function ActionsCenter(_target:*)
+	{
+		target = _target;
+		actions = new Dictionary;
+		currId = "";
+	}
+	
+	public function setCurrId(id:String):void
+	{
+		currId = id;
+	}
+	
+	public function register(funcName:String, id:String, func:Function):void
+	{
+		if(!actions.hasOwnProperty(funcName))
+			actions[funcName] = new Dictionary;
+		actions[funcName][id] = func;
+	}
+	
+	public function unRegisterFunc(funcName:String):void
+	{
+		if(actions.hasOwnProperty(funcName))
+			delete actions[funcName];
+	}
+	
+	public function unRegisterId(id:String):void
+	{
+		for each(var a:Dictionary in actions)
+			if(a.hasOwnProperty(id))
+				delete a[id];
+	}
+	
+	public function exec(funcName:String, ...rest):void
+	{
+		if(actions.hasOwnProperty(funcName) && currId.length > 0 && actions[funcName].hasOwnProperty(currId))
+		{
+			var func:Function = actions[funcName][currId] as Function;
+			func.apply(target, rest);
+		}
+			
 	}
 }
 
