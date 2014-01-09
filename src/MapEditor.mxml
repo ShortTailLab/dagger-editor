@@ -30,6 +30,7 @@
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.GameEvent;
+			import manager.ServerManager;
 			
 			
 			public var fView:FormationsView = null;
@@ -292,58 +293,12 @@
 			var process:NativeProcess;
 			private function sendToServer(e:Event):void
 			{
-				if(NativeProcess.isSupported)
-				{
-					var nativeProcessStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
-					var splitStr:String = Capabilities.os.substring(0, 3) == "Mac" ? "/" : "\\";
-					var file:File = File.desktopDirectory.resolvePath("editor"+splitStr+"makeDist.py");
-					if(file.exists)
-					{
-						nativeProcessStartupInfo.executable = file;
-						
-						var processArgs:Vector.<String> = new Vector.<String>();
-						processArgs[0] = file.url.substring(7, file.url.lastIndexOf(splitStr)+1)+"Resource"+splitStr+"level";
-						processArgs[1] = "zwf";
-						nativeProcessStartupInfo.arguments = processArgs;
-						
-						process = new NativeProcess();
-						process.start(nativeProcessStartupInfo);
-						process.addEventListener(ProgressEvent.STANDARD_OUTPUT_DATA, onOutputData);
-						process.addEventListener(ProgressEvent.STANDARD_ERROR_DATA, onErrorData);
-						process.addEventListener(NativeProcessExitEvent.EXIT, onExit);
-						process.addEventListener(IOErrorEvent.STANDARD_OUTPUT_IO_ERROR, onIOError);
-						process.addEventListener(IOErrorEvent.STANDARD_ERROR_IO_ERROR, onIOError);
-					}
-					else
-						Alert.show("File not exist");
-					
+				if (ServerManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/Resources"))) {
+					Alert.show("上传成功！");
 				}
-				else
-				{
-					Alert.show("NativeProcess not supported.");
+				else {
+					Alert.show("上传失败！");
 				}
-				
-				
-			}
-			public function onOutputData(event:ProgressEvent):void
-			{
-			  	Alert.show("Got: "+process.standardOutput.readUTFBytes(process.standardOutput.bytesAvailable)); 
-			}
-			
-			public function onErrorData(event:ProgressEvent):void
-			{
-				Alert.show("ERROR -"+ process.standardError.readUTFBytes(process.standardError.bytesAvailable)); 
-			}
-			
-			public function onExit(event:NativeProcessExitEvent):void
-			{
-				Alert.show("exit!");
-				//Alert.show("Process exited with ", event.exitCode);
-			}
-			
-			public function onIOError(event:IOErrorEvent):void
-			{
-				Alert.show(event.toString());
 			}
 			
 			private function onAccordionClick(e:Event):void {
