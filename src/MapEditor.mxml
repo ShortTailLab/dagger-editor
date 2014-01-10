@@ -295,7 +295,7 @@
 			private function sendToServer(e:Event):void
 			{
 				if (ServerManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/Resources"), tagInput.text)) {
-					Alert.show("上传成功！");
+//					Alert.show("上传成功！");
 				}
 				else {
 					Alert.show("上传失败！");

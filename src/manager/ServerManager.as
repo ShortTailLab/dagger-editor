@@ -18,6 +18,8 @@ package manager
 	import flash.net.URLVariables;
 	import flash.utils.ByteArray;
 	
+	import mx.controls.Alert;
+	
 	import by.blooddy.crypto.Base64;
 	import by.blooddy.crypto.MD5;
 
@@ -44,6 +46,8 @@ package manager
 		public function uploadFilesToServer(localDiretory:File, versionPrefix:String="dagger"):Boolean {
 			_versionPrefix = versionPrefix;
 			_localDirectoryPrefix = localDiretory.url;
+			_uploadMsg = "";
+			_numUploaded = 0;
 			if (_localDirectoryPrefix.charAt(_localDirectoryPrefix.length-1) != "/") {
 				_localDirectoryPrefix += "/";
 			}
@@ -183,10 +187,16 @@ package manager
 		
 		private function onResponse(e:HTTPStatusEvent):void {
 			trace("response code ", e.status, JSON.stringify(e.responseHeaders));
+			_uploadMsg += "url: "+(e as HTTPStatusEvent).responseURL+"\nstatus: "+(e as HTTPStatusEvent).status+"\n";
 		}
 		
 		private function onUploadComplete(e:Event):void {
 			trace("success");
+			_uploadMsg += "data: "+JSON.stringify((e.currentTarget as URLLoader).data) +"\n";
+			_numUploaded++;
+			if (_numUploaded == _needToUpload.length+1) {
+				Alert.show(_uploadMsg, "上传日志");
+			}
 		}
 		
 		private function onIOError(e:IOErrorEvent):void {
@@ -262,6 +272,9 @@ package manager
 		private var _needToUpload:Vector.<String>;
 		private var _serverDate:Date;
 		private static var _intance:ServerManager;
+		
+		private var _uploadMsg:String;
+		private var _numUploaded:int;
 		
 		private const OSS_ACCESS_KEY_ID:String	 	= "z7caZBtJU2kb8g3h";
 		private const OSS_ACCESS_KEY_SECRET:String 	= "fuihVj7qMCOjExkhKm2vAyEYhBBv8R";
