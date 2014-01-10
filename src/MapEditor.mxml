@@ -294,7 +294,7 @@
 			var process:NativeProcess;
 			private function sendToServer(e:Event):void
 			{
-				if (ServerManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/Resources"))) {
+				if (ServerManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/Resources"), tagInput.text)) {
 					Alert.show("上传成功！");
 				}
 				else {
@@ -329,6 +329,8 @@
 				<s:Button id="openBgBtn" label="添加背景地图" click="openBgFile(event)"/>
 				<s:Button id="openExcelBtn" label="打开怪物Excel" click="openExcelFile(event)"/>
 				<s:Button id="sendBtn" label="上传" click="sendToServer(event)"/>
+				<s:Label text="服务器Tag" color="0x777777"/>
+				<s:TextInput id="tagInput" width="50" text="zwf"/>
 		</s:HGroup>
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">

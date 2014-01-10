@@ -96,12 +96,13 @@ package manager
 			var versionFile:File = new File(tmpDirectory+"/version.json");
 			var fileStream:FileStream = new FileStream();
 			fileStream.open(versionFile, FileMode.WRITE);
-			fileStream.writeUTFBytes(JSON.stringify(oldDict));
+//			fileStream.writeUTFBytes(JSON.stringify(oldDict));
+			fileStream.writeUTFBytes(JSON.stringify(_versionDict));
 			fileStream.close();
 			
-			if (_needToUpload.length > 0) {
+//			if (_needToUpload.length > 0) {
 				uploadFile(versionFile, "version.json");
-			}
+//			}
 			
 			for each (var fileKey:String in _needToUpload) {
 				var file:File = new File(_localDirectoryPrefix+fileKey);
@@ -218,7 +219,7 @@ package manager
 						_versionDict[key]["p"] = 0;
 					}
 					else {
-						_versionDict[key]["p"] = 1;
+						_versionDict[key]["p"] = 0;
 					}
 					_versionDict[key]["h"] = getMD5Sum(file);
 				}
