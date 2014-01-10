@@ -29,6 +29,7 @@ package
 	
 	public class Data extends EventDispatcher
 	{
+		public var conf:Object = null;
 		public var matsData:Object = null;
 		public var enemyData:Object = null;
 		public var enemyMoveData:Object = null;
@@ -57,11 +58,11 @@ package
 		
 		public function init():void
 		{
-			1;
 			var file:File = File.desktopDirectory.resolvePath("data.json");
+			var stream:FileStream;
 			if(file.exists)
 			{
-				var stream:FileStream = new FileStream;
+				stream = new FileStream;
 				stream.open(file, FileMode.READ);
 				displayData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable)) as Array;
 				stream.close();
@@ -77,6 +78,19 @@ package
 			}
 			levelXML = parseLevelXML(displayData);
 			
+			file = File.desktopDirectory.resolvePath("editor/conf.json");
+			if(file.exists)
+			{
+				stream = new FileStream;
+				stream.open(file, FileMode.READ);
+				conf = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			else
+			{
+				conf = new Object;
+				conf.timeLineUnit = 100;
+			}
 			
 			ExcelReader.getInstance().initWithRelativePath("Resource/levelData.xlsx", onDataComplete);
 			EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onDataComplete);
@@ -147,6 +161,12 @@ package
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
 			stream.writeUTFBytes(JSON.stringify(displayData));
+			stream.close();
+			
+			file = File.desktopDirectory.resolvePath("editor/conf.json");
+			stream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes(JSON.stringify(conf));
 			stream.close();
 			
 			saveEnemyData();

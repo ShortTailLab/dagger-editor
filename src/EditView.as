@@ -12,11 +12,14 @@ package
 	import flash.filesystem.FileStream;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.text.TextField;
+	import flash.text.TextFormat;
 	import flash.ui.Keyboard;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
 	import mx.containers.Canvas;
+	import mx.controls.Text;
 	import mx.controls.VSlider;
 	import mx.core.UIComponent;
 	import mx.events.ResizeEvent;
@@ -41,6 +44,8 @@ package
 		private var timeLine:TimeLine = null;
 		private var slider:VSlider = null;
 		private var snapBtn:StateBtn = null;
+		private var unitLabel:TextField = null;
+		private var unitInput:TextInput = null;
 		private var inputField:TextInput = null;
 		private var submitBtn:Button = null;
 		private var canvas:Canvas;
@@ -83,6 +88,18 @@ package
 			map.addChild(mapBg);
 			mapPieces = new Dictionary;
 			mapFreePieces = new Array;
+			
+			unitLabel = new TextField;
+			unitLabel.defaultTextFormat = new TextFormat(null, 14);
+			unitLabel.text = "单位：";
+			this.addChild(unitLabel);
+			
+			unitInput = new TextInput;
+			unitInput.width = 30;
+			unitInput.height = 20;
+			unitInput.restrict = "0123456789";
+			unitInput.text = Data.getInstance().conf.timeLineUnit;
+			this.addChild(unitInput);
 			
 			timeLine = new TimeLine(speed, 5, 9);
 			timeLine.x = 0;
@@ -162,6 +179,8 @@ package
 		
 		public function save():void
 		{
+			Data.getInstance().conf.timeLineUnit = int(unitInput.text);
+			
 			var data:Array = new Array;
 			for each(var m:MatSprite in displayMats)
 				data.push(m.toExportData());
@@ -408,6 +427,10 @@ package
 			mapMask.graphics.endFill();
 			slider.x = -canvas.width*0.5+50;
 			slider.y = -canvas.height+80;
+			unitLabel.x = -170;
+			unitLabel.y = -30;
+			unitInput.x = -130;
+			unitInput.y = -30;
 			inputField.x = -canvas.width*0.5+30;
 			inputField.y = -canvas.height+30;
 			submitBtn.x = -canvas.width*0.5+120;

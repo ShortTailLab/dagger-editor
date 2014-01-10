@@ -134,7 +134,7 @@ package
 		public function initFromData(data:Object):void
 		{
 			this.x = data.x/2;
-			this.y = -data.y*EditView.speed/100;
+			this.y = -data.y*EditView.speed/Data.getInstance().conf.timeLineUnit;
 			if(data.hasOwnProperty("triggerTime"))
 				this.triggerTime = data.triggerTime;
 		}
@@ -144,7 +144,7 @@ package
 			var obj:Object = new Object;
 			obj.type = type;
 			obj.x = x*2;
-			obj.y = int(-y/EditView.speed*100);
+			obj.y = int(-y/EditView.speed*Data.getInstance().conf.timeLineUnit);
 			if(this.triggerTime > 0)
 				obj.triggerTime = this.triggerTime;
 			return obj;
