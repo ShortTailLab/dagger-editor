@@ -120,6 +120,7 @@ package
 			
 				
 			var file:File = File.desktopDirectory.resolvePath("enemyMoveData.json");
+			enemyMoveData = null;
 			if(file.exists)
 			{
 				var stream:FileStream = new FileStream;
@@ -127,7 +128,8 @@ package
 				enemyMoveData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
 			}
-			else
+			
+			if(!enemyMoveData)
 			{
 				enemyMoveData = new Object;
 				for(var item in enemyData)

@@ -297,7 +297,7 @@
 					Alert.show("上传成功！");
 				}
 				else {
-					Alert.show("上传失败！");
+					Alert.show("上传失败！"); 
 				}
 			}
 			

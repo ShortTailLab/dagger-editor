@@ -118,9 +118,9 @@ package
 				actions.setCurrId(moveTypeBox.selectedItem.data);
 				speedInput.text = Data.getInstance().enemyMoveData[target.type]["move"]["speed"];
 				var recordDots:Array = null;
-				if(moveType == 1)
-					recordDots = Data.getInstance().enemyMoveData[target.type]["move"].dir;
-				else if(moveType == 2)
+				//if(moveType == 1)
+					//recordDots = Data.getInstance().enemyMoveData[target.type]["move"].dir;
+				if(moveType == 2)
 					recordDots = Data.getInstance().enemyMoveData[target.type]["move"].loops;
 				else if(moveType == 5)
 				{
@@ -149,10 +149,10 @@ package
 		private function initActions():void
 		{
 			
-			actions.register("addDots", "1", function(px:int, py:int):void{
+			/*actions.register("addDots", "1", function(px:int, py:int):void{
 				if(this.dots.length == 0)
 					this.makeDot(0xff0000, px, py);
-			});
+			});*/
 			
 			actions.register("addDots", "2", function(px:int, py:int):void{
 					this.makeDot(0xff0000, px, py);
