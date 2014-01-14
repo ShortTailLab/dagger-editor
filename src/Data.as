@@ -58,7 +58,7 @@ package
 		
 		public function init():void
 		{
-			var file:File = File.desktopDirectory.resolvePath("data.json");
+			var file:File = File.desktopDirectory.resolvePath("editor/data.json");
 			var stream:FileStream;
 			if(file.exists)
 			{
@@ -92,8 +92,9 @@ package
 				conf.timeLineUnit = 100;
 			}
 			
-			ExcelReader.getInstance().initWithRelativePath("Resource/levelData.xlsx", onDataComplete);
 			EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onDataComplete);
+			ExcelReader.getInstance().initWithNativePath(File.desktopDirectory.nativePath+"/editor/levelData.xlsx");
+			
 		}
 		
 		private var loaderDic:Dictionary;
@@ -119,7 +120,7 @@ package
 			}
 			
 				
-			var file:File = File.desktopDirectory.resolvePath("enemyMoveData.json");
+			var file:File = File.desktopDirectory.resolvePath("editor/enemyMoveData.json");
 			enemyMoveData = null;
 			if(file.exists)
 			{
@@ -137,10 +138,10 @@ package
 					{
 						enemyMoveData[item] = new Object;
 						enemyMoveData[item]["move_type"] = enemyData[item]["move_type"]; 
-						enemyMoveData[item]["move"] = new Object;
-						for(var moveItem in enemyData[item]["move"])
+						enemyMoveData[item]["move_args"] = new Object;
+						for(var moveItem in enemyData[item]["move_args"])
 						{
-							enemyMoveData[item]["move"][moveItem] = enemyData[item]["move"][moveItem];
+							enemyMoveData[item]["move_args"][moveItem] = enemyData[item]["move_args"][moveItem];
 						}
 					}
 			}
@@ -159,7 +160,7 @@ package
 		
 		public function saveLocal():void
 		{
-			var file:File = File.desktopDirectory.resolvePath("data.json");
+			var file:File = File.desktopDirectory.resolvePath("editor/data.json");
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
 			stream.writeUTFBytes(JSON.stringify(displayData));
@@ -178,7 +179,7 @@ package
 		
 		public function saveEnemyData():void
 		{
-			var file:File = File.desktopDirectory.resolvePath("enemyMoveData.json");
+			var file:File = File.desktopDirectory.resolvePath("editor/enemyMoveData.json");
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
 			stream.writeUTFBytes(JSON.stringify(enemyMoveData));
@@ -190,8 +191,13 @@ package
 			for(var type in enemyMoveData)
 			{
 				enemyData[type]["move_type"] = enemyMoveData[type]["move_type"];
-				enemyData[type]["move"] = enemyMoveData[type]["move"];
-			}
+				enemyData[type]["move_args"] = enemyMoveData[type]["move_args"];
+				
+				if(enemyMoveData[type].hasOwnProperty("attack_type"))
+					enemyData[type]["attack_type"] = enemyMoveData[type]["attack_type"];
+				if(enemyMoveData[type].hasOwnProperty("attack_args"))
+					enemyData[type]["attack_args"] = enemyMoveData[type]["attack_args"];
+			}	
 			
 			var source:Array = displayData[0].data;
 			var positions:Array = new Array;

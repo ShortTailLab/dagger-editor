@@ -73,7 +73,7 @@ package excel
 				}
 			}
 			else {
-				file = new File(File.applicationDirectory.nativePath+"/"+_path);
+				file = new File(File.applicationDirectory.nativePath+"/"+_path); 
 				if (file.exists && file.modificationDate.getTime() != _lastModifiedDate.getTime()) {
 					trace("refreshing excel data from "+file.nativePath);
 					initWithRelativePath(_path);
@@ -96,20 +96,26 @@ package excel
 				_enemyData[workSheet.getCellValue("A"+i)] = enemy;
 				enemy["face"] = workSheet.getCellValue("B"+i);
 				enemy["name"] = workSheet.getCellValue("C"+i);
-				if (int(workSheet.getCellValue("D"+i)) == 1) {
-					enemy["bullet"] = JSON.parse(workSheet.getCellValue("K"+i));
+				if (int(workSheet.getCellValue("D"+i)) == 0) {
+					enemy["attack_type"] = 0;
+					enemy["attack_args"] = new Object;
+				}
+				else
+				{
+					enemy["attack_type"] = 1;
+					enemy["attack_args"] = JSON.parse(workSheet.getCellValue("K"+i));
 				}
 				if (int(workSheet.getCellValue("E"+i)) == 0) {
 					enemy["move_type"] = 0;
 				}
 				else {
 					enemy["move_type"] = int(workSheet.getCellValue("E"+i));
-					enemy["move"] = JSON.parse(workSheet.getCellValue("F"+i));
+					enemy["move_args"] = JSON.parse(workSheet.getCellValue("F"+i));
 				}
 				enemy["level"] = int(workSheet.getCellValue("L"+i));
 				enemy["health"] = int(workSheet.getCellValue("M"+i));
-				enemy["attack"] = int(workSheet.getCellValue("N"+i));
-				enemy["defend"] = int(workSheet.getCellValue("O"+i));
+				enemy["attack_args"]["damage"] = int(workSheet.getCellValue("N"+i));
+				enemy["defense"] = int(workSheet.getCellValue("O"+i));
 				enemy["bonus"] = int(workSheet.getCellValue("P"+i));
 				enemy["rbonus"] = int(workSheet.getCellValue("Q"+i));				
 			}

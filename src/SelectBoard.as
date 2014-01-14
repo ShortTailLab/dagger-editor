@@ -72,11 +72,14 @@ package
 			
 			timeInput.text = "";
 			xInput.text = "";
+			triggerInput.text = "";
 			if(control.targets.length == 1)
 			{
 				var data:Object = MatSprite(control.targets[0]).toExportData();
 				timeInput.text = data.y;
 				xInput.text = data.x;
+				if(data.hasOwnProperty("triggerTime"))
+					triggerInput.text = data.triggerTime;
 			}
 		}
 		

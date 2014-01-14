@@ -18,6 +18,8 @@ package manager
 	import flash.net.URLVariables;
 	import flash.utils.ByteArray;
 	
+	import mx.controls.Alert;
+	
 	import by.blooddy.crypto.Base64;
 	import by.blooddy.crypto.MD5;
 
@@ -42,8 +44,14 @@ package manager
 		 * 
 		 */
 		public function uploadFilesToServer(localDiretory:File, versionPrefix:String="dagger"):Boolean {
+			if (_isUploading) {
+				return true;
+			}
+			_isUploading = true;
 			_versionPrefix = versionPrefix;
 			_localDirectoryPrefix = localDiretory.url;
+			_uploadMsg = "";
+			_numUploaded = 0;
 			if (_localDirectoryPrefix.charAt(_localDirectoryPrefix.length-1) != "/") {
 				_localDirectoryPrefix += "/";
 			}
@@ -96,12 +104,13 @@ package manager
 			var versionFile:File = new File(tmpDirectory+"/version.json");
 			var fileStream:FileStream = new FileStream();
 			fileStream.open(versionFile, FileMode.WRITE);
-			fileStream.writeUTFBytes(JSON.stringify(oldDict));
+//			fileStream.writeUTFBytes(JSON.stringify(oldDict));
+			fileStream.writeUTFBytes(JSON.stringify(_versionDict));
 			fileStream.close();
 			
-			if (_needToUpload.length > 0) {
+//			if (_needToUpload.length > 0) {
 				uploadFile(versionFile, "version.json");
-			}
+//			}
 			
 			for each (var fileKey:String in _needToUpload) {
 				var file:File = new File(_localDirectoryPrefix+fileKey);
@@ -135,6 +144,11 @@ package manager
 //				var hmac:HMAC = Crypto.getHMAC("hmac-sha1");
 //				var result:ByteArray = hmac.compute(ba1, ba2);
 //				trace(Base64.encode(result));
+				
+				if (_serverDate == null) {
+					_uploadMsg += "error: empty server date\n";
+					_serverDate = new Date();
+				}
 				
 				var headers:Array = new Array();
 				var urlHeader:URLRequestHeader = new URLRequestHeader("Date",RFCTimeFormat.toRFC802(_serverDate));
@@ -176,29 +190,45 @@ package manager
 			file.load();
 		}
 		
-		private function onHttpBack(e:HTTPStatusEvent):void {
-			trace("error");
-		}
-		
 		private function onResponse(e:HTTPStatusEvent):void {
 			trace("response code ", e.status, JSON.stringify(e.responseHeaders));
+			_uploadMsg += "上传: "+(e as HTTPStatusEvent).responseURL+"\n状态: "+((e as HTTPStatusEvent).status==200?"成功":("失败 "+(e as HTTPStatusEvent).status))+"\n";
 		}
 		
 		private function onUploadComplete(e:Event):void {
 			trace("success");
+			if ((e.currentTarget as URLLoader).data) {
+				_uploadMsg += "信息: "+JSON.stringify((e.currentTarget as URLLoader).data) +"\n";
+			}
+			_numUploaded++;
+			checkFinish();
 		}
 		
 		private function onIOError(e:IOErrorEvent):void {
 			trace("io error");
+			_uploadMsg += e.text+"\n信息: IO error\n";
+			_numUploaded++;
+			checkFinish();
 		}
 		
 		private function onSecurityError(e:SecurityErrorEvent):void {
 			trace("security error");
+			_uploadMsg += e.text+"\n信息: security error\n";
+			_numUploaded++;
+			checkFinish();
 		}
 		
 		private function onOldVersionLoadError(e:IOErrorEvent):void {
 			trace("old version file load error");
-			onOldVersionLoadError(null);
+			_uploadMsg += e.text+"\n信息: IO error\n";
+			onOldVersionLoad(null);
+		}
+		
+		private function checkFinish():void {
+			if (_numUploaded == _needToUpload.length+1) {
+				Alert.show(_uploadMsg, "上传日志");
+				_isUploading = false;
+			}
 		}
 		
 		private function scanDirectory(directory:File):void {
@@ -218,7 +248,7 @@ package manager
 						_versionDict[key]["p"] = 0;
 					}
 					else {
-						_versionDict[key]["p"] = 1;
+						_versionDict[key]["p"] = 0;
 					}
 					_versionDict[key]["h"] = getMD5Sum(file);
 				}
@@ -230,6 +260,7 @@ package manager
 			fileStream.open(file, FileMode.READ);
 			var bytesArray:ByteArray = new ByteArray();
 			fileStream.readBytes(bytesArray, 0, fileStream.bytesAvailable);
+			fileStream.close();
 			return MD5.hashBytes(bytesArray);
 		}
 		
@@ -261,6 +292,10 @@ package manager
 		private var _needToUpload:Vector.<String>;
 		private var _serverDate:Date;
 		private static var _intance:ServerManager;
+		
+		private var _uploadMsg:String;
+		private var _numUploaded:int;
+		private var _isUploading:Boolean = false;
 		
 		private const OSS_ACCESS_KEY_ID:String	 	= "z7caZBtJU2kb8g3h";
 		private const OSS_ACCESS_KEY_SECRET:String 	= "fuihVj7qMCOjExkhKm2vAyEYhBBv8R";
