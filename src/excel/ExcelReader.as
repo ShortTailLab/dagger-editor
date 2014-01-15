@@ -96,13 +96,13 @@ package excel
 				_enemyData[workSheet.getCellValue("A"+i)] = enemy;
 				enemy["face"] = workSheet.getCellValue("B"+i);
 				enemy["name"] = workSheet.getCellValue("C"+i);
-				if (int(workSheet.getCellValue("D"+i)) == 0) {
-					enemy["attack_type"] = 0;
+				if (String(workSheet.getCellValue("D"+i)) == "") {
+					enemy["attack_type"] = "";
 					enemy["attack_args"] = new Object;
 				}
 				else
 				{
-					enemy["attack_type"] = 1;
+					enemy["attack_type"] = String(workSheet.getCellValue("D"+i));
 					enemy["attack_args"] = JSON.parse(workSheet.getCellValue("K"+i));
 				}
 				if (int(workSheet.getCellValue("E"+i)) == 0) {

@@ -39,6 +39,10 @@ package
 		private var radiusInput:TextInput;
 		private var attackDamageInput:TextInput;
 		private var attackBullet:TextInput;
+		private var typeBox:ComboBox;
+		
+		private var dirXInput:TextInput;
+		private var dirYInput:TextInput;
 		
 		private var actions:ActionsCenter;
 		
@@ -59,17 +63,24 @@ package
 			icon.y = 110;
 			mapContain.addChild(icon);
 			
+			var matType:ArrayCollection = new ArrayCollection([
+				{label:"enemy",data:0},
+				{label:"player",data:1},
+				{label:"neutral",data:2}
+			]); 
+			
 			var user1:ArrayCollection = new ArrayCollection([
-				{label:"定点",data:0},
-				{label:"直线",data:1},
-				{label:"曲线",data:2},
-				{label:"追踪行走",data:3},
-				{label:"非行走",data:5},
-				{label:"巡逻行走",data:6},
+				{label:"默认",data:"Default"},
+				{label:"直线",data:"MoveDirectionAndAttack"},
+				{label:"路径停止",data:"CustomPathStopAtExit"},
+				{label:"路径自动",data:"CustomPathTangentExit"},
+				{label:"追踪行走",data:"ChaseAndAttack"},
+				{label:"非行走",data:"StayOnMap"},
+				{label:"巡逻行走",data:"MoveLoopAndAttack"}
 			]); 
 			
 			var atkData:ArrayCollection = new ArrayCollection([
-				{label:"无",data:0},
+				{label:"",data:0},
 				{label:"M",data:1},
 				{label:"R",data:2}
 			]); 
@@ -86,23 +97,38 @@ package
 				while(dots.length > 0)
 					map.removeChild(dots.pop());
 				actions.setCurrId(moveTypeBox.selectedItem.data);
+				dirXInput.visible = dirYInput.visible = (moveTypeBox.selectedItem.data == MoveType.LineWalk);
 			});
 			mapContain.addChild(moveTypeBox);
 			
-			mapContain.addChild(getLabel("速度：", 20, 185));
+			mapContain.addChild(getLabel("速度：", 20, 175));
 			speedInput = new TextInput;
 			speedInput.width = 100;
 			speedInput.height = 25;
 			speedInput.x = 20;
-			speedInput.y = 200;
-			speedInput.restrict = "0123456789";
+			speedInput.y = 190;
 			mapContain.addChild(speedInput);
 			
-			mapContain.addChild(getLabel("攻击方式:", 20, 245));
+			mapContain.addChild(getLabel("dir:", 20, 215));
+			dirXInput = new TextInput;
+			dirXInput.width = 50;
+			dirXInput.height = 25;
+			dirXInput.x = 20;
+			dirXInput.y = 230;
+			mapContain.addChild(dirXInput);
+			dirYInput = new TextInput;
+			dirYInput.width = 50;
+			dirYInput.height = 25;
+			dirYInput.x = 80;
+			dirYInput.y = 230;
+			dirYInput.restrict = "-.0123456789";
+			mapContain.addChild(dirYInput);
+			
+			mapContain.addChild(getLabel("攻击方式:", 20, 265));
 			attackTypeBox = new ComboBox();
 			attackTypeBox.width = 100;
 			attackTypeBox.x = 20;
-			attackTypeBox.y = 260;
+			attackTypeBox.y = 280;
 			attackTypeBox.dataProvider = atkData;
 			attackTypeBox.selectedIndex = 0;
 			attackTypeBox.addEventListener(Event.CHANGE, function(){
@@ -110,46 +136,53 @@ package
 			});
 			mapContain.addChild(attackTypeBox);
 			
-			mapContain.addChild(getLabel("间隔:", 20, 285));
+			mapContain.addChild(getLabel("间隔(interval):", 20, 305));
 			intervalInput = new TextInput;
 			intervalInput.width = 100;
 			intervalInput.height = 25;
 			intervalInput.x = 20;
-			intervalInput.y = 300;
-			intervalInput.restrict = "0123456789";
+			intervalInput.y = 320;
 			mapContain.addChild(intervalInput);
-			mapContain.addChild(getLabel("攻击半径:", 20, 335));
+			mapContain.addChild(getLabel("攻击半径(radius):", 20, 345));
 			radiusInput = new TextInput;
 			radiusInput.width = 100;
 			radiusInput.height = 25;
 			radiusInput.x = 20;
-			radiusInput.y = 350;
-			radiusInput.restrict = "0123456789";
+			radiusInput.y = 360;
 			mapContain.addChild(radiusInput);
-			mapContain.addChild(getLabel("伤害:", 20, 385));
+			mapContain.addChild(getLabel("伤害(damage):", 20, 385));
 			attackDamageInput = new TextInput;
 			attackDamageInput.width = 100;
 			attackDamageInput.height = 25;
 			attackDamageInput.x = 20;
 			attackDamageInput.y = 400;
-			attackDamageInput.restrict = "0123456789";
 			mapContain.addChild(attackDamageInput);
-			mapContain.addChild(getLabel("子弹类型:", 20, 435));
+			mapContain.addChild(getLabel("子弹类型(bullet):", 20, 425));
 			attackBullet = new TextInput;
 			attackBullet.width = 100;
 			attackBullet.height = 25;
 			attackBullet.x = 20;
-			attackBullet.y = 450;
-			attackBullet.restrict = "0123456789";
+			attackBullet.y = 440;
 			mapContain.addChild(attackBullet);
 			
+			mapContain.addChild(getLabel("类型:", 20, 465));
+			typeBox = new ComboBox();
+			typeBox.width = 100;
+			typeBox.x = 20;
+			typeBox.y = 480;
+			typeBox.dataProvider = matType;
+			typeBox.selectedIndex = 0;
+			typeBox.addEventListener(Event.CHANGE, function(){
+				
+			});
+			mapContain.addChild(typeBox);
 			
 			var btn:Button = new Button;
 			btn.label = "保存";
 			btn.width = 50;
 			btn.height = 30;
 			btn.x = 45; 
-			btn.y = 500;
+			btn.y = 520;
 			btn.addEventListener(MouseEvent.CLICK, onSave);
 			mapContain.addChild(btn);
 
@@ -170,55 +203,61 @@ package
 			initActions();
 			this.addEventListener(CloseEvent.CLOSE, onClose);
 			
-			if(Data.getInstance().enemyMoveData.hasOwnProperty(target.type))
+			if(Data.getInstance().enemyEditData.hasOwnProperty(target.type))
 			{
-				var data:Object = Data.getInstance().enemyMoveData[target.type];
-				if(!data.hasOwnProperty("move_type"))
+				var data:Object = Data.getInstance().enemyEditData[target.type];
+				if(data.hasOwnProperty("move_type"))
 				{
-					Alert.show("move_type没有定义！");
-					PopUpManager.removePopUp(this);
-					return;
-				}
-				var moveType:int = data["move_type"];
-				for(var i:int = 0;  i < user1.length; i++)
-					if(user1[i].data == moveType)
+					var moveType:String = data["move_type"];
+					for(var i:int = 0;  i < user1.length; i++)
+						if(user1[i].data == moveType)
+						{
+							moveTypeBox.selectedIndex = i;
+							break;
+						}
+					actions.setCurrId(moveTypeBox.selectedItem.data);
+					if(data.hasOwnProperty("move_args"))
 					{
-						moveTypeBox.selectedIndex = i;
-						break;
+						speedInput.text = Data.getInstance().enemyEditData[target.type]["move_args"]["speed"];
+						var recordDots:Array = null;
+						if(moveType == MoveType.Wander && data["move_args"].hasOwnProperty("loop"))
+							recordDots = Data.getInstance().enemyEditData[target.type]["move_args"].loop;
+						else if((moveType == MoveType.CurveWalk || moveType == MoveType.CurveAndOut) && data["move_args"].hasOwnProperty("route"))
+						{
+							var route:Array = data["move_args"].route;
+							for(var i:int = 0; i < route.length; i++)
+							{
+								var color:uint = i%2==0 ? 0xff0000 : 0x00ff00;
+								var pos:Array = route[i] as Array;
+								makeDot(color, pos[0]*0.5, 480-pos[1]*0.5);
+							}
+							render();
+						}
+						if(moveType == MoveType.LineWalk)
+						{
+							var pos:Array = Data.getInstance().enemyEditData[target.type]["move_args"].dir as Array;
+							dirXInput.text = pos[0];
+							dirYInput.text = pos[1];
+						}
+						if(recordDots)
+							for(var d in recordDots)
+							{
+								var pos:Array = recordDots[d] as Array;
+								addDot(pos[0]*0.5, 480-pos[1]*0.5);
+							}
 					}
-				actions.setCurrId(moveTypeBox.selectedItem.data);
-				if(!data.hasOwnProperty("move_args"))
-				{
-					Alert.show("move_args没有定义！");
-					PopUpManager.removePopUp(this);
-					return;
+					
 				}
-				speedInput.text = Data.getInstance().enemyMoveData[target.type]["move_args"]["speed"];
-				var recordDots:Array = null;
-				if(moveType == MoveType.Wander && data["move_args"].hasOwnProperty("loop"))
-					recordDots = Data.getInstance().enemyMoveData[target.type]["move_args"].loop;
-				else if(moveType == MoveType.CurveWalk && data["move_args"].hasOwnProperty("route"))
-				{
-					var route:Array = data["move_args"].route;
-					for(var i:int = 0; i < route.length; i++)
-					{
-						var color:uint = i%2==0 ? 0xff0000 : 0x00ff00;
-						var pos:Array = route[i] as Array;
-						makeDot(color, pos[0]*0.5, 480-pos[1]*0.5);
-					}
-					render();
-				}
-				if(recordDots)
-					for(var d in recordDots)
-					{
-						var pos:Array = recordDots[d] as Array;
-						addDot(pos[0]*0.5, 480-pos[1]*0.5);
-					}
 				
 				if(data.hasOwnProperty("attack_type"))
 				{
-					var atkType:int = data["attack_type"];
-					attackTypeBox.selectedIndex = atkType;
+					for(var i:int = 0;  i < atkData.length; i++)
+						if(atkData[i].label == data["attack_type"])
+						{
+							attackTypeBox.selectedIndex = i;
+							break;
+						}
+					attackBullet.visible = data["attack_type"] == "R";
 				}
 				
 				if(data.hasOwnProperty("attack_args"))
@@ -232,9 +271,11 @@ package
 						attackBullet.text = data["attack_args"].bullet;
 				}
 				
-				attackBullet.visible = attackTypeBox.selectedItem.data == 2;
+				if(data.hasOwnProperty("type"))
+				{
+					typeBox.selectedIndex = data["typeIndex"];
+				}
 			}
-			
 		}
 		
 		
@@ -252,6 +293,17 @@ package
 			
 			
 			actions.register("addDots", String(MoveType.CurveWalk), function(px:int, py:int):void{
+				if(this.dots.length > 0)
+				{
+					var px1:Number = (px + this.dots[dots.length-1].x)*0.5;
+					var py1:Number = (py + this.dots[dots.length-1].y)*0.5;
+					this.makeDot(0x00ff00, px1, py1);
+				}
+				this.makeDot(0xff0000, px, py);
+				this.render();
+			});
+			
+			actions.register("addDots", String(MoveType.CurveAndOut), function(px:int, py:int):void{
 				if(this.dots.length > 0)
 				{
 					var px1:Number = (px + this.dots[dots.length-1].x)*0.5;
@@ -320,7 +372,7 @@ package
 		}
 		private function onDotMove(event:MouseEvent):void
 		{
-			if(moveTypeBox.selectedItem.data == MoveType.CurveWalk)
+			if(moveTypeBox.selectedItem.data == MoveType.CurveWalk || moveTypeBox.selectedItem.data == MoveType.CurveAndOut)
 				render();
 		}
 		
@@ -332,10 +384,10 @@ package
 		
 		private function onDelete(event:ContextMenuEvent):void
 		{
-			var type:int = moveTypeBox.selectedItem.data;
+			var type:String = moveTypeBox.selectedItem.data;
 			for(var i:int = 0; i < dots.length; i++)
 				if(dots[i] == event.contextMenuOwner)
-					if(type == MoveType.CurveWalk)
+					if(type == MoveType.CurveWalk || type == MoveType.CurveAndOut)
 					{
 						var relatDotIndex:int = (i==0 || i%2 == 1) ? i : i-1;
 						map.removeChild(dots[relatDotIndex]);
@@ -360,45 +412,68 @@ package
 				return;
 			}
 			
-			var type:int = moveTypeBox.selectedItem.data;
+			var type:String = moveTypeBox.selectedItem.data;
 			var route:Array = new Array;
 			for(var i:int = 0; i < dots.length; i++)
 			{
 				var pos:Array = new Array;
-				if(type == 4)
-				{
-					pos.push((dots[i].x - dots[0].x)*2);
-					pos.push((dots[i].y - dots[0].y)*2);
-				}
-				else
-				{
-					pos.push((dots[i].x*2));
-					pos.push((480-dots[i].y)*2);
-				}
+				pos.push((dots[i].x*2));
+				pos.push((480-dots[i].y)*2);
+				
 				route.push(pos);
 			}
 			
-			Data.getInstance().enemyMoveData[editTarget.type] = new Object;
-			Data.getInstance().enemyMoveData[editTarget.type]["move_type"] = type;
-			Data.getInstance().enemyMoveData[editTarget.type]["move_args"] = new Object;
-			Data.getInstance().enemyMoveData[editTarget.type]["move_args"].speed = int(speedInput.text);
-			if(type == MoveType.Wander)
-				Data.getInstance().enemyMoveData[editTarget.type]["move_args"].loop = route;
-			else if(type == MoveType.CurveWalk)
-				Data.getInstance().enemyMoveData[editTarget.type]["move_args"].route = route;
-			
+			if(!Data.getInstance().enemyEditData.hasOwnProperty(editTarget.type))
+				Data.getInstance().enemyEditData[editTarget.type] = new Object;
+			var enemyData:Object = Data.getInstance().enemyEditData[editTarget.type];
+			if(type == MoveType.Default && enemyData.hasOwnProperty("move_type"))
+			{
+				delete enemyData["move_type"];
+				delete enemyData["move_args"];
+			}
+			else
+			{
+				enemyData["move_type"] = type;
+				enemyData["move_args"] = new Object;
+				enemyData["move_args"].speed = int(speedInput.text);
+				if(type == MoveType.Wander)
+					enemyData["move_args"].loop = route;
+				else if(type == MoveType.CurveWalk || type == MoveType.CurveAndOut)
+				{
+					enemyData["move_args"].route = route;
+				}
+				else if(type == MoveType.LineWalk)
+				{
+					var pos:Array = new Array;
+					pos.push(dirXInput.text.length>0?Number(dirXInput.text):0);
+					pos.push(dirYInput.text.length>0?Number(dirYInput.text):0);
+					enemyData["move_args"].dir = pos;
+				}
+			}
+				
 			var atkType:int = attackTypeBox.selectedItem.data;
-			Data.getInstance().enemyMoveData[editTarget.type]["attack_type"] = atkType;
-			Data.getInstance().enemyMoveData[editTarget.type]["attack_args"] = new Object;
-			if(intervalInput.text.length > 0)
-				Data.getInstance().enemyMoveData[editTarget.type]["attack_args"].interval = intervalInput.text;
-			if(radiusInput.text.length >= 0)
-				Data.getInstance().enemyMoveData[editTarget.type]["attack_args"].radius = radiusInput.text;
-			if(attackDamageInput.text.length > 0)
-				Data.getInstance().enemyMoveData[editTarget.type]["attack_args"].damage = attackDamageInput.text;
-			if(attackBullet.text.length > 0)
-				Data.getInstance().enemyMoveData[editTarget.type]["attack_args"].bullet = attackBullet.text;
+			if(atkType == 0 && enemyData.hasOwnProperty("attack_type"))
+			{
+				delete enemyData["attack_type"];
+				delete enemyData["attack_args"];
+			}
+			else
+			{
+				Data.getInstance().enemyEditData[editTarget.type]["attack_type"] = attackTypeBox.selectedItem.label;
+				Data.getInstance().enemyEditData[editTarget.type]["attack_args"] = new Object;
+				if(intervalInput.text.length > 0)
+					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].interval = intervalInput.text;
+				if(radiusInput.text.length >= 0)
+					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].radius = radiusInput.text;
+				if(attackDamageInput.text.length > 0)
+					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].damage = attackDamageInput.text;
+				if(attackBullet.text.length > 0)
+					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].bullet = attackBullet.text;
+			}
 			
+			enemyData["type"] = typeBox.selectedItem.label;
+			enemyData["typeIndex"] = typeBox.selectedIndex;
+				
 			Data.getInstance().saveEnemyData();
 			Alert.show("保存成功");
 		}
@@ -508,12 +583,13 @@ class ActionsCenter
 
 class MoveType
 {
-	static public var NailPoint:int = 0;
-	static public var LineWalk:int = 1;
-	static public var CurveWalk:int = 2;
-	static public var StalkWalk:int = 3;
-	static public var STATIC:int = 5;
-	static public var Wander:int = 6;
+	static public var Default:String = "Default"
+	static public var LineWalk:String = "MoveDirectionAndAttack";
+	static public var CurveWalk:String = "CustomPathStopAtExit";
+	static public var StalkWalk:String = "ChaseAndAttack";
+	static public var STATIC:String = "StayOnMap"
+	static public var Wander:String = "MoveLoopAndAttack";
+	static public var CurveAndOut:String = "CustomPathTangentExit"
 }
 
 

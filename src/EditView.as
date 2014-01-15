@@ -26,17 +26,12 @@ package
 	import mx.events.SliderEvent;
 	
 	import spark.components.Button;
-	import spark.components.List;
 	import spark.components.TextInput;
-	
-	import bgedit.TmxMapView;
-	
-	import net.pixelpracht.tmx.TmxMap;
 	
 	
 	public class EditView extends UIComponent
 	{
-		static public var speed:Number = 20;//pixel per second
+		static public var speed:Number = 32;//pixel per second
 		
 		private var map:UIComponent = null;
 		private var mapMask:Sprite = null;

@@ -15,6 +15,7 @@ package
 	import flash.filesystem.FileStream;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
+	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
 	
@@ -32,7 +33,7 @@ package
 		public var conf:Object = null;
 		public var matsData:Object = null;
 		public var enemyData:Object = null;
-		public var enemyMoveData:Object = null;
+		public var enemyEditData:Object = null;
 		public var displayData:Array = null;
 		public var levelXML:XML = null;
 		public var enemySkinDic:Dictionary;
@@ -89,11 +90,11 @@ package
 			else
 			{
 				conf = new Object;
-				conf.timeLineUnit = 100;
+				conf.timeLineUnit = 32;
 			}
 			
 			EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onDataComplete);
-			ExcelReader.getInstance().initWithNativePath(File.desktopDirectory.nativePath+"/editor/levelData.xlsx");
+			ExcelReader.getInstance().initWithNativePath(File.desktopDirectory.resolvePath("editor/levelData.xlsx").nativePath);
 			
 		}
 		
@@ -110,40 +111,45 @@ package
 			for(var i in enemyData)
 				skinLength++;
 			
+			var f:File = File.desktopDirectory.resolvePath("editor/skins");
+			if(!f.exists)
+			{
+				Alert.show("editor/skins文件夹不存在！");
+				return;
+			}
 			for(var item in enemyData)
 			{
-				var path:String = enemyData[item].face+".png";
-				var loader = new Loader;
+				var bytes:ByteArray = new ByteArray;
+				var file:File = File.desktopDirectory.resolvePath("editor/skins/"+enemyData[item].face+".png");
+				var stream:FileStream = new FileStream;
+				stream.open(file, FileMode.READ);
+				stream.readBytes(bytes);
+				stream.close();
+				
+				var loader:Loader = new Loader;
 				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadSkin);
-				loader.load(new URLRequest("Resource/"+path));
+				loader.loadBytes(bytes);
 				loaderDic[loader] = item;
 			}
 			
 				
 			var file:File = File.desktopDirectory.resolvePath("editor/enemyMoveData.json");
-			enemyMoveData = null;
+			enemyEditData = null;
 			if(file.exists)
 			{
 				var stream:FileStream = new FileStream;
 				stream.open(file, FileMode.READ);
-				enemyMoveData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				enemyEditData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
 			}
 			
-			if(!enemyMoveData)
+			if(!enemyEditData)
 			{
-				enemyMoveData = new Object;
+				enemyEditData = new Object;
 				for(var item in enemyData)
-					if(enemyData[item].hasOwnProperty("move_type"))
-					{
-						enemyMoveData[item] = new Object;
-						enemyMoveData[item]["move_type"] = enemyData[item]["move_type"]; 
-						enemyMoveData[item]["move_args"] = new Object;
-						for(var moveItem in enemyData[item]["move_args"])
-						{
-							enemyMoveData[item]["move_args"][moveItem] = enemyData[item]["move_args"][moveItem];
-						}
-					}
+				{
+					enemyEditData[item] = new Object;
+				}
 			}
 		}
 		private var loadCount:int = 0;
@@ -182,21 +188,30 @@ package
 			var file:File = File.desktopDirectory.resolvePath("editor/enemyMoveData.json");
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(JSON.stringify(enemyMoveData));
+			stream.writeUTFBytes(JSON.stringify(enemyEditData));
 			stream.close();
 		}
 		
 		public function exportJS():void
 		{
-			for(var type in enemyMoveData)
+			for(var type in enemyEditData)
 			{
-				enemyData[type]["move_type"] = enemyMoveData[type]["move_type"];
-				enemyData[type]["move_args"] = enemyMoveData[type]["move_args"];
+				if(enemyEditData[type].hasOwnProperty("move_type"))
+				{
+					enemyData[type]["move_type"] = enemyEditData[type]["move_type"];
+					enemyData[type]["move_args"] = enemyEditData[type]["move_args"];
+				}
 				
-				if(enemyMoveData[type].hasOwnProperty("attack_type"))
-					enemyData[type]["attack_type"] = enemyMoveData[type]["attack_type"];
-				if(enemyMoveData[type].hasOwnProperty("attack_args"))
-					enemyData[type]["attack_args"] = enemyMoveData[type]["attack_args"];
+				if(enemyEditData[type].hasOwnProperty("attack_type"))
+				{
+					enemyData[type]["attack_type"] = enemyEditData[type]["attack_type"];
+					enemyData[type]["attack_args"] = enemyEditData[type]["attack_args"];
+				}
+				
+				if(enemyEditData[type].hasOwnProperty("type"))
+					enemyData[type]["type"] = enemyEditData[type]["type"];
+				else
+					enemyData[type]["type"] = "enemy";
 			}	
 			
 			var source:Array = displayData[0].data;
