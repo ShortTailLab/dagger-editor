@@ -49,6 +49,7 @@ package
 			menu.addItem(item);
 			menu.addItem(item2);
 			menu.addItem(item3);
+			target.parent.setChildIndex(target, target.parent.numChildren-1);
 			target.contextMenu = menu;
 			target.select(true);
 			target.enablePosChangeDispatch(true);

@@ -20,7 +20,6 @@ package
 			var posData:Array = Formation.getInstance().formations[name];
 			dots = new Shape;
 			this.addChild(dots);
-			dots.graphics.lineStyle(1);
 			for each(var pos in posData)
 			{
 				dots.graphics.beginFill(0xff0000);
@@ -47,7 +46,7 @@ package
 		
 		public function select(value:Boolean):void
 		{
-			var color:uint = value ? 0xff0000 : 0x000000;
+			var color:uint = value ? 0xff0000 : 0;
 			var transform:ColorTransform = new ColorTransform;
 			transform.color = color;
 			frame.transform.colorTransform = transform;

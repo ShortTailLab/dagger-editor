@@ -3,6 +3,7 @@ package
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
+	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.ui.Keyboard;
 	
@@ -24,10 +25,10 @@ package
 			this.control = _control;
 			control.addEventListener(Event.CHANGE, onChange);
 			
-			var selectLabel:TextField = Utils.getLabel("选择", 0, 0, 14);
-			this.addChild(selectLabel);
+			//var selectLabel:TextField = Utils.getLabel("选择", 0, 0, 14);
+			//this.addChild(selectLabel);
 			
-			var timeLabel:TextField = Utils.getLabel("时间:(ms)", 0, 70, 14);
+			var timeLabel:TextField = Utils.getLabel("时间:(ms)", 0, 0, 14);
 			this.addChild(timeLabel);
 			timeInput = new TextInput;
 			timeInput.width = 80;
@@ -96,17 +97,18 @@ package
 			{
 				selectContainer = new Sprite;
 				selectContainer.x = 0;
-				selectContainer.y = 15;
+				selectContainer.y = 240;
 				this.addChild(selectContainer);
 				
-				var num:int = Math.min(5, length);
-				for(var i:int = 0; i < num; i++)
+				for(var i:int = 0; i < length; i++)
 				{
-					var m:MatSprite = new MatSprite(control.targets[i].type, 40);
-					m.x = 20*i;
-					m.y = 45;
+					var m:MatSprite = new MatSprite(control.targets[i].type, 40, 30);
+					var pos:Point = Utils.makeGrid(new Point(0, 0), 50, 8, i);
+					m.x = pos.x;
+					m.y = pos.y;
 					selectContainer.addChild(m);
 				}
+				
 				if(length == 1)
 					MatSprite(control.targets[0]).addEventListener(MsgEvent.POS_CHANGE, update);
 				

@@ -26,29 +26,34 @@ package
 		private var isShowType:Boolean = false;
 		private var skin:Sprite = null;
 		private var selectFrame:Shape = null;
+		private var typeText:TextField = null;
+		private var typeSpr:Sprite = null;
 		
-		public function MatSprite(_type:String, size:int = -1, showType:Boolean = false)
+		public function MatSprite(_type:String, size:int = -1, textWidth:int = -1)
 		{
 			this.type = _type;
-			this.isShowType = showType;
 			this.trimSize = size;
-			
-			if(isShowType)
-			{
-				var typeText:TextField = new TextField;
-				typeText.defaultTextFormat = new TextFormat(null, 20);
-				typeText.autoSize = TextFieldAutoSize.CENTER;
-				typeText.selectable = false;
-				typeText.width = width;
-				typeText.height = 20;
-				typeText.x = -typeText.textWidth*0.5;
-				typeText.y = -typeText.textHeight*0.5;
-				typeText.text = this.type;
-				this.addChild(typeText);
-			}
 			
 			skin = new Sprite;
 			this.addChild(skin);
+			
+			if(textWidth > 0)
+			{
+				typeSpr = new Sprite;
+				typeText = new TextField;
+				typeText.defaultTextFormat = new TextFormat(null, 20);
+				typeText.autoSize = TextFieldAutoSize.CENTER;
+				typeText.selectable = false;
+				typeText.x = -typeText.textWidth*0.5;
+				typeText.y = -typeText.textHeight*0.5;
+				typeText.text = this.type;
+				typeSpr.addChild(typeText);
+				this.addChild(typeSpr);
+				var scale:Number = textWidth/typeSpr.width;
+				typeSpr.scaleX = typeSpr.scaleY = scale;
+			}
+			
+			
 			if(Data.getInstance().enemySkinDic.hasOwnProperty(type))
 			{
 				var bmpd:BitmapData = Data.getInstance().enemySkinDic[type];

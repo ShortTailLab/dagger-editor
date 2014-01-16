@@ -239,7 +239,6 @@
 			{
 				if(e.detail == Alert.OK)
 				{
-					
 					var index:int = _tree.selectedIndex
 					if(index != -1)
 					{

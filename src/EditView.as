@@ -1,5 +1,7 @@
 package
 {
+	import com.hurlant.crypto.symmetric.NullPad;
+	
 	import flash.display.Bitmap;
 	import flash.display.DisplayObject;
 	import flash.display.Shape;
@@ -33,6 +35,7 @@ package
 	{
 		static public var speed:Number = 32;//pixel per second
 		
+		private var bg:UIComponent = null;
 		private var map:UIComponent = null;
 		private var mapMask:Sprite = null;
 		public var mapBg:UIComponent = null;
@@ -62,6 +65,8 @@ package
 		
 		private var main:MapEditor = null;
 		
+		private var tipsContainer:Sprite = null;
+		
 		[Embed(source="background.jpg")]
 		static public var BgImage:Class;
 		
@@ -72,6 +77,9 @@ package
 			this.canvas.addEventListener(ResizeEvent.RESIZE, onResize);
 			
 			displayMats = new Array;
+			
+			bg = new UIComponent;
+			this.addChild(bg);
 			
 			map = new UIComponent;
 			this.addChild(map);
@@ -143,6 +151,7 @@ package
 			this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			bg.addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
 		}
 		
 		public function init(_levelName:String):void
@@ -266,7 +275,7 @@ package
 						for each(var p in posData)
 						{
 							var type:String = main.matsView.selected.type;
-							var mat:MatSprite = new MatSprite(type);
+							var mat:MatSprite = new MatSprite(type, -1, 30);
 							display(mat, e.data.x+p.x, -map.y-e.data.y+p.y);
 						}
 					}
@@ -274,7 +283,7 @@ package
 				else if(main.matsView.selected)
 				{
 					var type:String = main.matsView.selected.type;
-					var mat:MatSprite = new MatSprite(type);
+					var mat:MatSprite = new MatSprite(type, -1, 30);
 					display(mat, e.data.x, -map.y-e.data.y);
 				}
 			}
@@ -300,6 +309,48 @@ package
 				selectRect.width = localPoint.x - selectRect.x;
 				selectRect.height = localPoint.y - selectRect.y;
 				updateSelectRect();
+			}
+			
+			if(main.matsView.selected && !tipsContainer)
+			{
+				tipsContainer = new Sprite;
+				tipsContainer.alpha = 0.5;
+				var type:String = main.matsView.selected.type;
+				if(main.fView.selected)
+				{
+					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
+					for each(var p in posData)
+					{
+						var mat:MatSprite = new MatSprite(type, -1);
+						mat.x = p.x;
+						mat.y = p.y;
+						tipsContainer.addChild(mat);
+					}
+				}
+				else
+				{
+					var mat:MatSprite = new MatSprite(type, -1);
+					tipsContainer.addChild(mat);
+				}
+				this.addChild(tipsContainer);
+			}
+			else if(!main.matsView.selected && tipsContainer)
+			{
+				this.removeChild(tipsContainer);
+				tipsContainer = null;
+			}
+			if(tipsContainer)
+			{
+				tipsContainer.x = this.mouseX;
+				tipsContainer.y = this.mouseY;
+			}
+		}
+		private function onMouseOut(e:MouseEvent):void
+		{
+			if(tipsContainer)
+			{
+				this.removeChild(tipsContainer);
+				tipsContainer = null;
 			}
 		}
 		private function onMouseUp(e:MouseEvent):void{
@@ -412,10 +463,10 @@ package
 		{
 			this.x = canvas.width*0.5;
 			this.y = canvas.height;
-			map.graphics.clear();
-			map.graphics.beginFill(0xffffff);
-			map.graphics.drawRect(-canvas.width*0.5, -canvas.height, canvas.width, canvas.height);
-			map.graphics.endFill();
+			bg.graphics.clear();
+			bg.graphics.beginFill(0xAFEEEE);
+			bg.graphics.drawRect(-canvas.width*0.5, -canvas.height, canvas.width, canvas.height);
+			bg.graphics.endFill();
 			mapMask.graphics.clear();
 			mapMask.graphics.beginFill(0xffffff);
 			mapMask.graphics.drawRect(-canvas.width*0.5, -canvas.height, canvas.width, canvas.height);

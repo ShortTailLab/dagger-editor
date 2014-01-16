@@ -44,7 +44,7 @@ package
 			var data:Object = Data.getInstance().enemyData;
 			for(var item in data)
 			{
-				var view:MatSprite = new MatSprite(item, 100, true);
+				var view:MatSprite = new MatSprite(item, 100, 60);
 				view.doubleClickEnabled = true;
 				view.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
 				view.addEventListener(MouseEvent.CLICK, onMatClick);
