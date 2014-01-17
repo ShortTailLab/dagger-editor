@@ -196,6 +196,12 @@ package
 		{
 			for(var type in enemyEditData)
 			{
+				if(!enemyData.hasOwnProperty(type))
+				{
+					delete enemyEditData[type];
+					break;
+				}
+				
 				if(enemyEditData[type].hasOwnProperty("move_type"))
 				{
 					enemyData[type]["move_type"] = enemyEditData[type]["move_type"];

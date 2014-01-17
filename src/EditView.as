@@ -30,18 +30,22 @@ package
 	import spark.components.Button;
 	import spark.components.TextInput;
 	
+	import editEntity.EditBase;
+	import editEntity.MatFactory;
+	
 	
 	public class EditView extends UIComponent
 	{
 		static public var speed:Number = 32;//pixel per second
 		
 		private var bg:UIComponent = null;
-		private var map:UIComponent = null;
+		public var map:UIComponent = null;
+		public var snapBtn:StateBtn = null;
 		private var mapMask:Sprite = null;
 		public var mapBg:UIComponent = null;
 		private var timeLine:TimeLine = null;
 		private var slider:VSlider = null;
-		private var snapBtn:StateBtn = null;
+		
 		private var unitLabel:TextField = null;
 		private var unitInput:TextInput = null;
 		private var inputField:TextInput = null;
@@ -53,14 +57,11 @@ package
 		private var currTime:Number = -1;
 		private var levelName:String = "";
 		
-		private var displayMats:Array;
-		
 		private var mapPieces:Dictionary;
 		private var mapFreePieces:Array;
 		
-		private var selectControl:SelectControl;
-		private var selectRect:Rectangle;
-		private var selectRectShape:Shape;
+		public var matsControl:EditMatsControl;
+		public var selectControl:SelectControl;
 		private var selectBoard:SelectBoard;
 		
 		private var main:MapEditor = null;
@@ -75,8 +76,6 @@ package
 			this.main = _main;
 			this.canvas = _container;
 			this.canvas.addEventListener(ResizeEvent.RESIZE, onResize);
-			
-			displayMats = new Array;
 			
 			bg = new UIComponent;
 			this.addChild(bg);
@@ -134,9 +133,9 @@ package
 			snapBtn = new StateBtn("黏贴");
 			this.addChild(snapBtn);
 			
+			matsControl = new EditMatsControl(this);
+			
 			selectControl = new SelectControl(this);
-			selectRect = new Rectangle(0, 0, 0, 0);
-			selectRectShape = null;
 			
 			selectBoard = new SelectBoard(selectControl);
 			this.addChild(selectBoard);
@@ -158,36 +157,24 @@ package
 		{
 			if(levelName != "")
 				save();
-			
-			clear();
+			matsControl.clear();
 			
 			this.levelName = _levelName;
 			var level = Data.getInstance().getLevelData(levelName);
-			for each(var item:Object in level.data)
-			{
-				var mat:MatSprite = new MatSprite(item.type);
-				mat.initFromData(item);
-				display(mat, mat.x, mat.y);
-			}
+			matsControl.init(level.data);
 			var end:int = level.endTime != 0? level.endTime : canvas.height/speed;
 			setEndTime(end);
 			setCurrTime(0);
 		}
-		
 		public function clear():void
 		{
-			for each(var m:MatSprite in displayMats)
-				map.removeChild(m);
-			displayMats.splice(0, displayMats.length);
+			matsControl.clear();
 		}
 		
 		public function save():void
 		{
 			Data.getInstance().conf.timeLineUnit = int(unitInput.text);
-			
-			var data:Array = new Array;
-			for each(var m:MatSprite in displayMats)
-				data.push(m.toExportData());
+			var data:Array = matsControl.getMatsData();
 			Data.getInstance().updateLevelData(levelName, data, endTime);
 		}
 		private function onAddToStage(e:Event):void
@@ -216,7 +203,7 @@ package
 				var dy:Number = map.mouseY - currDragPoint.y;
 				if(dx != 0 || dy != 0)
 				{
-					for each(var m:MatSprite in draggingMats)
+					for each(var m:Sprite in draggingMats)
 					{
 						m.x += dx;
 						m.y += dy;
@@ -246,9 +233,9 @@ package
 			if(code == Keyboard.DELETE && selectControl.targets.length > 0)
 			{
 				var copy:Array = selectControl.targets.slice(0, selectControl.targets.length);
-				for each(var m:MatSprite in copy)
+				for each(var m:EditBase in copy)
 				{
-					removeMat(m);
+					matsControl.remove(m.id);
 				}
 			}
 		}
@@ -257,15 +244,13 @@ package
 			if(main.matsView.selected)
 			{
 				var type:String = main.matsView.selected.type;
-				var mat:MatSprite = new MatSprite(type);
-				
-				display(mat, e.localX, e.localY);
+				matsControl.add(type, e.localX, e.localY);
 			}
 		}
 		private function onGridClick(e:TimeLineEvent):void
 		{
 			selectControl.unselect();
-			if(!selectRectShape)
+			if(!selectControl.selectFrame)
 			{
 				if(main.fView.selected)
 				{
@@ -275,41 +260,26 @@ package
 						for each(var p in posData)
 						{
 							var type:String = main.matsView.selected.type;
-							var mat:MatSprite = new MatSprite(type, -1, 30);
-							display(mat, e.data.x+p.x, -map.y-e.data.y+p.y);
+							matsControl.add(type, e.data.x+p.x, -map.y-e.data.y+p.y);
 						}
 					}
 				}
 				else if(main.matsView.selected)
 				{
 					var type:String = main.matsView.selected.type;
-					var mat:MatSprite = new MatSprite(type, -1, 30);
-					display(mat, e.data.x, -map.y-e.data.y);
+					matsControl.add(type, e.data.x, -map.y-e.data.y);
 				}
 			}
 			
 		}
 		
-		private var isSelecting:Boolean = false;
 		private function onMouseDown(e:MouseEvent):void{
 			var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
-			selectRect.x = localPoint.x;
-			selectRect.y = localPoint.y;
-			isSelecting = true;
+			selectControl.onBeginSelect(localPoint.x, localPoint.y);
 		}
 		private function onMouseMove(e:MouseEvent):void{
-			if(isSelecting)
-			{
-				var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
-				if(!selectRectShape)
-				{
-					selectRectShape = new Shape;
-					map.addChild(selectRectShape);
-				}
-				selectRect.width = localPoint.x - selectRect.x;
-				selectRect.height = localPoint.y - selectRect.y;
-				updateSelectRect();
-			}
+			var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
+			selectControl.onUpdateSelect(localPoint.x, localPoint.y);
 			
 			if(main.matsView.selected && !tipsContainer)
 			{
@@ -321,7 +291,7 @@ package
 					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
 					for each(var p in posData)
 					{
-						var mat:MatSprite = new MatSprite(type, -1);
+						var mat:EditBase = MatFactory.createMat(type);
 						mat.x = p.x;
 						mat.y = p.y;
 						tipsContainer.addChild(mat);
@@ -329,8 +299,8 @@ package
 				}
 				else
 				{
-					var mat:MatSprite = new MatSprite(type, -1);
-					tipsContainer.addChild(mat);
+					var mat2:EditBase = MatFactory.createMat(type);
+					tipsContainer.addChild(mat2);
 				}
 				this.addChild(tipsContainer);
 			}
@@ -341,8 +311,8 @@ package
 			}
 			if(tipsContainer)
 			{
-				tipsContainer.x = this.mouseX;
-				tipsContainer.y = this.mouseY;
+				tipsContainer.x = this.mouseX-1;
+				tipsContainer.y = this.mouseY-1;
 			}
 		}
 		private function onMouseOut(e:MouseEvent):void
@@ -354,64 +324,63 @@ package
 			}
 		}
 		private function onMouseUp(e:MouseEvent):void{
-			isSelecting = false;
-			if(selectRectShape)
-			{
-				selectControl.selectMul(getSelectMats(selectRectShape));
-				map.removeChild(selectRectShape);
-				selectRectShape = null;
-			}
+			selectControl.onEndSelect();
 		}
-		private function onSliderMouseDown(e:MouseEvent):void
-		{
-			e.stopPropagation();
-		}
-		private function getSelectMats(frame:DisplayObject):Array
-		{
-			var result:Array = new Array;
-			for each(var m:MatSprite in displayMats)
-				if(m.hitTestObject(frame))
-					result.push(m);
-			return result;
-		}
-		
 		private var draggingMats:Array = null;
 		private var currDragPoint:Point;
+		private var isClick:Boolean =false;
 		private function onMatMouseDown(e:MouseEvent):void
 		{
 			e.stopPropagation();
+			isClick = true;
 			currDragPoint = new Point(map.mouseX, map.mouseY);
-			var _draggingMat:MatSprite = e.currentTarget as MatSprite;
+			var _draggingMat:EditBase = e.currentTarget as EditBase;
+			
+			
+			
 			if(_draggingMat.isSelected)
 				draggingMats = selectControl.targets;
 			else
-				draggingMats = new Array(e.currentTarget as MatSprite);
+				draggingMats = new Array(e.currentTarget as EditBase);
 			
-			this.stage.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
+			stage.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
 		}
+		
 		
 		private function onMatMouseUp(e:MouseEvent):void {
 			if(snapBtn.isOn)
 				snap(draggingMats);
 			
 			draggingMats = null;
+			
 			this.stage.removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
 		}
 		private function onMatMiddleClick(e:MouseEvent):void {
 			e.stopPropagation();
-			removeMat(e.currentTarget as MatSprite);
+		}
+		private function onMatMove(e:MouseEvent):void
+		{
+			isClick = false;
 		}
 		private function onMatClick(e:MouseEvent):void
 		{
 			e.stopPropagation();
-
-			var target:MatSprite = e.currentTarget as MatSprite;
-			selectControl.select(target);
+			if(isClick)
+			{
+				var target:EditBase = e.currentTarget as EditBase;
+				selectControl.select(target);
+				isClick =false;
+			}
+		}
+		
+		private function onSliderMouseDown(e:MouseEvent):void
+		{
+			e.stopPropagation();
 		}
 		
 		private function snap(mats:Array):void
 		{
-			for each(var m:MatSprite in mats)
+			for each(var m:EditBase in mats)
 			{
 				var pos:Point = new Point(m.x, m.y);
 				var pointOnGrid:Point = timeLine.globalToLocal(map.localToGlobal(pos));
@@ -420,41 +389,29 @@ package
 				m.y = -map.y-p.y;
 			}
 		}
-		private function display(mat:MatSprite, px:Number, py:Number):void
+		public function listen(mat:EditBase):void
 		{
 			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
 			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
+			mat.addEventListener(MouseEvent.MOUSE_MOVE, onMatMove);
 			mat.addEventListener(MouseEvent.CLICK, onMatClick);
-			mat.x = px;
-			mat.y = py;
-			map.addChild(mat);
-			displayMats.push(mat);
 		}
 		public function copySelect():void
 		{
 			var newMats:Array = new Array;
-			for each(var m:MatSprite in selectControl.targets)
+			for each(var m:EditBase in selectControl.targets)
 			{
-				var newM:MatSprite = new MatSprite(m.type);
-				display(newM, m.x+30, m.y+30);
-				newMats.push(newM);
+				newMats.push(matsControl.add(m.type, m.x+30, m.y+30));
 			}
 			selectControl.selectMul(newMats);
 		}
 		
-		public function removeMat(mat:MatSprite):void
+		public function unlisten(mat:EditBase):void
 		{
-			if(!mat)
-				return;
 			mat.removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
 			mat.removeEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
-			map.removeChild(mat);
-			for(var i:int = 0; i < displayMats.length; i++)
-				if(displayMats[i] == mat)
-				{
-					displayMats.splice(i, 1);
-					break;
-				}
+			mat.removeEventListener(MouseEvent.MOUSE_MOVE, onMatMove);
+			mat.removeEventListener(MouseEvent.CLICK, onMatClick);
 		}
 		
 		
@@ -522,18 +479,6 @@ package
 			slider.value = currTime;
 			slider.tickInterval = 10;
 			slider.labels = ["0", String(endTime)];
-		}
-		
-		private function updateSelectRect():void
-		{
-			selectRectShape.graphics.clear();
-			if(isSelecting && selectRect)
-			{
-				selectRectShape.x = selectRect.x;
-				selectRectShape.y = selectRect.y;
-				selectRectShape.graphics.lineStyle(1);
-				selectRectShape.graphics.drawRect(0, 0, selectRect.width, selectRect.height);
-			}
 		}
 		
 		//this called when endTime changed

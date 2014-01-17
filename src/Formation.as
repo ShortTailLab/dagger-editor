@@ -4,6 +4,7 @@ package
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
+	import editEntity.MatSprite;
 
 	public class Formation extends EventDispatcher
 	{

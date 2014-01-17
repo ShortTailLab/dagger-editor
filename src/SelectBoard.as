@@ -11,6 +11,10 @@ package
 	
 	import spark.components.TextInput;
 	
+	import editEntity.EditBase;
+	import editEntity.MatFactory;
+	import editEntity.MatSprite;
+	
 	public class SelectBoard extends UIComponent
 	{
 		private var selectContainer:Sprite = null;
@@ -74,9 +78,9 @@ package
 			timeInput.text = "";
 			xInput.text = "";
 			triggerInput.text = "";
-			if(control.targets.length == 1)
+			if(control.targets.length == 1)	
 			{
-				var data:Object = MatSprite(control.targets[0]).toExportData();
+				var data:Object = EditBase(control.targets[0]).toExportData();
 				timeInput.text = data.y;
 				xInput.text = data.x;
 				if(data.hasOwnProperty("triggerTime"))
@@ -102,7 +106,8 @@ package
 				
 				for(var i:int = 0; i < length; i++)
 				{
-					var m:MatSprite = new MatSprite(control.targets[i].type, 40, 30);
+					var m:EditBase = MatFactory.createMat(control.targets[i].type, 30);
+					m.trim(40);
 					var pos:Point = Utils.makeGrid(new Point(0, 0), 50, 8, i);
 					m.x = pos.x;
 					m.y = pos.y;
@@ -110,7 +115,7 @@ package
 				}
 				
 				if(length == 1)
-					MatSprite(control.targets[0]).addEventListener(MsgEvent.POS_CHANGE, update);
+					EditBase(control.targets[0]).addEventListener(MsgEvent.POS_CHANGE, update);
 				
 			}
 			update();
@@ -125,7 +130,7 @@ package
 		{
 			if(e.keyCode == Keyboard.ENTER)
 			{
-				for each(var m:MatSprite in control.targets)
+				for each(var m:EditBase in control.targets)
 				{
 					var data:Object = m.toExportData();
 					if(timeInput.text.length > 0)

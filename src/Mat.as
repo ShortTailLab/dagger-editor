@@ -1,5 +1,7 @@
 package
 {
+	import editEntity.MatSprite;
+
 	public class Mat
 	{
 		public var type:String = "";

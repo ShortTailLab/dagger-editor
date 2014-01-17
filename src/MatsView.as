@@ -12,11 +12,15 @@ package
 	import manager.EventManager;
 	import manager.EventType;
 	import manager.GameEvent;
+	import editEntity.MatFactory;
+	import editEntity.MatSprite;
+	import editEntity.TriggerSprite;
+	import editEntity.EditBase;
 	
 	public class MatsView extends UIComponent
 	{
 		
-		public var selected:MatSprite = null;
+		public var selected:EditBase = null;
 		
 		private var mats:Array = null;
 		
@@ -35,32 +39,42 @@ package
 		{
 			while(mats.length > 0)
 			{
-				var m:MatSprite = mats.pop();
+				var m:EditBase = mats.pop();
 				m.removeEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
 				m.removeEventListener(MouseEvent.CLICK, onMatClick);
 			}
 			this.removeChildren();
 			
+			var triggerMat:EditBase = MatFactory.createMat(TriggerSprite.TRIGGER_TYPE);
+			triggerMat.trim(70);
+			add(triggerMat);
+			
 			var data:Object = Data.getInstance().enemyData;
 			for(var item in data)
 			{
-				var view:MatSprite = new MatSprite(item, 100, 60);
-				view.doubleClickEnabled = true;
-				view.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
-				view.addEventListener(MouseEvent.CLICK, onMatClick);
-				this.addChild(view);
-				mats.push(view);
-				
-				var menu:ContextMenu = new ContextMenu;
-				var btn:ContextMenuItem = new ContextMenuItem("编辑");
-				btn.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
-					edit(e.contextMenuOwner as MatSprite);
-				});
-				menu.addItem(btn);
-				
-				view.contextMenu = menu;
+				var view:EditBase = MatFactory.createMat(item, 70);
+				view.trim(100);
+				add(view);
 			}
 			resize(2);
+		}
+		
+		private function add(view:EditBase):void
+		{
+			view.doubleClickEnabled = true;
+			view.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
+			view.addEventListener(MouseEvent.CLICK, onMatClick);
+			this.addChild(view);
+			mats.push(view);
+			
+			var menu:ContextMenu = new ContextMenu;
+			var btn:ContextMenuItem = new ContextMenuItem("编辑");
+			btn.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+				edit(e.contextMenuOwner as MatSprite);
+			});
+			menu.addItem(btn);
+			
+			view.contextMenu = menu;
 		}
 		
 		private function edit(target:MatSprite):void
@@ -78,8 +92,8 @@ package
 		
 		public function onMatClick(e:MouseEvent):void
 		{
-			var target:MatSprite = e.currentTarget as MatSprite;
-			var prev:MatSprite = selected;
+			var target:EditBase = e.currentTarget as EditBase;
+			var prev:EditBase = selected;
 			if(selected)
 			{
 				selected.select(false);
