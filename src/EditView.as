@@ -270,7 +270,6 @@ package
 					matsControl.add(type, e.data.x, -map.y-e.data.y);
 				}
 			}
-			
 		}
 		
 		private function onMouseDown(e:MouseEvent):void{
@@ -281,39 +280,7 @@ package
 			var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
 			selectControl.onUpdateSelect(localPoint.x, localPoint.y);
 			
-			if(main.matsView.selected && !tipsContainer)
-			{
-				tipsContainer = new Sprite;
-				tipsContainer.alpha = 0.5;
-				var type:String = main.matsView.selected.type;
-				if(main.fView.selected)
-				{
-					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
-					for each(var p in posData)
-					{
-						var mat:EditBase = MatFactory.createMat(type);
-						mat.x = p.x;
-						mat.y = p.y;
-						tipsContainer.addChild(mat);
-					}
-				}
-				else
-				{
-					var mat2:EditBase = MatFactory.createMat(type);
-					tipsContainer.addChild(mat2);
-				}
-				this.addChild(tipsContainer);
-			}
-			else if(!main.matsView.selected && tipsContainer)
-			{
-				this.removeChild(tipsContainer);
-				tipsContainer = null;
-			}
-			if(tipsContainer)
-			{
-				tipsContainer.x = this.mouseX-1;
-				tipsContainer.y = this.mouseY-1;
-			}
+			updateMouseTips();
 		}
 		private function onMouseOut(e:MouseEvent):void
 		{
@@ -326,6 +293,7 @@ package
 		private function onMouseUp(e:MouseEvent):void{
 			selectControl.onEndSelect();
 		}
+		
 		private var draggingMats:Array = null;
 		private var currDragPoint:Point;
 		private var isClick:Boolean =false;
@@ -387,6 +355,43 @@ package
 				var p:Point = timeLine.getGridPos(pointOnGrid.x, pointOnGrid.y);
 				m.x = p.x;
 				m.y = -map.y-p.y;
+			}
+		}
+		
+		private function updateMouseTips():void
+		{
+			if(main.matsView.selected && !tipsContainer)
+			{
+				tipsContainer = new Sprite;
+				tipsContainer.alpha = 0.5;
+				var type:String = main.matsView.selected.type;
+				if(main.fView.selected)
+				{
+					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
+					for each(var p in posData)
+					{
+						var mat:EditBase = MatFactory.createMat(type);
+						mat.x = p.x;
+						mat.y = p.y;
+						tipsContainer.addChild(mat);
+					}
+				}
+				else
+				{
+					var mat2:EditBase = MatFactory.createMat(type);
+					tipsContainer.addChild(mat2);
+				}
+				this.addChild(tipsContainer);
+			}
+			else if(!main.matsView.selected && tipsContainer)
+			{
+				this.removeChild(tipsContainer);
+				tipsContainer = null;
+			}
+			if(tipsContainer)
+			{
+				tipsContainer.x = this.mouseX-1;
+				tipsContainer.y = this.mouseY-1;
 			}
 		}
 		public function listen(mat:EditBase):void
