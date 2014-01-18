@@ -124,6 +124,7 @@ package editEntity
 		
 		override public function initFromData(data:Object):void
 		{
+			this.id = data.id;
 			this.x = data.x/2;
 			this.y = -data.y/2;
 			if(data.hasOwnProperty("triggerTime"))
@@ -133,6 +134,7 @@ package editEntity
 		override public function toExportData():Object
 		{
 			var obj:Object = new Object;
+			obj.id = this.id;
 			obj.type = type;
 			obj.x = x*2;
 			obj.y = Number(-y*2);

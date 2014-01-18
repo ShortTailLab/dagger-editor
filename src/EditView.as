@@ -274,10 +274,12 @@ package
 		
 		private function onMouseDown(e:MouseEvent):void{
 			var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
+			
 			selectControl.onBeginSelect(localPoint.x, localPoint.y);
 		}
 		private function onMouseMove(e:MouseEvent):void{
 			var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
+			
 			selectControl.onUpdateSelect(localPoint.x, localPoint.y);
 			
 			updateMouseTips();
@@ -303,8 +305,6 @@ package
 			isClick = true;
 			currDragPoint = new Point(map.mouseX, map.mouseY);
 			var _draggingMat:EditBase = e.currentTarget as EditBase;
-			
-			
 			
 			if(_draggingMat.isSelected)
 				draggingMats = selectControl.targets;

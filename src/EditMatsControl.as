@@ -1,5 +1,10 @@
 package
 {
+	import flash.geom.Point;
+	import flash.geom.Rectangle;
+	
+	import spark.primitives.Rect;
+	
 	import editEntity.EditBase;
 	import editEntity.MatFactory;
 	import editEntity.MatSprite;
@@ -23,7 +28,9 @@ package
 			
 			for each(var item:Object in data)
 			{
-				var mat:MatSprite = new MatSprite(item.type, -1, 30);
+				if(!item.hasOwnProperty("id"))
+					item.id = getUID();
+				var mat:EditBase = MatFactory.createMat(item.type, 30);
 				mat.initFromData(item);
 				addMat(mat);
 			}
@@ -32,9 +39,30 @@ package
 		public function getMatsData():Array
 		{
 			var data:Array = new Array;
-			for each(var m:MatSprite in mats)
-			data.push(m.toExportData());
+			for each(var m:EditBase in mats)
+				data.push(m.toExportData());
 			return data;
+		}
+		
+		public function getMat(id:String):EditBase
+		{
+			for each(var m:EditBase in mats)
+				if(m.id == id)
+					return m;
+			return null;
+		}
+		
+		public function getMatByPoint(pos:Point):Array
+		{
+			var localPos:Point = view.map.globalToLocal(pos);
+			var result:Array = new Array;
+			for each(var m:EditBase in mats)
+			{
+				var bound:Rectangle = m.getBounds(m.parent);
+				if(bound.contains(localPos.x, localPos.y))
+					result.push(m);
+			}
+			return result;
 		}
 		
 		public function add(type:String, px:int, py:int):EditBase
@@ -49,14 +77,23 @@ package
 		private function addMat(mat:EditBase):void
 		{
 			if(mat is TriggerSprite)
-				(mat as TriggerSprite).enable(true);
-			mat.id = idCount++;
+			{
+				(mat as TriggerSprite).enableRectAdjust(true);
+				(mat as TriggerSprite).active(view);
+			}
+			if(mat.id == "")
+				mat.id = getUID();
 			view.map.addChild(mat);
 			mats.push(mat);
 			view.listen(mat);	
 		}
 		
-		public function remove(id:int):void
+		private function getUID():String
+		{
+			return new Date().time+String(idCount++);;
+		}
+		
+		public function remove(id:String):void
 		{
 			for(var i:int = 0; i < mats.length; i++)
 				if(EditBase(mats[i]).id == id)

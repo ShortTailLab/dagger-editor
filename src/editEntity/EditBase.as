@@ -6,13 +6,14 @@ package editEntity
 	
 	public class EditBase extends Sprite
 	{
-		public var id:int;
+		public var id:String;
 		public var type:String;
 		public var triggerTime:int = -1;
 		public var isSelected:Boolean = false;
 		
 		public function EditBase()
 		{
+			id = "";
 		}
 		
 		public function select(value:Boolean):void

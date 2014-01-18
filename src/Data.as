@@ -21,6 +21,8 @@ package
 	
 	import mx.controls.Alert;
 	
+	import editEntity.TriggerSprite;
+	
 	import excel.ExcelReader;
 	
 	import manager.EventManager;
@@ -228,6 +230,17 @@ package
 				data.type = item.type;
 				data.x = item.x;
 				data.y = item.y;
+				data.id = item.id;
+				if(item.type == TriggerSprite.TRIGGER_TYPE)
+				{
+					data.width = item.width;
+					data.height = item.height;
+					data.objs = item.objs;
+				}
+				if(item.hasOwnProperty("triggerTime"))
+					data.triggerTime= item.triggerTime;
+				else
+					data.triggerTime = item.y;
 				positions.push(data);
 			}
 			var exportData:Object = new Object();
