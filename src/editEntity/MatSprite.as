@@ -1,4 +1,4 @@
-package
+package editEntity
 {
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
@@ -8,35 +8,37 @@ package
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.geom.Point;
-	import flash.net.URLRequest;
 	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
 	
 
-	public class MatSprite extends Sprite
+	public class MatSprite extends EditBase
 	{
-		public var type:String;
-		public var triggerTime:int = -1;
+
 		
 		public var trimSize:Number;
 		public var route:Array = null;
-		public var isSelected:Boolean = false;
+		
 		
 		private var isShowType:Boolean = false;
 		private var skin:Sprite = null;
 		private var selectFrame:Shape = null;
 		private var typeText:TextField = null;
 		private var typeSpr:Sprite = null;
+		private var textWidth:int = 0;
 		
-		public function MatSprite(_type:String, size:int = -1, textWidth:int = -1)
+		public function MatSprite(_type:String, size:int = -1, _textWidth:int = -1)
 		{
 			this.type = _type;
 			this.trimSize = size;
-			
+			this.textWidth = _textWidth;
+			init();
+		}
+		private function init():void
+		{
 			skin = new Sprite;
 			this.addChild(skin);
-			
 			if(textWidth > 0)
 			{
 				typeSpr = new Sprite;
@@ -49,10 +51,8 @@ package
 				typeText.text = this.type;
 				typeSpr.addChild(typeText);
 				this.addChild(typeSpr);
-				var scale:Number = textWidth/typeSpr.width;
-				typeSpr.scaleX = typeSpr.scaleY = scale;
+				setTextWidth(textWidth);
 			}
-			
 			
 			if(Data.getInstance().enemySkinDic.hasOwnProperty(type))
 			{
@@ -74,30 +74,10 @@ package
 				skin.addChild(empty);
 			}
 			
-			
 			if(trimSize > 0)
-				trim(trimSize);
-			
-		}
-		
-		public function enablePosChangeDispatch(value:Boolean):void
-		{
-			if(value)
 			{
-				posRecord = new Point(x, y);
-				this.addEventListener(Event.ENTER_FRAME, onPosCheck);
+				trim(trimSize);
 			}
-			else 
-				this.removeEventListener(Event.ENTER_FRAME, onPosCheck);
-		}
-		
-		private var posRecord:Point;
-		private function onPosCheck(e:Event):void
-		{
-			if(posRecord.x != x || posRecord.y != y)
-				this.dispatchEvent(new MsgEvent(MsgEvent.POS_CHANGE));
-			posRecord.x = x;
-			posRecord.y = y;
 		}
 		
 		private function onLoadSkin(e:Event):void
@@ -113,7 +93,7 @@ package
 				trim(trimSize);
 		}
 		
-		public function select(value:Boolean):void
+		override public function select(value:Boolean):void
 		{
 			isSelected = value;
 			if(value && !selectFrame)
@@ -130,28 +110,41 @@ package
 			}
 		}
 		
-		public function trim(size:Number):void
+		override public function trim(size:Number):void
 		{
 			var scale:Number = Math.min(size/skin.width, size/skin.height);
 			skin.scaleX = skin.scaleY = scale;
 		}
 		
-		public function initFromData(data:Object):void
+		public function setTextWidth(value:int):void
 		{
+			var scale:Number = value/typeSpr.width;
+			typeSpr.scaleX = typeSpr.scaleY = scale;
+		}
+		
+		override public function initFromData(data:Object):void
+		{
+			this.id = data.id;
 			this.x = data.x/2;
 			this.y = -data.y/2;
 			if(data.hasOwnProperty("triggerTime"))
 				this.triggerTime = data.triggerTime;
+			if(data.hasOwnProperty("triggerId"))
+				this.triggerId = data.triggerId;
 		}
 		
-		public function toExportData():Object
+		override public function toExportData():Object
 		{
 			var obj:Object = new Object;
+			obj.id = this.id;
 			obj.type = type;
 			obj.x = x*2;
 			obj.y = Number(-y*2);
+			obj.id = id;
 			if(this.triggerTime > 0)
 				obj.triggerTime = this.triggerTime;
+			if(this.triggerId != "")
+				obj.triggerId = this.triggerId;
 			return obj;
 		}
 	}

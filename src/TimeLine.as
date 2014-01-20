@@ -16,6 +16,7 @@ package
 		private var unitWidth:Number;
 		private var gridCols:int = 0;
 		private var gridRows:int = 0;
+		private var gridWidth:int = 360;
 		
 		public function TimeLine(sizePerUnit:int, timeInterval:int, gridColsNum:int)
 		{
@@ -24,6 +25,13 @@ package
 			this.interval = sizePerUnit*timeInterval;
 			this.timeInterval = timeInterval;
 			this.gridCols = gridColsNum;
+		}
+		
+		public function setSpeed(speed:int):void
+		{
+			heightPerUnit = speed;
+			this.interval = speed*timeInterval;
+			resize(heightRecord);
 		}
 		
 		private function onClick(e:MouseEvent):void
@@ -51,8 +59,11 @@ package
 			return null;
 		}
 		
+		private var heightRecord:int = 0;
 		public function resize(h:int):void
 		{
+			heightRecord = h;
+			
 			graphics.clear();
 			while(marks.length > 0)
 			{
@@ -89,17 +100,17 @@ package
 		public function setGridCols(num:int):void
 		{
 			gridCols = num;
-			unitWidth = 320/num;
+			unitWidth = gridWidth/num;
 			this.graphics.lineStyle(1, 0, 0.3);
 			this.graphics.beginFill(0xffffff,0);
-			this.graphics.drawRect(0, -gridRows*heightPerUnit, 320, gridRows*heightPerUnit);
+			this.graphics.drawRect(0, -gridRows*heightPerUnit, gridWidth, gridRows*heightPerUnit);
 			this.graphics.endFill();
 			
 			
 			for(var i:int = 0; i <gridRows; i++)
 			{
 				this.graphics.moveTo(0, -i*heightPerUnit);
-				this.graphics.lineTo(320, -i*heightPerUnit);
+				this.graphics.lineTo(gridWidth, -i*heightPerUnit);
 			}
 			for(var j:int = 0; j < num; j++)
 			{

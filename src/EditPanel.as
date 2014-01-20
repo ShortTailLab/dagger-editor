@@ -23,6 +23,7 @@ package
 	import spark.components.ComboBox;
 	import spark.components.TextInput;
 	import spark.components.TitleWindow;
+	import editEntity.MatSprite;
 	
 	public class EditPanel extends TitleWindow
 	{
