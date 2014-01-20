@@ -129,6 +129,8 @@ package editEntity
 			this.y = -data.y/2;
 			if(data.hasOwnProperty("triggerTime"))
 				this.triggerTime = data.triggerTime;
+			if(data.hasOwnProperty("triggerId"))
+				this.triggerId = data.triggerId;
 		}
 		
 		override public function toExportData():Object
@@ -141,6 +143,8 @@ package editEntity
 			obj.id = id;
 			if(this.triggerTime > 0)
 				obj.triggerTime = this.triggerTime;
+			if(this.triggerId != "")
+				obj.triggerId = this.triggerId;
 			return obj;
 		}
 	}

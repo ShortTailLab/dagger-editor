@@ -17,13 +17,12 @@ package
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.ui.Keyboard;
-	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
 	import mx.containers.Canvas;
-	import mx.controls.Text;
 	import mx.controls.VSlider;
 	import mx.core.UIComponent;
+	import mx.events.FlexEvent;
 	import mx.events.ResizeEvent;
 	import mx.events.SliderEvent;
 	
@@ -36,7 +35,7 @@ package
 	
 	public class EditView extends UIComponent
 	{
-		static public var speed:Number = 32;//pixel per second
+		public var speed:Number = -1;//pixel per second
 		
 		private var bg:UIComponent = null;
 		public var map:UIComponent = null;
@@ -76,6 +75,7 @@ package
 			this.main = _main;
 			this.canvas = _container;
 			this.canvas.addEventListener(ResizeEvent.RESIZE, onResize);
+			speed = Data.getInstance().conf.speed;
 			
 			bg = new UIComponent;
 			this.addChild(bg);
@@ -93,14 +93,15 @@ package
 			
 			unitLabel = new TextField;
 			unitLabel.defaultTextFormat = new TextFormat(null, 14);
-			unitLabel.text = "单位：";
+			unitLabel.text = "速度：";
 			this.addChild(unitLabel);
 			
 			unitInput = new TextInput;
 			unitInput.width = 30;
 			unitInput.height = 20;
 			unitInput.restrict = "0123456789";
-			unitInput.text = Data.getInstance().conf.timeLineUnit;
+			unitInput.text = Data.getInstance().conf.speed;
+			unitInput.addEventListener(FlexEvent.ENTER, onSpeedSubmit);
 			this.addChild(unitInput);
 			
 			timeLine = new TimeLine(speed, 5, 9);
@@ -112,6 +113,7 @@ package
 			inputField.width = 80;
 			inputField.height = 30;
 			inputField.restrict = "0123456789";
+			inputField.addEventListener(FlexEvent.ENTER, onCurrTimeSubmit);
 			this.addChild(inputField);
 			
 			submitBtn = new Button();
@@ -186,6 +188,17 @@ package
 		{
 			setCurrTime(int(inputField.text));
 		}
+		private function onCurrTimeSubmit(e:FlexEvent):void
+		{
+			setCurrTime(int(inputField.text));
+		}
+		private function onSpeedSubmit(e:FlexEvent):void
+		{
+			var speed:int = int(unitInput.text);
+			Data.getInstance().conf.speed = speed;
+			timeLine.setSpeed(speed);
+			timeLine.setCurrTime(currTime);
+		}
 		
 		private function onsliderChange(e:SliderEvent):void
 		{
@@ -221,7 +234,8 @@ package
 		{
 			var code:uint = e.keyCode;
 			if(code == Keyboard.ENTER)
-				onSubmit(null);
+			{
+			}
 			if(code == Keyboard.C && e.ctrlKey && selectControl.targets.length > 0)
 			{
 				this.copySelect();

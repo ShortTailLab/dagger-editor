@@ -39,6 +39,7 @@ package
 		public var displayData:Array = null;
 		public var levelXML:XML = null;
 		public var enemySkinDic:Dictionary;
+		public var currSelectedLevel:int = 0;
 		
 		private var autoSaveTimer:Timer;
 		private static var instance:Data = null;
@@ -88,11 +89,17 @@ package
 				stream.open(file, FileMode.READ);
 				conf = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
+				
+				if(!conf.hasOwnProperty("speed"))
+				{
+					conf = new Object;
+					conf.speed = 32;
+				}
 			}
 			else
 			{
 				conf = new Object;
-				conf.timeLineUnit = 32;
+				conf.speed = 32;
 			}
 			
 			EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onDataComplete);
@@ -222,7 +229,7 @@ package
 					enemyData[type]["type"] = "enemy";
 			}	
 			
-			var source:Array = displayData[0].data;
+			var source:Array = displayData[currSelectedLevel].data;
 			var positions:Array = new Array;
 			for each(var item:Object in source)
 			{
@@ -231,6 +238,8 @@ package
 				data.x = item.x;
 				data.y = item.y;
 				data.id = item.id;
+				if(item.hasOwnProperty("triggerId"))
+					data.triggerId = item.triggerId;
 				if(item.type == TriggerSprite.TRIGGER_TYPE)
 				{
 					data.width = item.width;
@@ -241,6 +250,7 @@ package
 					data.triggerTime= item.triggerTime;
 				else
 					data.triggerTime = item.y;
+				
 				positions.push(data);
 			}
 			var exportData:Object = new Object();
@@ -248,6 +258,9 @@ package
 			if (enemyData) {
 				exportData["defs"] = enemyData;
 			}
+			var map:Object = new Object;
+			map.speed = conf.speed;
+			exportData["map"] = map;
 			
 			var js:String = "function MAKE_LEVEL(){ var level = " +
 				"" + JSON.stringify(exportData, null, "\t") + "; return level; }"; 

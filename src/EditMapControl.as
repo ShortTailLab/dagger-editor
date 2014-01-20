@@ -61,14 +61,16 @@ package
 				var tmxMap = (map as TmxMapView).tmxMap;
 				scale = 320/tmxMap.totalWidth;
 				mapHeight =  (tmxMap.totalHeight-tmxMap.tileHeight)*scale; 
+				map.scaleX = map.scaleY = scale;
 			}
 			else
 			{
 				map = new BgImage as Bitmap;
-				scale = 0.5;
-				mapHeight = 480;
+				map.scaleX = 360/map.width;
+				map.scaleY = 540/map.height;
+				mapHeight = 540;
 			}
-			map.scaleX = map.scaleY = scale;
+			
 			return map;
 		}
 		

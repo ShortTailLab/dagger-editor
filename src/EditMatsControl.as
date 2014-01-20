@@ -30,6 +30,7 @@ package
 			{
 				if(!item.hasOwnProperty("id"))
 					item.id = getUID();
+				
 				var mat:EditBase = MatFactory.createMat(item.type, 30);
 				mat.initFromData(item);
 				addMat(mat);
@@ -40,7 +41,12 @@ package
 		{
 			var data:Array = new Array;
 			for each(var m:EditBase in mats)
+			{
+				if(m.triggerId.length > 0 && !getMat(m.triggerId))
+					m.triggerId = "";
+					
 				data.push(m.toExportData());
+			}
 			return data;
 		}
 		
@@ -98,6 +104,7 @@ package
 			for(var i:int = 0; i < mats.length; i++)
 				if(EditBase(mats[i]).id == id)
 				{
+					EditBase(mats[i]).onDelete();
 					view.unlisten(mats[i]);
 					view.map.removeChild(mats[i]);
 					mats.splice(i, 1);

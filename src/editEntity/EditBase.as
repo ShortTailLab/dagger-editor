@@ -10,6 +10,7 @@ package editEntity
 		public var type:String;
 		public var triggerTime:int = -1;
 		public var isSelected:Boolean = false;
+		public var triggerId:String = "";
 		
 		public function EditBase()
 		{
@@ -33,6 +34,8 @@ package editEntity
 			else 
 				this.removeEventListener(Event.ENTER_FRAME, onPosCheck);
 		}
+		
+		public function onDelete():void{}
 		
 		private var posRecord:Point;
 		private function onPosCheck(e:Event):void

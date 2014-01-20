@@ -8,6 +8,7 @@ package
 	import flash.ui.Keyboard;
 	
 	import mx.core.UIComponent;
+	import mx.events.FlexEvent;
 	
 	import spark.components.TextInput;
 	
@@ -40,7 +41,7 @@ package
 			timeInput.restrict = "0123456789";
 			timeInput.x = 0; 
 			timeInput.y = timeLabel.y + 20;
-			timeInput.addEventListener(Event.CHANGE, onInput);
+			timeInput.addEventListener(FlexEvent.ENTER, onSubmitTime);
 			this.addChild(timeInput);
 			
 			var xLabel:TextField = Utils.getLabel("x:", 0, timeLabel.y+70, 14);
@@ -51,7 +52,7 @@ package
 			xInput.restrict = "0123456789";
 			xInput.x = 0; 
 			xInput.y = xLabel.y + 20;
-			xInput.addEventListener(Event.CHANGE, onInput);
+			xInput.addEventListener(FlexEvent.ENTER, onSubmitX);
 			this.addChild(xInput);
 			
 			var triggerLabel:TextField = Utils.getLabel("触发时间", 0, xLabel.y+70, 14);
@@ -62,14 +63,9 @@ package
 			triggerInput.restrict = "0123456789";
 			triggerInput.x = 0; 
 			triggerInput.y = triggerLabel.y + 20;
-			triggerInput.addEventListener(Event.CHANGE, onInput);
+			triggerInput.addEventListener(FlexEvent.ENTER, onSubmitTrigger);
 			this.addChild(triggerInput);
 			
-			this.addEventListener(Event.ADDED_TO_STAGE, onStage);
-		}
-		private function onStage(e:Event):void
-		{
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		}
 		
 		public function update(e:MsgEvent = null):void
@@ -126,25 +122,37 @@ package
 			
 		}
 		
-		private function onKeyDown(e:KeyboardEvent):void
+		private function onSubmitTime(e:FlexEvent):void
 		{
-			if(e.keyCode == Keyboard.ENTER)
+			for each(var m:EditBase in control.targets)
 			{
-				for each(var m:EditBase in control.targets)
-				{
-					var data:Object = m.toExportData();
-					if(timeInput.text.length > 0)
-						data.y = int(timeInput.text);
-					if(xInput.text.length > 0)
-						data.x = int(xInput.text);
-					if(triggerInput.text.length > 0)
-						data.triggerTime = int(triggerInput.text);
-					m.initFromData(data);
-				}
-					
+				var data:Object = m.toExportData();
+				if(timeInput.text.length > 0)
+					data.y = int(timeInput.text);
+				m.initFromData(data);
 			}
 		}
 		
+		private function onSubmitX(e:FlexEvent):void
+		{
+			for each(var m:EditBase in control.targets)
+			{
+				var data:Object = m.toExportData();
+				if(xInput.text.length > 0)
+					data.x = int(xInput.text);
+				m.initFromData(data);
+			}
+		}
 		
+		private function onSubmitTrigger(e:FlexEvent):void
+		{
+			for each(var m:EditBase in control.targets)
+			{
+				var data:Object = m.toExportData();
+				if(triggerInput.text.length > 0)
+					data.triggerTime = int(triggerInput.text);
+				m.initFromData(data);
+			}
+		}
 	}
 }

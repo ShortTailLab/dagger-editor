@@ -10,6 +10,8 @@ package editEntity
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.utils.Dictionary;
+	
+	import mx.controls.Alert;
 
 	public class TriggerSprite extends EditBase
 	{
@@ -69,11 +71,18 @@ package editEntity
 		{
 			if(dotsDic.hasOwnProperty(id))
 				return;
+			var mat:EditBase = view.matsControl.getMat(id);
+			if(mat.triggerId.length > 0)
+			{
+				Alert.show("不能重复trigger");
+				return;
+			}
 			var dot:Sprite = createDot();
 			dot.addEventListener(MouseEvent.MOUSE_DOWN, onTirggerDotMouseDown);
 			triggerLayer.addChild(dot);
 			dotsDic[id] = dot;
 			triggerMatIds.push(id);
+			view.matsControl.getMat(id).triggerId = this.id;
 		}
 		
 		private function onTirggerDotMouseDown(e:MouseEvent):void
@@ -85,6 +94,7 @@ package editEntity
 					controlDot = dotsDic[id];
 					control(controlDot);
 					removeATrigger(id);
+					view.matsControl.getMat(id).triggerId = "";
 					return;
 				}
 		}
@@ -201,6 +211,14 @@ package editEntity
 			
 		}
 		
+		override public function onDelete():void
+		{
+			for each(var id:String in triggerMatIds)
+			{
+				view.matsControl.getMat(id).triggerId = "";
+			}
+		}
+		
 		override public function trim(size:Number):void
 		{
 			var scale:Number = size/this.width;
@@ -228,6 +246,8 @@ package editEntity
 			this.triggerMatIds = data.objs as Array;
 			if(data.hasOwnProperty("triggerTime"))
 				this.triggerTime = data.triggerTime;
+			if(data.hasOwnProperty("triggerId"))
+				this.triggerId = data.triggerId;
 		}
 		
 		override public function toExportData():Object
@@ -242,6 +262,8 @@ package editEntity
 			if(this.triggerTime > 0)
 				obj.triggerTime = this.triggerTime;
 			obj.objs = triggerMatIds;
+			if(this.triggerId.length > 0)
+				obj.triggerId = this.triggerId;
 			return obj;
 		}
 		

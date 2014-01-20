@@ -64,6 +64,7 @@
 			private function onDataReady(e:Event):void
 			{
 				_tree = new Tree();
+				_tree.selectedIndex = 0;
 				_tree.dataProvider = Data.getInstance().levelXML;
 				_tree.enabled = true;
 				_tree.labelField = "@label";
@@ -142,7 +143,6 @@
 				}
 				else {
 					middleArea.addElement(_bgEditView);
-//					rightArea.addElement(_bgSelectView);
 				}
 			}
 			
@@ -181,6 +181,7 @@
 			private function onLevelClick(e:Event):void{
 				var selectedNode:XML = (e.currentTarget as Tree).selectedItem as XML;
 				var label:String=selectedNode.@label;
+				Data.getInstance().currSelectedLevel = (e.currentTarget as Tree).selectedIndex;
 				_enemyEditView.init(label);
 			}	
 			private function onTMXClick(e:MouseEvent):void
@@ -244,6 +245,7 @@
 					{
 						Data.getInstance().deleteLevel(index);
 						_enemyEditView.clear();
+						//_tree.selectedIndex = 0;
 					}
 				}
 			}
@@ -294,6 +296,13 @@
 			var process:NativeProcess;
 			private function sendToServer(e:Event):void
 			{
+				if(_tree.selectedIndex == -1)
+				{
+					Alert.show("上传前请先选择关卡！");
+					return;
+				}
+				
+				saveFile(null);
 				if (ServerManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/Resources"), tagInput.text)) {
 //					Alert.show("上传成功！");
 				}
