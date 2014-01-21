@@ -55,7 +55,7 @@ package
 			super(target);
 			
 			matsData = new Object;
-			autoSaveTimer = new Timer(60000, 1);
+			autoSaveTimer = new Timer(600000, 1);
 			autoSaveTimer.addEventListener(TimerEvent.TIMER, onAutoSave);
 			autoSaveTimer.start();
 		}

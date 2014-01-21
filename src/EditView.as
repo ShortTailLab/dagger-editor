@@ -1,19 +1,11 @@
 package
 {
-	import com.hurlant.crypto.symmetric.NullPad;
-	
-	import flash.display.Bitmap;
 	import flash.display.DisplayObject;
-	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
-	import flash.filesystem.File;
-	import flash.filesystem.FileMode;
-	import flash.filesystem.FileStream;
 	import flash.geom.Point;
-	import flash.geom.Rectangle;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.ui.Keyboard;
@@ -47,6 +39,7 @@ package
 		
 		private var unitLabel:TextField = null;
 		private var unitInput:TextInput = null;
+		private var timeLabel:TextField = null;
 		private var inputField:TextInput = null;
 		private var submitBtn:Button = null;
 		private var canvas:Canvas;
@@ -109,19 +102,14 @@ package
 			timeLine.addEventListener("gridClick", onGridClick);
 			map.addChild(timeLine);
 			
+			timeLabel = Utils.getLabel("当前时间：", 0, 0, 14);
+			this.addChild(timeLabel);
 			inputField = new TextInput;
 			inputField.width = 80;
 			inputField.height = 30;
 			inputField.restrict = "0123456789";
 			inputField.addEventListener(FlexEvent.ENTER, onCurrTimeSubmit);
 			this.addChild(inputField);
-			
-			submitBtn = new Button();
-			submitBtn.label = "确认";
-			submitBtn.width = 50;
-			submitBtn.height = 30;
-			submitBtn.addEventListener(MouseEvent.CLICK, onSubmit);
-			this.addChild(submitBtn);
 			
 			slider = new VSlider;
 			slider.showDataTip = true;
@@ -136,7 +124,6 @@ package
 			this.addChild(snapBtn);
 			
 			matsControl = new EditMatsControl(this);
-			
 			selectControl = new SelectControl(this);
 			
 			selectBoard = new SelectBoard(selectControl);
@@ -183,11 +170,6 @@ package
 		{
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		}
-		
-		private function onSubmit(e:MouseEvent):void
-		{
-			setCurrTime(int(inputField.text));
-		}
 		private function onCurrTimeSubmit(e:FlexEvent):void
 		{
 			setCurrTime(int(inputField.text));
@@ -209,22 +191,6 @@ package
 			map.y = currTime*speed;
 			timeLine.y = -map.y;
 			updateMapSize();
-			
-			if(draggingMats && draggingMats.length > 0)
-			{
-				var dx:Number = map.mouseX - currDragPoint.x;
-				var dy:Number = map.mouseY - currDragPoint.y;
-				if(dx != 0 || dy != 0)
-				{
-					for each(var m:Sprite in draggingMats)
-					{
-						m.x += dx;
-						m.y += dy;
-					}
-					currDragPoint.x = map.mouseX;
-					currDragPoint.y = map.mouseY;
-				}
-			}
 		}
 		
 		private function onWheel(e:MouseEvent):void{
@@ -233,12 +199,9 @@ package
 		private function onKeyDown(e:KeyboardEvent):void
 		{
 			var code:uint = e.keyCode;
-			if(code == Keyboard.ENTER)
-			{
-			}
 			if(code == Keyboard.C && e.ctrlKey && selectControl.targets.length > 0)
 			{
-				this.copySelect();
+				selectControl.copySelect();
 			}
 			if(code == Keyboard.F && e.ctrlKey && selectControl.targets.length > 0)
 			{
@@ -264,37 +227,31 @@ package
 		private function onGridClick(e:TimeLineEvent):void
 		{
 			selectControl.unselect();
-			if(!selectControl.selectFrame)
+			if(main.fView.selected)
 			{
-				if(main.fView.selected)
+				if(main.matsView.selected)
 				{
-					if(main.matsView.selected)
+					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
+					for each(var p in posData)
 					{
-						var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
-						for each(var p in posData)
-						{
-							var type:String = main.matsView.selected.type;
-							matsControl.add(type, e.data.x+p.x, -map.y-e.data.y+p.y);
-						}
+						var type:String = main.matsView.selected.type;
+						matsControl.add(type, e.data.x+p.x, -map.y-e.data.y+p.y);
 					}
 				}
-				else if(main.matsView.selected)
-				{
-					var type:String = main.matsView.selected.type;
-					matsControl.add(type, e.data.x, -map.y-e.data.y);
-				}
+			}
+			else if(main.matsView.selected)
+			{
+				var type:String = main.matsView.selected.type;
+				matsControl.add(type, e.data.x, -map.y-e.data.y);
 			}
 		}
 		
 		private function onMouseDown(e:MouseEvent):void{
 			var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
 			
-			selectControl.onBeginSelect(localPoint.x, localPoint.y);
 		}
 		private function onMouseMove(e:MouseEvent):void{
 			var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
-			
-			selectControl.onUpdateSelect(localPoint.x, localPoint.y);
 			
 			updateMouseTips();
 		}
@@ -307,52 +264,6 @@ package
 			}
 		}
 		private function onMouseUp(e:MouseEvent):void{
-			selectControl.onEndSelect();
-		}
-		
-		private var draggingMats:Array = null;
-		private var currDragPoint:Point;
-		private var isClick:Boolean =false;
-		private function onMatMouseDown(e:MouseEvent):void
-		{
-			e.stopPropagation();
-			isClick = true;
-			currDragPoint = new Point(map.mouseX, map.mouseY);
-			var _draggingMat:EditBase = e.currentTarget as EditBase;
-			
-			if(_draggingMat.isSelected)
-				draggingMats = selectControl.targets;
-			else
-				draggingMats = new Array(e.currentTarget as EditBase);
-			
-			stage.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
-		}
-		
-		
-		private function onMatMouseUp(e:MouseEvent):void {
-			if(snapBtn.isOn)
-				snap(draggingMats);
-			
-			draggingMats = null;
-			
-			this.stage.removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
-		}
-		private function onMatMiddleClick(e:MouseEvent):void {
-			e.stopPropagation();
-		}
-		private function onMatMove(e:MouseEvent):void
-		{
-			isClick = false;
-		}
-		private function onMatClick(e:MouseEvent):void
-		{
-			e.stopPropagation();
-			if(isClick)
-			{
-				var target:EditBase = e.currentTarget as EditBase;
-				selectControl.select(target);
-				isClick =false;
-			}
 		}
 		
 		private function onSliderMouseDown(e:MouseEvent):void
@@ -360,7 +271,7 @@ package
 			e.stopPropagation();
 		}
 		
-		private function snap(mats:Array):void
+		public function snap(mats:Array):void
 		{
 			for each(var m:EditBase in mats)
 			{
@@ -408,32 +319,6 @@ package
 				tipsContainer.y = this.mouseY-1;
 			}
 		}
-		public function listen(mat:EditBase):void
-		{
-			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
-			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
-			mat.addEventListener(MouseEvent.MOUSE_MOVE, onMatMove);
-			mat.addEventListener(MouseEvent.CLICK, onMatClick);
-		}
-		public function copySelect():void
-		{
-			var newMats:Array = new Array;
-			for each(var m:EditBase in selectControl.targets)
-			{
-				newMats.push(matsControl.add(m.type, m.x+30, m.y+30));
-			}
-			selectControl.selectMul(newMats);
-		}
-		
-		public function unlisten(mat:EditBase):void
-		{
-			mat.removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
-			mat.removeEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
-			mat.removeEventListener(MouseEvent.MOUSE_MOVE, onMatMove);
-			mat.removeEventListener(MouseEvent.CLICK, onMatClick);
-		}
-		
-		
 		//adjust views pos when the canvas size change
 		private function onResize(e:ResizeEvent = null):void
 		{
@@ -453,10 +338,10 @@ package
 			unitLabel.y = -30;
 			unitInput.x = -130;
 			unitInput.y = -30;
-			inputField.x = -canvas.width*0.5+30;
+			inputField.x = -canvas.width*0.5+20;
 			inputField.y = -canvas.height+30;
-			submitBtn.x = -canvas.width*0.5+120;
-			submitBtn.y = -canvas.height+30;
+			timeLabel.x = -canvas.width*0.5+20;
+			timeLabel.y = -canvas.height+10;
 			timeLine.resize(canvas.height);
 			timeLine.setCurrTime(currTime);
 			selectBoard.x = -canvas.width*0.5+30;

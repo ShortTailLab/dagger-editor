@@ -5,10 +5,13 @@ package
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
+	import flash.events.MouseEvent;
+	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
+	import spark.primitives.Rect;
 	
 	import editEntity.EditBase;
 	
@@ -17,15 +20,16 @@ package
 	{
 		public var targets:Array = null;
 		public var view:EditView = null;
-		public var selectFrame:Shape = null;
-		private var selectRect:Rectangle = null;
-		public var isSelecting:Boolean = false;
+		private var selectFrame:Shape = null;
 		
 		public function SelectControl(_view:EditView)
 		{
 			targets = new Array;
 			this.view = _view;
-			selectRect = new Rectangle;
+			
+			this.view.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+			this.view.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			this.view.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 		}
 		
 		public function select(target:EditBase):void
@@ -37,59 +41,56 @@ package
 			this.dispatchEvent(new Event(Event.CHANGE));
 		}
 		
-		
-		public function onBeginSelect(px:Number, py:Number):void
+		public function isSelecting():Boolean
 		{
-			selectRect.x = px;
-			selectRect.y = py;
-			isSelecting = true;
+			return selectFrame;
 		}
 		
-		public function onUpdateSelect(px:Number, py:Number):void
+		public function update(dt:int):void
 		{
-			if(isSelecting)
+			
+		}
+		
+		private function onMouseDown(e:MouseEvent):void
+		{
+			var pos:Point = view.globalToLocal(new Point(e.stageX, e.stageY));
+			selectFrame = new Shape;
+			selectFrame.x = pos.x;
+			selectFrame.y = pos.y;
+			view.addChild(selectFrame);
+		}
+		
+		private function onMouseMove(e:MouseEvent):void
+		{
+			if(selectFrame)
 			{
-				if(!selectFrame)
-				{
-					selectFrame = new Shape;
-					view.map.addChild(selectFrame);
-				}
-				selectRect.width = px - selectRect.x;
-				selectRect.height = py - selectRect.y;
-				updateSelectRect();
+				var pos:Point = view.globalToLocal(new Point(e.stageX, e.stageY));
+				selectFrame.graphics.clear();
+				selectFrame.graphics.lineStyle(1);
+				selectFrame.graphics.drawRect(0, 0, pos.x-selectFrame.x, pos.y-selectFrame.y);
 			}
 		}
 		
-		public function onEndSelect():void
+		private function onMouseUp(e:MouseEvent):void
 		{
-			isSelecting = false;
 			if(selectFrame)
 			{
-				selectMul(getSelectMats(selectFrame));
-				view.map.removeChild(selectFrame);
+				selectMul(getSelectMats(selectFrame.getBounds(view)));
+				view.removeChild(selectFrame);
 				selectFrame = null;
 			}
 		}
 		
-		private function getSelectMats(frame:DisplayObject):Array
+		private function getSelectMats(frame:Rectangle):Array
 		{
 			var result:Array = new Array;
 			for each(var m:EditBase in view.matsControl.mats)
-			if(m.hitTestObject(frame))
-				result.push(m);
-			return result;
-		}
-		
-		private function updateSelectRect():void
-		{
-			selectFrame.graphics.clear();
-			if(isSelecting && selectRect)
 			{
-				selectFrame.x = selectRect.x;
-				selectFrame.y = selectRect.y;
-				selectFrame.graphics.lineStyle(1);
-				selectFrame.graphics.drawRect(0, 0, selectRect.width, selectRect.height);
+				var bound:Rectangle = m.getBounds(view);
+				if(frame.intersects(bound))
+					result.push(m);
 			}
+			return result;
 		}
 		
 		private function add(target:EditBase):void
@@ -97,7 +98,7 @@ package
 			var menu:ContextMenu = new ContextMenu;
 			var item:ContextMenuItem = new ContextMenuItem("复制");
 			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
-				view.copySelect();
+				copySelect();
 			});
 			var item2:ContextMenuItem = new ContextMenuItem("设为阵型");
 			item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
@@ -152,6 +153,16 @@ package
 					break;
 				}
 			this.dispatchEvent(new Event(Event.CHANGE));
+		}
+		
+		public function copySelect():void
+		{
+			var newMats:Array = new Array;
+			for each(var m:EditBase in targets)
+			{
+				newMats.push(view.matsControl.add(m.type, m.x+30, m.y+30));
+			}
+			selectMul(newMats);
 		}
 		
 		private function onRemoved(e:Event):void

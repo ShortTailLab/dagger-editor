@@ -34,9 +34,19 @@ package
 			resize(heightRecord);
 		}
 		
-		private function onClick(e:MouseEvent):void
+		private var isClick:Boolean = false;
+		private function onMouseDown(e:MouseEvent):void
 		{
-			if(e.target == this)
+			isClick = true;
+		}
+		
+		private function onMouseMove(e:MouseEvent):void
+		{
+			isClick = false;
+		}
+		private function onMouseUp(e:MouseEvent):void
+		{
+			if(isClick)
 			{
 				var gX:int = e.localX/unitWidth;
 				var gY:int = -e.localY/heightPerUnit;
@@ -47,6 +57,7 @@ package
 					evt.data.y = gY*heightPerUnit;
 					this.dispatchEvent(evt);
 				}
+				isClick = false;
 			}
 		}
 		
@@ -117,7 +128,9 @@ package
 				this.graphics.moveTo(j*unitWidth, 0);
 				this.graphics.lineTo(unitWidth*j, -i*heightPerUnit);
 			}
-			this.addEventListener(MouseEvent.MOUSE_UP, onClick);
+			this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 		}
 		
 		public function setCurrTime(time:int):void

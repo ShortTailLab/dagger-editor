@@ -2,12 +2,10 @@ package editEntity
 {
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
-	import flash.display.Loader;
 	import flash.display.LoaderInfo;
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.Event;
-	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
@@ -16,11 +14,8 @@ package editEntity
 	public class MatSprite extends EditBase
 	{
 
-		
 		public var trimSize:Number;
 		public var route:Array = null;
-		
-		
 		private var isShowType:Boolean = false;
 		private var skin:Sprite = null;
 		private var selectFrame:Shape = null;
@@ -28,9 +23,9 @@ package editEntity
 		private var typeSpr:Sprite = null;
 		private var textWidth:int = 0;
 		
-		public function MatSprite(_type:String, size:int = -1, _textWidth:int = -1)
+		public function MatSprite(_editView:EditView = null, _type:String = "", size:int = -1, _textWidth:int = -1)
 		{
-			this.type = _type;
+			super(_editView, _type);
 			this.trimSize = size;
 			this.textWidth = _textWidth;
 			init();
@@ -129,7 +124,7 @@ package editEntity
 			this.y = -data.y/2;
 			if(data.hasOwnProperty("triggerTime"))
 				this.triggerTime = data.triggerTime;
-			if(data.hasOwnProperty("triggerId"))
+			if(data.hasOwnProperty("triggerId") && editView.matsControl.getMat(data.triggerId))
 				this.triggerId = data.triggerId;
 		}
 		
