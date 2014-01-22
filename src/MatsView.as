@@ -18,6 +18,7 @@ package
 	import manager.EventManager;
 	import manager.EventType;
 	import manager.GameEvent;
+	import behaviorEdit.BTEditPanel;
 	
 	public class MatsView extends UIComponent
 	{
@@ -77,7 +78,14 @@ package
 				else
 					Alert.show("对象不可编辑");
 			});
+			var btn2:ContextMenuItem = new ContextMenuItem("行为");
+			btn2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+				var target:MatSprite = e.contextMenuOwner as MatSprite;
+				if(target)
+					editBT(target);
+			});
 			menu.addItem(btn);
+			menu.addItem(btn2);
 			
 			view.contextMenu = menu;
 		}
@@ -91,6 +99,17 @@ package
 				PopUpManager.centerPopUp(win);
 				win.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-win.width/2;
 				win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
+			}
+		}
+		private function editBT(target:MatSprite):void
+		{
+			if(target)
+			{
+				var btPanel:BTEditPanel = new BTEditPanel;
+				PopUpManager.addPopUp(btPanel, this);
+				PopUpManager.centerPopUp(btPanel);
+				btPanel.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-btPanel.width/2;
+				btPanel.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-btPanel.height/2;
 			}
 		}
 		

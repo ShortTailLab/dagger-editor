@@ -230,7 +230,7 @@ package
 			}	
 			
 			var source:Array = displayData[currSelectedLevel].data;
-			var positions:Array = new Array;
+			/*var positions:Array = new Array;
 			for each(var item:Object in source)
 			{
 				var data:Object = new Object;
@@ -260,7 +260,82 @@ package
 			}
 			var map:Object = new Object;
 			map.speed = conf.speed;
-			exportData["map"] = map;
+			exportData["map"] = map;*/
+			
+			var exportData:Object = new Object;
+			exportData.actor = new Object;
+			exportData.trap = new Object;
+			exportData.objects = new Array;
+			exportData.trigger = new Array;
+			for(var name in enemyData)
+			{
+				var data:Object = enemyData[name];
+				data.actions = new Array;
+				if(data.move_type != 0)
+				{
+					var action:Object = data.move_args;
+					action.type = data.move_type;
+					data.actions.push(action);
+					
+					delete data.move_args;
+				}
+				if(data.attack_type != "")
+				{
+					var action2:Object = data.attack_args;
+					action2.type = data.attack_type == "M" ? "MeleeAttack" : "RangedAttack";
+					data.actions.push(action2);
+				}
+				delete data.move_type;
+				delete data.attack_type;
+				delete data.attack_args;
+				exportData.actor[name] = data;
+			}
+			
+			for each(var item:Object in source)
+			{
+				if(item.type == "AreaTrigger")
+				{
+					var triData:Object = new Object;
+					var condData = new Object;
+					condData.type = "Area";
+					condData.area = new Array;
+					condData.area.push(item.x);
+					condData.area.push(item.y);
+					condData.area.push(item.width);
+					condData.area.push(item.height);
+					triData.cond = condData;
+					
+					var resultData:Object = new Object;
+					resultData.type = "Object";
+					resultData.objs = item.objs;
+					triData.result = resultData;
+					exportData.trigger.push(triData);
+				}
+				else
+				{
+					var objData:Object = new Object;
+					objData.id = item.id;
+					objData.name = item.type;
+					objData.coord = new Array(item.x, item.y);
+					exportData.objects.push(objData);
+					
+					if(!item.hasOwnProperty("triggerId"))
+					{
+						triData = new Object;
+						condData = new Object;
+						condData.type = "Time";
+						condData.time = item.y;
+						triData.cond = condData;
+						
+						resultData = new Object;
+						resultData.type = "Object";
+						resultData.objs = new Array(item.id);
+						triData.result = resultData;
+						exportData.trigger.push(triData);
+					}
+				}
+				
+			}
 			
 			var js:String = "function MAKE_LEVEL(){ var level = " +
 				"" + JSON.stringify(exportData, null, "\t") + "; return level; }"; 
