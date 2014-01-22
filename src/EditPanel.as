@@ -23,6 +23,8 @@ package
 	import spark.components.ComboBox;
 	import spark.components.TextInput;
 	import spark.components.TitleWindow;
+	
+	import editEntity.EditBase;
 	import editEntity.MatSprite;
 	
 	public class EditPanel extends TitleWindow
@@ -59,7 +61,7 @@ package
 			var mapContain:UIComponent = new UIComponent;
 			this.addElement(mapContain);
 			
-			var icon:MatSprite = new MatSprite(target.type, 100);
+			var icon:EditBase = new MatSprite(null, target.type, 100);
 			icon.x = 70;
 			icon.y = 110;
 			mapContain.addChild(icon);

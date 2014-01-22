@@ -95,7 +95,7 @@ package excel
 				var enemy:Object = new Object();
 				_enemyData[workSheet.getCellValue("A"+i)] = enemy;
 				enemy["face"] = workSheet.getCellValue("B"+i);
-				enemy["name"] = workSheet.getCellValue("C"+i);
+				enemy["nameCN"] = workSheet.getCellValue("C"+i);
 				if (String(workSheet.getCellValue("D"+i)) == "") {
 					enemy["attack_type"] = "";
 					enemy["attack_args"] = new Object;
@@ -109,7 +109,7 @@ package excel
 					enemy["move_type"] = 0;
 				}
 				else {
-					enemy["move_type"] = int(workSheet.getCellValue("E"+i));
+					enemy["move_type"] = workSheet.getCellValue("E"+i);
 					enemy["move_args"] = JSON.parse(workSheet.getCellValue("F"+i));
 				}
 				enemy["level"] = int(workSheet.getCellValue("L"+i));

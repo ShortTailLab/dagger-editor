@@ -6,21 +6,21 @@ package editEntity
 	
 	public class EditBase extends Sprite
 	{
-		public var id:String;
+		public var id:String = "";
 		public var type:String;
 		public var triggerTime:int = -1;
 		public var isSelected:Boolean = false;
 		public var triggerId:String = "";
+		protected var editView:EditView = null;
 		
-		public function EditBase()
+		public function EditBase(_editView:EditView = null, type:String = "")
 		{
-			id = "";
+			this.editView = _editView;
+			this.type = type;
 		}
 		
-		public function select(value:Boolean):void
-		{
-			
-		}
+		public function select(value:Boolean):void{}
+		public function update():void{};
 		
 		public function trim(size:Number):void{}
 		

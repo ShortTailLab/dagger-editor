@@ -5,17 +5,20 @@ package
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
+	import mx.controls.Alert;
 	import mx.core.FlexGlobals;
 	import mx.core.UIComponent;
 	import mx.managers.PopUpManager;
 	
-	import manager.EventManager;
-	import manager.EventType;
-	import manager.GameEvent;
+	import editEntity.EditBase;
 	import editEntity.MatFactory;
 	import editEntity.MatSprite;
 	import editEntity.TriggerSprite;
-	import editEntity.EditBase;
+	
+	import manager.EventManager;
+	import manager.EventType;
+	import manager.GameEvent;
+	import behaviorEdit.BTEditPanel;
 	
 	public class MatsView extends UIComponent
 	{
@@ -45,15 +48,14 @@ package
 			}
 			this.removeChildren();
 			
-			var triggerMat:EditBase = MatFactory.createMat(TriggerSprite.TRIGGER_TYPE);
+			var triggerMat:EditBase = new TriggerSprite();
 			triggerMat.trim(70);
 			add(triggerMat);
 			
 			var data:Object = Data.getInstance().enemyData;
 			for(var item in data)
 			{
-				var view:EditBase = MatFactory.createMat(item, 70);
-				view.trim(100);
+				var view:EditBase = new MatSprite(null, item, 100, 70);
 				add(view);
 			}
 			resize(2);
@@ -70,9 +72,20 @@ package
 			var menu:ContextMenu = new ContextMenu;
 			var btn:ContextMenuItem = new ContextMenuItem("编辑");
 			btn.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
-				edit(e.contextMenuOwner as MatSprite);
+				var target:MatSprite = e.contextMenuOwner as MatSprite;
+				if(target)
+					edit(target);
+				else
+					Alert.show("对象不可编辑");
+			});
+			var btn2:ContextMenuItem = new ContextMenuItem("行为");
+			btn2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+				var target:MatSprite = e.contextMenuOwner as MatSprite;
+				if(target)
+					editBT(target);
 			});
 			menu.addItem(btn);
+			menu.addItem(btn2);
 			
 			view.contextMenu = menu;
 		}
@@ -86,6 +99,17 @@ package
 				PopUpManager.centerPopUp(win);
 				win.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-win.width/2;
 				win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
+			}
+		}
+		private function editBT(target:MatSprite):void
+		{
+			if(target)
+			{
+				var btPanel:BTEditPanel = new BTEditPanel;
+				PopUpManager.addPopUp(btPanel, this);
+				PopUpManager.centerPopUp(btPanel);
+				btPanel.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-btPanel.width/2;
+				btPanel.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-btPanel.height/2;
 			}
 		}
 		

@@ -1,7 +1,6 @@
 package editEntity
 {
 	import flash.display.DisplayObject;
-	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
@@ -22,27 +21,22 @@ package editEntity
 		public var beginTriDot:Sprite = null;
 		public var triggerMatIds:Array = null;
 		public var dotsDic:Dictionary = null;
-		private var view:EditView;
 		private var triggerLayer:Sprite;
-		
-		private var isActive:Boolean = false;
 		private var editable:Boolean = false;
 		
-		public function TriggerSprite()
+		public function TriggerSprite(_editView:EditView = null)
 		{
-			this.type = TRIGGER_TYPE;
+			super(_editView, TRIGGER_TYPE);
 			//左上角为原点
 			rect = new Rectangle(-50, -100, 100, 100);
 			triggerMatIds = new Array;
 			dotsDic = new Dictionary;
 			initRectDots();
-		}
-		
-		public function active(_view:EditView):void
-		{
-			isActive = true;
-			view = _view;
-			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
+			
+			if(editView)
+			{
+				this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
+			}
 		}
 		
 		public function initTriggerMats():void
@@ -65,24 +59,32 @@ package editEntity
 			addDot(rect.right, rect.bottom);
 			addDot(rect.x, rect.bottom);
 			updateRect();
+			if(editView)
+			{
+				for(var i:int = 0; i < 4; i++)
+				{
+					dots[i].addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+					dots[i].addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+				}
+			}
 		}
 		
-		public function addATrigger(id:String):void
+		public function addATrigger(mat:EditBase):void
 		{
 			if(dotsDic.hasOwnProperty(id))
 				return;
-			var mat:EditBase = view.matsControl.getMat(id);
 			if(mat.triggerId.length > 0)
 			{
 				Alert.show("不能重复trigger");
 				return;
 			}
+			
 			var dot:Sprite = createDot();
 			dot.addEventListener(MouseEvent.MOUSE_DOWN, onTirggerDotMouseDown);
 			triggerLayer.addChild(dot);
-			dotsDic[id] = dot;
-			triggerMatIds.push(id);
-			view.matsControl.getMat(id).triggerId = this.id;
+			dotsDic[mat.id] = dot;
+			triggerMatIds.push(mat.id);
+			mat.triggerId = this.id;
 		}
 		
 		private function onTirggerDotMouseDown(e:MouseEvent):void
@@ -94,7 +96,7 @@ package editEntity
 					controlDot = dotsDic[id];
 					control(controlDot);
 					removeATrigger(id);
-					view.matsControl.getMat(id).triggerId = "";
+					editView.matsControl.getMat(id).triggerId = "";
 					return;
 				}
 		}
@@ -143,15 +145,20 @@ package editEntity
 			controlDot.stopDrag();
 			var globalPos:Point = triggerLayer.localToGlobal(new Point(controlDot.x, controlDot.y));
 			var id:String = findId(globalPos);
+			
 			if(id != "")
-				addATrigger(id);
+			{
+				var mat:EditBase = editView.matsControl.getMat(id);
+				addATrigger(mat);
+			}
+				
 			triggerLayer.removeChild(controlDot);
 			controlDot = null;
 		}
 		
 		private function findId(globalPos:Point):String
 		{
-			var mats:Array = view.matsControl.getMatByPoint(globalPos);
+			var mats:Array = editView.matsControl.getMatByPoint(globalPos);
 			for each(var m:EditBase in mats)
 				if(m.id != this.id)
 					return m.id;
@@ -171,23 +178,6 @@ package editEntity
 		private function onKeyUp(e:KeyboardEvent):void
 		{
 			
-		}
-		
-		public function enableRectAdjust(value:Boolean):void
-		{
-			for(var i:int = 0; i < 4; i++)
-			{
-				if(value)
-				{
-					dots[i].addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-					dots[i].addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-				}
-				else
-				{
-					dots[i].removeEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-					dots[i].removeEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-				}
-			}
 		}
 		public function enableEdit(value:Boolean):void
 		{
@@ -215,7 +205,7 @@ package editEntity
 		{
 			for each(var id:String in triggerMatIds)
 			{
-				view.matsControl.getMat(id).triggerId = "";
+				editView.matsControl.getMat(id).triggerId = "";
 			}
 		}
 		
@@ -232,7 +222,8 @@ package editEntity
 			var transform:ColorTransform = new ColorTransform;
 			transform.color = color;
 			this.transform.colorTransform = transform;
-			if(isActive)
+			
+			if(this.editView)
 				enableEdit(value);
 		}
 		
@@ -246,7 +237,7 @@ package editEntity
 			this.triggerMatIds = data.objs as Array;
 			if(data.hasOwnProperty("triggerTime"))
 				this.triggerTime = data.triggerTime;
-			if(data.hasOwnProperty("triggerId"))
+			if(data.hasOwnProperty("triggerId") && editView.matsControl.getMat(data.triggerId))
 				this.triggerId = data.triggerId;
 		}
 		
@@ -274,10 +265,7 @@ package editEntity
 		
 		private function addDot(px:int, py:int):void
 		{
-			var dot:Sprite = new Sprite;
-			dot.graphics.beginFill(0x000000);
-			dot.graphics.drawCircle(0, 0, 8);
-			dot.graphics.endFill();
+			var dot:Sprite = createDot();
 			dots.push(dot);
 			dot.x = px;
 			dot.y = py;
@@ -300,7 +288,7 @@ package editEntity
 				}
 				for(var id in dotsDic)
 				{
-					var mat:EditBase = view.matsControl.getMat(id);
+					var mat:EditBase = editView.matsControl.getMat(id);
 					if(mat)
 					{
 						var pos:Point = this.globalToLocal(mat.parent.localToGlobal(new Point(mat.x, mat.y)));
