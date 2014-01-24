@@ -2,6 +2,7 @@ package
 {
 	import com.as3xls.xls.ExcelFile;
 	import com.as3xls.xls.Sheet;
+	import com.hurlant.crypto.symmetric.NullPad;
 	
 	import flash.display.Bitmap;
 	import flash.display.Loader;
@@ -36,6 +37,7 @@ package
 		public var matsData:Object = null;
 		public var enemyData:Object = null;
 		public var enemyEditData:Object = null;
+		public var behaviorData:Object = null;
 		public var displayData:Array = null;
 		public var levelXML:XML = null;
 		public var enemySkinDic:Dictionary;
@@ -160,6 +162,17 @@ package
 					enemyEditData[item] = new Object;
 				}
 			}
+			
+			file = File.desktopDirectory.resolvePath("editor/behavior.json");
+			if(file.exists)
+			{
+				var stream:FileStream = new FileStream;
+				stream.open(file, FileMode.READ);
+				behaviorData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			else
+				behaviorData = new Object;
 		}
 		private var loadCount:int = 0;
 		private function onLoadSkin(e:Event):void
@@ -199,6 +212,16 @@ package
 			stream.open(file, FileMode.WRITE);
 			stream.writeUTFBytes(JSON.stringify(enemyEditData));
 			stream.close();
+		}
+		
+		public function saveBehaviorData():void
+		{
+			var file:File = File.desktopDirectory.resolvePath("editor/behavior.json");
+			var stream:FileStream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes(JSON.stringify(behaviorData));
+			stream.close();
+			Alert.show("保存成功！");
 		}
 		
 		public function exportJS():void

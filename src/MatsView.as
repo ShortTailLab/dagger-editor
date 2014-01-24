@@ -105,7 +105,7 @@ package
 		{
 			if(target)
 			{
-				var btPanel:BTEditPanel = new BTEditPanel;
+				var btPanel:BTEditPanel = new BTEditPanel(target);
 				PopUpManager.addPopUp(btPanel, this);
 				PopUpManager.centerPopUp(btPanel);
 				btPanel.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-btPanel.width/2;

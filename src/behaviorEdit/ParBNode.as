@@ -2,11 +2,11 @@ package behaviorEdit
 {
 	import flash.geom.Point;
 
-	public class SeqBNode extends BNode
+	public class ParBNode extends BNode
 	{
-		public function SeqBNode()
+		public function ParBNode(_type:String="")
 		{
-			super(BType.BTYPE_SEQ, 0xA020F0, true);
+			super(BType.BTYPE_PAR, 0xF4A460, true);
 		}
 		
 		override public function onLay(node:BNode):void
@@ -32,7 +32,8 @@ package behaviorEdit
 				connect(convertToLocal(this.getRightMiddle()), convertToLocal(childNodes[0].getLeftMiddle()));
 				for(var i:int = 0; i < childNodes.length-1; i++)
 				{
-					connect(convertToLocal(childNodes[i].getBottomMiddle()), convertToLocal(childNodes[i+1].getTopMiddle()));
+					var startPoint:Point = convertToLocal(this.getRightMiddle());
+					squareConnect(new Point(startPoint.x+5, startPoint.y), convertToLocal(childNodes[i+1].getLeftMiddle()));
 				}
 			}
 			else
@@ -43,6 +44,5 @@ package behaviorEdit
 			}
 			
 		}
-		
 	}
 }

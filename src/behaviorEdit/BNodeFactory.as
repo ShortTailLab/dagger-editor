@@ -15,6 +15,14 @@ package behaviorEdit
 				node = new RootBNode;
 			else if(type == BType.BTYPE_EXEC)
 				node = new ExecBNode();
+			else if(type == BType.BTYPE_PAR)
+				node = new ParBNode;
+			else if(type == BType.BTYPE_SEL)
+				node = new SelBNode;
+			else if(type == BType.BTYPE_COND)
+				node = new CondBNode;
+			else if(type == BType.BTYPE_LOOP)
+				node = new LoopBNode;
 			if(node)
 				node.nodeId = numCount++;
 			return node;

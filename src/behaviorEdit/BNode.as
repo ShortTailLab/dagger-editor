@@ -1,14 +1,24 @@
 package behaviorEdit
 {
 	import flash.display.Sprite;
+	import flash.events.ContextMenuEvent;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
+	import flash.ui.ContextMenu;
+	import flash.ui.ContextMenuItem;
 	
+	import mx.controls.Alert;
 	import mx.core.UIComponent;
 	import mx.effects.Move;
+	import mx.effects.Parallel;
+	import mx.events.EffectEvent;
+	
+	import editEntity.MatSprite;
+	
+	import flashx.textLayout.formats.Float;
 	
 	import manager.EventManager;
 
@@ -17,32 +27,43 @@ package behaviorEdit
 		public var nodeId:int = -1;
 		public var type:String = "";
 		public var par:BNode = null;
+		protected var enableLay:Boolean = false;
 		
 		public var treeWidth:Number = 0.0;
 		public var treeHeight:Number = 0.0;
 		
-		public var horizontalPadding:int = 10;
-		public var verticalPadding:int = 15;
+		protected var nodeWidth:Number = 100;
+		protected var nodeHeight:Number = 70;
+		
+		public var horizontalPadding:int = 30;
+		public var verticalPadding:int = 30;
 		public var childNodes:Array = null;
 		protected var view:BTEditView = null;
 		protected var isAcceptNode:Boolean = false;
-		private var color:uint = 0;
-		
-		protected var nodeWidth:Number = 80;
-		protected var nodeHeight:Number = 50;
+		protected var color:uint = 0;
 		
 		private var desX:Number = 0.0;
 		private var desY:Number = 0.0;
 		
-		public var enableDebug:Boolean = true;
+		public var enableDebug:Boolean = false;;
 		
-		public function BNode(_type:String = "", _color:uint = 0xF0FFF0, isAccept:Boolean = false)
+		public function BNode(_type:String = "", _color:uint = 0xF0FFF0, isAccept:Boolean = false, enableLayNode:Boolean = false)
 		{
 			this.type = _type;
 			this.color = _color;
 			this.isAcceptNode = isAccept; 
+			this.enableLay = enableLayNode;
 			childNodes = new Array;
 			
+			initShape();
+			
+			this.width = nodeWidth;
+			this.height = nodeHeight;
+			
+		}
+		
+		protected function initShape():void
+		{
 			var bg:Sprite = new Sprite;
 			bg.graphics.lineStyle(1);
 			bg.graphics.beginFill(color);
@@ -51,18 +72,14 @@ package behaviorEdit
 			this.addChild(bg);
 			
 			var label:TextField = new TextField;
-			label.defaultTextFormat = new TextFormat(null, 26);
+			label.defaultTextFormat = new TextFormat(null, 24);
 			label.text = type;
 			label.selectable = false;
-			label.width = label.textWidth;
-			label.height = label.textHeight;
+			label.width = label.textWidth+5;
+			label.height = label.textHeight+5;
 			this.addChild(label);
 			label.x = bg.width*0.5-label.textWidth*0.5;
 			label.y = bg.height*0.5-label.textHeight*0.5;
-			
-			this.width = nodeWidth;
-			this.height = nodeHeight;
-			
 		}
 		
 		public function init(_view:BTEditView):void
@@ -74,6 +91,15 @@ package behaviorEdit
 			
 			if(isAcceptNode)
 				this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			
+			var menu:ContextMenu = new ContextMenu;
+			var btn:ContextMenuItem = new ContextMenuItem("删除");
+			btn.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+				BNode(e.contextMenuOwner).removeSelf();
+				EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
+			});
+			menu.addItem(btn);
+			this.contextMenu = menu;
 		}
 		
 		public function initPos(dx:Number, dy:Number):void
@@ -82,9 +108,25 @@ package behaviorEdit
 			this.y = desY = dy;
 		}
 		
+		public function initData(data:Object):void
+		{
+		}
+		
+		public function exportData():Object
+		{
+			return null;
+		}
+		
+		public function update(dt:Number):void
+		{
+			for each(var n:BNode in childNodes)
+				n.update(dt);
+			drawGraph();
+		}
+		
 		public function getInteractiveRect():Rectangle
 		{
-			return new Rectangle(this.x+nodeWidth, this.y-nodeWidth, treeWidth, treeHeight+nodeWidth);
+			return new Rectangle(this.x+nodeWidth, this.y-nodeHeight, nodeWidth, treeHeight+nodeHeight);
 		}
 		
 		public function getChildNodeIndex(node:BNode):int
@@ -93,6 +135,28 @@ package behaviorEdit
 				if(childNodes[i] == node)
 					return i;
 			return -1;
+		}
+		
+		public function getCenterPoint():Point
+		{
+			return new Point(this.x+(nodeWidth-horizontalPadding)*0.5, this.y+(nodeHeight-verticalPadding)*0.5);
+		}
+		public function getLeftMiddle():Point
+		{
+			return new Point(this.x, this.y+(nodeHeight-verticalPadding)*0.5);
+		}
+		public function getRightMiddle():Point
+		{
+			return new Point(this.x+(nodeWidth-horizontalPadding), this.y+(nodeHeight-verticalPadding)*0.5);
+		}
+		
+		public function getTopMiddle():Point
+		{
+			return new Point(this.x+(nodeWidth-horizontalPadding)*0.5, this.y);
+		}
+		public function getBottomMiddle():Point
+		{
+			return new Point(this.x+(nodeWidth-horizontalPadding)*0.5, this.y+(nodeHeight-verticalPadding));
 		}
 		
 		private var isPressing:Boolean = false;
@@ -136,7 +200,20 @@ package behaviorEdit
 		
 		public function onLay(node:BNode):void
 		{
-			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
+			if(enableLay)
+			{
+				for(var i:int = 0; i < childNodes.length; i++)
+					if(node.y < childNodes[i].y)
+						break;
+				
+				if(node.par == this && getChildNodeIndex(node) < i)
+					i--;
+				node.par.removeChildNode(node.nodeId);
+				childNodes.splice(i, 0, node);
+				
+				node.par = this;
+			}
+			
 		}
 		
 		public function onAdd(nodeType:String):void
@@ -156,8 +233,8 @@ package behaviorEdit
 		
 		public function removeSelf():void
 		{
-			for(var i:int = 0; i < childNodes.length; i++)
-				childNodes[i].removeSelf();
+			while(childNodes.length > 0)
+				BNode(childNodes.pop()).removeSelf();
 			if(this.par)
 			{
 				this.par.removeChildNode(this.nodeId);
@@ -181,31 +258,45 @@ package behaviorEdit
 		{
 			treeWidth = 0;
 			treeHeight = 0;
-			for(var i:int = 0; i < childNodes.length; i++)
+			if(childNodes.length > 0)
 			{
-				childNodes[i].desX = this.desX + nodeWidth;
-				childNodes[i].desY = this.desY + treeHeight ;
-				var action:Move = new Move(childNodes[i]);
-				action.xFrom = childNodes[i].x;
-				action.yFrom = childNodes[i].y;
-				action.xTo = childNodes[i].desX;
-				action.yTo = childNodes[i].desY;
-				action.duration = 200;
-				action.play();
-				
-				childNodes[i].drawWithAnim();
-				treeWidth = Math.max(treeWidth, childNodes[i].treeWidth);
-				treeHeight += childNodes[i].treeHeight;
+				var parActions:Parallel = new Parallel;
+				for(var i:int = 0; i < childNodes.length; i++)
+				{
+					childNodes[i].desX = this.desX + nodeWidth;
+					childNodes[i].desY = this.desY + treeHeight ;
+					var action:Move = new Move(childNodes[i]);
+					action.xFrom = childNodes[i].x;
+					action.yFrom = childNodes[i].y;
+					action.xTo = childNodes[i].desX;
+					action.yTo = childNodes[i].desY;
+					action.duration = 200;
+					parActions.addChild(action);
+					
+					childNodes[i].drawWithAnim();
+					treeWidth = Math.max(treeWidth, nodeWidth + childNodes[i].treeWidth);
+					treeHeight += childNodes[i].treeHeight;
+				}
+				parActions.addEventListener(EffectEvent.EFFECT_END, onMoveEnd);
+				parActions.play();
 			}
+			else
+				drawGraph();
+			
 			treeWidth = Math.max(treeWidth, nodeWidth);
 			treeHeight = Math.max(treeHeight, nodeHeight);
 			
-			if(enableDebug)
+			if(false)
 			{
 				this.graphics.clear();
 				this.graphics.lineStyle(1);
 				this.graphics.drawRect(nodeWidth, 0, treeWidth, treeHeight);
 			}
+		}
+		
+		private function onMoveEnd(e:EffectEvent):void
+		{
+			drawGraph();
 		}
 		
 		public function draw():void
@@ -222,7 +313,31 @@ package behaviorEdit
 			}
 			treeWidth = Math.max(treeWidth, nodeWidth);
 			treeHeight = Math.max(treeHeight, nodeHeight);
+		}
+		
+		public function drawGraph():void
+		{
 			
+		}
+		
+		public function convertToLocal(p:Point):Point
+		{
+			return new Point(p.x-this.x, p.y-this.y);
+		}
+		
+		public function connect(p1:Point, p2:Point):void
+		{
+			this.graphics.lineStyle(2);
+			this.graphics.moveTo(p1.x, p1.y);
+			this.graphics.lineTo(p2.x, p2.y);
+		}
+		
+		public function squareConnect(p1:Point, p2:Point):void
+		{
+			this.graphics.lineStyle(2);
+			this.graphics.moveTo(p1.x, p1.y);
+			this.graphics.lineTo(p1.x, p2.y);
+			this.graphics.lineTo(p2.x, p2.y);
 		}
 	}
 }

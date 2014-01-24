@@ -1,25 +1,26 @@
 package behaviorEdit
 {
 	import flash.geom.Point;
-	
-	import mx.controls.Alert;
 
-	public class RootBNode extends BNode
+	public class SelBNode extends BNode
 	{
-		public function RootBNode()
+		public function SelBNode()
 		{
-			super(BType.BTYPE_ROOT, 0x228B22, true);
+			super(BType.BTYPE_SEL, 0xD15FEE, true);
 		}
 		
-		override public function onAdd(nodeType:String):void
+		override public function onLay(node:BNode):void
 		{
-			if(childNodes.length == 0)
-			{
-				super.onAdd(nodeType);
-			}
-			else
-				Alert.show("Root节点只能添加一个子节点");
+			for(var i:int = 0; i < childNodes.length; i++)
+				if(node.y < childNodes[i].y)
+					break;
 			
+			if(node.par == this && getChildNodeIndex(node) < i)
+				i--;
+			node.par.removeChildNode(node.nodeId);
+			childNodes.splice(i, 0, node);
+			
+			node.par = this;
 		}
 		
 		override public function drawGraph():void
@@ -42,6 +43,5 @@ package behaviorEdit
 			}
 			
 		}
-		
 	}
 }
