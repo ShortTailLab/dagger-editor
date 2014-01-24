@@ -16,7 +16,7 @@ package behaviorEdit
 			else if(type == BType.BTYPE_EXEC)
 				node = new ExecBNode();
 			if(node)
-				node.id = numCount++;
+				node.nodeId = numCount++;
 			return node;
 		}
 	}

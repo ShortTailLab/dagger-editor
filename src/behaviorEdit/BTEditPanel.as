@@ -1,5 +1,6 @@
 package behaviorEdit
 {
+	import flash.events.EventDispatcher;
 	import flash.events.MouseEvent;
 	
 	import mx.core.UIComponent;
@@ -13,6 +14,8 @@ package behaviorEdit
 	import spark.components.TitleWindow;
 	import spark.components.VGroup;
 	import spark.components.VScrollBar;
+	
+	import manager.EventManager;
 	
 	public class BTEditPanel extends TitleWindow
 	{
@@ -74,6 +77,7 @@ package behaviorEdit
 			
 			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			this.addEventListener(CloseEvent.CLOSE, onClose);
 		}
 		
 		private function onMouseMove(e:MouseEvent):void
@@ -83,6 +87,7 @@ package behaviorEdit
 				currNode.x = this.mouseX-10;
 				currNode.y = this.mouseY-15;
 			}
+			EventManager.getInstance().dispatchEvent(e);
 		}
 		
 		private function onMouseUp(e:MouseEvent):void
@@ -92,6 +97,8 @@ package behaviorEdit
 				grabLayer.removeChild(currNode);
 				currNode = null;
 			}
+			
+			EventManager.getInstance().dispatchEvent(e);
 		}
 		
 		private function onNodeMouseDown(e:MouseEvent):void
