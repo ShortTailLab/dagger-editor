@@ -71,7 +71,6 @@ package behaviorEdit
 			this.view.addChild(this);
 			
 			this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-			//EventManager.getInstance().addEventListener(BTEvent.LAID, onNodeLaid);
 			
 			if(isAcceptNode)
 				this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
@@ -133,16 +132,6 @@ package behaviorEdit
 				isPressing = false;
 			}
 			
-		}
-		
-		public function onNodeLaid(e:BTEvent):void
-		{
-			var node:BNode = e.bindingNode;
-			if(node && node != this && getInteractiveRect().containsPoint(new Point(node.x, node.y)))
-			{
-				onLay(node);
-				EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
-			}
 		}
 		
 		public function onLay(node:BNode):void

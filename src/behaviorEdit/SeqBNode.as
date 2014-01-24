@@ -1,6 +1,5 @@
 package behaviorEdit
 {
-	import manager.EventManager;
 
 	public class SeqBNode extends BNode
 	{
