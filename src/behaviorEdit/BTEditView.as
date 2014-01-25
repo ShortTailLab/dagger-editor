@@ -14,7 +14,6 @@ package behaviorEdit
 		
 		public function BTEditView(_panel:BTEditPanel)
 		{
-			trace("new view");
 			panel = _panel; 
 			
 			rootNode = new RootBNode;

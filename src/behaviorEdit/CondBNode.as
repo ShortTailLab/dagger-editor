@@ -12,6 +12,8 @@ package behaviorEdit
 		public function CondBNode()
 		{
 			super(BType.BTYPE_COND, 0x1E90FF, true, true);
+			
+			
 		}
 		
 		override protected function initShape():void
@@ -20,9 +22,9 @@ package behaviorEdit
 			bg.graphics.lineStyle(1);
 			bg.graphics.beginFill(color);
 			bg.graphics.moveTo(getTopMiddle().x, getTopMiddle().y);
-			bg.graphics.lineTo(getRightMiddle().x, getRightMiddle().y);
+			bg.graphics.lineTo(getRightPoint().x, getRightPoint().y);
 			bg.graphics.lineTo(getBottomMiddle().x, getBottomMiddle().y);
-			bg.graphics.lineTo(getLeftMiddle().x, getLeftMiddle().y);
+			bg.graphics.lineTo(getLeftPoint().x, getLeftPoint().y);
 			bg.graphics.lineTo(getTopMiddle().x, getTopMiddle().y);
 			bg.graphics.endFill();
 			this.addChild(bg);
@@ -72,22 +74,21 @@ package behaviorEdit
 			if(childNodes.length > 0)
 			{
 				this.graphics.lineStyle(2);
-				connect(convertToLocal(this.getRightMiddle()), convertToLocal(childNodes[0].getLeftMiddle()));
+				Utils.horConnect(this, convertToLocal(this.getRightPoint()), convertToLocal(childNodes[0].getLeftPoint()));
 				for(var i:int = 0; i < childNodes.length-1; i++)
 				{
-					var startPoint:Point = convertToLocal(this.getRightMiddle());
-					squareConnect(new Point(startPoint.x+5, startPoint.y), convertToLocal(childNodes[i+1].getLeftMiddle()));
+					var startPoint:Point = convertToLocal(this.getRightPoint());
+					Utils.squareConnect(this, new Point(startPoint.x+5, startPoint.y), convertToLocal(childNodes[i+1].getLeftPoint()));
 				}
 			}
 			else
 			{
-				var rpos:Point = convertToLocal(this.getRightMiddle());
-				squareConnect(rpos, new Point(this.nodeWidth, rpos.y-15));
+				var rpos:Point = convertToLocal(this.getRightPoint());
+				Utils.squareConnect(this, rpos, new Point(this.nodeWidth, rpos.y-15));
 				this.graphics.drawCircle(this.nodeWidth+8, rpos.y-15, 8);
-				squareConnect(rpos, new Point(this.nodeWidth, rpos.y+15));
+				Utils.squareConnect(this, rpos, new Point(this.nodeWidth, rpos.y+15));
 				this.graphics.drawCircle(this.nodeWidth+8, rpos.y+15, 8);
 			}
-			
 		}
 		
 	}

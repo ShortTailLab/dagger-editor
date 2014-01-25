@@ -16,18 +16,16 @@ package behaviorEdit
 	import mx.effects.Parallel;
 	import mx.events.EffectEvent;
 	
-	import editEntity.MatSprite;
-	
-	import flashx.textLayout.formats.Float;
-	
 	import manager.EventManager;
 
 	public class BNode extends UIComponent
 	{
+		
 		public var nodeId:int = -1;
 		public var type:String = "";
 		public var par:BNode = null;
 		protected var enableLay:Boolean = false;
+		protected var drawStyle:String = "";
 		
 		public var treeWidth:Number = 0.0;
 		public var treeHeight:Number = 0.0;
@@ -37,23 +35,26 @@ package behaviorEdit
 		
 		public var horizontalPadding:int = 30;
 		public var verticalPadding:int = 30;
-		public var childNodes:Array = null;
+		public var childNodes:Array = new Array;
 		protected var view:BTEditView = null;
 		protected var isAcceptNode:Boolean = false;
 		protected var color:uint = 0;
 		
+		protected var bg:Sprite;
+		protected var label:TextField;
+		
 		private var desX:Number = 0.0;
 		private var desY:Number = 0.0;
 		
-		public var enableDebug:Boolean = false;;
+		public var enableDebug:Boolean = false;
 		
-		public function BNode(_type:String = "", _color:uint = 0xF0FFF0, isAccept:Boolean = false, enableLayNode:Boolean = false)
+		public function BNode(_type:String = "", _color:uint = 0xF0FFF0, isAccept:Boolean = false, enableLayNode:Boolean = false, graphStyle:String = "")
 		{
 			this.type = _type;
 			this.color = _color;
 			this.isAcceptNode = isAccept; 
 			this.enableLay = enableLayNode;
-			childNodes = new Array;
+			this.drawStyle = graphStyle;
 			
 			initShape();
 			
@@ -64,14 +65,14 @@ package behaviorEdit
 		
 		protected function initShape():void
 		{
-			var bg:Sprite = new Sprite;
+			bg = new Sprite;
 			bg.graphics.lineStyle(1);
 			bg.graphics.beginFill(color);
 			bg.graphics.drawRect(0, 0, nodeWidth-horizontalPadding, nodeHeight-verticalPadding);
 			bg.graphics.endFill();
 			this.addChild(bg);
 			
-			var label:TextField = new TextField;
+			label = new TextField;
 			label.defaultTextFormat = new TextFormat(null, 24);
 			label.text = type;
 			label.selectable = false;
@@ -141,13 +142,13 @@ package behaviorEdit
 		{
 			return new Point(this.x+(nodeWidth-horizontalPadding)*0.5, this.y+(nodeHeight-verticalPadding)*0.5);
 		}
-		public function getLeftMiddle():Point
+		public function getLeftPoint():Point
 		{
-			return new Point(this.x, this.y+(nodeHeight-verticalPadding)*0.5);
+			return new Point(this.x, this.y+20);
 		}
-		public function getRightMiddle():Point
+		public function getRightPoint():Point
 		{
-			return new Point(this.x+(nodeWidth-horizontalPadding), this.y+(nodeHeight-verticalPadding)*0.5);
+			return new Point(this.x+(nodeWidth-horizontalPadding), this.y+20);
 		}
 		
 		public function getTopMiddle():Point
@@ -171,8 +172,8 @@ package behaviorEdit
 		{
 			if(isPressing)
 			{
-				this.x = view.mouseX-nodeWidth*0.5;
-				this.y = view.mouseY-nodeHeight*0.5;
+				this.x = view.mouseX;
+				this.y = view.mouseY;
 				draw();
 			}
 			
@@ -317,27 +318,75 @@ package behaviorEdit
 		
 		public function drawGraph():void
 		{
-			
+			if(drawStyle == BNodeDrawStyle.SEQ_DRAW)
+			{
+				this.graphics.clear();
+				if(childNodes.length > 0)
+				{
+					this.graphics.lineStyle(2);
+					Utils.horConnect(this, convertToLocal(this.getRightPoint()), convertToLocal(childNodes[0].getLeftPoint()), 2);
+					for(var i:int = 0; i < childNodes.length-1; i++)
+					{
+						Utils.verConnect(this, convertToLocal(childNodes[i].getBottomMiddle()), convertToLocal(childNodes[i+1].getTopMiddle()), 2);
+					}
+				}
+				else
+				{
+					var rpos:Point = convertToLocal(this.getRightPoint());
+					Utils.horConnect(this, rpos, new Point(this.nodeWidth, rpos.y), 2);
+					this.graphics.drawCircle(this.nodeWidth+8, rpos.y, 8);
+				}
+				
+			}
+			else if(drawStyle == BNodeDrawStyle.PAR_DRAW)
+			{
+				this.graphics.clear();
+				if(childNodes.length > 0)
+				{
+					this.graphics.lineStyle(2);
+					Utils.horConnect(this, convertToLocal(this.getRightPoint()), convertToLocal(childNodes[0].getLeftPoint()), 2);
+					for(var i:int = 0; i < childNodes.length-1; i++)
+					{
+						var startPoint:Point = convertToLocal(this.getRightPoint());
+						Utils.squareConnect(this, new Point(startPoint.x+5, startPoint.y), convertToLocal(childNodes[i+1].getLeftPoint()), 2);
+					}
+				}
+				else
+				{
+					var rpos:Point = convertToLocal(this.getRightPoint());
+					Utils.horConnect(this, rpos, new Point(this.nodeWidth, rpos.y));
+					this.graphics.drawCircle(this.nodeWidth+8, rpos.y, 8);
+				}
+			}
+			else if(drawStyle == BNodeDrawStyle.LOOP_DRAW)
+			{
+				this.graphics.clear();
+				if(childNodes.length > 0)
+				{
+					this.graphics.lineStyle(2);
+					var startPoint:Point = convertToLocal(this.getRightPoint());
+					Utils.horConnect(this, startPoint, convertToLocal(childNodes[0].getLeftPoint()));
+					for(var i:int = 0; i < childNodes.length-1; i++)
+					{
+						Utils.verConnect(this, convertToLocal(childNodes[i].getBottomMiddle()), convertToLocal(childNodes[i+1].getTopMiddle()));
+					}
+					var lastPos:Point = convertToLocal(childNodes[childNodes.length-1].getBottomMiddle());
+					var bottomPos:Point = new Point(lastPos.x, lastPos.y+10);
+					Utils.verConnect(this, lastPos, bottomPos);
+					Utils.squareConnect(this, new Point(startPoint.x+5, startPoint.y), bottomPos);
+				}
+				else
+				{
+					var rpos:Point = convertToLocal(this.getRightPoint());
+					Utils.horConnect(this, rpos, new Point(this.nodeWidth, rpos.y));
+					this.graphics.drawCircle(this.nodeWidth+8, rpos.y, 8);
+				}
+			}
 		}
 		
 		public function convertToLocal(p:Point):Point
 		{
 			return new Point(p.x-this.x, p.y-this.y);
-		}
-		
-		public function connect(p1:Point, p2:Point):void
-		{
-			this.graphics.lineStyle(2);
-			this.graphics.moveTo(p1.x, p1.y);
-			this.graphics.lineTo(p2.x, p2.y);
-		}
-		
-		public function squareConnect(p1:Point, p2:Point):void
-		{
-			this.graphics.lineStyle(2);
-			this.graphics.moveTo(p1.x, p1.y);
-			this.graphics.lineTo(p1.x, p2.y);
-			this.graphics.lineTo(p2.x, p2.y);
 		}
 	}
 }

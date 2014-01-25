@@ -22,6 +22,8 @@ package
 	
 	import mx.controls.Alert;
 	
+	import behaviorEdit.BType;
+	
 	import editEntity.TriggerSprite;
 	
 	import excel.ExcelReader;
@@ -224,6 +226,41 @@ package
 			Alert.show("保存成功！");
 		}
 		
+		public function getBTreeJS(sourceData:Object, isEndComma:Boolean):String
+		{
+			var js:String = getNodeJS(sourceData);
+			
+			var children:Array = sourceData.children as Array;
+			for(var i:int = 0; i < children.length; i++)
+				js += getBTreeJS(children[i], i != children.length-1);
+			js += ")";
+			if(isEndComma)
+				js += ",";
+			
+			return js;
+		}
+		private function getNodeJS(node:Object):String
+		{
+			if(node.type == BType.BTYPE_SEQ)
+				return "BT.seq(";
+			else if(node.type == BType.BTYPE_PAR)
+				return "BT.par(";
+			else if(node.type == BType.BTYPE_SEL)
+				return "BT.sel(";
+			else if(node.type == BType.BTYPE_LOOP)
+				return "BT.loop("+node.data.times+",";
+			else if(node.type == BType.BTYPE_EXEC)
+			{
+				if(node.data && node.data.hasOwnProperty("content"))
+					return node.data.content;
+				else
+					return "";
+			}
+				
+			
+			return "null";
+		}
+		
 		public function exportJS():void
 		{
 			for(var type in enemyEditData)
@@ -308,6 +345,14 @@ package
 					action2.type = data.attack_type == "M" ? "MeleeAttack" : "RangedAttack";
 					data.actions.push(action2);
 				}
+				
+				if(behaviorData.hasOwnProperty(name))
+				{
+					var bArray:Array = new Array;
+					bArray.push("function(){return "+getBTreeJS(behaviorData[name], false)+";}");
+					data.behaviors = new FunctionObj("function(){return "+getBTreeJS(behaviorData[name], false)+";}");
+				}
+				
 				delete data.move_type;
 				delete data.attack_type;
 				delete data.attack_args;
@@ -360,8 +405,10 @@ package
 				
 			}
 			
+			var content:String = JSON.stringify(exportData, null, "\t")
+			
 			var js:String = "function MAKE_LEVEL(){ var level = " +
-				"" + JSON.stringify(exportData, null, "\t") + "; return level; }"; 
+				"" + content + "; return level; }"; 
 			
 			var file:File = File.desktopDirectory.resolvePath("editor/Resources/level/demo.js");
 			var stream:FileStream = new FileStream;
@@ -442,5 +489,19 @@ package
 			}
 			this.dispatchEvent(new Event(Event.COMPLETE));
 		}
+	}
+}
+
+class FunctionObj
+{
+	private var content:String = ""
+	function FunctionObj(_content:String)
+	{
+		content = _content;	
+	}
+	
+	public function toJSON(k):*
+	{
+		return content;
 	}
 }

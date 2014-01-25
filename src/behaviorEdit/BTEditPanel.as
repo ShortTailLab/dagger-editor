@@ -123,6 +123,7 @@ package behaviorEdit
 			{
 				Data.getInstance().behaviorData[editType] = data;
 				Data.getInstance().saveBehaviorData();
+				trace(Data.getInstance().getBTreeJS(data, false));
 			}
 			else
 				Alert.show("数据为空");
