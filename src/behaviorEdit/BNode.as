@@ -39,6 +39,7 @@ package behaviorEdit
 		protected var view:BTEditView = null;
 		protected var isAcceptNode:Boolean = false;
 		protected var color:uint = 0;
+		protected var canMove:Boolean = true;
 		
 		protected var bg:Sprite;
 		protected var label:TextField;
@@ -66,11 +67,8 @@ package behaviorEdit
 		protected function initShape():void
 		{
 			bg = new Sprite;
-			bg.graphics.lineStyle(1);
-			bg.graphics.beginFill(color);
-			bg.graphics.drawRect(0, 0, nodeWidth-horizontalPadding, nodeHeight-verticalPadding);
-			bg.graphics.endFill();
 			this.addChild(bg);
+			updateBg();
 			
 			label = new TextField;
 			label.defaultTextFormat = new TextFormat(null, 24);
@@ -83,12 +81,22 @@ package behaviorEdit
 			label.y = bg.height*0.5-label.textHeight*0.5;
 		}
 		
+		protected function updateBg():void
+		{
+			bg.graphics.clear();
+			bg.graphics.lineStyle(1);
+			bg.graphics.beginFill(color);
+			bg.graphics.drawRect(0, 0, nodeWidth-horizontalPadding, nodeHeight-verticalPadding);
+			bg.graphics.endFill();
+		}
+		
 		public function init(_view:BTEditView):void
 		{
 			this.view = _view;	
 			this.view.addChild(this);
 			
-			this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+			if(canMove)
+				this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			
 			if(isAcceptNode)
 				this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
@@ -124,6 +132,8 @@ package behaviorEdit
 				n.update(dt);
 			drawGraph();
 		}
+		
+		
 		
 		public function getInteractiveRect():Rectangle
 		{
@@ -214,7 +224,6 @@ package behaviorEdit
 				
 				node.par = this;
 			}
-			
 		}
 		
 		public function onAdd(nodeType:String):void
@@ -222,6 +231,7 @@ package behaviorEdit
 			var node:BNode = BNodeFactory.createBNode(nodeType);
 			node.init(view);
 			add(node);
+			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.HAS_EDITED));
 		}
 		
 		public function add(node:BNode):void
@@ -327,7 +337,7 @@ package behaviorEdit
 					Utils.horConnect(this, convertToLocal(this.getRightPoint()), convertToLocal(childNodes[0].getLeftPoint()), 2);
 					for(var i:int = 0; i < childNodes.length-1; i++)
 					{
-						Utils.verConnect(this, convertToLocal(childNodes[i].getBottomMiddle()), convertToLocal(childNodes[i+1].getTopMiddle()), 2);
+						Utils.connect(this, convertToLocal(childNodes[i].getBottomMiddle()), convertToLocal(childNodes[i+1].getTopMiddle()), 2);
 					}
 				}
 				else
@@ -368,7 +378,7 @@ package behaviorEdit
 					Utils.horConnect(this, startPoint, convertToLocal(childNodes[0].getLeftPoint()));
 					for(var i:int = 0; i < childNodes.length-1; i++)
 					{
-						Utils.verConnect(this, convertToLocal(childNodes[i].getBottomMiddle()), convertToLocal(childNodes[i+1].getTopMiddle()));
+						Utils.connect(this, convertToLocal(childNodes[i].getBottomMiddle()), convertToLocal(childNodes[i+1].getTopMiddle()));
 					}
 					var lastPos:Point = convertToLocal(childNodes[childNodes.length-1].getBottomMiddle());
 					var bottomPos:Point = new Point(lastPos.x, lastPos.y+10);

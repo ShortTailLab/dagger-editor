@@ -117,7 +117,7 @@ package excel
 				enemy["attack_args"]["damage"] = int(workSheet.getCellValue("N"+i));
 				enemy["defense"] = int(workSheet.getCellValue("O"+i));
 				enemy["bonus"] = int(workSheet.getCellValue("P"+i));
-				enemy["rbonus"] = int(workSheet.getCellValue("Q"+i));				
+				enemy["rbonus"] = int(workSheet.getCellValue("Q"+i));	
 			}
 			_excelLoader.close();
 

@@ -39,11 +39,14 @@ package
 		public var matsData:Object = null;
 		public var enemyData:Object = null;
 		public var enemyEditData:Object = null;
-		public var behaviorData:Object = null;
+		public var enemyBTData:Object = null;
+		public var behaviorsData:Object = null;
 		public var displayData:Array = null;
 		public var levelXML:XML = null;
+		public var behaviorsXML:XML = null;
 		public var enemySkinDic:Dictionary;
 		public var currSelectedLevel:int = 0;
+		public var behaviorBaseNode:Object = null;
 		
 		private var autoSaveTimer:Timer;
 		private static var instance:Data = null;
@@ -165,17 +168,53 @@ package
 				}
 			}
 			
+			var file:File = File.desktopDirectory.resolvePath("editor/enemyBehaviorsData.json");
+			enemyBTData = null;
+			if(file.exists)
+			{
+				var stream:FileStream = new FileStream;
+				stream.open(file, FileMode.READ);
+				enemyBTData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			
+			if(!enemyBTData)
+			{
+				enemyBTData = new Object;
+				for(var item in enemyData)
+				{
+					enemyBTData[item] = new Array;
+				}
+			}
+			
 			file = File.desktopDirectory.resolvePath("editor/behavior.json");
 			if(file.exists)
 			{
 				var stream:FileStream = new FileStream;
 				stream.open(file, FileMode.READ);
-				behaviorData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				behaviorsData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
+				//check the null behavior
+				for(var b in behaviorsData)
+					if(!behaviorsData[b])
+						delete behaviorsData[b];
 			}
 			else
-				behaviorData = new Object;
+				behaviorsData = new Object;
+			
+			
+			file = File.desktopDirectory.resolvePath("editor/bt_node_format.json");
+			if(file.exists)
+			{
+				var stream:FileStream = new FileStream;
+				stream.open(file, FileMode.READ);
+				this.behaviorBaseNode = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			
+			behaviorsXML = this.parseBehaviorXML(behaviorsData);
 		}
+		
 		private var loadCount:int = 0;
 		private function onLoadSkin(e:Event):void
 		{
@@ -216,24 +255,50 @@ package
 			stream.close();
 		}
 		
+		public function saveEnemyBehaviorData():void
+		{
+			var file:File = File.desktopDirectory.resolvePath("editor/enemyBehaviorsData.json");
+			var stream:FileStream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes(JSON.stringify(enemyBTData));
+			stream.close();
+		}
+		
 		public function saveBehaviorData():void
 		{
 			var file:File = File.desktopDirectory.resolvePath("editor/behavior.json");
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(JSON.stringify(behaviorData));
+			stream.writeUTFBytes(JSON.stringify(behaviorsData));
 			stream.close();
 			Alert.show("保存成功！");
 		}
 		
 		public function getBTreeJS(sourceData:Object, isEndComma:Boolean):String
 		{
-			var js:String = getNodeJS(sourceData);
+			var js:String = "";
+			var prev:String = getNodeJS(sourceData);
+			if(prev != "")
+			{
+				js = prev;
+				var children:Array = sourceData.children as Array;
+				for(var i:int = 0; i < children.length; i++)
+					js += getBTreeJS(children[i], i != children.length-1);
+				js += ")";
+			}
+			else
+			{
+				if(sourceData.data)
+				{
+					if(sourceData.data.hasOwnProperty("content") && sourceData.data.content != "")
+					{
+						js = sourceData.data.content;
+					}
+				}
+				else
+					js = "null";
+			}
 			
-			var children:Array = sourceData.children as Array;
-			for(var i:int = 0; i < children.length; i++)
-				js += getBTreeJS(children[i], i != children.length-1);
-			js += ")";
 			if(isEndComma)
 				js += ",";
 			
@@ -249,21 +314,17 @@ package
 				return "BT.sel(";
 			else if(node.type == BType.BTYPE_LOOP)
 				return "BT.loop("+node.data.times+",";
-			else if(node.type == BType.BTYPE_EXEC)
+			else if(node.type == BType.BTYPE_COND)
 			{
-				if(node.data && node.data.hasOwnProperty("content"))
-					return node.data.content;
-				else
-					return "";
+				return "BT.cond("+node.data.cond+",";
 			}
 				
-			
-			return "null";
+			return "";
 		}
 		
 		public function exportJS():void
 		{
-			for(var type in enemyEditData)
+			/*for(var type in enemyEditData)
 			{
 				if(!enemyData.hasOwnProperty(type))
 				{
@@ -287,76 +348,71 @@ package
 					enemyData[type]["type"] = enemyEditData[type]["type"];
 				else
 					enemyData[type]["type"] = "enemy";
-			}	
-			
+			}*/
 			var source:Array = displayData[currSelectedLevel].data;
-			/*var positions:Array = new Array;
-			for each(var item:Object in source)
-			{
-				var data:Object = new Object;
-				data.type = item.type;
-				data.x = item.x;
-				data.y = item.y;
-				data.id = item.id;
-				if(item.hasOwnProperty("triggerId"))
-					data.triggerId = item.triggerId;
-				if(item.type == TriggerSprite.TRIGGER_TYPE)
-				{
-					data.width = item.width;
-					data.height = item.height;
-					data.objs = item.objs;
-				}
-				if(item.hasOwnProperty("triggerTime"))
-					data.triggerTime= item.triggerTime;
-				else
-					data.triggerTime = item.y;
-				
-				positions.push(data);
-			}
-			var exportData:Object = new Object();
-			exportData["pos"] = positions;
-			if (enemyData) {
-				exportData["defs"] = enemyData;
-			}
-			var map:Object = new Object;
-			map.speed = conf.speed;
-			exportData["map"] = map;*/
 			
 			var exportData:Object = new Object;
 			exportData.actor = new Object;
 			exportData.trap = new Object;
-			exportData.objects = new Array;
+			exportData.objects = new Object;
 			exportData.trigger = new Array;
+			exportData.bullet = new Object;
+			exportData.luck = new Object;
+			exportData.behavior = new Object;
+			
+			for(var bName in behaviorsData)
+			{
+				exportData.behavior[bName]= String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return "+getBTreeJS(behaviorsData[bName], false)+";}@@");
+			}
+			
 			for(var name in enemyData)
 			{
 				var data:Object = enemyData[name];
-				data.actions = new Array;
-				if(data.move_type != 0)
+				
+				if(enemyBTData.hasOwnProperty(name))
+					data.behaviors = enemyBTData[name];
+				else
+					data.behaviors = new Array;
+				
+				if(data.face >= 10000 && data.face < 20000)
 				{
-					var action:Object = data.move_args;
-					action.type = data.move_type;
-					data.actions.push(action);
+					exportData.bullet[name] = data;
+				}
+				else
+				{
+					/*data.actions = new Array;
+					if(data.move_type != 0)
+					{
+						var action:Object = data.move_args;
+						action.type = data.move_type;
+						data.actions.push(action);
+						
+						delete data.move_args;
+					}
+					if(data.attack_type != "")
+					{
+						var action2:Object = data.attack_args;
+						action2.type = data.attack_type == "M" ? "MeleeAttack" : "RangedAttack";
+						data.actions.push(action2);
+					}*/
 					
-					delete data.move_args;
-				}
-				if(data.attack_type != "")
-				{
-					var action2:Object = data.attack_args;
-					action2.type = data.attack_type == "M" ? "MeleeAttack" : "RangedAttack";
-					data.actions.push(action2);
+					/*if(behaviorData.hasOwnProperty(name) && behaviorData[name])
+					{
+						data.behaviors = "@@@function(){return "+getBTreeJS(behaviorData[name], false)+";}@@@";
+					}
+					else
+						data.behaviors = null;*/
+					
+					if(!data.hasOwnProperty("attack"))
+						data.attack = 1;
+					if(!data.hasOwnProperty("health"))
+						data.health = 1;
+					if(!data.hasOwnProperty("defense"))
+						data.defense = 1;
+					exportData.actor[name] = data;
 				}
 				
-				if(behaviorData.hasOwnProperty(name))
-				{
-					var bArray:Array = new Array;
-					bArray.push("function(){return "+getBTreeJS(behaviorData[name], false)+";}");
-					data.behaviors = new FunctionObj("function(){return "+getBTreeJS(behaviorData[name], false)+";}");
-				}
 				
-				delete data.move_type;
-				delete data.attack_type;
-				delete data.attack_args;
-				exportData.actor[name] = data;
 			}
 			
 			for each(var item:Object in source)
@@ -366,11 +422,7 @@ package
 					var triData:Object = new Object;
 					var condData = new Object;
 					condData.type = "Area";
-					condData.area = new Array;
-					condData.area.push(item.x);
-					condData.area.push(item.y);
-					condData.area.push(item.width);
-					condData.area.push(item.height);
+					condData.area = "@@cc.rect("+item.x+","+item.y+","+item.width+","+item.height+")@@";
 					triData.cond = condData;
 					
 					var resultData:Object = new Object;
@@ -382,10 +434,9 @@ package
 				else
 				{
 					var objData:Object = new Object;
-					objData.id = item.id;
 					objData.name = item.type;
-					objData.coord = new Array(item.x, item.y);
-					exportData.objects.push(objData);
+					objData.coord = "@@cc.p("+item.x+","+item.y+")@@";
+					exportData.objects[item.id] = objData;
 					
 					if(!item.hasOwnProperty("triggerId"))
 					{
@@ -405,7 +456,8 @@ package
 				
 			}
 			
-			var content:String = JSON.stringify(exportData, null, "\t")
+			var content:String = JSON.stringify(exportData, null, "\t");
+			content = adjustJS(content);
 			
 			var js:String = "function MAKE_LEVEL(){ var level = " +
 				"" + content + "; return level; }"; 
@@ -418,6 +470,17 @@ package
 			
 			Alert.show("保存成功！");
 		}
+		
+		private function adjustJS(js:String):String
+		{
+			var reg1:RegExp = /"@@/g;
+			var reg2:RegExp = /@@"/g;
+			var result:String = "";
+			result = js.replace(reg1, "");
+			result = result.replace(reg2, "");
+			return result;
+		}
+		
 		
 		private function onAutoSave(e:TimerEvent):void
 		{
@@ -458,6 +521,66 @@ package
 			for each(var item in data)
 				levels.appendChild(new XML("<level label='"+item.levelName+"'></level>"));
 			return levels;
+		}
+		
+		public function parseBehaviorXML(data:Object):XML
+		{
+			var xml:XML = <Root></Root>;
+			for(var b in data)
+				xml.appendChild(new XML("<behavior label='"+b+"'></behavior>"));
+			return xml;
+		}
+		
+		public function addBehaviors(name:String, data:Object):Boolean
+		{
+			if(!behaviorsData.hasOwnProperty(name))
+			{
+				behaviorsData[name] = data;
+				behaviorsXML.appendChild(new XML("<behavior label='"+name+"'></behavior>"));
+				this.saveBehaviorData();
+				return true;
+			}
+			else
+			{
+				Alert.okLabel = "确定";
+				Alert.show("行为名已存在");
+				return false;
+			}
+		}
+		
+		public function updateBehavior(name:String, data:Object):void
+		{
+			if(behaviorsData.hasOwnProperty(name))
+			{
+				behaviorsData[name] = data;
+				this.saveBehaviorData();
+			}
+			else
+				trace("update behavior: behavior is not exsit!");
+		}
+		
+		public function deleteBehaviors(name:String):void
+		{
+			
+			if(behaviorsData.hasOwnProperty())
+			{
+				//behaviorsXML.
+				delete behaviorsData[name];
+				this.saveBehaviorData();
+			}
+		}
+		
+		public function setEnemyBehavior(enemyType:String, bName:String):void
+		{
+			if(this.enemyBTData.hasOwnProperty(enemyType))
+			{
+				enemyBTData[enemyType] = new Array;
+				if(bName != "")
+					enemyBTData[enemyType].push(bName);
+				saveEnemyBehaviorData();
+			}
+			else
+				trace("set enemy data: enemytype not exist!");
 		}
 		
 		public function updateLevelData(name:String, data:Array, endTime:int):void

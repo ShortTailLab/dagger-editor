@@ -9,6 +9,7 @@ package behaviorEdit
 		public function RootBNode()
 		{
 			super(BType.BTYPE_ROOT, 0x228B22, true, false, BNodeDrawStyle.SEQ_DRAW);
+			this.canMove = false;
 		}
 		
 		override public function onAdd(nodeType:String):void
@@ -20,6 +21,12 @@ package behaviorEdit
 			else
 				Alert.show("Root节点只能添加一个子节点");
 			
+		}
+		
+		override public function removeSelf():void
+		{
+			while(childNodes.length > 0)
+				BNode(childNodes.pop()).removeSelf();
 		}
 		
 	}

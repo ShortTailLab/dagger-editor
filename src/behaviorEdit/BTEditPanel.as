@@ -1,10 +1,13 @@
 package behaviorEdit
 {
+	import flash.events.ContextMenuEvent;
 	import flash.events.EventDispatcher;
 	import flash.events.MouseEvent;
+	import flash.text.TextField;
 	
 	import mx.controls.Alert;
 	import mx.controls.Button;
+	import mx.controls.Tree;
 	import mx.core.UIComponent;
 	import mx.events.CloseEvent;
 	import mx.managers.PopUpManager;
@@ -18,6 +21,7 @@ package behaviorEdit
 	import spark.components.VScrollBar;
 	
 	import editEntity.EditBase;
+	import editEntity.MatFactory;
 	import editEntity.MatSprite;
 	
 	import manager.EventManager;
@@ -28,15 +32,37 @@ package behaviorEdit
 		private var grabLayer:UIComponent = null;
 		private var editType:String;
 		private var editView:BTEditView;
+		private var currBName:String = "";
+		private var currBData:Object = null;
+		
+		private var bnameLabel:TextField = null;
 		
 		public function BTEditPanel(target:MatSprite)
 		{
 			BNodeFactory.numCount = 0;
 			this.title = "行为编辑";
-			this.width = 900;
-			this.height = 700;
+			this.width = 1100;
+			this.height = 800;
 			this.setStyle("backgroundColor", 0xEEE8AA);
 			editType = target.type;
+			
+			
+			
+			var behaviorsPanel:Panel = new Panel;
+			behaviorsPanel.title = "行为库";
+			behaviorsPanel.width = 100;
+			behaviorsPanel.percentHeight = 100;
+			behaviorsPanel.x = 1000;
+			this.addElement(behaviorsPanel);
+			var _tree:Tree = new Tree;
+			_tree.dataProvider = Data.getInstance().behaviorsXML;
+			_tree.enabled = true;
+			_tree.labelField = "@label";
+			_tree.percentWidth = 100;
+			_tree.percentHeight = 100;
+			_tree.showRoot = false;
+			_tree.addEventListener(MouseEvent.CLICK, onBehaviorClick);
+			behaviorsPanel.addElement(_tree);
 			
 			var btnsPanel:Panel = new Panel;
 			btnsPanel.title = "类型";
@@ -46,7 +72,15 @@ package behaviorEdit
 			btnsPanel.addElement(btnsView);
 			this.addElement(btnsPanel);
 			
-			var icon:EditBase = new MatSprite(null, target.type, 100);
+			
+			btnsView.addChild((Utils.getLabel("行为ID：", 10, 150, 14)));
+			bnameLabel = Utils.getLabel("", 10, 170, 14);
+			bnameLabel.width = 100;
+			bnameLabel.height = 20;
+			bnameLabel.border = true;
+			btnsView.addChild(bnameLabel);
+			
+			var icon:EditBase = new MatSprite(null, editType, 100, 70);
 			icon.x = 60;
 			icon.y = 110;
 			btnsView.addChild(icon);
@@ -58,15 +92,14 @@ package behaviorEdit
 			{
 				node = BNodeFactory.createBNode(btypes[i]);
 				node.x = 20;
-				node.y = 120+50*i;
+				node.y = 200+50*i;
 				node.addEventListener(MouseEvent.MOUSE_DOWN, onNodeMouseDown);
 				btnsView.addChild(node);
 			}
 			
-			
 			var btn:Button = new Button;
 			btn.label = "保存";
-			btn.width = 50;
+			btn.width = 80;
 			btn.height = 30;
 			btn.x = 20;
 			btn.y = node.y + 80;
@@ -75,7 +108,7 @@ package behaviorEdit
 			
 			var editGroup:HGroup = new HGroup();
 			editGroup.x = 120;
-			editGroup.percentWidth = 100;
+			editGroup.width = 880;
 			editGroup.percentHeight = 100;
 			var group:Group = new Group();
 			group.clipAndEnableScrolling = true;
@@ -98,6 +131,7 @@ package behaviorEdit
 			editGroup.addElement(vscrollbar);
 			this.addElement(editGroup);
 			
+			
 			grabLayer = new UIComponent;
 			this.addElement(grabLayer);
 			
@@ -110,24 +144,81 @@ package behaviorEdit
 		
 		private function initEditView():void
 		{
-			if(Data.getInstance().behaviorData.hasOwnProperty(editType))
+			var bs:Array = Data.getInstance().enemyBTData[editType] as Array;
+			if(bs.length > 0)
 			{
-				editView.init(Data.getInstance().behaviorData[editType]);
+				setCurrBehavior(bs[0]);
 			}
+			else
+				trace("enemy behaviors is null");
+			 
+		}
+		
+		private function setCurrBehavior(name:String):void
+		{
+			this.currBName = name;
+			bnameLabel.text = this.currBName;
+			editView.init(Data.getInstance().behaviorsData[name]);
 		}
 		
 		private function onSave(e:MouseEvent):void
 		{
-			var data:Object = editView.export();
-			if(data)
+			currBData = editView.export();
+			if(!currBData)
+				Data.getInstance().setEnemyBehavior(editType, "");
+			else if(currBName != "" && Data.getInstance().behaviorsData.hasOwnProperty(currBName))
 			{
-				Data.getInstance().behaviorData[editType] = data;
-				Data.getInstance().saveBehaviorData();
-				trace(Data.getInstance().getBTreeJS(data, false));
+				Alert.okLabel = "更新";
+				Alert.noLabel = "新建";
+				Alert.show("该来自行为库的行为还是新建一个？", "tips", Alert.OK|Alert.NO, this, alertClose);
+			}
+			else if(currBName.length == 0)
+				newBehavior();
+		}
+		
+		
+		private function alertClose(e:CloseEvent):void
+		{
+			if(e.detail == Alert.OK)
+			{
+				Data.getInstance().updateBehavior(currBName, currBData);
+				Data.getInstance().setEnemyBehavior(editType, currBName);
+				Alert.okLabel = "确定";
+			}
+			else if(e.detail == Alert.NO)
+			{
+				newBehavior();
+			}
+		}
+		
+		private function newBehavior():void
+		{
+			var window:RenamePanel = new RenamePanel;
+			window.addEventListener(MsgEvent.RENAME_LEVEL, onSaveConfirm);
+			
+			PopUpManager.addPopUp(window, this, true);
+			PopUpManager.centerPopUp(window);
+		}
+		
+		private function onSaveConfirm(e:MsgEvent):void
+		{
+			if(e.hintMsg.length > 0)
+			{
+				currBName = e.hintMsg;
+				bnameLabel.text = this.currBName;
+				Data.getInstance().addBehaviors(currBName, currBData);
+				Data.getInstance().setEnemyBehavior(editType, currBName);
+				Alert.okLabel = "确定";
 			}
 			else
-				Alert.show("数据为空");
-			
+				Alert.show("命名不能未空");
+		}
+		
+		private function onBehaviorClick(e:MouseEvent):void
+		{
+			var selectedNode:XML = (e.currentTarget as Tree).selectedItem as XML;
+			var label:String=selectedNode.@label;
+			this.setCurrBehavior(label);
 		}
 		
 		private function onMouseMove(e:MouseEvent):void

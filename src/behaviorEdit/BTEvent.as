@@ -6,6 +6,7 @@ package behaviorEdit
 	{
 		static public var TREE_CHANGE:String = "tree_change";
 		static public var LAID:String = "laid";
+		static public var HAS_EDITED:String = "has_edit";
 		
 		public var bindingNode:BNode = null;
 		

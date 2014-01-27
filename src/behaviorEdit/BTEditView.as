@@ -26,6 +26,7 @@ package behaviorEdit
 		
 		public function init(data:Object):void
 		{
+			rootNode.removeSelf();
 			if(data.hasOwnProperty("type"))
 				initNode(rootNode, data);
 		}
@@ -54,7 +55,7 @@ package behaviorEdit
 			return null;
 		}
 		
-		public function getExportData(node:BNode):Object
+		private function getExportData(node:BNode):Object
 		{
 			var nodeData:Object = new Object;
 			nodeData.type = node.type;
