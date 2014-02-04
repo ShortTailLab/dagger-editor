@@ -158,7 +158,7 @@ package behaviorEdit
 			}
 			nodeWidth = Math.max(2*gridWidth, label.width)+horizontalPadding;
 			var h:int = i > 0 ? gridHeight*(int(i/2)) : 0;
-			nodeHeight = Math.max(100, label.height+h+verticalPadding);
+			nodeHeight = Math.max(70, label.height+h+verticalPadding);
 			updateBg();
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
