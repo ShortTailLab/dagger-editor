@@ -3,6 +3,8 @@ package behaviorEdit
 	import flash.geom.Point;
 	
 	import mx.controls.Alert;
+	
+	import manager.EventManager;
 
 	public class RootBNode extends BNode
 	{
@@ -27,6 +29,7 @@ package behaviorEdit
 		{
 			while(childNodes.length > 0)
 				BNode(childNodes.pop()).removeSelf();
+			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
 		
 	}

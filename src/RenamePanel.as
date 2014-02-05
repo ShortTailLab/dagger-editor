@@ -5,7 +5,7 @@ package
 	import flash.events.MouseEvent;
 	import flash.ui.Keyboard;
 	
-	import mx.containers.TitleWindow;
+	import spark.components.TitleWindow;
 	import mx.controls.TextInput;
 	import mx.events.CloseEvent;
 	import mx.managers.PopUpManager;
@@ -21,7 +21,6 @@ package
 			this.title = "重命名";
 			this.width = 200;
 			this.height = 100;
-			this.showCloseButton = true;
 			
 			input = new TextInput;
 			input.height = 30;
@@ -33,11 +32,14 @@ package
 			btn.addEventListener(MouseEvent.CLICK, onRenameClick);
 			this.addElement(btn);
 			
-			this.addEventListener(CloseEvent.CLOSE, function(){
-				PopUpManager.removePopUp(this);
-				stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-			});
+			this.addEventListener(CloseEvent.CLOSE, onClose);
 			this.addEventListener(Event.ADDED_TO_STAGE, onAdded);
+		}
+		
+		private function onClose(e:CloseEvent):void
+		{
+			PopUpManager.removePopUp(this);
+			stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		}
 		
 		private function onAdded(e:Event):void

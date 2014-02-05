@@ -3,6 +3,7 @@ package behaviorEdit
 	import flash.events.Event;
 	import flash.geom.Point;
 	
+	import mx.controls.Alert;
 	import mx.core.UIComponent;
 	
 	import manager.EventManager;
@@ -26,9 +27,14 @@ package behaviorEdit
 		
 		public function init(data:Object):void
 		{
-			rootNode.removeSelf();
-			if(data.hasOwnProperty("type"))
+			clear();
+			if(data && data.hasOwnProperty("type"))
 				initNode(rootNode, data);
+		}
+		
+		public function clear():void
+		{
+			rootNode.removeSelf();
 		}
 		
 		public function initNode(par:BNode, nodeData:Object):void

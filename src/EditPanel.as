@@ -70,7 +70,7 @@ package
 				{label:"enemy",data:0},
 				{label:"player",data:1},
 				{label:"neutral",data:2}
-			]); 
+			]);
 			
 			var user1:ArrayCollection = new ArrayCollection([
 				{label:"默认",data:"Default"},

@@ -53,10 +53,16 @@ package
 		{
 			target.graphics.lineStyle(lineStyle);
 			target.graphics.moveTo(p1.x, p1.y);
-			target.graphics.lineTo(p1.x, p2.y);
+			if(p1.x!=p2.x && p1.y!=p2.y)
+				target.graphics.lineTo(p1.x, p2.y);
 			target.graphics.lineTo(p2.x, p2.y);
 		}
 		
+		static public function assert(val:Boolean):void
+		{
+			while(val)
+			{}
+		}
 		
 	}
 }

@@ -40,7 +40,7 @@ package
 		public var enemyData:Object = null;
 		public var enemyEditData:Object = null;
 		public var enemyBTData:Object = null;
-		public var behaviorsData:Object = null;
+		public var behaviors:Object = null;
 		public var displayData:Array = null;
 		public var levelXML:XML = null;
 		public var behaviorsXML:XML = null;
@@ -168,6 +168,7 @@ package
 				}
 			}
 			
+			//this record the behaviors' name of each enemy
 			var file:File = File.desktopDirectory.resolvePath("editor/enemyBehaviorsData.json");
 			enemyBTData = null;
 			if(file.exists)
@@ -177,7 +178,7 @@ package
 				enemyBTData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
 			}
-			
+			//you can see the struct of enemyBTData here.
 			if(!enemyBTData)
 			{
 				enemyBTData = new Object;
@@ -187,20 +188,21 @@ package
 				}
 			}
 			
-			file = File.desktopDirectory.resolvePath("editor/behavior.json");
+			//this records all behaviors.
+			file = File.desktopDirectory.resolvePath("editor/behaviors.json");
 			if(file.exists)
 			{
 				var stream:FileStream = new FileStream;
 				stream.open(file, FileMode.READ);
-				behaviorsData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				behaviors = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
 				//check the null behavior
-				for(var b in behaviorsData)
-					if(!behaviorsData[b])
-						delete behaviorsData[b];
+				/*for(var b in behaviors)
+					if(!behaviors[b])
+						delete behaviors[b];*/
 			}
 			else
-				behaviorsData = new Object;
+				behaviors = new Object;
 			
 			
 			file = File.desktopDirectory.resolvePath("editor/bt_node_format.json");
@@ -211,8 +213,10 @@ package
 				this.behaviorBaseNode = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
 			}
+			else
+				Alert.show("bt_node_format.json丢失，打开怪物行为时候可能会出错!");
 			
-			behaviorsXML = this.parseBehaviorXML(behaviorsData);
+			behaviorsXML = this.parseBehaviorXML(behaviors);
 		}
 		
 		private var loadCount:int = 0;
@@ -266,12 +270,11 @@ package
 		
 		public function saveBehaviorData():void
 		{
-			var file:File = File.desktopDirectory.resolvePath("editor/behavior.json");
+			var file:File = File.desktopDirectory.resolvePath("editor/behaviors.json");
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(JSON.stringify(behaviorsData));
+			stream.writeUTFBytes(JSON.stringify(behaviors));
 			stream.close();
-			Alert.show("保存成功！");
 		}
 		
 		public function getBTreeJS(sourceData:Object, isEndComma:Boolean):String
@@ -360,9 +363,9 @@ package
 			exportData.luck = new Object;
 			exportData.behavior = new Object;
 			
-			for(var bName in behaviorsData)
+			for(var bName in behaviors)
 			{
-				exportData.behavior[bName]= String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return "+getBTreeJS(behaviorsData[bName], false)+";}@@");
+				exportData.behavior[bName]= String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return "+getBTreeJS(behaviors[bName], false)+";}@@");
 			}
 			
 			for(var name in enemyData)
@@ -531,43 +534,86 @@ package
 			return xml;
 		}
 		
-		public function addBehaviors(name:String, data:Object):Boolean
+		public function addBehaviors(name:String, data:Object):void
 		{
-			if(!behaviorsData.hasOwnProperty(name))
+			if(!behaviors.hasOwnProperty(name))
 			{
-				behaviorsData[name] = data;
+				behaviors[name] = data;
 				behaviorsXML.appendChild(new XML("<behavior label='"+name+"'></behavior>"));
 				this.saveBehaviorData();
-				return true;
 			}
 			else
-			{
-				Alert.okLabel = "确定";
-				Alert.show("行为名已存在");
-				return false;
-			}
+				trace("addBehaviors error: behavior exists!");
 		}
 		
 		public function updateBehavior(name:String, data:Object):void
 		{
-			if(behaviorsData.hasOwnProperty(name))
+			if(behaviors.hasOwnProperty(name))
 			{
-				behaviorsData[name] = data;
+				behaviors[name] = data;
 				this.saveBehaviorData();
+				Alert.show("保存成功！");
 			}
 			else
-				trace("update behavior: behavior is not exsit!");
+				trace("update behavior: behavior"+name+" is not exsit!");
+		}
+		
+		public function renameBehavior(prevName:String, currName:String):void
+		{
+			if(behaviors.hasOwnProperty(currName))
+			{
+				trace("renamebehavior:currname is invalid!")
+				return;
+			}
+			this.addBehaviors(currName, behaviors[prevName]);
+			this.deleteBehaviors(prevName);
 		}
 		
 		public function deleteBehaviors(name:String):void
 		{
 			
-			if(behaviorsData.hasOwnProperty())
+			if(behaviors.hasOwnProperty(name))
 			{
-				//behaviorsXML.
-				delete behaviorsData[name];
+				var isChangeEnemyData:Boolean = false;
+				for each(var btData:Array in enemyBTData)
+				{
+					var i:int = btData.indexOf(name);
+					if(i >= 0)
+					{
+						isChangeEnemyData = true;
+						btData.splice(i, 1);
+					}
+				}
+				if(isChangeEnemyData)
+					this.saveEnemyBehaviorData();
+				
+				delete behaviors[name];
+				behaviorsXML = this.parseBehaviorXML(behaviors);
 				this.saveBehaviorData();
+				
 			}
+		}
+		
+		public function addEnemyBehavior(enemyType:String, bName:String):void
+		{
+			if(!enemyBTData.hasOwnProperty(enemyType))
+			{
+				trace("addenemybehavior error:enemyType not exist!");
+				return;
+			}
+			var bts:Array = enemyBTData[enemyType] as Array;
+			if(enemyContainsBehavior(enemyType, bName))
+			{
+				trace("addenemybehavior error:try to add a behavior that has existed!");
+				return;
+			}
+			bts.push(bName);
+		}
+		
+		public function enemyContainsBehavior(enemyType:String, bName:String):Boolean
+		{
+			var bts:Array = enemyBTData[enemyType] as Array;
+			return bts.indexOf(bName) >= 0;
 		}
 		
 		public function setEnemyBehavior(enemyType:String, bName:String):void

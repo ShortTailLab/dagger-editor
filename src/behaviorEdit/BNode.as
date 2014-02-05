@@ -170,7 +170,7 @@ package behaviorEdit
 			return new Point(this.x+(nodeWidth-horizontalPadding)*0.5, this.y+(nodeHeight-verticalPadding));
 		}
 		
-		private var isPressing:Boolean = false;
+		protected var isPressing:Boolean = false;
 		protected function onMouseDown(e:MouseEvent):void
 		{
 			isPressing = true;
@@ -253,6 +253,12 @@ package behaviorEdit
 			}
 			
 			view.removeChild(this);
+		}
+		
+		public function clearAllChildren():void
+		{
+			for each(var node:BNode in childNodes)
+				node.removeSelf();
 		}
 		
 		public function removeChildNode(id:int):void
