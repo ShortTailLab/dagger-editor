@@ -199,7 +199,7 @@ package behaviorEdit
 				editView.init(Data.getInstance().behaviors[name]);
 			}
 			else
-				Alert.show("setCurrBehavior:"+name+"不存在");
+				trace("setCurrBehavior:"+name+"不存在");
 		}
 		
 		private function onNewBT(e:MouseEvent):void
@@ -228,7 +228,7 @@ package behaviorEdit
 		private var prevIndex:int = 0;
 		private function onClickBt(e:MouseEvent):void
 		{
-			//Data.getInstance().updateBehavior(btArray[prevIndex], editView.export());
+			Data.getInstance().updateBehavior(btArray[prevIndex], editView.export());
 			this.setCurrBehavior(btBar.selectedItem);
 			prevIndex = btBar.selectedIndex;
 		}
@@ -312,22 +312,8 @@ package behaviorEdit
 		
 		private function onSave(e:MouseEvent):void
 		{
-			Data.getInstance().updateBehavior(btBar.selectedItem, editView.export());
-		}
-		
-		
-		private function alertClose(e:CloseEvent):void
-		{
-			if(e.detail == Alert.OK)
-			{
-				Data.getInstance().updateBehavior(currBName, currBData);
-				Data.getInstance().setEnemyBehavior(editType, currBName);
-				Alert.okLabel = "确定";
-			}
-			else if(e.detail == Alert.NO)
-			{
-				//newBehavior();
-			}
+			if(Data.getInstance().updateBehavior(btBar.selectedItem, editView.export()))
+				Alert.show("保存成功");
 		}
 		
 		private function onBehaviorClick(e:MouseEvent):void
@@ -374,7 +360,6 @@ package behaviorEdit
 		private function onClose(e:CloseEvent):void
 		{
 			editView.remove();
-			
 			PopUpManager.removePopUp(this);
 		}
 	}

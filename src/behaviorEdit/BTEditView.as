@@ -18,7 +18,7 @@ package behaviorEdit
 			panel = _panel; 
 			
 			rootNode = new RootBNode;
-			rootNode.initPos(50, 50);
+			rootNode.initPos(50, 20);
 			rootNode.init(this);
 			
 			EventManager.getInstance().addEventListener(BTEvent.TREE_CHANGE, onTreeChange);

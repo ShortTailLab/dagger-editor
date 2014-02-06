@@ -24,7 +24,7 @@ package behaviorEdit
 		private var hasInit:Boolean = false;
 		
 		private var parmNodes:Array = null;
-		private var parmInput:Dictionary = null;
+		private var parmInput:Array = null;
 		
 		private var execType:String = "";
 		private var nodeData:Object;
@@ -99,34 +99,39 @@ package behaviorEdit
 			this.clearAllChildren();
 			
 			parmNodes = new Array;
-			parmInput = new Dictionary;
+			parmInput = new Array;
 			var interval:int = 30;
 			var yRecord:int = 0;
-			var nodeData:Object = Data.getInstance().behaviorBaseNode[type];
+			var nodeData:Array = Data.getInstance().behaviorBaseNode[type] as Array;
 			var i:int = 0;
 			for each(var item in nodeData)
 			{
 				if(item.type == "node")
 				{
 					parmNodes.push(item.name);
+					var parmData:Object = new Object;
+					parmData.name = item.name;
+					parmData.type = item.type;
+					parmData.input = null;
+					parmInput.push(parmData);
 				}
-				else if(item.type == "float" || item.type == "string")
+				else if(item.type == "float" || item.type == "string" || item.type == "int")
 				{
-					addInput(item.name, yRecord);
+					addInput(item.name, yRecord, item.type);
 					yRecord += 30;
 				}
 				else if(item.type == "ccsize")
 				{
-					addInput(item.name+" w", yRecord);
+					addInput(item.name+" w", yRecord, item.type);
 					yRecord += 30;
-					addInput(item.name+" h", yRecord);
+					addInput(item.name+" h", yRecord, item.type);
 					yRecord += 30;
 				}
 				else if(item.type == "ccp")
 				{
-					addInput(item.name+" x", yRecord);
+					addInput(item.name+" x", yRecord, item.type);
 					yRecord += 30;
-					addInput(item.name+" y", yRecord);
+					addInput(item.name+" y", yRecord, item.type);
 					yRecord += 30;
 				}
 			}
@@ -136,7 +141,7 @@ package behaviorEdit
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
 		
-		private function addInput(name:String, py:int):void
+		private function addInput(name:String, py:int, type:String):void
 		{
 			var tt:TextField = Utils.getLabel(name+":", 0, py, 14);
 			tt.selectable = false;
@@ -147,7 +152,11 @@ package behaviorEdit
 			input.x = 50;
 			input.y = py;
 			input.addEventListener(MouseEvent.MOUSE_DOWN, onInputDown);
-			parmInput[name] = input;
+			var parmData:Object = new Object;
+			parmData.name = name;
+			parmData.type = type;
+			parmData.input = input;
+			parmInput.push(parmData);
 			container.addChild(input);
 		}
 		
@@ -162,9 +171,10 @@ package behaviorEdit
 			if(data && data.execType && data.execType != "")
 			{
 				this.initExecType(data.execType);
-				for(var parm:String in parmInput)
+				for(var i:int = 0; i < parmInput.length; i++)
 				{
-					TextInput(parmInput[parm]).text = data[parm];
+					if(parmInput[i].input)
+						TextInput(parmInput[i].input).text = (data.parm as Array)[i].value;
 				}
 			}
 		}
@@ -174,9 +184,15 @@ package behaviorEdit
 			
 			var obj:Object = new Object;
 			obj.execType = this.execType;
-			for(var parm:String in parmInput)
+			obj.parm = new Array;
+			for each(var o:Object in parmInput)
 			{
-				obj[parm] = TextInput(parmInput[parm]).text;
+				var data:Object = new Object;
+				data.name = o.name;
+				data.type = o.type;
+				if(o.input)
+					data.value = TextInput(o.input).text;
+				obj.parm.push(data);
 			}
 			return obj;
 		}

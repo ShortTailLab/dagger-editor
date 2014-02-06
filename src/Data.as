@@ -277,53 +277,85 @@ package
 			stream.close();
 		}
 		
-		public function getBTreeJS(sourceData:Object, isEndComma:Boolean):String
+		public function genBTreeJS(sourceData:Object):String
 		{
-			var js:String = "";
-			var prev:String = getNodeJS(sourceData);
-			if(prev != "")
+			var children:Array = sourceData.children as Array;
+			var childrenJS:Array = new Array;
+			for each(var childData:Object in children)
 			{
-				js = prev;
-				var children:Array = sourceData.children as Array;
-				for(var i:int = 0; i < children.length; i++)
-					js += getBTreeJS(children[i], i != children.length-1);
-				js += ")";
+				var js:String = genBTreeJS(childData);
+				//if any child return "", the whole tree is invalid and should be ""
+				if(js == "")
+					return "";
+				childrenJS.push(js);
+			}
+			
+			var result:String = "";
+			if(sourceData.type == BType.BTYPE_EXEC)
+			{
+				result += sourceData.data.execType+"(";
+				var parms:Array = sourceData.data.parm as Array
+				for(var i:int = 0; i < parms.length; i++)
+				{
+					if(parms[i].type == "ccp")
+					{
+						result += "cc.p("+parms[i].value+","+parms[++i].value+")";
+					}
+					else if(parms[i].type == "ccsize")
+					{
+						result += "cc.size("+parms[i].value+","+parms[++i].value+")";
+					}
+					else if(parms[i].type == "node")
+					{
+						//the parms ask for a node while node array is empty.
+						if(children.length == 0)
+						{
+							trace("genBtTree error:invalid node: a node parm is missing!");
+							return "";
+						}
+						result += childrenJS.shift();
+					}
+					else
+						result += parms[i].value;
+					
+					if(i < parms.length-1)
+						result += ",";
+				}
+				result += ")";
+			}
+			else if(children.length == 0)
+			{
+				trace("genBtTree error: children is empty.");
+				return "";
 			}
 			else
 			{
-				if(sourceData.data)
+				if(sourceData.type == BType.BTYPE_SEQ)
+					result += "BT.seq(";
+				else if(sourceData.type == BType.BTYPE_PAR)
+					result += "BT.par(";
+				else if(sourceData.type == BType.BTYPE_SEL)
+					result += "BT.sel(";
+				else if(sourceData.type == BType.BTYPE_LOOP)
+					result += "BT.loop("+sourceData.data.times+",";
+				else if(sourceData.type == BType.BTYPE_COND)
 				{
-					if(sourceData.data.hasOwnProperty("content") && sourceData.data.content != "")
-					{
-						js = sourceData.data.content;
-					}
+					result += "BT.cond("+sourceData.data.cond+",";
 				}
 				else
-					js = "null";
-			}
-			
-			if(isEndComma)
-				js += ",";
-			
-			return js;
-		}
-		private function getNodeJS(node:Object):String
-		{
-			if(node.type == BType.BTYPE_SEQ)
-				return "BT.seq(";
-			else if(node.type == BType.BTYPE_PAR)
-				return "BT.par(";
-			else if(node.type == BType.BTYPE_SEL)
-				return "BT.sel(";
-			else if(node.type == BType.BTYPE_LOOP)
-				return "BT.loop("+node.data.times+",";
-			else if(node.type == BType.BTYPE_COND)
-			{
-				return "BT.cond("+node.data.cond+",";
-			}
+					return "";
 				
-			return "";
+				while(childrenJS.length > 0)
+				{
+					result += childrenJS.shift();
+					if(childrenJS.length > 0)
+						result += ",";
+				}
+				result += ")";
+			}
+			return result;
 		}
+		
 		
 		public function exportJS():void
 		{
@@ -365,7 +397,14 @@ package
 			
 			for(var bName in behaviors)
 			{
-				exportData.behavior[bName]= String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return "+getBTreeJS(behaviors[bName], false)+";}@@");
+				var js:String = genBTreeJS(behaviors[bName]);
+				if(js == "")
+				{
+					Alert.show("导出行为"+bName+"脚本出错，请检查");
+					return;
+				}
+				exportData.behavior[bName]= String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
+					""+js+";}@@");
 			}
 			
 			for(var name in enemyData)
@@ -546,16 +585,19 @@ package
 				trace("addBehaviors error: behavior exists!");
 		}
 		
-		public function updateBehavior(name:String, data:Object):void
+		public function updateBehavior(name:String, data:Object):Boolean
 		{
 			if(behaviors.hasOwnProperty(name))
 			{
 				behaviors[name] = data;
 				this.saveBehaviorData();
-				Alert.show("保存成功！");
+				return true
 			}
 			else
+			{
 				trace("update behavior: behavior"+name+" is not exsit!");
+				return false;
+			}
 		}
 		
 		public function renameBehavior(prevName:String, currName:String):void
