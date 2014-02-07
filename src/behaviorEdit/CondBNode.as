@@ -83,14 +83,10 @@ package behaviorEdit
 		
 		override public function exportData():Object
 		{
-			if(inputLabel.text != "")
-			{
-				var obj:Object = new Object;
-				obj.cond = inputLabel.text;
-				obj.first = boolSwitch;
-				return obj;
-			}
-			return null;
+			var obj:Object = new Object;
+			obj.cond = inputLabel.text;
+			obj.first = boolSwitch;
+			return obj;
 		}
 		
 		private function onLabelMouseDown(e:MouseEvent):void

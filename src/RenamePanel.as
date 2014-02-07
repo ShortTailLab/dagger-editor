@@ -29,6 +29,7 @@ package
 			
 			var btn:Button = new Button;
 			btn.label = "确定";
+			btn.y = 40
 			btn.addEventListener(MouseEvent.CLICK, onRenameClick);
 			this.addElement(btn);
 			
@@ -38,8 +39,8 @@ package
 		
 		private function onClose(e:CloseEvent):void
 		{
-			PopUpManager.removePopUp(this);
 			stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			PopUpManager.removePopUp(this);
 		}
 		
 		private function onAdded(e:Event):void

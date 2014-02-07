@@ -2,6 +2,7 @@ package behaviorEdit
 {
 	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
+	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
@@ -96,7 +97,10 @@ package behaviorEdit
 			this.view.addChild(this);
 			
 			if(canMove)
+			{
 				this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+				
+			}
 			
 			if(isAcceptNode)
 				this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
@@ -134,7 +138,6 @@ package behaviorEdit
 		}
 		
 		
-		
 		public function getInteractiveRect():Rectangle
 		{
 			return new Rectangle(this.x+nodeWidth, this.y-nodeHeight, nodeWidth, treeHeight+nodeHeight);
@@ -170,43 +173,37 @@ package behaviorEdit
 			return new Point(this.x+(nodeWidth-horizontalPadding)*0.5, this.y+(nodeHeight-verticalPadding));
 		}
 		
+		protected var hasMouseDown:Boolean = false;
 		protected var isPressing:Boolean = false;
 		protected function onMouseDown(e:MouseEvent):void
 		{
-			isPressing = true;
-			EventManager.getInstance().addEventListener(MouseEvent.MOUSE_MOVE, onPanelMouseMove);
-			EventManager.getInstance().addEventListener(MouseEvent.MOUSE_UP, onPanelMouseUp);
+			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			this.startDrag();
+			isPressing = false;
+			hasMouseDown = true;
 		}
 		
-		protected function onPanelMouseMove(e:MouseEvent):void
+		private function onMouseMove(e:MouseEvent):void
 		{
-			if(isPressing)
-			{
-				this.x = view.mouseX;
-				this.y = view.mouseY;
-				draw();
-			}
-			
+			isPressing = true;
+			draw();
 		}
-		
 		protected function onMouseUp(e:MouseEvent):void
 		{
 			if(view.panel.currNode)
 				onAdd(view.panel.currNode.type);
-		}
-		
-		protected function onPanelMouseUp(e:MouseEvent):void
-		{
+			
 			if(isPressing)
 			{
-				EventManager.getInstance().removeEventListener(MouseEvent.MOUSE_MOVE, onPanelMouseMove);
-				EventManager.getInstance().removeEventListener(MouseEvent.MOUSE_UP, onPanelMouseUp);
+				//dispatch event that accepted by editview. 
 				var event:BTEvent = new BTEvent(BTEvent.LAID);
 				event.bindingNode = this;
 				EventManager.getInstance().dispatchEvent(event);
 				isPressing = false;
 			}
-			
+			hasMouseDown = false;
+			this.stopDrag();
+			this.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 		}
 		
 		public function onLay(node:BNode):void

@@ -75,13 +75,9 @@ package behaviorEdit
 		
 		override public function exportData():Object
 		{
-			if(input.text != "")
-			{
-				var obj:Object = new Object;
-				obj.times = input.text;
-				return obj;
-			}
-			return null;
+			var obj:Object = new Object;
+			obj.times = input.text;
+			return obj;
 		}
 		
 		private function onLabelMouseDown(e:MouseEvent):void

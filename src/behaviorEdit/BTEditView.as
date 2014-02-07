@@ -3,7 +3,6 @@ package behaviorEdit
 	import flash.events.Event;
 	import flash.geom.Point;
 	
-	import mx.controls.Alert;
 	import mx.core.UIComponent;
 	
 	import manager.EventManager;

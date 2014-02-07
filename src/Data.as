@@ -233,6 +233,8 @@ package
 		
 		public function saveLocal():void
 		{
+			genBackUp("data.json");
+			
 			var file:File = File.desktopDirectory.resolvePath("editor/data.json");
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
@@ -261,6 +263,7 @@ package
 		
 		public function saveEnemyBehaviorData():void
 		{
+			
 			var file:File = File.desktopDirectory.resolvePath("editor/enemyBehaviorsData.json");
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
@@ -270,10 +273,26 @@ package
 		
 		public function saveBehaviorData():void
 		{
+			genBackUp("behaviors.json");
 			var file:File = File.desktopDirectory.resolvePath("editor/behaviors.json");
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
 			stream.writeUTFBytes(JSON.stringify(behaviors));
+			stream.close();
+		}
+		
+		private function genBackUp(path:String):void
+		{
+			var file:File = File.desktopDirectory.resolvePath("editor/"+path);
+			var stream:FileStream = new FileStream;
+			stream.open(file, FileMode.READ);
+			var backupData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+			stream.close();
+			
+			file = File.desktopDirectory.resolvePath("editor/backup/"+path);
+			stream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes(JSON.stringify(backupData));
 			stream.close();
 		}
 		
@@ -289,8 +308,8 @@ package
 					return "";
 				childrenJS.push(js);
 			}
-			
 			var result:String = "";
+			
 			if(sourceData.type == BType.BTYPE_EXEC)
 			{
 				result += sourceData.data.execType+"(";
@@ -323,6 +342,7 @@ package
 				}
 				result += ")";
 			}
+			//except for exec node, others should have child nodes.
 			else if(children.length == 0)
 			{
 				trace("genBtTree error: children is empty.");
@@ -337,9 +357,21 @@ package
 				else if(sourceData.type == BType.BTYPE_SEL)
 					result += "BT.sel(";
 				else if(sourceData.type == BType.BTYPE_LOOP)
+				{
+					if(sourceData.data.times == "")
+					{
+						trace("genBtTree error: times is empty.");
+						return "";
+					}
 					result += "BT.loop("+sourceData.data.times+",";
+				}
 				else if(sourceData.type == BType.BTYPE_COND)
 				{
+					if(sourceData.data.cond == "")
+					{
+						trace("genBtTree error: cond is empty.");
+						return "";
+					}
 					result += "BT.cond("+sourceData.data.cond+",";
 				}
 				else
@@ -453,7 +485,6 @@ package
 						data.defense = 1;
 					exportData.actor[name] = data;
 				}
-				
 				
 			}
 			
@@ -607,8 +638,22 @@ package
 				trace("renamebehavior:currname is invalid!")
 				return;
 			}
-			this.addBehaviors(currName, behaviors[prevName]);
-			this.deleteBehaviors(prevName);
+			var isChangeEnemyData:Boolean = false;
+			for each(var btData:Array in enemyBTData)
+			{
+				var i:int = btData.indexOf(prevName);
+				if(i >= 0)
+				{
+					isChangeEnemyData = true;
+					btData[i] = currName;
+				}
+			}
+			if(isChangeEnemyData)
+				this.saveEnemyBehaviorData();
+			behaviors[currName] = behaviors[prevName];
+			delete behaviors[prevName];
+			behaviorsXML = this.parseBehaviorXML(behaviors);
+			this.saveBehaviorData();
 		}
 		
 		public function deleteBehaviors(name:String):void
@@ -632,7 +677,6 @@ package
 				delete behaviors[name];
 				behaviorsXML = this.parseBehaviorXML(behaviors);
 				this.saveBehaviorData();
-				
 			}
 		}
 		

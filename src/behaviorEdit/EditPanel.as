@@ -1,4 +1,4 @@
-package
+package behaviorEdit
 {
 	import flash.display.Bitmap;
 	import flash.display.Shape;

@@ -43,7 +43,7 @@ package behaviorEdit
 			label.defaultTextFormat = new TextFormat(null, 16);
 			label.x = 5;
 			label.y = 5;
-			this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseClick);
+			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			
 			/*inputLabel = new TextArea();
 			inputLabel.width = 150;
@@ -64,15 +64,17 @@ package behaviorEdit
 				Alert.show("不能接受子节点参数");
 		}
 		
-		private function onMouseClick(e:MouseEvent):void
+		override protected function onMouseUp(e:MouseEvent):void
 		{
-			e.stopPropagation();
-			this.isPressing = false;
-			var window:ExecTypePanel = new ExecTypePanel;
-			window.addEventListener(MsgEvent.EXEC_TYPE, onSelectType);
-			
-			PopUpManager.addPopUp(window, this, true);
-			PopUpManager.centerPopUp(window);
+			if(hasMouseDown && !isPressing)
+			{
+				var window:ExecTypePanel = new ExecTypePanel;
+				window.addEventListener(MsgEvent.EXEC_TYPE, onSelectType);
+				
+				PopUpManager.addPopUp(window, this, true);
+				PopUpManager.centerPopUp(window);
+			}
+			super.onMouseUp(e);
 		}
 		
 		private function onSelectType(e:MsgEvent):void

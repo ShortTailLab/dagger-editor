@@ -1,31 +1,38 @@
 package
 {
 	import flash.events.ContextMenuEvent;
+	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.text.TextField;
+	import flash.text.TextFormat;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
 	import mx.controls.Alert;
+	import mx.controls.TextInput;
 	import mx.core.FlexGlobals;
 	import mx.core.UIComponent;
 	import mx.managers.PopUpManager;
 	
+	import behaviorEdit.BTEditPanel;
+	import behaviorEdit.EditPanel;
+	
 	import editEntity.EditBase;
-	import editEntity.MatFactory;
 	import editEntity.MatSprite;
 	import editEntity.TriggerSprite;
 	
 	import manager.EventManager;
 	import manager.EventType;
 	import manager.GameEvent;
-	import behaviorEdit.BTEditPanel;
 	
 	public class MatsView extends UIComponent
 	{
 		
 		public var selected:EditBase = null;
-		
+		private var matsLayer:UIComponent = null;
+		private var labelContainer:UIComponent = null;
 		private var mats:Array = null;
+		private var matsOnShow:Array = null;
 		
 		private var grid_width:int = 110;
 		private var grid_height:int = 150;
@@ -33,6 +40,7 @@ package
 		public function MatsView()
 		{
 			mats = new Array;
+			
 			init();
 			
 			EventManager.getInstance().addEventListener(EventType.ENEMY_DATA_UPDATE, init); 
@@ -48,6 +56,19 @@ package
 			}
 			this.removeChildren();
 			
+			var searchFrame:TextInput = new TextInput;
+			searchFrame.width = 100;
+			searchFrame.height = 20;
+			searchFrame.x = 10;
+			searchFrame.y = 10;
+			searchFrame.addEventListener(Event.CHANGE, onTextChange);
+			this.addChild(searchFrame);
+			
+			matsLayer = new UIComponent;
+			this.addChild(matsLayer);
+			labelContainer = new UIComponent;
+			this.addChild(labelContainer);
+			
 			var triggerMat:EditBase = new TriggerSprite();
 			triggerMat.trim(70);
 			add(triggerMat);
@@ -58,7 +79,13 @@ package
 				var view:EditBase = new MatSprite(null, item, 100, 70);
 				add(view);
 			}
-			resize(2);
+			mats.sort(function(a, b):int{
+				if(int(a.type) < int(b.type))
+					return -1;
+				else
+					return 1;
+			});
+			resize(mats, 2);
 		}
 		
 		private function add(view:EditBase):void
@@ -66,7 +93,6 @@ package
 			view.doubleClickEnabled = true;
 			view.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
 			view.addEventListener(MouseEvent.CLICK, onMatClick);
-			this.addChild(view);
 			mats.push(view);
 			
 			var menu:ContextMenu = new ContextMenu;
@@ -135,14 +161,59 @@ package
 			edit(e.currentTarget as MatSprite);
 		}
 		
-		public function resize(cols:int):void
+		private function onTextChange(e:Event):void
 		{
-			for(var i:int = 0; i < mats.length; i++)
+			var text:String = TextInput(e.target).text;
+			matsOnShow = mats.filter(function(a, index:int, arr:Array):Boolean{
+				var type:String = a.type as String;
+				return type.search(text) == 0;
+			});
+			resize(matsOnShow);
+		}
+		
+		public function resize(matArray:Array, cols:int = 2):void
+		{
+			matsLayer.removeChildren();
+			labelContainer.removeChildren();
+			if(matArray.length > 0)
 			{
-				mats[i].x = 60+i%cols*grid_width;
-				mats[i].y = 130+int(i/cols)*grid_height;
+				var prev:String = "";
+				var px:int = 0;
+				var py:int = 0;
+				var xCount:int = 0;
+				for(var i:int = 0; i < matArray.length; i++)
+				{
+					var type:String = String(matArray[i].type);
+					if(type.length == 7)
+					{
+						var curr:String = type.substr(1, 4);
+						if(curr != prev)
+						{
+							var label:TextField = Utils.getLabel("章节 "+curr.substr(0, 2)+" 关卡 "+curr.substr(2, 2), 10, py+40, 18);
+							label.width = 200;
+							label.selectable = false;
+							label.setTextFormat(new TextFormat(null, 18, 0xff0000)); 
+							labelContainer.addChild(label);
+							
+							xCount = 0;
+							py += 30;
+							prev = curr;
+						}
+					}
+					
+					px = 60+xCount*grid_width;
+					if(xCount == 0)
+						py += grid_height;
+					
+					matArray[i].x = px;
+					matArray[i].y = py;
+					matsLayer.addChild(matArray[i]);
+					
+					xCount++;
+					xCount = xCount%cols;
+				}
+				this.height = matArray[matArray.length-1].y+130;
 			}
-			this.height = mats[mats.length-1].y+130;
 		}
 	}
 }
