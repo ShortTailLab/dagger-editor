@@ -228,15 +228,15 @@ package behaviorEdit
 		private var prevIndex:int = 0;
 		private function onClickBt(e:MouseEvent):void
 		{
-			Data.getInstance().updateBehavior(btArray[prevIndex], editView.export());
+			//Data.getInstance().updateBehavior(btArray[prevIndex], editView.export());
 			this.setCurrBehavior(btBar.selectedItem);
-			prevIndex = btBar.selectedIndex;
+			//prevIndex = btBar.selectedIndex;
 		}
 		
 		private function onDeleteEnemyBT(e:ContextMenuEvent):void
 		{
 			var currBName:String = btBar.selectedItem;
-			btArray.removeItemAt(btArray.getItemIndex(currBName));
+			btArray.removeItemAt(btBar.selectedIndex);
 			Data.getInstance().saveEnemyBehaviorData();
 		}
 		
