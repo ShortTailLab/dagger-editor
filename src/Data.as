@@ -312,7 +312,7 @@ package
 			
 			if(sourceData.type == BType.BTYPE_EXEC)
 			{
-				result += sourceData.data.execType+"(";
+				result += sourceData.data.execType+"(actor,";
 				var parms:Array = sourceData.data.parm as Array
 				for(var i:int = 0; i < parms.length; i++)
 				{

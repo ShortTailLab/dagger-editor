@@ -7,12 +7,15 @@ package behaviorEdit
 	import flash.text.TextFormat;
 	import flash.utils.Dictionary;
 	
+	import mx.collections.ArrayCollection;
 	import mx.controls.Alert;
 	import mx.controls.Button;
 	import mx.controls.TextArea;
 	import mx.controls.TextInput;
 	import mx.core.UIComponent;
 	import mx.managers.PopUpManager;
+	
+	import spark.components.ComboBox;
 	
 	import manager.EventManager;
 
@@ -104,7 +107,17 @@ package behaviorEdit
 			parmInput = new Array;
 			var interval:int = 30;
 			var yRecord:int = 0;
-			var nodeData:Array = Data.getInstance().behaviorBaseNode[type] as Array;
+			var nodes:Array = Data.getInstance().behaviorBaseNode as Array;
+			var targetNode:Object;
+			for each(var d in nodes)
+				if(d.func == type)
+				{
+					nodeData = d.args as Array;
+					break;
+				}
+			if(!nodeData)
+				return;
+			 
 			var i:int = 0;
 			for each(var item in nodeData)
 			{
@@ -117,7 +130,7 @@ package behaviorEdit
 					parmData.input = null;
 					parmInput.push(parmData);
 				}
-				else if(item.type == "float" || item.type == "string" || item.type == "int")
+				else if(item.type == "float" || item.type == "string" || item.type == "int" || item.type == "array_ccp")
 				{
 					addInput(item.name, yRecord, item.type);
 					yRecord += 30;
@@ -136,6 +149,10 @@ package behaviorEdit
 					addInput(item.name+" y", yRecord, item.type);
 					yRecord += 30;
 				}
+				else if(item.type == "bool")
+				{
+					
+				}
 			}
 			nodeWidth = Math.max(100, label.width)+horizontalPadding;
 			nodeHeight = Math.max(70, label.height+yRecord+verticalPadding);
@@ -148,18 +165,38 @@ package behaviorEdit
 			var tt:TextField = Utils.getLabel(name+":", 0, py, 14);
 			tt.selectable = false;
 			container.addChild(tt);
-			var input:TextInput = new TextInput;
-			input.height = 20;
-			input.width = 40;
-			input.x = 50;
-			input.y = py;
-			input.addEventListener(MouseEvent.MOUSE_DOWN, onInputDown);
+			
 			var parmData:Object = new Object;
 			parmData.name = name;
 			parmData.type = type;
-			parmData.input = input;
+			
+			if(type == "bool")
+			{
+				var boxData:ArrayCollection = new ArrayCollection(["true", "false"]);
+				var box:ComboBox = new ComboBox;
+				box.dataProvider = boxData;
+				box.width = 40;
+				box.x = 50;
+				box.y = py;
+				container.addChild(box);
+				parmData.box = box;
+			}
+			else
+			{
+				var input:TextInput = new TextInput;
+				input.height = 20;
+				input.width = 40;
+				input.x = 50;
+				input.y = py;
+				if(type == "array_ccp")
+					input.addEventListener(MouseEvent.MOUSE_DOWN, onPathInputDown);
+				else
+					input.addEventListener(MouseEvent.MOUSE_DOWN, onInputDown);
+				parmData.input = input;
+				container.addChild(input);
+			}
 			parmInput.push(parmData);
-			container.addChild(input);
+			
 		}
 		
 		private function onInputDown(e:MouseEvent):void
@@ -167,23 +204,39 @@ package behaviorEdit
 			e.stopPropagation();
 		}
 		
+		private function onPathInputDown(e:MouseEvent):void
+		{
+			e.stopPropagation();
+			
+			var window:PathEditPanel = new PathEditPanel;
+			
+			PopUpManager.addPopUp(window, this, true);
+			PopUpManager.centerPopUp(window);
+		}
 		
 		override public function initData(data:Object):void
 		{
 			if(data && data.execType && data.execType != "")
 			{
 				this.initExecType(data.execType);
+				var parmData:Array = data.parm as Array;
 				for(var i:int = 0; i < parmInput.length; i++)
 				{
-					if(parmInput[i].input)
-						TextInput(parmInput[i].input).text = (data.parm as Array)[i].value;
+					for each(var p in parmData)
+						if(p.name == parmInput[i].name)
+						{
+							if(parmInput[i].hasOwnProperty("input"))
+								TextInput(parmInput[i].input).text = p.value;
+						}
+							
+					
+					
 				}
 			}
 		}
 		
 		override public function exportData():Object
 		{
-			
 			var obj:Object = new Object;
 			obj.execType = this.execType;
 			obj.parm = new Array;
