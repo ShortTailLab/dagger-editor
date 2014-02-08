@@ -12,8 +12,6 @@ package behaviorEdit
 	import mx.events.CloseEvent;
 	import mx.managers.PopUpManager;
 	
-	import spark.components.Button;
-	
 	public class ExecTypePanel extends TitleWindow
 	{
 		public function ExecTypePanel()

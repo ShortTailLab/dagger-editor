@@ -11,17 +11,16 @@ package behaviorEdit
 	import mx.controls.Alert;
 	import mx.controls.Button;
 	import mx.controls.TextArea;
-	import mx.controls.TextInput;
 	import mx.core.UIComponent;
 	import mx.managers.PopUpManager;
 	
 	import spark.components.ComboBox;
+	import spark.components.TextInput;
 	
 	import manager.EventManager;
 
 	public class ExecBNode extends BNode
 	{
-		
 		private var inputLabel:TextArea;
 		private var container:UIComponent = null;
 		private var hasInit:Boolean = false;
@@ -127,13 +126,7 @@ package behaviorEdit
 					var parmData:Object = new Object;
 					parmData.name = item.name;
 					parmData.type = item.type;
-					parmData.input = null;
 					parmInput.push(parmData);
-				}
-				else if(item.type == "float" || item.type == "string" || item.type == "int" || item.type == "array_ccp")
-				{
-					addInput(item.name, yRecord, item.type);
-					yRecord += 30;
 				}
 				else if(item.type == "ccsize")
 				{
@@ -149,10 +142,12 @@ package behaviorEdit
 					addInput(item.name+" y", yRecord, item.type);
 					yRecord += 30;
 				}
-				else if(item.type == "bool")
+				else
 				{
-					
+					addInput(item.name, yRecord, item.type);
+					yRecord += 30;
 				}
+					
 			}
 			nodeWidth = Math.max(100, label.width)+horizontalPadding;
 			nodeHeight = Math.max(70, label.height+yRecord+verticalPadding);
@@ -175,11 +170,12 @@ package behaviorEdit
 				var boxData:ArrayCollection = new ArrayCollection(["true", "false"]);
 				var box:ComboBox = new ComboBox;
 				box.dataProvider = boxData;
-				box.width = 40;
+				box.width = 50;
 				box.x = 50;
 				box.y = py;
-				container.addChild(box);
 				parmData.box = box;
+				box.addEventListener(MouseEvent.MOUSE_DOWN, onInputDown);
+				container.addChild(box);
 			}
 			else
 			{
@@ -188,15 +184,18 @@ package behaviorEdit
 				input.width = 40;
 				input.x = 50;
 				input.y = py;
-				if(type == "array_ccp")
+				if(type == "array_ccp" || type == "array_ccp_curve" )
+				{
+					input.prompt = name;
 					input.addEventListener(MouseEvent.MOUSE_DOWN, onPathInputDown);
+					parmData.path = new Array;
+				}
 				else
 					input.addEventListener(MouseEvent.MOUSE_DOWN, onInputDown);
 				parmData.input = input;
 				container.addChild(input);
 			}
 			parmInput.push(parmData);
-			
 		}
 		
 		private function onInputDown(e:MouseEvent):void
@@ -208,10 +207,32 @@ package behaviorEdit
 		{
 			e.stopPropagation();
 			
-			var window:PathEditPanel = new PathEditPanel;
+			var name:String = TextInput(e.currentTarget).prompt;
+			var data:Object = this.getParmData(name);
 			
+			var window:PathEditPanel = new PathEditPanel(name, data.path, data.type=="array_ccp_curve");
+			window.addEventListener(MsgEvent.EDIT_PATH, onReturnPath);
 			PopUpManager.addPopUp(window, this, true);
 			PopUpManager.centerPopUp(window);
+		}
+		private function onReturnPath(e:MsgEvent):void
+		{
+			var data:Object = this.getParmData(e.hintMsg);
+			TextInput(data.input).text = JSON.stringify(e.hintData);
+			data.path = e.hintData;
+					
+		}
+		
+		private function getParmData(parmName:String):Object
+		{
+			for each(var p:Object in parmInput)
+			{
+				if(p.name == parmName)
+				{
+					return p;
+				}
+			}
+			return null;
 		}
 		
 		override public function initData(data:Object):void
@@ -220,17 +241,22 @@ package behaviorEdit
 			{
 				this.initExecType(data.execType);
 				var parmData:Array = data.parm as Array;
-				for(var i:int = 0; i < parmInput.length; i++)
+				for each(var item in parmInput)
 				{
 					for each(var p in parmData)
-						if(p.name == parmInput[i].name)
+						if(p.name == item.name)
 						{
-							if(parmInput[i].hasOwnProperty("input"))
-								TextInput(parmInput[i].input).text = p.value;
+							if(item.type == "bool")
+								ComboBox(item.box).selectedItem = p.value;
+							else if(item.type == "array_ccp" || type == "array_ccp_curve" )
+							{
+								TextInput(item.input).text = JSON.stringify(p.path);
+								item.path = p.path;
+							}
+							else if(item.type != "node")
+								TextInput(item.input).text = p.value;
+							break;
 						}
-							
-					
-					
 				}
 			}
 		}
@@ -245,8 +271,17 @@ package behaviorEdit
 				var data:Object = new Object;
 				data.name = o.name;
 				data.type = o.type;
-				if(o.input)
+				if(data.type == "bool")
+				{
+					data.value = ComboBox(o.box).selectedItem;
+				}
+				else if(data.type == "array_ccp" || type == "array_ccp_curve" )
+				{
+					data.path = o.path;
+				}
+				else if(data.type != "node")
 					data.value = TextInput(o.input).text;
+					
 				obj.parm.push(data);
 			}
 			return obj;

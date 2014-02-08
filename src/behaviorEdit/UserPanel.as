@@ -31,12 +31,21 @@ package behaviorEdit
 			this.addElement(btnsView);
 			this.addElement(this);
 			
+			var saveBtn:Button = new Button;
+			saveBtn.label = "保存";
+			saveBtn.width = 80;
+			saveBtn.height = 30;
+			saveBtn.x = 20;
+			saveBtn.y = 140;
+			saveBtn.addEventListener(MouseEvent.CLICK, onSave);
+			btnsView.addChild(saveBtn);
+			
 			var newBtn:Button = new Button;
 			newBtn.label = "添加行为";
 			newBtn.width = 80;
 			newBtn.height = 30;
 			newBtn.x = 20;
-			newBtn.y = 150;
+			newBtn.y = 180;
 			newBtn.addEventListener(MouseEvent.CLICK, onNewBT);
 			btnsView.addChild(newBtn);
 			
@@ -53,7 +62,7 @@ package behaviorEdit
 			{
 				node = BNodeFactory.createBNode(btypes[i]);
 				node.x = 20;
-				node.y = 280+50*i;
+				node.y = 300+50*i;
 				node.addEventListener(MouseEvent.MOUSE_DOWN, onNodeMouseDown);
 				btnsView.addChild(node);
 			}
@@ -70,7 +79,7 @@ package behaviorEdit
 				newBtInput.width = 100;
 				newBtInput.height = 30;
 				newBtInput.x = 10;
-				newBtInput.y = 190;
+				newBtInput.y = 220;
 				newBtInput.prompt = "输入行为名";
 				newBtInput.addEventListener(FlexEvent.ENTER, onEnterNewBt);
 				btnsView.addChild(newBtInput);
@@ -80,7 +89,7 @@ package behaviorEdit
 				newConfirmBtn.width = 45;
 				newConfirmBtn.height = 25;
 				newConfirmBtn.x = 10;
-				newConfirmBtn.y = 225;
+				newConfirmBtn.y = 255;
 				newConfirmBtn.addEventListener(MouseEvent.CLICK, onNewConfirmClick);
 				btnsView.addChild(newConfirmBtn);
 				
@@ -89,7 +98,7 @@ package behaviorEdit
 				cancelBtn.width = 45;
 				cancelBtn.height = 25;
 				cancelBtn.x = 65;
-				cancelBtn.y = 225;
+				cancelBtn.y = 255;
 				cancelBtn.addEventListener(MouseEvent.CLICK, onCancel);
 				btnsView.addChild(cancelBtn);
 			}
@@ -97,11 +106,9 @@ package behaviorEdit
 		
 		public function setNewBt(bName:String):void
 		{
-			if(parPanel.state == BTEditState.NEW_BT)
-			{
-				newBtInput.text = bName;
-				parPanel.setCurrBehavior(bName);
-			}
+			onNewBT(null);
+			newBtInput.text = bName;
+			parPanel.setCurrBehavior(bName);
 		}
 		
 		private function onEnterNewBt(e:FlexEvent):void

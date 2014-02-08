@@ -132,7 +132,7 @@ package
 			if(target)
 			{
 				var btPanel:BTEditPanel = new BTEditPanel(target);
-				PopUpManager.addPopUp(btPanel, this);
+				PopUpManager.addPopUp(btPanel, this, true);
 				PopUpManager.centerPopUp(btPanel);
 				btPanel.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-btPanel.width/2;
 				btPanel.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-btPanel.height/2;
@@ -166,14 +166,19 @@ package
 			var text:String = TextInput(e.target).text;
 			matsOnShow = mats.filter(function(a, index:int, arr:Array):Boolean{
 				var type:String = a.type as String;
-				return type.search(text) == 0;
+				return (type.search(text) == 0);
 			});
 			resize(matsOnShow);
 		}
 		
 		public function resize(matArray:Array, cols:int = 2):void
 		{
-			matsLayer.removeChildren();
+			while(matsLayer.numChildren>0)
+			{
+				var m = matsLayer.removeChildAt(matsLayer.numChildren-1);
+				m.removeEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
+				m.removeEventListener(MouseEvent.CLICK, onMatClick);
+			}
 			labelContainer.removeChildren();
 			if(matArray.length > 0)
 			{
@@ -207,6 +212,8 @@ package
 					
 					matArray[i].x = px;
 					matArray[i].y = py;
+					matArray[i].addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
+					matArray[i].addEventListener(MouseEvent.CLICK, onMatClick);
 					matsLayer.addChild(matArray[i]);
 					
 					xCount++;

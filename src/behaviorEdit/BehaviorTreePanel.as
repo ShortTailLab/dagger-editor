@@ -46,12 +46,9 @@ package behaviorEdit
 		
 		private function onBehaviorClick(e:MouseEvent):void
 		{
-			if(parPanel.state == BTEditState.NEW_BT)
-			{
-				var selectedNode:XML = (e.currentTarget as Tree).selectedItem as XML;
-				var label:String=selectedNode.@label;
-				parPanel.userPanel.setNewBt(label);
-			}
+			var selectedNode:XML = (e.currentTarget as Tree).selectedItem as XML;
+			var label:String=selectedNode.@label;
+			parPanel.userPanel.setNewBt(label);
 		}
 		
 		private function onDeleteBT(e:ContextMenuEvent):void

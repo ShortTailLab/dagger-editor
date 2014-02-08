@@ -96,7 +96,7 @@ package excel
 				_enemyData[workSheet.getCellValue("A"+i)] = enemy;
 				enemy["face"] = workSheet.getCellValue("B"+i);
 				enemy["nameCN"] = workSheet.getCellValue("C"+i);
-				if (String(workSheet.getCellValue("D"+i)) == "") {
+				/*if (String(workSheet.getCellValue("D"+i)) == "") {
 					enemy["attack_type"] = "";
 					enemy["attack_args"] = new Object;
 				}
@@ -111,10 +111,10 @@ package excel
 				else {
 					enemy["move_type"] = workSheet.getCellValue("E"+i);
 					enemy["move_args"] = JSON.parse(workSheet.getCellValue("F"+i));
-				}
+				}*/
 				enemy["level"] = int(workSheet.getCellValue("L"+i));
 				enemy["health"] = int(workSheet.getCellValue("M"+i));
-				enemy["attack_args"]["damage"] = int(workSheet.getCellValue("N"+i));
+				//enemy["attack_args"]["damage"] = int(workSheet.getCellValue("N"+i));
 				enemy["defense"] = int(workSheet.getCellValue("O"+i));
 				enemy["bonus"] = int(workSheet.getCellValue("P"+i));
 				enemy["rbonus"] = int(workSheet.getCellValue("Q"+i));	

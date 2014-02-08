@@ -298,93 +298,109 @@ package
 		
 		public function genBTreeJS(sourceData:Object):String
 		{
-			var children:Array = sourceData.children as Array;
-			var childrenJS:Array = new Array;
-			for each(var childData:Object in children)
-			{
-				var js:String = genBTreeJS(childData);
-				//if any child return "", the whole tree is invalid and should be ""
-				if(js == "")
-					return "";
-				childrenJS.push(js);
-			}
 			var result:String = "";
-			
-			if(sourceData.type == BType.BTYPE_EXEC)
+			if(sourceData)
 			{
-				result += sourceData.data.execType+"(actor,";
-				var parms:Array = sourceData.data.parm as Array
-				for(var i:int = 0; i < parms.length; i++)
+				var children:Array = sourceData.children as Array;
+				var childrenJS:Array = new Array;
+				for each(var childData:Object in children)
 				{
-					if(parms[i].type == "ccp")
+					var js:String = genBTreeJS(childData);
+					//if any child return "", the whole tree is invalid and should be ""
+					if(js == "")
+						return "";
+					childrenJS.push(js);
+				}
+				
+				if(sourceData.type == BType.BTYPE_EXEC)
+				{
+					result += sourceData.data.execType+"(actor";
+					//the format of data refer to execNode.exportData()
+					var parms:Array = sourceData.data.parm as Array
+					for(var i:int = 0; i < parms.length; i++)
 					{
-						result += "cc.p("+parms[i].value+","+parms[++i].value+")";
-					}
-					else if(parms[i].type == "ccsize")
-					{
-						result += "cc.size("+parms[i].value+","+parms[++i].value+")";
-					}
-					else if(parms[i].type == "node")
-					{
-						//the parms ask for a node while node array is empty.
-						if(children.length == 0)
-						{
-							trace("genBtTree error:invalid node: a node parm is missing!");
-							return "";
-						}
-						result += childrenJS.shift();
-					}
-					else
-						result += parms[i].value;
-					
-					if(i < parms.length-1)
 						result += ",";
-				}
-				result += ")";
-			}
-			//except for exec node, others should have child nodes.
-			else if(children.length == 0)
-			{
-				trace("genBtTree error: children is empty.");
-				return "";
-			}
-			else
-			{
-				if(sourceData.type == BType.BTYPE_SEQ)
-					result += "BT.seq(";
-				else if(sourceData.type == BType.BTYPE_PAR)
-					result += "BT.par(";
-				else if(sourceData.type == BType.BTYPE_SEL)
-					result += "BT.sel(";
-				else if(sourceData.type == BType.BTYPE_LOOP)
-				{
-					if(sourceData.data.times == "")
-					{
-						trace("genBtTree error: times is empty.");
-						return "";
+						if(parms[i].type == "ccp")
+						{
+							result += "cc.p("+parms[i].value+","+parms[++i].value+")";
+						}
+						else if(parms[i].type == "ccsize")
+						{
+							result += "cc.size("+parms[i].value+","+parms[++i].value+")";
+						}
+						else if(parms[i].type == "node")
+						{
+							//the parms ask for a node while node array is empty.
+							if(children.length == 0)
+							{
+								trace("genBtTree error:invalid node: a node parm is missing!");
+								return "";
+							}
+							result += childrenJS.shift();
+						}
+						else if(parms[i].type == "array_ccp")
+						{
+							var path:Array = parms[i].path as Array;
+							result += "[";
+							for(var i:int = 0; i < path.length; i++)
+							{
+								result += "cc.p("+path[i].x+","+path[i].y+")";
+								if(i < path.length-1)
+									result += ","
+							}
+							result += "]";
+						}
+						else
+							result += parms[i].value;
+						
 					}
-					result += "BT.loop("+sourceData.data.times+",";
+					result += ")";
 				}
-				else if(sourceData.type == BType.BTYPE_COND)
+					//except for exec node, others should have child nodes.
+				else if(children.length == 0)
 				{
-					if(sourceData.data.cond == "")
-					{
-						trace("genBtTree error: cond is empty.");
-						return "";
-					}
-					result += "BT.cond("+sourceData.data.cond+",";
+					trace("genBtTree error: children is empty.");
+					return "";
 				}
 				else
-					return "";
-				
-				while(childrenJS.length > 0)
 				{
-					result += childrenJS.shift();
-					if(childrenJS.length > 0)
-						result += ",";
+					if(sourceData.type == BType.BTYPE_SEQ)
+						result += "BT.seq(";
+					else if(sourceData.type == BType.BTYPE_PAR)
+						result += "BT.par(";
+					else if(sourceData.type == BType.BTYPE_SEL)
+						result += "BT.sel(";
+					else if(sourceData.type == BType.BTYPE_LOOP)
+					{
+						if(sourceData.data.times == "")
+						{
+							trace("genBtTree error: times is empty.");
+							return "";
+						}
+						result += "BT.loop("+sourceData.data.times+",";
+					}
+					else if(sourceData.type == BType.BTYPE_COND)
+					{
+						if(sourceData.data.cond == "")
+						{
+							trace("genBtTree error: cond is empty.");
+							return "";
+						}
+						result += "BT.cond("+sourceData.data.cond+",";
+					}
+					else
+						return "";
+					
+					while(childrenJS.length > 0)
+					{
+						result += childrenJS.shift();
+						if(childrenJS.length > 0)
+							result += ",";
+					}
+					result += ")";
 				}
-				result += ")";
 			}
+			
 			return result;
 		}
 		
@@ -442,6 +458,7 @@ package
 			for(var name in enemyData)
 			{
 				var data:Object = enemyData[name];
+				
 				
 				if(enemyBTData.hasOwnProperty(name))
 					data.behaviors = enemyBTData[name];
