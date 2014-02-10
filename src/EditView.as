@@ -60,7 +60,7 @@ package
 		
 		private var tipsContainer:Sprite = null;
 		
-		[Embed(source="background.jpg")]
+		[Embed(source="map_snow1.png")]
 		static public var BgImage:Class;
 		
 		public function EditView(_main:MapEditor, _container:Canvas)
@@ -215,6 +215,8 @@ package
 					matsControl.remove(m.id);
 				}
 			}
+			if(code == Keyboard.S && e.ctrlKey)
+				save();
 		}
 		private function onClick(e:MouseEvent):void
 		{

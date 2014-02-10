@@ -97,6 +97,11 @@ package editEntity
 				selectFrame.graphics.lineStyle(1, 0xff0000);
 				selectFrame.graphics.drawRect(-skin.width*0.5, -skin.height, skin.width, skin.height);
 				this.addChild(selectFrame);
+				
+				if(this.hasOwnProperty("triggerTime"))
+				{
+					
+				}
 			}
 			else if(!value && selectFrame)
 			{

@@ -85,7 +85,7 @@ package excel
 			_excelLoader.removeEventListener(Event.COMPLETE, onExcelLoad);
 
 			_enemyData = new Object();
-			var workSheet:Worksheet = _excelLoader.worksheet("怪物表");
+			var workSheet:Worksheet = _excelLoader.worksheet("新表");
 			
 			for (var i:int = 3; ; i++) {
 //				trace("A"+i+" value: " + workSheet.getCellValue("A"+i));
@@ -95,29 +95,47 @@ package excel
 				var enemy:Object = new Object();
 				_enemyData[workSheet.getCellValue("A"+i)] = enemy;
 				enemy["face"] = workSheet.getCellValue("B"+i);
-				enemy["nameCN"] = workSheet.getCellValue("C"+i);
-				/*if (String(workSheet.getCellValue("D"+i)) == "") {
-					enemy["attack_type"] = "";
-					enemy["attack_args"] = new Object;
-				}
-				else
+				enemy["type"] = workSheet.getCellValue("D"+i);
+				if(enemy["type"] == "bullet")
 				{
-					enemy["attack_type"] = String(workSheet.getCellValue("D"+i));
-					enemy["attack_args"] = JSON.parse(workSheet.getCellValue("K"+i));
+					enemy["nameCN"] = workSheet.getCellValue("C"+i);
+					enemy["offset"] = Utils.arrayStr2ccpStr(workSheet.getCellValue("E"+i));
+					enemy["area"] = Utils.arrayStr2ccsStr(workSheet.getCellValue("F"+i));
+					enemy["range"] = workSheet.getCellValue("G"+i);
+					enemy["speed"] = workSheet.getCellValue("H"+i);
+					enemy["damage"] = workSheet.getCellValue("I"+i);
 				}
-				if (int(workSheet.getCellValue("E"+i)) == 0) {
-					enemy["move_type"] = 0;
+				else if(enemy["type"] == "actor")
+				{
+					enemy["nameCN"] = workSheet.getCellValue("C"+i);
+					enemy["area"] = Utils.arrayStr2ccsStr(workSheet.getCellValue("F"+i));
+					enemy["attack"] = int(workSheet.getCellValue("J"+i));
+					enemy["health"] = int(workSheet.getCellValue("K"+i));
+					enemy["defense"] = int(workSheet.getCellValue("L"+i));	
+					
 				}
-				else {
-					enemy["move_type"] = workSheet.getCellValue("E"+i);
-					enemy["move_args"] = JSON.parse(workSheet.getCellValue("F"+i));
-				}*/
-				enemy["level"] = int(workSheet.getCellValue("L"+i));
+				else if(enemy["type"] == "RollingStone")
+				{
+					enemy["speed"] = int(workSheet.getCellValue("H"+i));
+					enemy["dps"] = int(workSheet.getCellValue("M"+i));
+				}
+				else if(enemy["type"] == "Meteorite")
+				{
+					enemy["damage"] = int(workSheet.getCellValue("I"+i));
+					enemy["dps"] = int(workSheet.getCellValue("M"+i));
+				}
+				else if(enemy["type"] == "Bangalore")
+				{
+					enemy["area"] = Utils.arrayStr2ccsStr(workSheet.getCellValue("F"+i));
+					enemy["dps"] = int(workSheet.getCellValue("M"+i));
+				}
+				
+				/*enemy["level"] = int(workSheet.getCellValue("L"+i));
 				enemy["health"] = int(workSheet.getCellValue("M"+i));
 				//enemy["attack_args"]["damage"] = int(workSheet.getCellValue("N"+i));
 				enemy["defense"] = int(workSheet.getCellValue("O"+i));
 				enemy["bonus"] = int(workSheet.getCellValue("P"+i));
-				enemy["rbonus"] = int(workSheet.getCellValue("Q"+i));	
+				enemy["rbonus"] = int(workSheet.getCellValue("Q"+i));	*/
 			}
 			_excelLoader.close();
 

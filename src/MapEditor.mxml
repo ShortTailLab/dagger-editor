@@ -179,11 +179,19 @@
 			}
 			
 			private function onLevelClick(e:Event):void{
-				var selectedNode:XML = (e.currentTarget as Tree).selectedItem as XML;
+				/*var selectedNode:XML = (e.currentTarget as Tree).selectedItem as XML;
 				var label:String=selectedNode.@label;
 				Data.getInstance().currSelectedLevel = (e.currentTarget as Tree).selectedIndex;
-				_enemyEditView.init(label);
+				_enemyEditView.init(label);*/
+				setCurrLevel(_tree.selectedIndex);
 			}	
+			
+			private function setCurrLevel(index:int):void
+			{
+				_tree.selectedIndex = index;
+				Data.getInstance().currSelectedLevel = index;
+				_enemyEditView.init(_tree.selectedItem.@label);
+			}
 			private function onTMXClick(e:MouseEvent):void
 			{
 				var file:File = File.desktopDirectory.resolvePath("editor/"+List(e.currentTarget).selectedItem);
@@ -245,7 +253,7 @@
 					{
 						Data.getInstance().deleteLevel(index);
 						_enemyEditView.clear();
-						//_tree.selectedIndex = 0;
+						setCurrLevel(0);
 					}
 				}
 			}

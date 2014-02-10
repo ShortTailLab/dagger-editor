@@ -15,7 +15,7 @@ package
 		private var tmxFile:File = null;
 		private var mapXML:XML = null;
 		
-		[Embed(source="background.jpg")]
+		[Embed(source="map_snow1.png")]
 		static public var BgImage:Class;
 		static private var _instance:EditMapControl = null;
 		static public function getInstance():EditMapControl

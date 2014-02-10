@@ -9,10 +9,11 @@ package
 	import flash.ui.ContextMenuItem;
 	
 	import mx.controls.Alert;
-	import mx.controls.TextInput;
 	import mx.core.FlexGlobals;
 	import mx.core.UIComponent;
 	import mx.managers.PopUpManager;
+	
+	import spark.components.TextInput;
 	
 	import behaviorEdit.BTEditPanel;
 	import behaviorEdit.EditPanel;
@@ -55,8 +56,8 @@ package
 				m.removeEventListener(MouseEvent.CLICK, onMatClick);
 			}
 			this.removeChildren();
-			
 			var searchFrame:TextInput = new TextInput;
+			searchFrame.prompt = "搜索";
 			searchFrame.width = 100;
 			searchFrame.height = 20;
 			searchFrame.x = 10;
@@ -91,8 +92,8 @@ package
 		private function add(view:EditBase):void
 		{
 			view.doubleClickEnabled = true;
-			view.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
-			view.addEventListener(MouseEvent.CLICK, onMatClick);
+			//view.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
+			//view.addEventListener(MouseEvent.CLICK, onMatClick);
 			mats.push(view);
 			
 			var menu:ContextMenu = new ContextMenu;
@@ -132,7 +133,7 @@ package
 			if(target)
 			{
 				var btPanel:BTEditPanel = new BTEditPanel(target);
-				PopUpManager.addPopUp(btPanel, this, true);
+				PopUpManager.addPopUp(btPanel, this);
 				PopUpManager.centerPopUp(btPanel);
 				btPanel.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-btPanel.width/2;
 				btPanel.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-btPanel.height/2;

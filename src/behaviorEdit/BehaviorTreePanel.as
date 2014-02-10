@@ -47,14 +47,19 @@ package behaviorEdit
 		private function onBehaviorClick(e:MouseEvent):void
 		{
 			var selectedNode:XML = (e.currentTarget as Tree).selectedItem as XML;
-			var label:String=selectedNode.@label;
-			parPanel.userPanel.setNewBt(label);
+			if(selectedNode)
+			{
+				var label:String=selectedNode.@label;
+				parPanel.userPanel.setNewBt(label);
+			}
 		}
 		
 		private function onDeleteBT(e:ContextMenuEvent):void
 		{
 			if(btTree.selectedIndex >= 0)
 				Alert.show("删除库行为会一并删除所有相关的行为，确定删除？", "tips", Alert.OK|Alert.CANCEL, this, onDeleteBtClose);
+			else
+				Alert.show("请先选择要删除的行为");
 			
 		}
 		

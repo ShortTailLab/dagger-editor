@@ -56,7 +56,7 @@ package behaviorEdit
 			dots = new Array;
 			this.title = "编辑";
 			this.width = 500;
-			this.height = 600;
+			this.height = 600;    
 			
 			var mapContain:UIComponent = new UIComponent;
 			this.addElement(mapContain);

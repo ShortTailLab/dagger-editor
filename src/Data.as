@@ -170,7 +170,7 @@ package
 			
 			//this record the behaviors' name of each enemy
 			var file:File = File.desktopDirectory.resolvePath("editor/enemyBehaviorsData.json");
-			enemyBTData = null;
+			enemyBTData = new Object;
 			if(file.exists)
 			{
 				var stream:FileStream = new FileStream;
@@ -179,12 +179,14 @@ package
 				stream.close();
 			}
 			//you can see the struct of enemyBTData here.
-			if(!enemyBTData)
 			{
-				enemyBTData = new Object;
+				for(var orgItem in enemyBTData)
+					if(!enemyData.hasOwnProperty(orgItem))
+						delete enemyBTData[orgItem];
 				for(var item in enemyData)
 				{
-					enemyBTData[item] = new Array;
+					if(!enemyBTData.hasOwnProperty(item))
+						enemyBTData[item] = new Array;
 				}
 			}
 			
@@ -284,124 +286,20 @@ package
 		private function genBackUp(path:String):void
 		{
 			var file:File = File.desktopDirectory.resolvePath("editor/"+path);
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.READ);
-			var backupData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-			stream.close();
-			
-			file = File.desktopDirectory.resolvePath("editor/backup/"+path);
-			stream = new FileStream;
-			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(JSON.stringify(backupData));
-			stream.close();
-		}
-		
-		public function genBTreeJS(sourceData:Object):String
-		{
-			var result:String = "";
-			if(sourceData)
+			if(file.exists)
 			{
-				var children:Array = sourceData.children as Array;
-				var childrenJS:Array = new Array;
-				for each(var childData:Object in children)
-				{
-					var js:String = genBTreeJS(childData);
-					//if any child return "", the whole tree is invalid and should be ""
-					if(js == "")
-						return "";
-					childrenJS.push(js);
-				}
+				var stream:FileStream = new FileStream;
+				stream.open(file, FileMode.READ);
+				var backupData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
 				
-				if(sourceData.type == BType.BTYPE_EXEC)
-				{
-					result += sourceData.data.execType+"(actor";
-					//the format of data refer to execNode.exportData()
-					var parms:Array = sourceData.data.parm as Array
-					for(var i:int = 0; i < parms.length; i++)
-					{
-						result += ",";
-						if(parms[i].type == "ccp")
-						{
-							result += "cc.p("+parms[i].value+","+parms[++i].value+")";
-						}
-						else if(parms[i].type == "ccsize")
-						{
-							result += "cc.size("+parms[i].value+","+parms[++i].value+")";
-						}
-						else if(parms[i].type == "node")
-						{
-							//the parms ask for a node while node array is empty.
-							if(children.length == 0)
-							{
-								trace("genBtTree error:invalid node: a node parm is missing!");
-								return "";
-							}
-							result += childrenJS.shift();
-						}
-						else if(parms[i].type == "array_ccp")
-						{
-							var path:Array = parms[i].path as Array;
-							result += "[";
-							for(var i:int = 0; i < path.length; i++)
-							{
-								result += "cc.p("+path[i].x+","+path[i].y+")";
-								if(i < path.length-1)
-									result += ","
-							}
-							result += "]";
-						}
-						else
-							result += parms[i].value;
-						
-					}
-					result += ")";
-				}
-					//except for exec node, others should have child nodes.
-				else if(children.length == 0)
-				{
-					trace("genBtTree error: children is empty.");
-					return "";
-				}
-				else
-				{
-					if(sourceData.type == BType.BTYPE_SEQ)
-						result += "BT.seq(";
-					else if(sourceData.type == BType.BTYPE_PAR)
-						result += "BT.par(";
-					else if(sourceData.type == BType.BTYPE_SEL)
-						result += "BT.sel(";
-					else if(sourceData.type == BType.BTYPE_LOOP)
-					{
-						if(sourceData.data.times == "")
-						{
-							trace("genBtTree error: times is empty.");
-							return "";
-						}
-						result += "BT.loop("+sourceData.data.times+",";
-					}
-					else if(sourceData.type == BType.BTYPE_COND)
-					{
-						if(sourceData.data.cond == "")
-						{
-							trace("genBtTree error: cond is empty.");
-							return "";
-						}
-						result += "BT.cond("+sourceData.data.cond+",";
-					}
-					else
-						return "";
-					
-					while(childrenJS.length > 0)
-					{
-						result += childrenJS.shift();
-						if(childrenJS.length > 0)
-							result += ",";
-					}
-					result += ")";
-				}
+				file = File.desktopDirectory.resolvePath("editor/backup/"+path);
+				stream = new FileStream;
+				stream.open(file, FileMode.WRITE);
+				stream.writeUTFBytes(JSON.stringify(backupData));
+				stream.close();
 			}
 			
-			return result;
 		}
 		
 		
@@ -445,7 +343,7 @@ package
 			
 			for(var bName in behaviors)
 			{
-				var js:String = genBTreeJS(behaviors[bName]);
+				var js:String = Utils.genBTreeJS(behaviors[bName]);
 				if(js == "")
 				{
 					Alert.show("导出行为"+bName+"脚本出错，请检查");
@@ -457,50 +355,28 @@ package
 			
 			for(var name in enemyData)
 			{
-				var data:Object = enemyData[name];
-				
-				
+				var data:Object = Utils.deepCopy(enemyData[name]);
+				var behaviors:Object;
 				if(enemyBTData.hasOwnProperty(name))
-					data.behaviors = enemyBTData[name];
+					behaviors = enemyBTData[name];
 				else
-					data.behaviors = new Array;
+					behaviors = new Array;
 				
-				if(data.face >= 10000 && data.face < 20000)
+				if(data.type == "bullet")
 				{
 					exportData.bullet[name] = data;
+					delete data.type;
 				}
-				else
+				else if(data.type == "actor")
 				{
-					/*data.actions = new Array;
-					if(data.move_type != 0)
-					{
-						var action:Object = data.move_args;
-						action.type = data.move_type;
-						data.actions.push(action);
-						
-						delete data.move_args;
-					}
-					if(data.attack_type != "")
-					{
-						var action2:Object = data.attack_args;
-						action2.type = data.attack_type == "M" ? "MeleeAttack" : "RangedAttack";
-						data.actions.push(action2);
-					}*/
-					
-					/*if(behaviorData.hasOwnProperty(name) && behaviorData[name])
-					{
-						data.behaviors = "@@@function(){return "+getBTreeJS(behaviorData[name], false)+";}@@@";
-					}
-					else
-						data.behaviors = null;*/
-					
-					if(!data.hasOwnProperty("attack"))
-						data.attack = 1;
-					if(!data.hasOwnProperty("health"))
-						data.health = 1;
-					if(!data.hasOwnProperty("defense"))
-						data.defense = 1;
 					exportData.actor[name] = data;
+					exportData.actor[name].behaviors = behaviors;
+					delete data.type;
+				}
+				else if(data.type == "RollingStone" || data.type == "Meteorite" || data.type == "Bangalore")
+				{
+					exportData.trap[name] = data;
+					exportData.behaviors = behaviors;
 				}
 				
 			}
@@ -533,7 +409,7 @@ package
 						triData = new Object;
 						condData = new Object;
 						condData.type = "Time";
-						condData.time = item.y;
+						condData.time = item.hasOwnProperty("triggerTime") ? item.triggerTime : item.y;
 						triData.cond = condData;
 						
 						resultData = new Object;
@@ -563,11 +439,9 @@ package
 		
 		private function adjustJS(js:String):String
 		{
-			var reg1:RegExp = /"@@/g;
-			var reg2:RegExp = /@@"/g;
+			var reg1:RegExp = /"@@|@@"/g;
 			var result:String = "";
 			result = js.replace(reg1, "");
-			result = result.replace(reg2, "");
 			return result;
 		}
 		

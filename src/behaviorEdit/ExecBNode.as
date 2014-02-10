@@ -170,6 +170,7 @@ package behaviorEdit
 				var boxData:ArrayCollection = new ArrayCollection(["true", "false"]);
 				var box:ComboBox = new ComboBox;
 				box.dataProvider = boxData;
+				box.selectedIndex = 0;
 				box.width = 50;
 				box.x = 50;
 				box.y = py;
@@ -248,7 +249,7 @@ package behaviorEdit
 						{
 							if(item.type == "bool")
 								ComboBox(item.box).selectedItem = p.value;
-							else if(item.type == "array_ccp" || type == "array_ccp_curve" )
+							else if(item.type == "array_ccp" || item.type == "array_ccp_curve" )
 							{
 								TextInput(item.input).text = JSON.stringify(p.path);
 								item.path = p.path;
@@ -275,7 +276,7 @@ package behaviorEdit
 				{
 					data.value = ComboBox(o.box).selectedItem;
 				}
-				else if(data.type == "array_ccp" || type == "array_ccp_curve" )
+				else if(data.type == "array_ccp" || data.type == "array_ccp_curve")
 				{
 					data.path = o.path;
 				}
@@ -319,7 +320,6 @@ package behaviorEdit
 						Utils.squareConnect(this, startPoint, endPoint);
 						this.graphics.drawCircle(endPoint.x+8, endPoint.y, 8);
 					}
-					
 				}
 			}
 			

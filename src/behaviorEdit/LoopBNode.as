@@ -62,7 +62,6 @@ package behaviorEdit
 			input.height = 20;
 			input.x = 15;
 			input.y = 28;
-			input.restrict = "0123456789-";
 			input.addEventListener(MouseEvent.MOUSE_DOWN, onLabelMouseDown);
 			this.addChild(input);
 		}

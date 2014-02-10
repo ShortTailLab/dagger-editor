@@ -88,7 +88,6 @@ package behaviorEdit
 				p.y = dot.y;
 				data.push(p);
 			}
-			
 			var evt:MsgEvent = new MsgEvent(MsgEvent.EDIT_PATH);
 			evt.hintMsg = parmName;
 			evt.hintData = data;

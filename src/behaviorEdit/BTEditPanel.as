@@ -26,6 +26,7 @@ package behaviorEdit
 	import spark.components.TitleWindow;
 	import spark.components.VGroup;
 	import spark.components.VScrollBar;
+	
 	import editEntity.MatSprite;
 	
 	import manager.EventManager;
@@ -36,7 +37,7 @@ package behaviorEdit
 		public var userPanel:UserPanel = null;
 		private var behaviorsPanel:BehaviorTreePanel;
 		private var grabLayer:UIComponent = null;
-		public var editType:String;
+		public var editTargetType:String;
 		public var editView:BTEditView;
 		private var currBName:String = "";
 		private var currBData:Object = null;
@@ -58,7 +59,7 @@ package behaviorEdit
 			this.width = 1100;
 			this.height = 800;
 			this.setStyle("backgroundColor", 0xEEE8AA);
-			editType = target.type;
+			editTargetType = target.type;
 			
 			behaviorsPanel = new BehaviorTreePanel(this);
 			behaviorsPanel.width = 100;
@@ -69,7 +70,7 @@ package behaviorEdit
 			userPanel = new UserPanel(this);
 			this.addElement(userPanel);
 			
-			btArray = new ArrayCollection(Data.getInstance().enemyBTData[editType] as Array);
+			btArray = new ArrayCollection(Data.getInstance().enemyBTData[editTargetType] as Array);
 			btBar = new TabBar(); 
 			//btBar.setStyle("chromeColor", "#EEE8AA"); 
 			btBar.height = 40;
@@ -168,12 +169,15 @@ package behaviorEdit
 			this.setCurrBehavior(bName);
 		}
 		
-		public function save():void
+		public function save():Boolean
 		{
-			if(btBar.selectedIndex >= 0)
-				Data.getInstance().updateBehavior(btBar.selectedItem, editView.export());
+			if(state == BTEditState.EXEC_BT && btBar.selectedIndex >= 0)
+				return Data.getInstance().updateBehavior(btBar.selectedItem, editView.export());
 			else
+			{
 				trace("undefine bt");
+				return false;
+			}
 		}
 		
 		private function onClickBt(e:MouseEvent):void
@@ -193,6 +197,7 @@ package behaviorEdit
 			var currBName:String = btBar.selectedItem;
 			btArray.removeItemAt(btBar.selectedIndex);
 			Data.getInstance().saveEnemyBehaviorData();
+			
 		}
 		
 		private function onRenameBT(e:ContextMenuEvent):void
@@ -253,6 +258,18 @@ package behaviorEdit
 			save();
 			editView.remove();
 			PopUpManager.removePopUp(this);
+			
+			var msg:String = "";
+			for each(var bname:String in btArray)
+				if(Utils.genBTreeJS(Data.getInstance().behaviors[bname]) == "")
+				{
+					trace(bname);
+					msg += bname + " ";
+				}
+			if(msg.length > 0)
+			{
+				Alert.show("行为"+msg+"不合法，请检查！");
+			}
 		}
 	}
 }

@@ -50,7 +50,7 @@ package behaviorEdit
 			btnsView.addChild(newBtn);
 			
 			
-			var icon:EditBase = new MatSprite(null, parPanel.editType, 100, 70);
+			var icon:EditBase = new MatSprite(null, parPanel.editTargetType, 100, 70);
 			icon.x = 60;
 			icon.y = 110;
 			btnsView.addChild(icon);
@@ -118,17 +118,20 @@ package behaviorEdit
 		
 		private function onSave(e:MouseEvent):void
 		{
-			parPanel.save();
+			if(parPanel.save())
+				Alert.show("保存成功");
+			else if(parPanel.state == BTEditState.NEW_BT)
+				onNewConfirmClick(null);
 		}
 		
-		private function onNewConfirmClick(e:MouseEvent):void
+		public function onNewConfirmClick(e:MouseEvent):void
 		{
 			var bName:String = newBtInput.text;
 			if(newBtInput.text.length == 0)
 			{
 				Alert.show("行为名不能为空！");
 			}
-			else if(Data.getInstance().enemyContainsBehavior(parPanel.editType, newBtInput.text))
+			else if(Data.getInstance().enemyContainsBehavior(parPanel.editTargetType, newBtInput.text))
 			{
 				Alert.show("该行为已经存在！");
 				return;
