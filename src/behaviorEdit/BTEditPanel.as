@@ -10,13 +10,12 @@ package behaviorEdit
 	
 	import mx.collections.ArrayCollection;
 	import mx.controls.Alert;
-	import mx.controls.Button;
 	import mx.controls.Tree;
 	import mx.core.UIComponent;
 	import mx.events.CloseEvent;
-	import mx.events.FlexEvent;
 	import mx.managers.PopUpManager;
 	
+	import spark.components.Button;
 	import spark.components.Group;
 	import spark.components.HGroup;
 	import spark.components.HScrollBar;
@@ -30,6 +29,7 @@ package behaviorEdit
 	import editEntity.MatSprite;
 	
 	import manager.EventManager;
+	import manager.MsgInform;
 	
 	public class BTEditPanel extends TitleWindow
 	{
@@ -71,6 +71,7 @@ package behaviorEdit
 			this.addElement(userPanel);
 			
 			btArray = new ArrayCollection(Data.getInstance().enemyBTData[editTargetType] as Array);
+			_state = btArray.length > 0 ? BTEditState.EXEC_BT : BTEditState.NEW_BT;
 			btBar = new TabBar(); 
 			//btBar.setStyle("chromeColor", "#EEE8AA"); 
 			btBar.height = 40;
@@ -89,6 +90,7 @@ package behaviorEdit
 			menu.addItem(item2);
 			menu.addItem(item3);
 			btBar.contextMenu = menu;
+			
 			
 			var editGroup:HGroup = new HGroup();
 			editGroup.y = 40;
@@ -119,8 +121,8 @@ package behaviorEdit
 			//this used to add the dragging node.
 			grabLayer = new UIComponent;
 			this.addElement(grabLayer);
-			
 			this.setCurrBehavior(btBar.selectedItem);
+			onChangeBt();
 			
 			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
@@ -134,20 +136,44 @@ package behaviorEdit
 
 		public function set state(value:String):void
 		{
-			_state = value;
-			prevBTName = "";
-			if(_state == BTEditState.NEW_BT)
+			if(value == BTEditState.NEW_BT)
+			{
 				btBar.alpha = 0.3;
+				prevBTName = "";
+			}
 			else
+			{
 				btBar.alpha = 1;
+			}
+			_state = value;
+			
+		}
+		
+		public function setStateToNew():void
+		{
+			if(state != BTEditState.NEW_BT)
+				editView.clear();
+			state = BTEditState.NEW_BT;
+		}
+		
+		public function setStateToExec():void
+		{
+			if(state == BTEditState.NEW_BT)
+				btBar.selectedIndex = 0;
+			state = BTEditState.EXEC_BT;
 		}
 
+		
 		public function setCurrBehavior(name:String):void
 		{
 			if(Data.getInstance().behaviors.hasOwnProperty(name))
 			{
+				trace("preName"+prevBTName);
 				if(prevBTName != "" && prevBTName != name)
+				{
 					Data.getInstance().updateBehavior(prevBTName, editView.export());
+					trace("update");
+				}
 				editView.init(Data.getInstance().behaviors[name]);
 				prevBTName = name;
 			}
@@ -158,7 +184,7 @@ package behaviorEdit
 			}
 		}
 		
-		public function addNewBT(bName:String):void
+		public function addBT(bName:String):void
 		{
 			var data:Object = editView.export();
 			if(!Data.getInstance().behaviors.hasOwnProperty(bName))
@@ -167,16 +193,81 @@ package behaviorEdit
 			Data.getInstance().saveEnemyBehaviorData();
 			btBar.selectedItem = bName;
 			this.setCurrBehavior(bName);
+			onChangeBt();
 		}
 		
-		public function save():Boolean
+		public function removeBT(index:int):void
+		{
+			if(index>=0 && index<btArray.length)
+			{
+				btArray.removeItemAt(index);
+				Data.getInstance().saveEnemyBehaviorData();
+				var bName:String = "";
+				if(btArray.length > 0)
+				{
+					var index2:int = Math.max(0, index-1);
+					btBar.selectedIndex = index2;
+					bName = btArray[index2];
+				}
+				else
+					this.setStateToNew();
+				setCurrBehavior(bName);
+				onChangeBt();
+			}
+			else
+				trace("removeBT:index is out of range");
+		}
+		
+		private var newBtn:Button = null;
+		private function onChangeBt():void
+		{
+			if(btArray.length == 0 && !newBtn)
+			{
+				newBtn = new Button;
+				newBtn.label = "+";
+				newBtn.width = 30;
+				newBtn.height = 30;
+				newBtn.x = 140;
+				newBtn.y = 5;
+				newBtn.addEventListener(MouseEvent.CLICK, onNewBtnClick);
+				this.addElement(newBtn);
+			}
+			else if(btArray.length > 0 && newBtn)
+			{
+				newBtn.removeEventListener(MouseEvent.CLICK, onNewBtnClick);
+				this.removeElement(newBtn);
+				newBtn = null;
+			}
+		}
+		
+		private function onNewBtnClick(e:MouseEvent):void
+		{
+			userPanel.onNewBT(null);
+		}
+		
+		
+		public function save():void
 		{
 			if(state == BTEditState.EXEC_BT && btBar.selectedIndex >= 0)
-				return Data.getInstance().updateBehavior(btBar.selectedItem, editView.export());
-			else
 			{
-				trace("undefine bt");
-				return false;
+				if(Data.getInstance().behaviors.hasOwnProperty(btBar.selectedItem))
+				{
+					Data.getInstance().updateBehavior(btBar.selectedItem, editView.export())
+					MsgInform.shared().show(this, "保存成功!");
+				}
+				else
+					MsgInform.shared().show(this, "行为名不存在!");
+				
+			}
+			else if(state == BTEditState.NEW_BT)
+			{
+				if(userPanel.isEditing())
+					userPanel.onNewConfirmClick(null);
+				else
+				{
+					MsgInform.shared().show(this, "请先输入行为名!");
+					userPanel.onNewBT(null);
+				}
 			}
 		}
 		
@@ -188,16 +279,13 @@ package behaviorEdit
 			}
 			else if(state == BTEditState.NEW_BT)
 			{
-				Alert.show("请先完成新建行为");
+				MsgInform.shared().show(this, "新建行为未保存!");
 			}
 		}
 		
 		private function onDeleteEnemyBT(e:ContextMenuEvent):void
 		{
-			var currBName:String = btBar.selectedItem;
-			btArray.removeItemAt(btBar.selectedIndex);
-			Data.getInstance().saveEnemyBehaviorData();
-			
+			removeBT(btBar.selectedIndex);
 		}
 		
 		private function onRenameBT(e:ContextMenuEvent):void

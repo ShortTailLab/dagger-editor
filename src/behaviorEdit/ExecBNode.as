@@ -149,7 +149,7 @@ package behaviorEdit
 				}
 					
 			}
-			nodeWidth = Math.max(100, label.width)+horizontalPadding;
+			nodeWidth = Math.max(120, label.width)+horizontalPadding;
 			nodeHeight = Math.max(70, label.height+yRecord+verticalPadding);
 			updateBg();
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
@@ -182,7 +182,7 @@ package behaviorEdit
 			{
 				var input:TextInput = new TextInput;
 				input.height = 20;
-				input.width = 40;
+				input.width = 60;
 				input.x = 50;
 				input.y = py;
 				if(type == "array_ccp" || type == "array_ccp_curve" )

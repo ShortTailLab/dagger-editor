@@ -13,7 +13,6 @@
 			import mx.collections.ArrayList;
 			import mx.containers.TitleWindow;
 			import mx.controls.Alert;
-			import mx.controls.TextInput;
 			import mx.controls.Tree;
 			import mx.events.CloseEvent;
 			import mx.managers.PopUpManager;
@@ -39,8 +38,6 @@
 			private function init():void
 			{
 				_instance = this;
-				
-				
 				
 				var menu:ContextMenu = new ContextMenu;
 				var item:ContextMenuItem = new ContextMenuItem("新建");
@@ -253,7 +250,7 @@
 					{
 						Data.getInstance().deleteLevel(index);
 						_enemyEditView.clear();
-						setCurrLevel(0);
+						setCurrLevel(Math.max(index-1, 0));
 					}
 				}
 			}

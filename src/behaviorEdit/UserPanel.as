@@ -13,8 +13,11 @@ package behaviorEdit
 	import editEntity.EditBase;
 	import editEntity.MatSprite;
 	
+	import manager.MsgInform;
+	
 	public class UserPanel extends Panel
 	{
+		
 		private var parPanel:BTEditPanel = null;
 		private var btnsView:UIComponent = null;
 		private var newBtInput:TextInput = null;
@@ -68,13 +71,21 @@ package behaviorEdit
 			}
 		}
 		
-		private function onNewBT(e:MouseEvent):void
+		public function onNewBT(e:MouseEvent):void
 		{
-			if(parPanel.state != BTEditState.NEW_BT)
+			if(parPanel.state == BTEditState.EXEC_BT)
 			{
-				parPanel.state = BTEditState.NEW_BT;
+				parPanel.save();
 				parPanel.editView.clear();
-				
+			}
+			parPanel.setStateToNew();
+			newBTInput();
+		}
+		
+		public function newBTInput():void
+		{
+			if(!newBtInput)
+			{
 				newBtInput = new TextInput;
 				newBtInput.width = 100;
 				newBtInput.height = 30;
@@ -103,12 +114,25 @@ package behaviorEdit
 				btnsView.addChild(cancelBtn);
 			}
 		}
-		
-		public function setNewBt(bName:String):void
+		public function removeNewBTInput():void
 		{
-			onNewBT(null);
-			newBtInput.text = bName;
-			parPanel.setCurrBehavior(bName);
+			if(newBtInput)
+			{
+				newBtInput.removeEventListener(FlexEvent.ENTER, onEnterNewBt);
+				btnsView.removeChild(newBtInput);
+				newConfirmBtn.removeEventListener(MouseEvent.CLICK, onNewConfirmClick);
+				btnsView.removeChild(newConfirmBtn);
+				btnsView.removeChild(cancelBtn);
+				newBtInput = null;
+				newConfirmBtn = null;
+				cancelBtn = null;
+			}
+		}
+		
+		public function setBtName(bName:String):void
+		{
+			if(newBtInput)
+				newBtInput.text = bName;
 		}
 		
 		private function onEnterNewBt(e:FlexEvent):void
@@ -118,10 +142,12 @@ package behaviorEdit
 		
 		private function onSave(e:MouseEvent):void
 		{
-			if(parPanel.save())
-				Alert.show("保存成功");
-			else if(parPanel.state == BTEditState.NEW_BT)
-				onNewConfirmClick(null);
+			parPanel.save();
+		}
+		
+		public function isEditing():Boolean
+		{
+			return newBtInput != null;
 		}
 		
 		public function onNewConfirmClick(e:MouseEvent):void
@@ -130,6 +156,7 @@ package behaviorEdit
 			if(newBtInput.text.length == 0)
 			{
 				Alert.show("行为名不能为空！");
+				return;
 			}
 			else if(Data.getInstance().enemyContainsBehavior(parPanel.editTargetType, newBtInput.text))
 			{
@@ -138,7 +165,7 @@ package behaviorEdit
 			}
 			else
 			{
-				parPanel.addNewBT(bName);
+				parPanel.addBT(bName);
 			}
 			
 			onCancel();
@@ -146,15 +173,8 @@ package behaviorEdit
 		
 		private function onCancel(e:MouseEvent = null):void
 		{
-			parPanel.state = BTEditState.EXEC_BT;
-			newBtInput.removeEventListener(FlexEvent.ENTER, onEnterNewBt);
-			btnsView.removeChild(newBtInput);
-			newConfirmBtn.removeEventListener(MouseEvent.CLICK, onNewConfirmClick);
-			btnsView.removeChild(newConfirmBtn);
-			btnsView.removeChild(cancelBtn);
-			newBtInput = null;
-			newConfirmBtn = null;
-			cancelBtn = null;
+			removeNewBTInput();
+			parPanel.setStateToExec();
 		}
 		
 		private function onNodeMouseDown(e:MouseEvent):void

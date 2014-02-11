@@ -179,6 +179,11 @@ package
 			return result;
 		}
 		
+		static public function comp2BNode(node1:Object, node2:Object):Boolean
+		{
+			return genBTreeJS(node1) == genBTreeJS(node2);
+		}
+		
 		static public function arrayStr2ccpStr(str:String):String
 		{
 			var arr:Array = JSON.parse(str) as Array;

@@ -3,10 +3,12 @@ package
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.events.TimerEvent;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
+	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
 	import mx.core.FlexGlobals;
@@ -52,8 +54,6 @@ package
 			while(mats.length > 0)
 			{
 				var m:EditBase = mats.pop();
-				m.removeEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
-				m.removeEventListener(MouseEvent.CLICK, onMatClick);
 			}
 			this.removeChildren();
 			var searchFrame:TextInput = new TextInput;
@@ -92,26 +92,15 @@ package
 		private function add(view:EditBase):void
 		{
 			view.doubleClickEnabled = true;
-			//view.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
-			//view.addEventListener(MouseEvent.CLICK, onMatClick);
 			mats.push(view);
 			
 			var menu:ContextMenu = new ContextMenu;
-			var btn:ContextMenuItem = new ContextMenuItem("编辑");
-			btn.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
-				var target:MatSprite = e.contextMenuOwner as MatSprite;
-				if(target)
-					edit(target);
-				else
-					Alert.show("对象不可编辑");
-			});
 			var btn2:ContextMenuItem = new ContextMenuItem("行为");
 			btn2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
 				var target:MatSprite = e.contextMenuOwner as MatSprite;
 				if(target)
 					editBT(target);
 			});
-			menu.addItem(btn);
 			menu.addItem(btn2);
 			
 			view.contextMenu = menu;
@@ -140,26 +129,41 @@ package
 			}
 		}
 		
-		
+		private var isDoubleClick:Boolean = false;
 		public function onMatClick(e:MouseEvent):void
 		{
-			var target:EditBase = e.currentTarget as EditBase;
-			var prev:EditBase = selected;
-			if(selected)
+			if(isDoubleClick)
 			{
-				selected.select(false);
-				selected = null;
+				onMatDoubleClick(e);
 			}
-			if(target != prev)
+			else
 			{
-				selected = target;
-				selected.select(true);
+				isDoubleClick = true;
+				var timer:Timer = new Timer(200, 1);
+				timer.addEventListener(TimerEvent.TIMER_COMPLETE, function(e):void{isDoubleClick=false;});
+				timer.start();
+				
+				var target:EditBase = e.currentTarget as EditBase;
+				var prev:EditBase = selected;
+				if(selected)
+				{
+					selected.select(false);
+					selected = null;
+				}
+				if(target != prev)
+				{
+					selected = target;
+					selected.select(true);
+				}
 			}
+			
 		}
 		
 		public function onMatDoubleClick(e:MouseEvent):void
 		{
-			edit(e.currentTarget as MatSprite);
+			var target = e.currentTarget as MatSprite
+			if(target)
+				editBT(target);
 		}
 		
 		private function onTextChange(e:Event):void
@@ -177,7 +181,6 @@ package
 			while(matsLayer.numChildren>0)
 			{
 				var m = matsLayer.removeChildAt(matsLayer.numChildren-1);
-				m.removeEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
 				m.removeEventListener(MouseEvent.CLICK, onMatClick);
 			}
 			labelContainer.removeChildren();
@@ -197,6 +200,7 @@ package
 						{
 							var label:TextField = Utils.getLabel("章节 "+curr.substr(0, 2)+" 关卡 "+curr.substr(2, 2), 10, py+40, 18);
 							label.width = 200;
+							label.height = label.textHeight + 10;
 							label.selectable = false;
 							label.setTextFormat(new TextFormat(null, 18, 0xff0000)); 
 							labelContainer.addChild(label);
@@ -213,7 +217,6 @@ package
 					
 					matArray[i].x = px;
 					matArray[i].y = py;
-					matArray[i].addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
 					matArray[i].addEventListener(MouseEvent.CLICK, onMatClick);
 					matsLayer.addChild(matArray[i]);
 					

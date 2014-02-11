@@ -50,7 +50,9 @@ package behaviorEdit
 			if(selectedNode)
 			{
 				var label:String=selectedNode.@label;
-				parPanel.userPanel.setNewBt(label);
+				parPanel.setStateToNew();
+				parPanel.userPanel.setBtName(label);
+				parPanel.setCurrBehavior(label);
 			}
 		}
 		

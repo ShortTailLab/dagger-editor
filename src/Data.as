@@ -507,19 +507,10 @@ package
 				trace("addBehaviors error: behavior exists!");
 		}
 		
-		public function updateBehavior(name:String, data:Object):Boolean
+		public function updateBehavior(name:String, data:Object):void
 		{
-			if(behaviors.hasOwnProperty(name))
-			{
 				behaviors[name] = data;
 				this.saveBehaviorData();
-				return true
-			}
-			else
-			{
-				trace("update behavior: behavior"+name+" is not exsit!");
-				return false;
-			}
 		}
 		
 		public function renameBehavior(prevName:String, currName:String):void
