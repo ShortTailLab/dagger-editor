@@ -171,7 +171,7 @@ package behaviorEdit
 			onCancel();
 		}
 		
-		private function onCancel(e:MouseEvent = null):void
+		public function onCancel(e:MouseEvent = null):void
 		{
 			removeNewBTInput();
 			parPanel.setStateToExec();

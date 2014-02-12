@@ -56,6 +56,18 @@
 				
 				EventManager.getInstance().addEventListener(EventType.INIT_BG_DATA_COMPLETE, onBgDataInit);
 				BgModel.getInstance().init();
+				
+				this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
+			}
+			private function onAddToStage(e:Event):void
+			{
+				stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			}
+			private function onKeyDown(e:KeyboardEvent):void
+			{
+				var code = e.keyCode;
+				if(code == Keyboard.S && e.ctrlKey)
+					saveFile(null);
 			}
 			
 			private function onDataReady(e:Event):void

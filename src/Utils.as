@@ -1,5 +1,8 @@
 package
 {
+	import flash.filesystem.File;
+	import flash.filesystem.FileMode;
+	import flash.filesystem.FileStream;
 	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
@@ -201,6 +204,20 @@ package
 			objByte.writeObject(obj);
 			objByte.position = 0;
 			return objByte.readObject();
+		}
+		
+		static public function loadJsonFileToObject(path:String):Object
+		{
+			var file:File = File.desktopDirectory.resolvePath(path);
+			var result:Object = null;
+			if(file.exists)
+			{
+				var stream:FileStream = new FileStream;
+				stream.open(file, FileMode.READ);
+				result = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			return result;
 		}
 		
 	}

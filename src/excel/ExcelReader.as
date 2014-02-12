@@ -9,6 +9,7 @@ package excel
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
 	import flash.utils.ByteArray;
+	import flash.utils.Dictionary;
 	import flash.utils.Timer;
 	
 	import manager.EventManager;
@@ -86,6 +87,16 @@ package excel
 
 			_enemyData = new Object();
 			var workSheet:Worksheet = _excelLoader.worksheet("新表");
+			var argToColDic:Dictionary = new Dictionary;
+			var cols:String = "EFGHIJKLMNOPQRSTUVWXYZ";
+			for(var k:int=0; k<cols.length; k++)
+			{
+				var colStr:String = cols.substr(k, 1);
+				var arg:String = workSheet.getCellValue(colStr+"2");
+				if(arg != "")
+					argToColDic[arg] = colStr;
+			}
+					
 			
 			for (var i:int = 3; ; i++) {
 //				trace("A"+i+" value: " + workSheet.getCellValue("A"+i));
@@ -96,8 +107,36 @@ package excel
 				_enemyData[workSheet.getCellValue("A"+i)] = enemy;
 				enemy["face"] = workSheet.getCellValue("B"+i);
 				enemy["type"] = workSheet.getCellValue("D"+i);
-				if(enemy["type"] == "bullet")
+				
+				var argsData:Object = Data.getInstance().dynamicArgs;
+				if(argsData.hasOwnProperty(enemy["type"]))
+					for(var arg in argsData[enemy["type"]])
+					{
+						if(enemy["type"] == "bullet" || enemy["type"] == "actor")
+							enemy["nameCN"] = workSheet.getCellValue("C"+i);
+						
+						if(argToColDic.hasOwnProperty(arg))
+						{
+							var argType:String = argsData[enemy["type"]][arg];
+							var value:String = workSheet.getCellValue(argToColDic[arg]+i);
+							if(argType == "ccp")
+								enemy[arg] = Utils.arrayStr2ccpStr(value);
+							else if(argType == "ccsize")
+								enemy[arg] = Utils.arrayStr2ccsStr(value);
+							else if(argType == "int")
+								enemy[arg] = int(value);
+							else if(argType == "float")
+								enemy[arg] = Number(value);
+							else
+								enemy[arg] = value;
+						}
+					}
+				
+				
+				
+				/*if(enemy["type"] == "bullet")
 				{
+					
 					enemy["nameCN"] = workSheet.getCellValue("C"+i);
 					enemy["offset"] = Utils.arrayStr2ccpStr(workSheet.getCellValue("E"+i));
 					enemy["area"] = Utils.arrayStr2ccsStr(workSheet.getCellValue("F"+i));

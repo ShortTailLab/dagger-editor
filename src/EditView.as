@@ -215,8 +215,6 @@ package
 					matsControl.remove(m.id);
 				}
 			}
-			if(code == Keyboard.S && e.ctrlKey)
-				save();
 		}
 		private function onClick(e:MouseEvent):void
 		{

@@ -51,6 +51,7 @@ package behaviorEdit
 			{
 				var label:String=selectedNode.@label;
 				parPanel.setStateToNew();
+				parPanel.userPanel.onNewBT(null);
 				parPanel.userPanel.setBtName(label);
 				parPanel.setCurrBehavior(label);
 			}
@@ -72,6 +73,10 @@ package behaviorEdit
 				Data.getInstance().deleteBehaviors(btTree.selectedItem.@label);
 				btTree.dataProvider = Data.getInstance().behaviorsXML;
 				parPanel.btArray.refresh();
+				parPanel.userPanel.onCancel();
+				var toBt:String = parPanel.btArray.length > 0 ? parPanel.btArray[0] : "";
+				parPanel.setCurrBehavior(toBt);
+				
 			}
 		}
 		

@@ -88,6 +88,7 @@ package editEntity
 				trim(trimSize);
 		}
 		
+		
 		override public function select(value:Boolean):void
 		{
 			isSelected = value;
@@ -97,18 +98,50 @@ package editEntity
 				selectFrame.graphics.lineStyle(1, 0xff0000);
 				selectFrame.graphics.drawRect(-skin.width*0.5, -skin.height, skin.width, skin.height);
 				this.addChild(selectFrame);
-				
-				if(this.hasOwnProperty("triggerTime"))
-				{
-					
-				}
+				showTrigger();
 			}
 			else if(!value && selectFrame)
 			{
+				if(triggerShadow)
+				{
+					this.removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+					this.removeChild(triggerShadow);
+					triggerShadow = null;
+				}
 				this.removeChild(selectFrame);
 				selectFrame = null;
+				
 			}
 		}
+		
+		private var triggerShadow:EditBase = null;
+		public function showTrigger():void
+		{
+			if(this.triggerTime > 0 && !triggerShadow)
+			{
+				triggerShadow = MatFactory.createMat(this.type);
+				triggerShadow.alpha = 0.5;
+				triggerShadow.x = 0;
+				triggerShadow.y = 0;
+				this.addChild(triggerShadow);
+				this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
+			}
+			else if(this.triggerTime == 0 && triggerShadow)
+			{
+				this.removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+				this.removeChild(triggerShadow);
+				triggerShadow = null;
+			}
+		}
+		
+		private function onEnterFrame(e:Event):void
+		{
+			if(this.triggerTime>0 && triggerShadow)
+			{
+				triggerShadow.y = -this.triggerTime/2-this.y;
+			}
+		}
+		
 		
 		override public function trim(size:Number):void
 		{

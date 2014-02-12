@@ -14,8 +14,6 @@ package
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
-	import flash.net.URLLoader;
-	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
@@ -47,6 +45,7 @@ package
 		public var enemySkinDic:Dictionary;
 		public var currSelectedLevel:int = 0;
 		public var behaviorBaseNode:Object = null;
+		public var dynamicArgs:Object = null;
 		
 		private var autoSaveTimer:Timer;
 		private static var instance:Data = null;
@@ -109,8 +108,24 @@ package
 				conf.speed = 32;
 			}
 			
-			EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onDataComplete);
-			ExcelReader.getInstance().initWithNativePath(File.desktopDirectory.resolvePath("editor/levelData.xlsx").nativePath);
+			dynamicArgs = Utils.loadJsonFileToObject("editor/dynamic_args.json");
+			if(!dynamicArgs)
+			{
+				Alert.show("dynamic_args.json丢失！");
+				return;
+			}
+			
+			file = File.desktopDirectory.resolvePath("editor/levelData.xlsx");
+			if(file.exists)
+			{
+				EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onDataComplete);
+				ExcelReader.getInstance().initWithNativePath(file.nativePath);
+			}
+			else
+			{
+				Alert.show("levelData丢失！");
+			}
+			
 			
 		}
 		
@@ -168,6 +183,18 @@ package
 				}
 			}
 			
+			//this records all behaviors.
+			file = File.desktopDirectory.resolvePath("editor/behaviors.json");
+			if(file.exists)
+			{
+				var stream:FileStream = new FileStream;
+				stream.open(file, FileMode.READ);
+				behaviors = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			else
+				behaviors = new Object;
+			
 			//this record the behaviors' name of each enemy
 			var file:File = File.desktopDirectory.resolvePath("editor/enemyBehaviorsData.json");
 			enemyBTData = new Object;
@@ -181,30 +208,17 @@ package
 			//you can see the struct of enemyBTData here.
 			{
 				for(var orgItem in enemyBTData)
+				{
+					//clear the items which enemy id is invalid
 					if(!enemyData.hasOwnProperty(orgItem))
 						delete enemyBTData[orgItem];
-				for(var item in enemyData)
-				{
-					if(!enemyBTData.hasOwnProperty(item))
-						enemyBTData[item] = new Array;
+					//clear the unexist behaviors of each item.
+					var behaviorsOfEnemy:Array = enemyBTData[orgItem] as Array;
+					for(var j:int = 0; j < behaviorsOfEnemy.length; j++)
+						if(!behaviors.hasOwnProperty(behaviorsOfEnemy[j]))
+							behaviorsOfEnemy.splice(j--, 1);
 				}
 			}
-			
-			//this records all behaviors.
-			file = File.desktopDirectory.resolvePath("editor/behaviors.json");
-			if(file.exists)
-			{
-				var stream:FileStream = new FileStream;
-				stream.open(file, FileMode.READ);
-				behaviors = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-				stream.close();
-				//check the null behavior
-				/*for(var b in behaviors)
-					if(!behaviors[b])
-						delete behaviors[b];*/
-			}
-			else
-				behaviors = new Object;
 			
 			
 			file = File.desktopDirectory.resolvePath("editor/bt_node_format.json");
@@ -333,6 +347,7 @@ package
 			var source:Array = displayData[currSelectedLevel].data;
 			
 			var exportData:Object = new Object;
+			
 			exportData.actor = new Object;
 			exportData.trap = new Object;
 			exportData.objects = new Object;
@@ -340,6 +355,9 @@ package
 			exportData.bullet = new Object;
 			exportData.luck = new Object;
 			exportData.behavior = new Object;
+			
+			exportData.map = new Object;
+			exportData.map.speed = this.conf.speed;
 			
 			for(var bName in behaviors)
 			{

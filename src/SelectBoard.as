@@ -151,7 +151,11 @@ package
 				var data:Object = m.toExportData();
 				if(triggerInput.text.length > 0)
 					data.triggerTime = int(triggerInput.text);
+				else 
+					data.triggerTime = 0;
 				m.initFromData(data);
+				if(m is MatSprite)
+					MatSprite(m).showTrigger();
 			}
 		}
 	}

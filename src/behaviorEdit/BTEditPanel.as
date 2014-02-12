@@ -52,6 +52,7 @@ package behaviorEdit
 		private var _state:String = BTEditState.EXEC_BT;
 		private var prevBTName:String = "";
 		
+		
 		public function BTEditPanel(target:MatSprite)
 		{
 			BNodeFactory.numCount = 0;
@@ -70,7 +71,10 @@ package behaviorEdit
 			userPanel = new UserPanel(this);
 			this.addElement(userPanel);
 			
+			if(!Data.getInstance().enemyBTData.hasOwnProperty(editTargetType))
+				Data.getInstance().enemyBTData[editTargetType] = new Array;
 			btArray = new ArrayCollection(Data.getInstance().enemyBTData[editTargetType] as Array);
+			
 			_state = btArray.length > 0 ? BTEditState.EXEC_BT : BTEditState.NEW_BT;
 			btBar = new TabBar(); 
 			//btBar.setStyle("chromeColor", "#EEE8AA"); 
@@ -146,7 +150,6 @@ package behaviorEdit
 				btBar.alpha = 1;
 			}
 			_state = value;
-			
 		}
 		
 		public function setStateToNew():void
@@ -159,7 +162,9 @@ package behaviorEdit
 		public function setStateToExec():void
 		{
 			if(state == BTEditState.NEW_BT)
+			{
 				btBar.selectedIndex = 0;
+			}
 			state = BTEditState.EXEC_BT;
 		}
 
@@ -168,11 +173,9 @@ package behaviorEdit
 		{
 			if(Data.getInstance().behaviors.hasOwnProperty(name))
 			{
-				trace("preName"+prevBTName);
 				if(prevBTName != "" && prevBTName != name)
 				{
 					Data.getInstance().updateBehavior(prevBTName, editView.export());
-					trace("update");
 				}
 				editView.init(Data.getInstance().behaviors[name]);
 				prevBTName = name;
@@ -198,7 +201,7 @@ package behaviorEdit
 		
 		public function removeBT(index:int):void
 		{
-			if(index>=0 && index<btArray.length)
+			if(index>=0 && index<btArray.length) 
 			{
 				btArray.removeItemAt(index);
 				Data.getInstance().saveEnemyBehaviorData();
@@ -257,7 +260,6 @@ package behaviorEdit
 				}
 				else
 					MsgInform.shared().show(this, "行为名不存在!");
-				
 			}
 			else if(state == BTEditState.NEW_BT)
 			{
