@@ -104,8 +104,8 @@ package manager
 			var versionFile:File = new File(tmpDirectory+"/version.json");
 			var fileStream:FileStream = new FileStream();
 			fileStream.open(versionFile, FileMode.WRITE);
-//			fileStream.writeUTFBytes(JSON.stringify(oldDict));
-			fileStream.writeUTFBytes(JSON.stringify(_versionDict));
+			fileStream.writeUTFBytes(JSON.stringify(oldDict));
+//			fileStream.writeUTFBytes(JSON.stringify(_versionDict));
 			fileStream.close();
 			
 //			if (_needToUpload.length > 0) {
