@@ -53,12 +53,20 @@ package editEntity
 		private function initRectDots():void
 		{
 			while(dots.length > 0)
+			{
+				var dot:Sprite = dots.pop() as Sprite;
+				dot.removeEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+				dot.removeEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 				this.removeChild(dots.pop() as DisplayObject);
+			}
+			
 			addDot(rect.x, rect.y);
 			addDot(rect.right, rect.y);
 			addDot(rect.right, rect.bottom);
 			addDot(rect.x, rect.bottom);
 			updateRect();
+			
+			
 			if(editView)
 			{
 				for(var i:int = 0; i < 4; i++)
@@ -115,8 +123,9 @@ package editEntity
 		private function createDot():Sprite
 		{
 			var dot:Sprite = new Sprite;
+			dot.graphics.lineStyle(1);
 			dot.graphics.beginFill(0);
-			dot.graphics.drawCircle(0, 0, 8);
+			dot.graphics.drawCircle(0, 0, 10);
 			dot.graphics.endFill();
 			return dot;
 		}
@@ -356,6 +365,7 @@ package editEntity
 		private var currId:int = -1;
 		private function onMouseDown(e:MouseEvent):void
 		{
+			trace("dot mouse down");
 			e.stopPropagation();
 			var dot:Sprite = e.currentTarget as Sprite;
 			for(var i:int = 0; i < 4; i++)
@@ -365,7 +375,6 @@ package editEntity
 					break;
 				}
 			dot.startDrag();
-			
 		}
 		
 		private function onMouseUp(e:MouseEvent):void

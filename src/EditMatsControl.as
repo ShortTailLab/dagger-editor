@@ -91,13 +91,12 @@ package
 			mat.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
 			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
 			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
-			
 			mat.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);	
 		}
 		
 		private function getUID():String
 		{
-			return new Date().time+String(idCount++);;
+			return new Date().time+String(idCount++);
 		}
 		
 		public function remove(id:String):void
