@@ -72,6 +72,7 @@ package behaviorEdit
 				Data.getInstance().deleteBehaviors(btTree.selectedItem.@label);
 				btTree.dataProvider = Data.getInstance().behaviorsXML;
 				controller.getBTs().refresh();
+				EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.BT_REMOVED));
 			}
 		}
 		

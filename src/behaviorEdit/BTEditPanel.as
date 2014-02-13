@@ -1,24 +1,15 @@
 package behaviorEdit
 {
-	import flash.events.ContextMenuEvent;
-	import flash.events.Event;
-	import flash.events.EventDispatcher;
 	import flash.events.MouseEvent;
-	import flash.text.TextField;
 	
-	import mx.collections.ArrayCollection;
 	import mx.controls.Alert;
-	import mx.controls.Tree;
 	import mx.core.UIComponent;
 	import mx.events.CloseEvent;
 	import mx.managers.PopUpManager;
 	
-	import spark.components.Button;
 	import spark.components.Group;
 	import spark.components.HGroup;
 	import spark.components.HScrollBar;
-	import spark.components.TabBar;
-	import spark.components.TextInput;
 	import spark.components.TitleWindow;
 	import spark.components.VGroup;
 	import spark.components.VScrollBar;
@@ -42,14 +33,14 @@ package behaviorEdit
 		{
 			BNodeFactory.numCount = 0;
 			this.title = "行为编辑";
-			this.width = 1100;
+			this.width = 1150;
 			this.height = 800;
 			this.setStyle("backgroundColor", 0xEEE8AA);
 			
 			controller = new BTEditController(this, target.type);
 			
 			behaviorsPanel = new BehaviorTreePanel(controller);
-			behaviorsPanel.width = 100;
+			behaviorsPanel.width = 150;
 			behaviorsPanel.percentHeight = 100;
 			behaviorsPanel.x = 1000;
 			this.addElement(behaviorsPanel);
@@ -91,6 +82,9 @@ package behaviorEdit
 			//this used to add the dragging node.
 			grabLayer = new UIComponent;
 			this.addElement(grabLayer);
+			
+			var defaultBT:String = controller.getBTs().length > 0 ? controller.getBTs()[0] : "";
+			controller.setCurrEditBehavior(defaultBT);
 			
 			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
