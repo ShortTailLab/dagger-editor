@@ -34,6 +34,7 @@
 			
 			public var fView:FormationsView = null;
 			public var matsView:MatsView = null;
+			public var currEditLevel:int = -1;
 			
 			private function init():void
 			{
@@ -83,8 +84,9 @@
 				_tree.addEventListener(MouseEvent.CLICK, onLevelClick);
 				enemyEdit.addElement(_tree);
 				
-				_enemyEditView = new EditView(this, middleArea);
-				_enemyEditView.init(Data.getInstance().levelXML.level[0].@label);
+				_enemyEditView = new EditView(this, middleArea); 
+				//if(Data.getInstance().levelXML.level.length() > 0)
+					//this.setCurrLevel(0);
 				
 				var modelView:Panel = new Panel();
 				modelView.percentHeight = 40;
@@ -262,15 +264,21 @@
 					{
 						Data.getInstance().deleteLevel(index);
 						_enemyEditView.clear();
-						setCurrLevel(Math.max(index-1, 0));
+						if(Data.getInstance().levelXML.level.length()>0)
+							setCurrLevel(Math.max(index-1, 0));
 					}
 				}
 			}
 			private function saveFile(event:Event):void
 			{
-				_enemyEditView.save();
-				Data.getInstance().saveLocal();
-				Data.getInstance().exportJS();
+				if(_enemyEditView.levelName != "")
+				{
+					_enemyEditView.save();
+					Data.getInstance().saveLocal();
+					Data.getInstance().exportJS();
+				}
+				else
+					 Alert.show("没有选中关卡");
 			}
 			
 			private function openLevelFile(event:Event):void {

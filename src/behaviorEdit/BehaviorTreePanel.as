@@ -39,9 +39,11 @@ package behaviorEdit
 			item0.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteBT);
 			treeMenu.addItem(item0);
 			btTree.contextMenu = treeMenu;
+			
+			EventManager.getInstance().addEventListener(BehaviorEvent.BT_XML_APPEND, updateTree);
 		}
 		
-		public function updateTree():void
+		public function updateTree(e:BehaviorEvent = null):void
 		{
 			btTree.dataProvider = Data.getInstance().behaviorsXML;
 		}
@@ -62,7 +64,6 @@ package behaviorEdit
 				Alert.show("删除库行为会一并删除所有相关的行为，确定删除？", "tips", Alert.OK|Alert.CANCEL, this, onDeleteBtClose);
 			else
 				Alert.show("请先选择要删除的行为");
-			
 		}
 		
 		private function onDeleteBtClose(e:CloseEvent):void

@@ -113,7 +113,10 @@ package behaviorEdit
 		private function onNewBT(e:BehaviorEvent):void
 		{
 			if(e.msg != "")
+			{
+				currEditBehavior = "";
 				parPanel.editView.init(Data.getInstance().behaviors[e.msg]);
+			}
 			else if(currEditBehavior != "")
 				this.setCurrEditBehavior("");
 				

@@ -10,6 +10,7 @@ package behaviorEdit
 		static public var CREATE_NEW_BT:String = "create_new_bt";
 		static public var CREATE_BT_DONE:String = "create_bt_done";
 		static public var CREATE_BT_CANCEL:String = "create_bt_cancel";
+		static public var BT_XML_APPEND:String = "bt_xml_append";
 		
 		public var msg:String;
 		

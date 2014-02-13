@@ -47,7 +47,7 @@ package
 		
 		private var endTime:Number = -1;
 		private var currTime:Number = -1;
-		private var levelName:String = "";
+		public var levelName:String = "";
 		
 		private var mapPieces:Dictionary;
 		private var mapFreePieces:Array;
@@ -145,18 +145,22 @@ package
 		public function init(_levelName:String):void
 		{
 			if(levelName != "")
+			{
 				save();
-			matsControl.clear();
-			
+			}
 			this.levelName = _levelName;
+			matsControl.clear();
 			var level = Data.getInstance().getLevelData(levelName);
 			matsControl.init(level.data);
 			var end:int = level.endTime != 0? level.endTime : canvas.height/speed;
 			setEndTime(end);
-			setCurrTime(0);
+			setCurrTime(0);	
+			
 		}
+		
 		public function clear():void
 		{
+			this.levelName = "";
 			matsControl.clear();
 		}
 		
@@ -166,6 +170,7 @@ package
 			var data:Array = matsControl.getMatsData();
 			Data.getInstance().updateLevelData(levelName, data, endTime);
 		}
+		
 		private function onAddToStage(e:Event):void
 		{
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);

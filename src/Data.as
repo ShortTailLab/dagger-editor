@@ -21,6 +21,7 @@ package
 	import mx.controls.Alert;
 	
 	import behaviorEdit.BType;
+	import behaviorEdit.BehaviorEvent;
 	
 	import editEntity.TriggerSprite;
 	
@@ -43,7 +44,7 @@ package
 		public var levelXML:XML = null;
 		public var behaviorsXML:XML = null;
 		public var enemySkinDic:Dictionary;
-		public var currSelectedLevel:int = 0;
+		public var currSelectedLevel:int = -1;
 		public var behaviorBaseNode:Object = null;
 		public var dynamicArgs:Object = null;
 		
@@ -344,6 +345,9 @@ package
 				else
 					enemyData[type]["type"] = "enemy";
 			}*/
+			if(currSelectedLevel < 0)
+				return;
+			
 			var source:Array = displayData[currSelectedLevel].data;
 			
 			var exportData:Object = new Object;
@@ -471,7 +475,6 @@ package
 		
 		public function makeNewLevel(name:String):void
 		{
-			
 			levelXML.appendChild(new XML("<level label='"+name+"'></level>"));
 			var o:Object = new Object;
 			o.levelName = name;
@@ -491,6 +494,7 @@ package
 					break;
 				}
 		}
+		
 		public function renameLevel(index:int, name:String):void
 		{
 			levelXML.level[index].@label = name;
@@ -499,7 +503,7 @@ package
 		}
 		public function parseLevelXML(data:Object):XML
 		{
-			var levels:XML = <Root></Root>
+			var levels:XML = <Root></Root>;
 			for each(var item in data)
 				levels.appendChild(new XML("<level label='"+item.levelName+"'></level>"));
 			return levels;
@@ -510,6 +514,7 @@ package
 			var xml:XML = <Root></Root>;
 			for(var b in data)
 				xml.appendChild(new XML("<behavior label='"+b+"'></behavior>"));
+			trace("behaviors:"+XMLList(xml.behavior).length());
 			return xml;
 		}
 		
@@ -517,6 +522,9 @@ package
 		{
 			if(!behaviors.hasOwnProperty(name))
 			{
+				if(XMLList(behaviorsXML.behavior).length() == 0)
+					EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.BT_XML_APPEND));
+				
 				behaviors[name] = data;
 				behaviorsXML.appendChild(new XML("<behavior label='"+name+"'></behavior>"));
 				this.saveBehaviorData();
