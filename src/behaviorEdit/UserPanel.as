@@ -13,7 +13,7 @@ package behaviorEdit
 	import editEntity.EditBase;
 	import editEntity.MatSprite;
 	
-	import manager.MsgInform;
+	import manager.EventManager;
 	
 	public class UserPanel extends Panel
 	{
@@ -23,10 +23,12 @@ package behaviorEdit
 		private var newBtInput:TextInput = null;
 		private var newConfirmBtn:Button = null;
 		private var cancelBtn:Button = null;
+		private var controller:BTEditController = null;
 		
-		public function UserPanel(par:BTEditPanel)
+		public function UserPanel(par:BTEditPanel, _controller:BTEditController)
 		{
 			parPanel = par;
+			controller = _controller;
 			this.title = "类型";
 			this.width = 120;
 			this.percentHeight = 100;
@@ -49,11 +51,11 @@ package behaviorEdit
 			newBtn.height = 30;
 			newBtn.x = 20;
 			newBtn.y = 180;
-			newBtn.addEventListener(MouseEvent.CLICK, onNewBT);
+			newBtn.addEventListener(MouseEvent.CLICK, onAddClick);
 			btnsView.addChild(newBtn);
 			
 			
-			var icon:EditBase = new MatSprite(null, parPanel.editTargetType, 100, 70);
+			var icon:EditBase = new MatSprite(null, controller.editTargetType, 100, 70);
 			icon.x = 60;
 			icon.y = 110;
 			btnsView.addChild(icon);
@@ -69,20 +71,18 @@ package behaviorEdit
 				node.addEventListener(MouseEvent.MOUSE_DOWN, onNodeMouseDown);
 				btnsView.addChild(node);
 			}
+			
+			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_NEW_BT, onNewBT);
+			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_CANCEL, onCreateCancel);
 		}
 		
-		public function onNewBT(e:MouseEvent):void
+		private function onAddClick(e:MouseEvent):void
 		{
-			if(parPanel.state == BTEditState.EXEC_BT)
-			{
-				parPanel.save();
-				parPanel.editView.clear();
-			}
-			parPanel.setStateToNew();
-			newBTInput();
+			if(!controller.isCreatingNew)
+				EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.CREATE_NEW_BT));
 		}
 		
-		public function newBTInput():void
+		private function onNewBT(e:BehaviorEvent):void
 		{
 			if(!newBtInput)
 			{
@@ -113,8 +113,10 @@ package behaviorEdit
 				cancelBtn.addEventListener(MouseEvent.CLICK, onCancel);
 				btnsView.addChild(cancelBtn);
 			}
+			newBtInput.text = e.msg;
 		}
-		public function removeNewBTInput():void
+		
+		private function onCreateCancel(e:BehaviorEvent = null):void
 		{
 			if(newBtInput)
 			{
@@ -129,12 +131,6 @@ package behaviorEdit
 			}
 		}
 		
-		public function setBtName(bName:String):void
-		{
-			if(newBtInput)
-				newBtInput.text = bName;
-		}
-		
 		private function onEnterNewBt(e:FlexEvent):void
 		{
 			onNewConfirmClick(null);
@@ -142,12 +138,7 @@ package behaviorEdit
 		
 		private function onSave(e:MouseEvent):void
 		{
-			parPanel.save();
-		}
-		
-		public function isEditing():Boolean
-		{
-			return newBtInput != null;
+			controller.saveSelectItem();
 		}
 		
 		public function onNewConfirmClick(e:MouseEvent):void
@@ -158,24 +149,24 @@ package behaviorEdit
 				Alert.show("行为名不能为空！");
 				return;
 			}
-			else if(Data.getInstance().enemyContainsBehavior(parPanel.editTargetType, newBtInput.text))
+			else if(Data.getInstance().enemyContainsBehavior(controller.editTargetType, newBtInput.text))
 			{
 				Alert.show("该行为已经存在！");
 				return;
 			}
 			else
 			{
-				parPanel.addBT(bName);
+				controller.addBT(bName);
+				EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.CREATE_BT_DONE, bName));
+				onCreateCancel();
 			}
-			
-			onCancel();
 		}
 		
 		public function onCancel(e:MouseEvent = null):void
 		{
-			removeNewBTInput();
-			parPanel.setStateToExec();
+			EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.CREATE_BT_CANCEL));
 		}
+		
 		
 		private function onNodeMouseDown(e:MouseEvent):void
 		{

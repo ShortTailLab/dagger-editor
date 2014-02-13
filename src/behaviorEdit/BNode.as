@@ -190,8 +190,8 @@ package behaviorEdit
 		}
 		protected function onMouseUp(e:MouseEvent):void
 		{
-			if(view.panel.currNode)
-				onAdd(view.panel.currNode.type);
+			if(view.panel.currSelectBNode)
+				onAdd(view.panel.currSelectBNode.type);
 			
 			if(isPressing)
 			{

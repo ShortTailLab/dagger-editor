@@ -535,7 +535,7 @@ package
 		{
 			if(behaviors.hasOwnProperty(currName))
 			{
-				trace("renamebehavior:currname is invalid!")
+				trace("renamebehavior:currname is invalid!");
 				return;
 			}
 			var isChangeEnemyData:Boolean = false;

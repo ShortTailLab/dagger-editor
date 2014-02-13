@@ -11,14 +11,16 @@ package behaviorEdit
 	
 	import spark.components.Panel;
 	
+	import manager.EventManager;
+	
 	public class BehaviorTreePanel extends Panel
 	{
-		private var parPanel:BTEditPanel = null;
+		private var controller:BTEditController;
 		private var btTree:Tree;
 		
-		public function BehaviorTreePanel(par:BTEditPanel)
+		public function BehaviorTreePanel(ctrl:BTEditController)
 		{
-			this.parPanel = par;
+			this.controller = ctrl;
 			this.title = "行为库";
 			this.x = 1000;
 			this.addElement(this);
@@ -50,10 +52,7 @@ package behaviorEdit
 			if(selectedNode)
 			{
 				var label:String=selectedNode.@label;
-				parPanel.setStateToNew();
-				parPanel.userPanel.onNewBT(null);
-				parPanel.userPanel.setBtName(label);
-				parPanel.setCurrBehavior(label);
+				EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.CREATE_NEW_BT, label));
 			}
 		}
 		
@@ -72,11 +71,7 @@ package behaviorEdit
 			{
 				Data.getInstance().deleteBehaviors(btTree.selectedItem.@label);
 				btTree.dataProvider = Data.getInstance().behaviorsXML;
-				parPanel.btArray.refresh();
-				parPanel.userPanel.onCancel();
-				var toBt:String = parPanel.btArray.length > 0 ? parPanel.btArray[0] : "";
-				parPanel.setCurrBehavior(toBt);
-				
+				controller.getBTs().refresh();
 			}
 		}
 		
