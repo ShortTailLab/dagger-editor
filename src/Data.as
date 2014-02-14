@@ -14,6 +14,9 @@ package
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
+	import flash.net.URLLoader;
+	import flash.net.URLLoaderDataFormat;
+	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
@@ -30,7 +33,6 @@ package
 	import manager.EventManager;
 	import manager.EventType;
 	import manager.GameEvent;
-	
 	
 	public class Data extends EventDispatcher
 	{
@@ -127,12 +129,52 @@ package
 				Alert.show("levelData丢失！");
 			}
 			
+			// sync configs
+			syncConfigs();
+		}
+		
+		private const bt_node_format:String = "http://oss.aliyuncs.com/dagger-static/editor-configs/bt_node_format.json";
+		private const dynamic_args:String = "http://oss.aliyuncs.com/dagger-static/editor-configs/dynamic_args.json";
+		private var loader:URLLoader = null;
+		public function syncConfigs():void
+		{
+			var loader:URLLoader = new URLLoader();
+			loader.dataFormat = URLLoaderDataFormat.TEXT;
+			loader.addEventListener(Event.COMPLETE, onNodesSyncComplete);
+			loader.load( new URLRequest(bt_node_format) );
 			
+		
+			loader = new URLLoader();
+			loader.dataFormat = URLLoaderDataFormat.TEXT;
+			loader.addEventListener(Event.COMPLETE, onArgsSyncComplete);
+			loader.load( new URLRequest(dynamic_args) );
+		}
+		
+		private function onNodesSyncComplete(e:Event = null):void
+		{
+			var str = e.target.data;
+			this.behaviorBaseNode = JSON.parse(str);
+			var file:File = File.desktopDirectory.resolvePath("editor/bt_node_format.json");
+			var stream:FileStream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes(JSON.stringify(this.behaviorBaseNode));
+			stream.close();
+		}	
+		
+		private function onArgsSyncComplete(e:Event = null):void
+		{
+			var str = e.target.data;
+			this.dynamicArgs = JSON.parse(str);
+			var file:File = File.desktopDirectory.resolvePath("editor/dynamic_args.json");
+			var stream:FileStream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes(JSON.stringify(this.dynamicArgs));
+			stream.close();			
 		}
 		
 		private var loaderDic:Dictionary;
 		private var skinLength:int = 0;
-		private function onDataComplete(e:GameEvent = null):void
+		private function onDataComplete(e:Event = null):void
 		{
 			// do sth.
 			enemyData = ExcelReader.getInstance().enemyData;
@@ -221,8 +263,7 @@ package
 				}
 			}
 			
-			
-			file = File.desktopDirectory.resolvePath("editor/bt_node_format.json");
+			var file:File = File.desktopDirectory.resolvePath("editor/bt_node_format.json");
 			if(file.exists)
 			{
 				var stream:FileStream = new FileStream;
