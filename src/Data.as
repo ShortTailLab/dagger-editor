@@ -14,6 +14,9 @@ package
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
+	import flash.net.URLLoader;
+	import flash.net.URLLoaderDataFormat;
+	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
@@ -30,7 +33,7 @@ package
 	import manager.EventManager;
 	import manager.EventType;
 	import manager.GameEvent;
-	
+	import manager.SyncManager;
 	
 	public class Data extends EventDispatcher
 	{
@@ -109,6 +112,12 @@ package
 				conf.speed = 32;
 			}
 			
+			SyncManager.getInstance().addEventListener(Event.COMPLETE, onSyncComplete);
+			SyncManager.getInstance().sync();
+			
+		}
+		private function onSyncComplete(e:Event):void
+		{
 			dynamicArgs = Utils.loadJsonFileToObject("editor/dynamic_args.json");
 			if(!dynamicArgs)
 			{
@@ -116,7 +125,7 @@ package
 				return;
 			}
 			
-			file = File.desktopDirectory.resolvePath("editor/levelData.xlsx");
+			var file:File = File.desktopDirectory.resolvePath("editor/levelData.xlsx");
 			if(file.exists)
 			{
 				EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onDataComplete);
@@ -126,13 +135,11 @@ package
 			{
 				Alert.show("levelData丢失！");
 			}
-			
-			
 		}
 		
 		private var loaderDic:Dictionary;
 		private var skinLength:int = 0;
-		private function onDataComplete(e:GameEvent = null):void
+		private function onDataComplete(e:Event = null):void
 		{
 			// do sth.
 			enemyData = ExcelReader.getInstance().enemyData;
@@ -221,8 +228,7 @@ package
 				}
 			}
 			
-			
-			file = File.desktopDirectory.resolvePath("editor/bt_node_format.json");
+			var file:File = File.desktopDirectory.resolvePath("editor/bt_node_format.json");
 			if(file.exists)
 			{
 				var stream:FileStream = new FileStream;

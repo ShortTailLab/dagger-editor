@@ -87,8 +87,28 @@ package behaviorEdit
 		
 		private function initExecType(type:String):void
 		{
+			var nodes:Array = Data.getInstance().behaviorBaseNode as Array;
+			for each(var d in nodes)
+				if(d.func == type)
+				{
+					nodeData = d.args as Array;
+					break;
+				}
+			if(!nodeData)
+			{
+				return;
+			}
+			
 			hasInit = true;
 			execType = type;
+			
+			
+			parmNodes = new Array;
+			parmInput = new Array;
+			var interval:int = 30;
+			var yRecord:int = 0;
+			
+			var targetNode:Object;
 			var sType:String = type.split(".").pop();
 			label.text = sType;
 			label.width = label.textWidth+10;
@@ -101,21 +121,6 @@ package behaviorEdit
 			this.addChild(container);
 			
 			this.clearAllChildren();
-			
-			parmNodes = new Array;
-			parmInput = new Array;
-			var interval:int = 30;
-			var yRecord:int = 0;
-			var nodes:Array = Data.getInstance().behaviorBaseNode as Array;
-			var targetNode:Object;
-			for each(var d in nodes)
-				if(d.func == type)
-				{
-					nodeData = d.args as Array;
-					break;
-				}
-			if(!nodeData)
-				return;
 			 
 			var i:int = 0;
 			for each(var item in nodeData)
@@ -300,7 +305,7 @@ package behaviorEdit
 				for(var i:int = 0; i <  parmNodes.length; i++)
 				{
 					var label:TextField = new TextField;
-					label.defaultTextFormat = new TextFormat(null, 20, 0xff0000);
+					label.defaultTextFormat = new TextFormat(null, 16, 0xff0000);
 					label.text = parmNodes[i];
 					label.x = endPoint.x - label.textWidth-3;
 					label.y = endPoint.y -label.textHeight-3;
