@@ -14,6 +14,7 @@ package manager
 	import flash.net.URLRequestMethod;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
+	
 
 	public class SyncManager extends EventDispatcher
 	{
@@ -44,10 +45,13 @@ package manager
 		
 		public function dispatch():void
 		{
-			var isDispatch:Boolean = false;
+			trace("tring to dispatch");
 			for each(var state in syncFlag)
-				if(state == false)
+				if(state == false) 
+				{
+					trace(state+" failed");
 					return;
+				}
 			this.dispatchEvent(new Event(Event.COMPLETE));
 		}
 		
@@ -80,6 +84,7 @@ package manager
 			loader.addEventListener(Event.COMPLETE, onArgsSyncComplete);
 			loader.load( new URLRequest(dynamic_args));
 			syncFlag["args"] = false;
+			
 		}
 		
 		private function onNodesSyncComplete(e:Event = null):void

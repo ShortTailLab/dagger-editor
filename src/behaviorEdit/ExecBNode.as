@@ -102,7 +102,6 @@ package behaviorEdit
 			hasInit = true;
 			execType = type;
 			
-			
 			parmNodes = new Array;
 			parmInput = new Array;
 			var interval:int = 30;

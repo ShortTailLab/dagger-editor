@@ -10,8 +10,6 @@
 	<fx:Script>
 		<![CDATA[
 			import mx.collections.ArrayCollection;
-			import mx.collections.ArrayList;
-			import mx.containers.TitleWindow;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
 			import mx.events.CloseEvent;
@@ -59,16 +57,18 @@
 				
 				this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
 			}
+			
 			private function onAddToStage(e:Event):void
 			{
 				stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-			}
+			} 
 			private function onKeyDown(e:KeyboardEvent):void
 			{
 				var code = e.keyCode;
 				if(code == Keyboard.S && e.ctrlKey)
 					saveFile(null);
 			}
+			
 			
 			private function onDataReady(e:Event):void
 			{
@@ -107,7 +107,6 @@
 				hgroup.addElement(group);
 				hgroup.addElement(vscrollbar);
 				modelView.addElement(hgroup);
-				
 				
 				var matsPanel:Panel = new Panel();
 				matsPanel.title = "资源";
@@ -199,7 +198,7 @@
 			{
 				_tree.selectedIndex = index;
 				Data.getInstance().currSelectedLevel = index;
-				_enemyEditView.init(_tree.selectedItem.@label);
+				_enemyEditView.init(Data.getInstance().displayData[index].levelName);
 			}
 			private function onTMXClick(e:MouseEvent):void
 			{
@@ -226,7 +225,6 @@
 			
 			private function onRenameClick(e:MsgEvent):void
 			{
-				
 				var index:int = _tree.selectedIndex;
 				if(index != -1)
 				{
@@ -261,6 +259,7 @@
 					if(index != -1)
 					{
 						Data.getInstance().deleteLevel(index);
+						_tree.dataProvider = Data.getInstance().levelXML;
 						_enemyEditView.clear();
 						setCurrLevel(Math.max(index-1, 0));
 					}

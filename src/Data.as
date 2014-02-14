@@ -1,9 +1,5 @@
 package
 {
-	import com.as3xls.xls.ExcelFile;
-	import com.as3xls.xls.Sheet;
-	import com.hurlant.crypto.symmetric.NullPad;
-	
 	import flash.display.Bitmap;
 	import flash.display.Loader;
 	import flash.display.LoaderInfo;
@@ -14,9 +10,6 @@ package
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
-	import flash.net.URLLoader;
-	import flash.net.URLLoaderDataFormat;
-	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
@@ -25,8 +18,6 @@ package
 	
 	import behaviorEdit.BType;
 	import behaviorEdit.BehaviorEvent;
-	
-	import editEntity.TriggerSprite;
 	
 	import excel.ExcelReader;
 	
@@ -43,7 +34,7 @@ package
 		public var enemyEditData:Object = null;
 		public var enemyBTData:Object = null;
 		public var behaviors:Object = null;
-		public var displayData:Array = null;
+		private var _displayData:Array = null;
 		public var levelXML:XML = null;
 		public var behaviorsXML:XML = null;
 		public var enemySkinDic:Dictionary;
@@ -53,6 +44,26 @@ package
 		
 		private var autoSaveTimer:Timer;
 		private static var instance:Data = null;
+
+		public function get displayData():Array
+		{
+			return _displayData;
+		}
+
+		public function set displayData(value:Array):void
+		{
+			_displayData = value;
+			if(_displayData.length == 0)
+			{
+				var level:Object = new Object;
+				level.levelName = "level1";
+				level.endTime = 0;
+				level.data = new Array;
+				_displayData.push(level);
+			}
+			
+		}
+
 		public static function getInstance():Data
 		{
 			if(!instance)
@@ -79,7 +90,7 @@ package
 				stream = new FileStream;
 				stream.open(file, FileMode.READ);
 				displayData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable)) as Array;
-				stream.close();
+				stream.close(); 
 			}
 			else 
 			{
@@ -113,8 +124,7 @@ package
 			}
 			
 			SyncManager.getInstance().addEventListener(Event.COMPLETE, onSyncComplete);
-			SyncManager.getInstance().sync();
-			
+			SyncManager.getInstance().syncConfigs();
 		}
 		private function onSyncComplete(e:Event):void
 		{
@@ -171,7 +181,6 @@ package
 				loaderDic[loader] = item;
 			}
 			
-				
 			var file:File = File.desktopDirectory.resolvePath("editor/enemyMoveData.json");
 			enemyEditData = null;
 			if(file.exists)
@@ -222,9 +231,10 @@ package
 						delete enemyBTData[orgItem];
 					//clear the unexist behaviors of each item.
 					var behaviorsOfEnemy:Array = enemyBTData[orgItem] as Array;
-					for(var j:int = 0; j < behaviorsOfEnemy.length; j++)
-						if(!behaviors.hasOwnProperty(behaviorsOfEnemy[j]))
-							behaviorsOfEnemy.splice(j--, 1);
+					if(behaviorsOfEnemy)
+						for(var j:int = 0; j < behaviorsOfEnemy.length; j++)
+							if(!behaviors.hasOwnProperty(behaviorsOfEnemy[j]))
+								behaviorsOfEnemy.splice(j--, 1);
 				}
 			}
 			
@@ -499,6 +509,16 @@ package
 					saveLocal();
 					break;
 				}
+			
+			if(displayData.length == 0)
+			{
+				var level:Object = new Object;
+				level.levelName = "level1";
+				level.endTime = 0;
+				level.data = new Array;
+				displayData.push(level);
+				levelXML = parseLevelXML(displayData);
+			}
 		}
 		
 		public function renameLevel(index:int, name:String):void

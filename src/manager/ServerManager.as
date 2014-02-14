@@ -176,8 +176,6 @@ package manager
 				urlHeader = new URLRequestHeader("Authorization", "OSS "+OSS_ACCESS_KEY_ID+":"+signature);
 				headers.push(urlHeader);
 				
-				trace("generated signature: "+signature);
-				
 				urlRequest.requestHeaders = headers;
 				
 				var urlLoader:URLLoader = new URLLoader();
