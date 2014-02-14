@@ -86,7 +86,6 @@ package
 				mat.id = getUID();
 			view.map.addChild(mat);
 			mats.push(mat);
-			mat.mouseChildren = false;
 			mat.doubleClickEnabled = true;
 			mat.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
 			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);

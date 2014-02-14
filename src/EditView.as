@@ -132,6 +132,7 @@ package
 			setEndTime(canvas.height/speed);
 			setCurrTime(0);
 			
+			
 			onResize();
 			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
 			this.addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);

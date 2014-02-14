@@ -57,7 +57,7 @@ package editEntity
 				var dot:Sprite = dots.pop() as Sprite;
 				dot.removeEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 				dot.removeEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-				this.removeChild(dots.pop() as DisplayObject);
+				this.removeChild(dot);
 			}
 			
 			addDot(rect.x, rect.y);
@@ -65,7 +65,6 @@ package editEntity
 			addDot(rect.right, rect.bottom);
 			addDot(rect.x, rect.bottom);
 			updateRect();
-			
 			
 			if(editView)
 			{
