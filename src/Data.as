@@ -117,6 +117,33 @@ package
 			SyncManager.getInstance().sync();
 			
 		}
+		
+		// where is the built-in functional package?
+		private function reduce(f:Function, val:*, a:Array):*
+		{
+			var result:* = val;
+			for each(var item:* in a.slice(1, a.length))
+				result = f(item, result)
+			return result;
+		}
+		
+		//
+		private const syncTargets:Array = [
+			// LAN only, should port this file to oss 
+			"http://svn.stl.com/策划文档/屌丝RPG/levelData.xlsx",
+			//
+			"http://oss.aliyuncs.com/dagger-static/editor-configs/bt_node_format.json",
+			"http://oss.aliyuncs.com/dagger-static/editor-configs/dynamic_args.json"
+		];
+		
+		private function sync():void
+		{
+			this.reduce(function()
+			{
+				
+			}, true, syncTargets);
+		}
+		
 		private function onSyncComplete(e:Event):void
 		{
 			dynamicArgs = Utils.loadJsonFileToObject("editor/dynamic_args.json");
