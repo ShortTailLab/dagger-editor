@@ -12,12 +12,11 @@ package
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
-	import flash.net.URLLoader;
-	import flash.net.URLLoaderDataFormat;
-	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
+	
+	import flash.net.*;
 	
 	import mx.controls.Alert;
 	
@@ -56,6 +55,7 @@ package
 		// anchors
 		public var currSelectedLevel:int = -1;
 		private var autoSaveTimer:Timer;
+		
 		// -------------------------------------------------
 		private static var instance:Data = null;
 		public static function getInstance():Data
@@ -90,13 +90,13 @@ package
 			//
 			{
 				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/bt_node_format.json",
-				suffix: "bt_node_format.json",
-				type: URLLoaderDataFormat.TEXT
+				suffix: "bt_node_format.json"
+				//type: URLLoaderDataFormat.TEXT
 			},
 			{
 				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/dynamic_args.json",
-				suffix: "dynamic_args.json",
-				type: URLLoaderDataFormat.TEXT
+				suffix: "dynamic_args.json"
+				//type: URLLoaderDataFormat.TEXT
 			}
 		];
 		// where is the synchronous loader? WTF...
@@ -126,6 +126,7 @@ package
 				Alert.show("[WARN]同步服务器出错，将会使用本地数据…");
 				this.load();
 			}
+
 			syncTargets.forEach(function(item:Object, ...args):void
 			{
 				var loader:URLLoader = new URLLoader;
@@ -237,6 +238,7 @@ package
 						delete this.enemy_bh[orgItem];
 					//clear the unexist behaviors of each item.
 					var behaviorsOfEnemy:Array = this.enemy_bh[orgItem] as Array;
+					if( !behaviorsOfEnemy ) continue;
 					for(var j:int = 0; j < behaviorsOfEnemy.length; j++)
 						if(!this.bh_lib.hasOwnProperty(behaviorsOfEnemy[j]))
 							behaviorsOfEnemy.splice(j--, 1);
@@ -384,6 +386,16 @@ package
 					saveLocal();
 					break;
 				}
+			
+			if(displayData.length == 0)
+			{
+				var level:Object = new Object;
+				level.levelName = "level1";
+				level.endTime = 0;
+				level.data = new Array;
+				displayData.push(level);
+				this.level_xml = parseLevelXML(displayData);
+			}
 		}
 		
 		public function renameLevel(index:int, name:String):void
@@ -528,6 +540,24 @@ package
 				if(item.levelName == levelName)
 					return item;
 			return null;
+		}
+		
+		public function get displayData():Array
+		{
+			return this.levels;
+		}
+		
+		public function set displayData(value:Array):void
+		{
+			this.levels = value;
+			if(this.levels.length == 0)
+			{
+				var level:Object = new Object;
+				level.levelName = "level-1";
+				level.endTime = 0;
+				level.data = new Array;
+				this.levels.push(level);
+			}
 		}
 	}
 }
