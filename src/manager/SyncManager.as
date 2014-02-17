@@ -116,6 +116,9 @@ package manager
 		private function onLevelDataComplete(e:Event):void
 		{
 			var bytes:ByteArray = e.target.data as ByteArray;
+			if(bytes.length == 0)
+				return;
+			
 			var file:File = File.desktopDirectory.resolvePath("editor/levelData.xlsx");
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);

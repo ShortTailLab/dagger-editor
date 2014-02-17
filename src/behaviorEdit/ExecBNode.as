@@ -38,7 +38,7 @@ package behaviorEdit
 		}
 		
 		
-		override public function init(_view:BTEditView):void
+		/*override public function init(_view:BTEditView):void
 		{
 			super.init(_view);
 			
@@ -54,7 +54,7 @@ package behaviorEdit
 			inputLabel.y = 20;
 			inputLabel.addEventListener(MouseEvent.MOUSE_DOWN, onLabelMouseDown);
 			this.addChild(inputLabel);*/
-		}
+		//}
 		
 		override public function onAdd(nodeType:String):void
 		{
@@ -162,6 +162,7 @@ package behaviorEdit
 		private function addInput(name:String, py:int, type:String):void
 		{
 			var tt:TextField = Utils.getLabel(name+":", 0, py, 14);
+			tt.height = tt.textHeight+5;
 			tt.selectable = false;
 			container.addChild(tt);
 			

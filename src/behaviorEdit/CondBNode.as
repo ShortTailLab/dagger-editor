@@ -51,7 +51,7 @@ package behaviorEdit
 			label.y = bg.height*0.5-label.textHeight*0.5;
 		}
 		
-		override public function init(_view:BTEditView):void
+		/*override public function init(_view:BTEditView):void
 		{
 			super.init(_view);
 			nodeWidth = 200;
@@ -73,7 +73,7 @@ package behaviorEdit
 			inputLabel.y = 20;
 			inputLabel.addEventListener(MouseEvent.MOUSE_DOWN, onLabelMouseDown);
 			this.addChild(inputLabel);
-		}
+		}*/
 		
 		override public function initData(data:Object):void
 		{

@@ -1,6 +1,8 @@
 package behaviorEdit
 {
+	import flash.display.DisplayObject;
 	import flash.events.Event;
+	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	
 	import mx.core.UIComponent;
@@ -18,10 +20,13 @@ package behaviorEdit
 			
 			rootNode = new RootBNode;
 			rootNode.initPos(50, 20);
-			rootNode.init(this);
+			this.addNode(rootNode);
 			
 			EventManager.getInstance().addEventListener(BTEvent.TREE_CHANGE, onTreeChange);
 			EventManager.getInstance().addEventListener(BTEvent.LAID, onNodeLaid);
+			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			
+			//this.scaleX = this.scaleY = 0.5;
 		}
 		
 		public function init(data:Object):void
@@ -39,12 +44,19 @@ package behaviorEdit
 		public function initNode(par:BNode, nodeData:Object):void
 		{
 			var node:BNode = BNodeFactory.createBNode(nodeData.type);
-			node.init(this);
+			this.addNode(node);
 			node.initData(nodeData.data);
 			par.add(node);
 			var children:Array = nodeData.children as Array;
 			for(var i:int = 0; i < children.length; i++)
 				initNode(node, children[i]);
+		}
+		
+		public function addNode(childNode:BNode):void
+		{
+			childNode.view = this;
+			childNode.active();
+			this.addChild(childNode);
 		}
 		
 		public function remove():void
@@ -107,6 +119,10 @@ package behaviorEdit
 				}
 			return null;
 		}
-		
+	
+		private function onMouseUp(e:MouseEvent):void
+		{
+			EventManager.getInstance().dispatchEvent(e);
+		}
 	}
 }
