@@ -268,7 +268,7 @@
 			private function saveFile(event:Event):void
 			{
 				_enemyEditView.save();
-				if( Data.getInstance().exportJS() && Data.getInstance().saveLocal() )
+				if( Data.getInstance().saveLocal() && Data.getInstance().exportJS() )
 				{
 					Alert.show("成功导出数据");
 				}

@@ -50,7 +50,6 @@ package
 		
 		// misc
 		public var dynamic_args:Object = null;
-		public var desc_of_triggers:Object = null;
 		
 		// anchors
 		public var currSelectedLevel:int = -1;
@@ -283,12 +282,7 @@ package
 			var actors:Object = {}, traps:Object = {};
 			for each( var item:* in source ) 
 			{
-				var data:Object = this.enemy_profile[item.type];
-				if( data.type == "bullet" ) {
-					Alert.show("子弹类型不可被放置在地图中"); 
-					return false;
-				}
-				if( data.type == "AreaTrigger" ) {
+				if( item.type == "AreaTrigger" ) {
 					export.trigger.push({
 						cond : {
 							type: "Area",
@@ -300,19 +294,20 @@ package
 					});
 					continue;
 				}
-				
-				var t:Number = item.triggerTime || item.y;
-				export.trigger.push({
-					cond : { type : "Time", time : t }, 
-					result : { type: "Object", objs: item.id }
-				});
-				
+
+				var data:Object = this.enemy_profile[item.type];
+				if( data.type == "bullet" ) {
+					Alert.show("子弹类型不可被放置在地图中"); 
+					return false;
+				}
 				if( data.type == "actor" ) actors[item.type] = data;
 				else traps[item.type] = data;
 				
+				var t:Number = item.triggerTime;
 				export.objects[item.id] = {
-					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@"
-				}
+					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@",
+					time : t, triggers : item.triggers
+				};
 			}
 			
 			export.actor = new Object; 
