@@ -9,7 +9,10 @@ package
 	import flash.display.LoaderInfo;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
+	import flash.events.HTTPStatusEvent;
 	import flash.events.IEventDispatcher;
+	import flash.events.IOErrorEvent;
+	import flash.events.SecurityErrorEvent;
 	import flash.events.TimerEvent;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
@@ -113,38 +116,69 @@ package
 				conf.speed = 32;
 			}
 			
-			SyncManager.getInstance().addEventListener(Event.COMPLETE, onSyncComplete);
-			SyncManager.getInstance().sync();
-			
+			//SyncManager.getInstance().addEventListener(Event.COMPLETE, onSyncComplete);
+			//SyncManager.getInstance().sync();
+			this.sync();
 		}
 		
-		// where is the built-in functional package?
-		private function reduce(f:Function, val:*, a:Array):*
-		{
-			var result:* = val;
-			for each(var item:* in a.slice(1, a.length))
-				result = f(item, result)
-			return result;
-		}
-		
+		// ---------------------------------------------------
 		//
 		private const syncTargets:Array = [
 			// LAN only, should port this file to oss 
-			"http://svn.stl.com/策划文档/屌丝RPG/levelData.xlsx",
+			// { 
+			//		src: "http://svn.stl.com/策划文档/屌丝RPG/levelData.xlsx",
+			//		type : URLLoaderDataFormat.BINARY
+			// },
 			//
-			"http://oss.aliyuncs.com/dagger-static/editor-configs/bt_node_format.json",
-			"http://oss.aliyuncs.com/dagger-static/editor-configs/dynamic_args.json"
+			{
+				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/bt_node_format.json",
+				suffix: "bt_node_format.json",
+				type: URLLoaderDataFormat.TEXT
+			},
+			{
+				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/dynamic_args.json",
+				suffix: "dynamic_args.json",
+				type: URLLoaderDataFormat.TEXT
+			}
 		];
-		
+		// where is the synchronous loader? WTF...
 		private function sync():void
 		{
-			this.reduce(function()
+			var counter:Number = 0;
+			var error:Boolean = false;
+			var alldone:Function = function(item:Object):Function
 			{
-				
-			}, true, syncTargets);
+				// [TODO] dispatch handler by item.type
+				var handleTEXT:Function = function(e:Event):void
+				{
+					var file:File = File.desktopDirectory.resolvePath("editor/data/"+item.suffix);
+					var stream:FileStream = new FileStream;
+					stream.open(file, FileMode.WRITE);
+					stream.writeUTFBytes(e.target.data);
+					
+					if( ++counter >= syncTargets.length && !error )
+						this.load();
+				}
+				return handleTEXT;
+			}
+			var anyerror:Function = function():void
+			{
+				error = true;
+				Alert.show("[WARN]同步服务器出错，将会使用本地数据…");
+				this.load();
+			}
+			syncTargets.forEach(function(item:Object):void
+			{
+				var loader:URLLoader = new URLLoader;
+				loader.dataFormat = item.type;
+				loader.addEventListener(Event.COMPLETE, alldone(item));
+				loader.addEventListener(IOErrorEvent.IO_ERROR, anyerror);
+				loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, anyerror);
+				loader.load( new URLRequest(item.src) );
+			}, null);
 		}
 		
-		private function onSyncComplete(e:Event):void
+		private function onSyncComplete():void
 		{
 			dynamicArgs = Utils.loadJsonFileToObject("editor/dynamic_args.json");
 			if(!dynamicArgs)
@@ -167,6 +201,29 @@ package
 		
 		private var loaderDic:Dictionary;
 		private var skinLength:int = 0;
+		
+		private function load():void
+		{
+			this.dynamicArgs = Utils.loadJsonFileToObject("editor/dynamic_args.json");
+			if(!dynamicArgs)
+			{
+				Alert.show("dynamic_args.json丢失！");
+				return;
+			}
+			
+			this.
+			
+			var file:File = File.desktopDirectory.resolvePath("editor/bt_node_format.json");
+			if(file.exists)
+			{
+				var stream:FileStream = new FileStream;
+				stream.open(file, FileMode.READ);
+				this.behaviorBaseNode = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			else
+				Alert.show("bt_node_format.json丢失，打开怪物行为时候可能会出错!");
+		}
 		private function onDataComplete(e:Event = null):void
 		{
 			// do sth.
