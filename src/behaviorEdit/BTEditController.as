@@ -20,7 +20,7 @@ package behaviorEdit
 			editTargetType = type;
 			if(!Data.getInstance().enemy_profile.hasOwnProperty(type))
 				Data.getInstance().enemy_profile[type] = new Array;
-			btArray = new ArrayCollection(Data.getInstance().enemy_profile[editTargetType] as Array);
+			btArray = new ArrayCollection(Data.getInstance().enemy_bh[editTargetType] as Array);
 			
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_NEW_BT, onNewBT);
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_DONE, onCreateDone);

@@ -12,11 +12,11 @@ package
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
+	import flash.net.URLLoader;
+	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
-	
-	import flash.net.*;
 	
 	import mx.controls.Alert;
 	
@@ -109,12 +109,9 @@ package
 				// [TODO] dispatch handler by item.type
 				var handleTEXT:Function = function(e:Event):void
 				{
-					//trace("sync "+item.suffix+" done");
-					var file:File = File.desktopDirectory.resolvePath("editor/data/"+item.suffix);
-					var stream:FileStream = new FileStream;
-					stream.open(file, FileMode.WRITE);
-					stream.writeUTFBytes(e.target.data);
-					
+					trace("sync "+item.suffix+" done");
+					Utils.write(e.target.data, "editor/data/"+item.suffix);
+						
 					if( ++counter >= syncTargets.length && !error )
 						self.load();
 				}
@@ -162,6 +159,7 @@ package
 					data 		: new Array
 				});
 			}  
+			this.currSelectedLevel = this.levels.length-1;
 			this.level_xml = this.parseLevelXML(this.levels);
 			
 			this.bh_lib = this.loadJson("editor/saved/bh_lib.json", false);
@@ -169,12 +167,14 @@ package
 			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
 			
 			this.conf = this.loadJson("editor/saved/conf.json", false);
-			if( !conf ) conf = { speed: 32};
-			this.dynamic_args = this.loadJson("editor/data/dynamic_args.json");
-			this.bh_node = this.loadJson("editor/data/bt_node_format.json");
+			if( !this.conf ) this.conf = { speed: 32};
 			//this record the behaviors' name of each enemy
 			this.enemy_bh = this.loadJson("editor/saved/enemy_bh.json");
 
+			// load configs 
+			this.dynamic_args = this.loadJson("editor/data/dynamic_args.json");
+			this.bh_node = this.loadJson("editor/data/bt_node_format.json");
+			
 			// async loading
 			// ---------------------------------------------------------------
 			// exceptional case, bad design, refactor this.
@@ -229,7 +229,7 @@ package
 
 		private function start():void
 		{
-			//you can see the struct of enemyBTData here.
+			// clean up
 			{
 				for(var orgItem:* in this.enemy_bh)
 				{
@@ -283,25 +283,30 @@ package
 			var actors:Object = {}, traps:Object = {};
 			for each( var item:* in source ) 
 			{
-				if( item.type == "bullet" ) {
+				var data:Object = this.enemy_profile[item.type];
+				if( data.type == "bullet" ) {
 					Alert.show("子弹类型不可被放置在地图中"); 
 					return false;
 				}
-				if( item.type == "AreaTrigger" )
-				{
+				if( data.type == "AreaTrigger" ) {
 					export.trigger.push({
 						cond : {
-							type : "Area",
-							area : "@@cc.rect("+item.x+","+item.y+","+item.width+","+item.height+")@@"
+							type: "Area",
+							area: "@@cc.rect("+item.x+","+item.y+","+item.width+","+item.height+")@@"
 						},
 						result : {
-							type : "Object", objs : item.objs
+							type: "Object", objs : item.objs
 						}
 					});
 					continue;
 				}
-					
-				var data:Object = this.enemy_profile[item.type];
+				
+				var t:Number = item.triggerTime || item.y;
+				export.trigger.push({
+					cond : { type : "Time", time : t }, 
+					result : { type: "Object", objs: item.id }
+				});
+				
 				if( data.type == "actor" ) actors[item.type] = data;
 				else traps[item.type] = data;
 				
@@ -321,7 +326,7 @@ package
 				
 				export.actor[key] = Utils.deepCopy(actors[key]);	
 				export.actor[key].behaviors = this.enemy_bh[key];
-				this.enemy_bh[key].foreach(function(item:*, ...args):void {
+				this.enemy_bh[key].forEach(function(item:*, ...args):void {
 					bhs[item] = true;
 				}, null);
 			}
@@ -336,15 +341,27 @@ package
 				var raw:String = Utils.genBTreeJS(this.bh_lib[key]);
 				export.behavior[key] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
 					""+raw+";}@@");
-			}
+			} 
 			
 			export.trap = new Object;
-			for(  var key in traps )
+			for(  var key:* in traps )
 				export.trap[key] = Utils.deepCopy(traps[key]);
 			
 		
-			// todo
+			// export bullet
 			export.bullet = new Object;
+			for( var key:* in this.enemy_profile ) {
+				if(this.enemy_profile[key].type == "bullet")
+				{
+					for( var bh:String in export.behavior )
+					{
+						if( export.behavior[bh].search(key) != -1)
+						{
+							export.bullet[key] = this.enemy_profile[key];
+						}
+					}
+				}
+			}
 			
 			// undefined
 			export.luck = new Object;
@@ -353,8 +370,6 @@ package
 			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
 				adjustJS(content) + "; return level; }"; 
 			Utils.write(wrap, "editor/export/level/demo.js");
-			
-			Alert.show("保存成功！");
 			return true;
 		}
 		
@@ -558,6 +573,11 @@ package
 				level.data = new Array;
 				this.levels.push(level);
 			}
+		}
+		
+		public function appendTriggerToEnemy(ins, cond, result):void
+		{
+			
 		}
 	}
 }

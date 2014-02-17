@@ -235,7 +235,7 @@ package
 			return Utils.write( JSON.stringify(item), filepath );
 		}
 		
-		static public function copyDirectoryTo(from:String, to:String)
+		static public function copyDirectoryTo(from:String, to:String):void
 		{
 			var f:File = File.desktopDirectory.resolvePath(from);
 			var t:File = File.desktopDirectory.resolvePath(to);

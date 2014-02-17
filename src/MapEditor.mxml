@@ -259,7 +259,7 @@
 					if(index != -1)
 					{
 						Data.getInstance().deleteLevel(index);
-						_tree.dataProvider = Data.getInstance().levelXML;
+						_tree.dataProvider = Data.getInstance().level_xml;
 						_enemyEditView.clear();
 						setCurrLevel(Math.max(index-1, 0));
 					}
