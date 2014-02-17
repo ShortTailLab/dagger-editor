@@ -29,21 +29,18 @@ package
 	import behaviorEdit.BType;
 	import behaviorEdit.BehaviorEvent;
 	
-	import editEntity.TriggerSprite;
-	
 	import excel.ExcelReader;
 	
 	import manager.EventManager;
 	import manager.EventType;
 	import manager.GameEvent;
-	import manager.SyncManager;
 	
 	public class Data extends EventDispatcher
 	{
 		public var conf:Object = null;
 		public var matsData:Object = null;
 		public var enemyData:Object = null;
-		public var enemyEditData:Object = null;
+		//public var enemyEditData:Object = null; // unused
 		public var enemyBTData:Object = null;
 		public var behaviors:Object = null;
 		public var displayData:Array = null;
@@ -74,55 +71,11 @@ package
 			autoSaveTimer.start();
 		}
 		
-		public function init():void
-		{
-			var file:File = File.desktopDirectory.resolvePath("editor/data.json");
-			var stream:FileStream;
-			if(file.exists)
-			{
-				stream = new FileStream;
-				stream.open(file, FileMode.READ);
-				displayData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable)) as Array;
-				stream.close();
-			}
-			else 
-			{
-				displayData = new Array;
-				var level:Object = new Object;
-				level.levelName = "level1";
-				level.endTime = 0;
-				level.data = new Array;
-				displayData.push(level);
-			}
-			levelXML = parseLevelXML(displayData);
-			
-			file = File.desktopDirectory.resolvePath("editor/conf.json");
-			if(file.exists)
-			{
-				stream = new FileStream;
-				stream.open(file, FileMode.READ);
-				conf = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-				stream.close();
-				
-				if(!conf.hasOwnProperty("speed"))
-				{
-					conf = new Object;
-					conf.speed = 32;
-				}
-			}
-			else
-			{
-				conf = new Object;
-				conf.speed = 32;
-			}
-			
-			//SyncManager.getInstance().addEventListener(Event.COMPLETE, onSyncComplete);
-			//SyncManager.getInstance().sync();
-			this.sync();
-		}
-		
+		// entrance of Data
+		public function init():void { this.sync(); }
 		// ---------------------------------------------------
-		//
+		// where is the built-in functional package?
+		// ---------------------------------------------------
 		private const syncTargets:Array = [
 			// LAN only, should port this file to oss 
 			// { 
@@ -177,166 +130,111 @@ package
 				loader.load( new URLRequest(item.src) );
 			}, null);
 		}
-		
-		private function onSyncComplete():void
+		// ---------------------------------------------------
+		// 
+		private function loadJson(filepath:String, warn:Boolean=true):Object
 		{
-			dynamicArgs = Utils.loadJsonFileToObject("editor/dynamic_args.json");
-			if(!dynamicArgs)
+			var ret:Object = Utils.loadJsonFileToObject(filepath);
+			if( !ret && warn)
 			{
-				Alert.show("dynamic_args.json丢失！");
-				return;
+				Alert.show(filepath+"无法被载入内存或无法被解析！");
+				return null;
 			}
+			return ret;
+		}
+		private function load():void
+		{
+			// saved informations
+			var data:Object = this.loadJson("editor/data.json");
+			if( !data )
+			{
+				this.displayData = new Array;
+				this.displayData.push({
+					levelName 	: "level-1",
+					endTime 	: 0,
+					data 		: new Array
+				});
+			}  
+			this.levelXML = this.parseLevelXML(displayData);
 			
+			this.behaviors = this.loadJson("editor/behaviors.json", false);
+			if( !this.behaviors )  this.behaviors = new Object;
+			this.behaviorsXML = this.parseBehaviorXML(this.behaviors);
+			
+			this.conf = this.loadJson("editor/conf.json", false);
+			if( !conf ) conf = { speed: 32}
+			this.dynamicArgs = this.loadJson("editor/dynamic_args.json");
+			this.behaviorBaseNode = this.loadJson("editor/bt_node_format.json");
+			//this record the behaviors' name of each enemy
+			this.enemyBTData = this.loadJson("editor/enemyBehaviorsData.json");
+
+			
+			// async loading
+			// ---------------------------------------------------------------
+			// exceptional case, bad design, refactor this.
+			this.enemySkinDic = new Dictionary;
+			var onexceldone:Function = function(e:Event):void
+			{
+				var length:Number = 0, countor:Number = 0;
+				for(var i:* in this.enemyData) length ++;
+				
+				this.enemyData = ExcelReader.getInstance().enemyData;
+				var alldone:Function = function(item:*):Function
+				{
+					return function(e:Event):void
+					{
+						var loader:Loader = (e.target as LoaderInfo).loader; 
+						this.enemySkinDic[item] = Bitmap(loader.content).bitmapData;
+						if( ++countor >= length ) this.start();
+					}
+				}
+				
+				for(var item:* in enemyData)
+				{
+					var bytes:ByteArray = new ByteArray;
+					var filepath:String = "editor/skins/"+item.face+".png";
+					var file:File = File.desktopDirectory.resolvePath(filepath);
+					var stream:FileStream = new FileStream();
+					stream.open(file, FileMode.READ);
+					stream.readBytes(bytes);
+					stream.close();
+					
+					var loader:Loader = new Loader;
+					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(item));
+					loader.loadBytes(bytes);
+				}
+				
+			}
 			var file:File = File.desktopDirectory.resolvePath("editor/levelData.xlsx");
 			if(file.exists)
 			{
-				EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onDataComplete);
+				EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onexceldone);
 				ExcelReader.getInstance().initWithNativePath(file.nativePath);
 			}
-			else
-			{
-				Alert.show("levelData丢失！");
-			}
+			else Alert.show("levelData丢失！");
+			// ---------------------------------------------------------------
 		}
-		
-		private var loaderDic:Dictionary;
-		private var skinLength:int = 0;
-		
-		private function load():void
+
+		private function start():void
 		{
-			this.dynamicArgs = Utils.loadJsonFileToObject("editor/dynamic_args.json");
-			if(!dynamicArgs)
-			{
-				Alert.show("dynamic_args.json丢失！");
-				return;
-			}
-			
-			this.
-			
-			var file:File = File.desktopDirectory.resolvePath("editor/bt_node_format.json");
-			if(file.exists)
-			{
-				var stream:FileStream = new FileStream;
-				stream.open(file, FileMode.READ);
-				this.behaviorBaseNode = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-				stream.close();
-			}
-			else
-				Alert.show("bt_node_format.json丢失，打开怪物行为时候可能会出错!");
-		}
-		private function onDataComplete(e:Event = null):void
-		{
-			// do sth.
-			enemyData = ExcelReader.getInstance().enemyData;
-			loaderDic = new Dictionary;
-			enemySkinDic = new Dictionary;
-			skinLength = 0;
-			loadCount = 0;
-			for(var i in enemyData)
-				skinLength++;
-			
-			var f:File = File.desktopDirectory.resolvePath("editor/skins");
-			if(!f.exists)
-			{
-				Alert.show("editor/skins文件夹不存在！");
-				return;
-			}
-			for(var item in enemyData)
-			{
-				var bytes:ByteArray = new ByteArray;
-				var file:File = File.desktopDirectory.resolvePath("editor/skins/"+enemyData[item].face+".png");
-				var stream:FileStream = new FileStream;
-				stream.open(file, FileMode.READ);
-				stream.readBytes(bytes);
-				stream.close();
-				
-				var loader:Loader = new Loader;
-				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadSkin);
-				loader.loadBytes(bytes);
-				loaderDic[loader] = item;
-			}
-			
-				
-			var file:File = File.desktopDirectory.resolvePath("editor/enemyMoveData.json");
-			enemyEditData = null;
-			if(file.exists)
-			{
-				var stream:FileStream = new FileStream;
-				stream.open(file, FileMode.READ);
-				enemyEditData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-				stream.close();
-			}
-			
-			if(!enemyEditData)
-			{
-				enemyEditData = new Object;
-				for(var item in enemyData)
-				{
-					enemyEditData[item] = new Object;
-				}
-			}
-			
-			//this records all behaviors.
-			file = File.desktopDirectory.resolvePath("editor/behaviors.json");
-			if(file.exists)
-			{
-				var stream:FileStream = new FileStream;
-				stream.open(file, FileMode.READ);
-				behaviors = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-				stream.close();
-			}
-			else
-				behaviors = new Object;
-			
-			//this record the behaviors' name of each enemy
-			var file:File = File.desktopDirectory.resolvePath("editor/enemyBehaviorsData.json");
-			enemyBTData = new Object;
-			if(file.exists)
-			{
-				var stream:FileStream = new FileStream;
-				stream.open(file, FileMode.READ);
-				enemyBTData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-				stream.close();
-			}
 			//you can see the struct of enemyBTData here.
 			{
-				for(var orgItem in enemyBTData)
+				for(var orgItem:* in this.enemyBTData)
 				{
 					//clear the items which enemy id is invalid
-					if(!enemyData.hasOwnProperty(orgItem))
-						delete enemyBTData[orgItem];
+					if(!this.enemyData.hasOwnProperty(orgItem))
+						delete this.enemyBTData[orgItem];
 					//clear the unexist behaviors of each item.
-					var behaviorsOfEnemy:Array = enemyBTData[orgItem] as Array;
+					var behaviorsOfEnemy:Array = this.enemyBTData[orgItem] as Array;
 					for(var j:int = 0; j < behaviorsOfEnemy.length; j++)
-						if(!behaviors.hasOwnProperty(behaviorsOfEnemy[j]))
+						if(!this.behaviors.hasOwnProperty(behaviorsOfEnemy[j]))
 							behaviorsOfEnemy.splice(j--, 1);
 				}
 			}
 			
-			var file:File = File.desktopDirectory.resolvePath("editor/bt_node_format.json");
-			if(file.exists)
-			{
-				var stream:FileStream = new FileStream;
-				stream.open(file, FileMode.READ);
-				this.behaviorBaseNode = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-				stream.close();
-			}
-			else
-				Alert.show("bt_node_format.json丢失，打开怪物行为时候可能会出错!");
-			
-			behaviorsXML = this.parseBehaviorXML(behaviors);
-		}
-		
-		private var loadCount:int = 0;
-		private function onLoadSkin(e:Event):void
-		{
-			var loader:Loader = (e.target as LoaderInfo).loader;
-			enemySkinDic[loaderDic[loader]] = Bitmap(loader.content).bitmapData; 
-			if(++loadCount >= skinLength)
-			{
-				this.dispatchEvent(new Event(Event.COMPLETE));
-				EventManager.getInstance().dispatchEvent(new GameEvent(EventType.ENEMY_DATA_UPDATE));
-			}
+			// let's rock 'n' roll
+			this.dispatchEvent(new Event(Event.COMPLETE));
+			EventManager.getInstance().dispatchEvent(new GameEvent(EventType.ENEMY_DATA_UPDATE));
 		}
 		
 		public function saveLocal():void
@@ -355,18 +253,8 @@ package
 			stream.writeUTFBytes(JSON.stringify(conf));
 			stream.close();
 			
-			saveEnemyData();
 			autoSaveTimer.reset();
 			autoSaveTimer.start();
-		}
-		
-		public function saveEnemyData():void
-		{
-			var file:File = File.desktopDirectory.resolvePath("editor/enemyMoveData.json");
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(JSON.stringify(enemyEditData));
-			stream.close();
 		}
 		
 		public function saveEnemyBehaviorData():void
@@ -411,31 +299,6 @@ package
 		
 		public function exportJS():void
 		{
-			/*for(var type in enemyEditData)
-			{
-				if(!enemyData.hasOwnProperty(type))
-				{
-					delete enemyEditData[type];
-					break;
-				}
-				
-				if(enemyEditData[type].hasOwnProperty("move_type"))
-				{
-					enemyData[type]["move_type"] = enemyEditData[type]["move_type"];
-					enemyData[type]["move_args"] = enemyEditData[type]["move_args"];
-				}
-				
-				if(enemyEditData[type].hasOwnProperty("attack_type"))
-				{
-					enemyData[type]["attack_type"] = enemyEditData[type]["attack_type"];
-					enemyData[type]["attack_args"] = enemyEditData[type]["attack_args"];
-				}
-				
-				if(enemyEditData[type].hasOwnProperty("type"))
-					enemyData[type]["type"] = enemyEditData[type]["type"];
-				else
-					enemyData[type]["type"] = "enemy";
-			}*/
 			if(currSelectedLevel < 0)
 				return;
 			
