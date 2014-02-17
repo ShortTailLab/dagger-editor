@@ -38,16 +38,19 @@ package manager
 		
 		public function sync():void
 		{
-			this.syncLevelData();
+			//this.syncLevelData();
 			this.syncConfigs();
 		}
 		
 		public function dispatch():void
 		{
+			//trace("tring to dispatch");
 			var isDispatch:Boolean = false;
 			for each(var state in syncFlag)
-				if(state == false)
+				if(state == false){
+					//trace(state);
 					return;
+				}
 			this.dispatchEvent(new Event(Event.COMPLETE));
 		}
 		
