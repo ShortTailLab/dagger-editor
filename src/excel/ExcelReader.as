@@ -95,8 +95,7 @@ package excel
 				var arg:String = workSheet.getCellValue(colStr+"2");
 				if(arg != "")
 					argToColDic[arg] = colStr;
-			}
-					
+			}	
 			
 			for (var i:int = 3; ; i++) {
 //				trace("A"+i+" value: " + workSheet.getCellValue("A"+i));

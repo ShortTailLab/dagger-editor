@@ -38,7 +38,7 @@ package behaviorEdit
 			if(!Data.getInstance().bh_lib.hasOwnProperty(bName))
 				Data.getInstance().addBehaviors(bName, data);
 			btArray.addItem(bName);
-			Data.getInstance().saveEnemyBehaviorData();
+			Data.getInstance().saveLocal();
 			
 			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_ADDED, bName);
 			EventManager.getInstance().dispatchEvent(evt);
@@ -47,7 +47,7 @@ package behaviorEdit
 		public function removeBTByIndex(index:int):void
 		{
 			btArray.removeItemAt(index);
-			Data.getInstance().saveEnemyBehaviorData();
+			Data.getInstance().saveLocal();
 			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_REMOVED, index);
 			EventManager.getInstance().dispatchEvent(evt);
 			

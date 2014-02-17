@@ -167,7 +167,7 @@ package
 		
 		public function save():void
 		{
-			Data.getInstance().conf.timeLineUnit = int(unitInput.text);
+			Data.getInstance().conf.speed = int(unitInput.text);
 			var data:Array = matsControl.getMatsData();
 			Data.getInstance().updateLevelData(levelName, data, endTime);
 		}
