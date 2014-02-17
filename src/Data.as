@@ -50,6 +50,7 @@ package
 		public var currSelectedLevel:int = -1;
 		public var behaviorBaseNode:Object = null;
 		public var dynamicArgs:Object = null;
+		public var descOfTriggers:Object = null;
 		
 		private var autoSaveTimer:Timer;
 		private static var instance:Data = null;
