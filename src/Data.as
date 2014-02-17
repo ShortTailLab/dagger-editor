@@ -303,10 +303,11 @@ package
 				if( data.type == "actor" ) actors[item.type] = data;
 				else traps[item.type] = data;
 				
-				var t:Number = item.triggerTime;
+				var t:Number = item.triggerTime || item.y;
+				var triggers:Array = item.triggers || [];
 				export.objects[item.id] = {
 					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@",
-					time : t, triggers : item.triggers
+					time : t, triggers : triggers
 				};
 			}
 			

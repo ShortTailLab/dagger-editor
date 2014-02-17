@@ -69,7 +69,6 @@
 					saveFile(null);
 			}
 			
-			
 			private function onDataReady(e:Event):void
 			{
 				_tree = new Tree();

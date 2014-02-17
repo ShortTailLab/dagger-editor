@@ -1,8 +1,9 @@
 // ActionScript file
 package Trigger
 {
+	import mx.controls.Alert;
+	import flash.events.Event;
 	import flash.events.MouseEvent;
-	import flash.events.ContextMenuEvent;
 	
 	import mx.controls.Button;
 	import mx.core.UIComponent;
@@ -17,10 +18,11 @@ package Trigger
 
 	public class EditTriggers extends TitleWindow
 	{
-		private var triggers = new Array; 
+		private var host:MatSprite = null;
 		
 		public function EditTriggers(target:MatSprite)
 		{
+			this.host = target;
 			
 			this.title = "触发器编辑";
 			this.width = 400; this.height = 500;
@@ -30,25 +32,34 @@ package Trigger
 			var view = new UIComponent;
 			view.addChild(addNewTrigger);
 			this.addElement(view);
+			
 			addNewTrigger.label = "添加触发器";
 			addNewTrigger.width = 80;
 			addNewTrigger.height = 30;
-			addNewTrigger.x = 20; addNewTrigger.y = 20;
+			addNewTrigger.x = 10; addNewTrigger.y = 10;
 			var self = this;
-			addNewTrigger.addEventListener(MouseEvent.CLICK, 
-				function(e:MouseEvent)
-				{
-					var node = new TNode();
-					node.setPosition(200, 200);
-					self.addElement( node );
-					triggers.push(node);
-					var e2:TriggerEvent = new TriggerEvent(node, TriggerEvent.ADD_TRIGGER);
-					EventManager.getInstance().dispatchEvent( e2 );
-				}
-			);
+			addNewTrigger.addEventListener(MouseEvent.CLICK, onAddTrigger);
 		
 			this.addEventListener(CloseEvent.CLOSE, onClose);
 			EventManager.getInstance().addEventListener(TriggerEvent.REMOVE_TRIGGER, onRemoveNode);
+		}
+		
+		private function onAddTrigger(evt:MouseEvent):void
+		{
+			for( var i:int = 0; i<this.numElements; i++ )
+			{
+				if( !(this.getElementAt(i) is TNode) ) continue;
+				var e:TNode = this.getElementAt(i) as TNode;
+				
+				if( !e.isDone() )
+				{
+					Alert.show("有Trigger未完成填写，请检查");
+					return;
+				}
+			}
+			
+			this.addElement( new TNode("type", "type") );
+			this.relayout();
 		}
 		
 		private function onClose(e:CloseEvent):void
@@ -57,13 +68,25 @@ package Trigger
 			PopUpManager.removePopUp(this);
 			
 			// save all the configs
-			
+		}
+		
+		private function relayout():void
+		{
+			var y = 50;
+			for( var i:int = 0; i<this.numElements; i++ )
+			{
+				var e:* = this.getElementAt(i);
+				if( e is TNode ){
+					e = TNode(e); e.x = 10; e.y = y;
+					y  += (e.getHeight() + 10);
+				}
+			}
 		}
 		
 		private function onRemoveNode(e:TriggerEvent):void
 		{
-			//this.removeChild( TNode(e.from) );
 			this.removeElement( e.from );
+			this.relayout();
 		}
 	}
 }
