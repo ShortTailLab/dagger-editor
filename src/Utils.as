@@ -220,5 +220,21 @@ package
 			return result;
 		}
 		
+		static public function writeObjectToJsonFile(item:Object, filepath:String):Boolean
+		{
+			var file:File = File.desktopDirectory.resolvePath(filepath);
+			var stream:FileStream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes( JSON.stringify(item) );
+			stream.close();
+			return true;
+		}
+		
+		static public function copyDirectoryTo(from:String, to:String)
+		{
+			var f:File = File.desktopDirectory.resolvePath(from);
+			var t:File = File.desktopDirectory.resolvePath(to);
+			f.copyTo(t, true);
+		}
 	}
 }

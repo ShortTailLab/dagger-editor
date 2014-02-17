@@ -1,15 +1,10 @@
 package
 {
-	import com.as3xls.xls.ExcelFile;
-	import com.as3xls.xls.Sheet;
-	import com.hurlant.crypto.symmetric.NullPad;
-	
 	import flash.display.Bitmap;
 	import flash.display.Loader;
 	import flash.display.LoaderInfo;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
-	import flash.events.HTTPStatusEvent;
 	import flash.events.IEventDispatcher;
 	import flash.events.IOErrorEvent;
 	import flash.events.SecurityErrorEvent;
@@ -25,8 +20,6 @@ package
 	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
-	
-	import behaviorEdit.BType;
 	import behaviorEdit.BehaviorEvent;
 	
 	import excel.ExcelReader;
@@ -38,37 +31,48 @@ package
 	public class Data extends EventDispatcher
 	{
 		public var conf:Object = null;
-		public var matsData:Object = null;
-		public var enemyData:Object = null;
-		//public var enemyEditData:Object = null; // unused
-		public var enemyBTData:Object = null;
-		public var behaviors:Object = null;
-		public var displayData:Array = null;
-		public var levelXML:XML = null;
-		public var behaviorsXML:XML = null;
-		public var enemySkinDic:Dictionary;
-		public var currSelectedLevel:int = -1;
-		public var behaviorBaseNode:Object = null;
-		public var dynamicArgs:Object = null;
-		public var descOfTriggers:Object = null;
 		
+		// definition of enemies
+		public var enemy_bh:Object = null;
+		public var enemy_profile:Object = null;
+		
+		// instances of enemy and map configs for every level
+		public var levels:Array = null;
+		public var level_xml:XML = null;
+		
+		// static image of enemies
+		public var skins:Dictionary; 
+		
+		// behavior 
+		public var bh_lib:Object = null;
+		public var bh_node:Object = null;
+		public var bh_xml:Object = null;
+		
+		// misc
+		public var dynamic_args:Object = null;
+		public var desc_of_triggers:Object = null;
+		
+		// anchors
+		public var currSelectedLevel:int = -1;
 		private var autoSaveTimer:Timer;
+		// -------------------------------------------------
 		private static var instance:Data = null;
 		public static function getInstance():Data
 		{
-			if(!instance)
-				instance = new Data;
+			if(!instance) instance = new Data;
 			return instance;
 		}
+		// -------------------------------------------------
 		
 		public function Data(target:IEventDispatcher=null)
 		{
-			super(target);
-			
-			matsData = new Object;
-			autoSaveTimer = new Timer(600000, 1);
-			autoSaveTimer.addEventListener(TimerEvent.TIMER, onAutoSave);
-			autoSaveTimer.start();
+			super(target); var self:* = this;
+		
+			this.autoSaveTimer = new Timer(600000, 1);
+			this.autoSaveTimer.addEventListener(
+				TimerEvent.TIMER, function():void { self.saveLocal(); }
+			);
+			this.autoSaveTimer.start();
 		}
 		
 		// entrance of Data
@@ -146,36 +150,35 @@ package
 		private function load():void
 		{
 			// saved informations
-			this.displayData = this.loadJson("editor/data.json") as Array;
-			if( !this.displayData )
+			this.levels = this.loadJson("editor/data/levels.json") as Array;
+			if( !this.levels ) 
 			{
-				this.displayData = new Array;
-				this.displayData.push({
+				this.levels = new Array;
+				this.levels.push({
 					levelName 	: "level-1",
 					endTime 	: 0,
 					data 		: new Array
 				});
 			}  
-			this.levelXML = this.parseLevelXML(displayData);
+			this.level_xml = this.parseLevelXML(this.levels);
 			
-			this.behaviors = this.loadJson("editor/behaviors.json", false);
-			if( !this.behaviors )  this.behaviors = new Object;
-			this.behaviorsXML = this.parseBehaviorXML(this.behaviors);
+			this.bh_lib = this.loadJson("editor/data/bh_lib.json", false);
+			if( !this.bh_lib )  this.bh_lib = new Object;
+			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
 			
-			this.conf = this.loadJson("editor/conf.json", false);
+			this.conf = this.loadJson("editor/data/conf.json", false);
 			if( !conf ) conf = { speed: 32}
-			this.dynamicArgs = this.loadJson("editor/dynamic_args.json");
-			this.behaviorBaseNode = this.loadJson("editor/bt_node_format.json");
+			this.dynamic_args = this.loadJson("editor/data/dynamic_args.json");
+			this.bh_node = this.loadJson("editor/data/bt_node_format.json");
 			//this record the behaviors' name of each enemy
-			this.enemyBTData = this.loadJson("editor/enemyBehaviorsData.json");
+			this.enemy_bh = this.loadJson("editor/data/enemyBehaviorsData.json");
 
 			
 			// async loading
 			// ---------------------------------------------------------------
-			// exceptional case, bad design, refactor this.
-			//trace("load excel");
+			// exceptional case, bad design, refactor this.=
 			var self:* = this;
-			this.enemySkinDic = new Dictionary;
+			this.skins = new Dictionary;
 			var onexceldone:Function = function(e:Event):void
 			{	
 				self.enemyData = ExcelReader.getInstance().enemyData;
@@ -185,21 +188,19 @@ package
 					return function(e:Event):void
 					{
 						var face:String = self.enemyData[key].face;
-						//trace("loading "+face+" done");
 						var loader:Loader = (e.target as LoaderInfo).loader; 
-						self.enemySkinDic[face] = Bitmap(loader.content).bitmapData;
+						self.skins[face] = Bitmap(loader.content).bitmapData;
 						if( ++countor >= length ) self.start();
-						//trace("[PROGRESS] "+countor+"/"+length);
 					}
 				}
 					
 				for(var key:String in self.enemyData)
 				{
 					var face:String = self.enemyData[key].face;
-					if( self.enemySkinDic.hasOwnProperty(face) ) continue;
+					if( self.skins.hasOwnProperty(face) ) continue;
 					
 					length ++;
-					self.enemySkinDic[face] = "icu";
+					self.skins[face] = "icu";
 					
 					var bytes:ByteArray = new ByteArray;
 					var filepath:String = "editor/skins/"+self.enemyData[key].face+".png";
@@ -216,7 +217,7 @@ package
 				}
 				
 			}
-			var file:File = File.desktopDirectory.resolvePath("editor/levelData.xlsx");
+			var file:File = File.desktopDirectory.resolvePath("editor/data/levelData.xlsx");
 			if(file.exists)
 			{
 				EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onexceldone);
@@ -230,15 +231,15 @@ package
 		{
 			//you can see the struct of enemyBTData here.
 			{
-				for(var orgItem:* in this.enemyBTData)
+				for(var orgItem:* in this.enemy_bh)
 				{
 					//clear the items which enemy id is invalid
-					if(!this.enemyData.hasOwnProperty(orgItem))
-						delete this.enemyBTData[orgItem];
+					if(!this.enemy_profile.hasOwnProperty(orgItem))
+						delete this.enemy_bh[orgItem];
 					//clear the unexist behaviors of each item.
-					var behaviorsOfEnemy:Array = this.enemyBTData[orgItem] as Array;
+					var behaviorsOfEnemy:Array = this.enemy_bh[orgItem] as Array;
 					for(var j:int = 0; j < behaviorsOfEnemy.length; j++)
-						if(!this.behaviors.hasOwnProperty(behaviorsOfEnemy[j]))
+						if(!this.bh_lib.hasOwnProperty(behaviorsOfEnemy[j]))
 							behaviorsOfEnemy.splice(j--, 1);
 				}
 			}
@@ -248,72 +249,31 @@ package
 			EventManager.getInstance().dispatchEvent(new GameEvent(EventType.ENEMY_DATA_UPDATE));
 		}
 		
-		public function saveLocal():void
+		// -------------------------------------------------------------
+		// persistence
+		public function saveLocal(e:TimerEvent=null):void
 		{
-			genBackUp("data.json");
+			Utils.copyDirectoryTo("editor/data/","editor/backup/");
 			
-			var file:File = File.desktopDirectory.resolvePath("editor/data.json");
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(JSON.stringify(displayData));
-			stream.close();
+			Utils.writeObjectToJsonFile(this.levels, "editor/data/levels.json");
+			Utils.writeObjectToJsonFile(this.conf, "editor/data/conf.json");
+			Utils.writeObjectToJsonFile(this.enemy_bh, "editor/data/enemyBehaviorsData.json");
+			Utils.writeObjectToJsonFile(this.bh_lib, "editor/data/bh_lib.json");
 			
-			file = File.desktopDirectory.resolvePath("editor/conf.json");
-			stream = new FileStream;
-			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(JSON.stringify(conf));
-			stream.close();
-			
-			autoSaveTimer.reset();
-			autoSaveTimer.start();
+			autoSaveTimer.reset(); autoSaveTimer.start();
 		}
 		
 		public function saveEnemyBehaviorData():void
 		{
-			
-			var file:File = File.desktopDirectory.resolvePath("editor/enemyBehaviorsData.json");
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(JSON.stringify(enemyBTData));
-			stream.close();
+			Utils.writeObjectToJsonFile(this.enemy_bh, "editor/data/enemyBehaviorsData.json");
 		}
-		
-		public function saveBehaviorData():void
-		{
-			genBackUp("behaviors.json");
-			var file:File = File.desktopDirectory.resolvePath("editor/behaviors.json");
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes(JSON.stringify(behaviors));
-			stream.close();
-		}
-		
-		private function genBackUp(path:String):void
-		{
-			var file:File = File.desktopDirectory.resolvePath("editor/"+path);
-			if(file.exists)
-			{
-				var stream:FileStream = new FileStream;
-				stream.open(file, FileMode.READ);
-				var backupData = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-				stream.close();
-				
-				file = File.desktopDirectory.resolvePath("editor/backup/"+path);
-				stream = new FileStream;
-				stream.open(file, FileMode.WRITE);
-				stream.writeUTFBytes(JSON.stringify(backupData));
-				stream.close();
-			}
-			
-		}
-		
 		
 		public function exportJS():void
 		{
 			if(currSelectedLevel < 0)
 				return;
 			
-			var source:Array = displayData[currSelectedLevel].data;
+			var source:Array = this.levels[currSelectedLevel].data;
 			
 			var exportData:Object = new Object;
 			
@@ -340,12 +300,12 @@ package
 					""+js+";}@@");
 			}
 			
-			for(var name in enemyData)
+			for(var name in enemy_profile)
 			{
-				var data:Object = Utils.deepCopy(enemyData[name]);
+				var data:Object = Utils.deepCopy(enemy_profile[name]);
 				var behaviors:Object;
-				if(enemyBTData.hasOwnProperty(name))
-					behaviors = enemyBTData[name];
+				if(this.enemy_bh.hasOwnProperty(name))
+					behaviors = this.enemy_bh[name];
 				else
 					behaviors = new Array;
 				
@@ -432,29 +392,23 @@ package
 			return result;
 		}
 		
-		
-		private function onAutoSave(e:TimerEvent):void
-		{
-			saveLocal();
-		}
-		
 		public function makeNewLevel(name:String):void
 		{
-			levelXML.appendChild(new XML("<level label='"+name+"'></level>"));
+			this.level_xml.appendChild(new XML("<level label='"+name+"'></level>"));
 			var o:Object = new Object;
 			o.levelName = name;
 			o.data = new Array;
-			displayData.push(o);
+			this.levels.push(o);
 		}
 		
 		public function deleteLevel(index:int):void
 		{
-			var name:String = levelXML.level[index].@label;
-			delete levelXML.level[index];
-			for(var l in displayData)
-				if(displayData[l].levelName == name)
+			var name:String = this.level_xml.level[index].@label;
+			delete this.level_xml.level[index];
+			for(var l in this.levels)
+				if(this.levels[l].levelName == name)
 				{
-					displayData.splice(l, 1);
+					this.levels.splice(l, 1);
 					saveLocal();
 					break;
 				}
@@ -462,8 +416,8 @@ package
 		
 		public function renameLevel(index:int, name:String):void
 		{
-			levelXML.level[index].@label = name;
-			displayData[index].levelName = name
+			this.level_xml.level[index].@label = name;
+			this.levels[index].levelName = name
 			saveLocal();
 		}
 		public function parseLevelXML(data:Object):XML
@@ -485,14 +439,14 @@ package
 		
 		public function addBehaviors(name:String, data:Object):void
 		{
-			if(!behaviors.hasOwnProperty(name))
+			if(!this.bh_lib.hasOwnProperty(name))
 			{
-				if(XMLList(behaviorsXML.behavior).length() == 0)
+				if(XMLList(this.bh_xml.behavior).length() == 0)
 					EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.BT_XML_APPEND));
 				
-				behaviors[name] = data;
-				behaviorsXML.appendChild(new XML("<behavior label='"+name+"'></behavior>"));
-				this.saveBehaviorData();
+				this.bh_lib[name] = data;
+				this.bh_xml.appendChild(new XML("<behavior label='"+name+"'></behavior>"));
+				this.saveLocal();
 			}
 			else
 				trace("addBehaviors error: behavior exists!");
@@ -500,19 +454,19 @@ package
 		
 		public function updateBehavior(name:String, data:Object):void
 		{
-				behaviors[name] = data;
-				this.saveBehaviorData();
+				this.bh_lib[name] = data;
+				this.saveLocal();
 		}
 		
 		public function renameBehavior(prevName:String, currName:String):void
 		{
-			if(behaviors.hasOwnProperty(currName))
+			if(this.bh_lib.hasOwnProperty(currName))
 			{
 				trace("renamebehavior:currname is invalid!");
 				return;
 			}
 			var isChangeEnemyData:Boolean = false;
-			for each(var btData:Array in enemyBTData)
+			for each(var btData:Array in this.enemy_bh)
 			{
 				var i:int = btData.indexOf(prevName);
 				if(i >= 0)
@@ -523,19 +477,19 @@ package
 			}
 			if(isChangeEnemyData)
 				this.saveEnemyBehaviorData();
-			behaviors[currName] = behaviors[prevName];
-			delete behaviors[prevName];
-			behaviorsXML = this.parseBehaviorXML(behaviors);
-			this.saveBehaviorData();
+			this.bh_lib[currName] = this.bh_lib[prevName];
+			delete this.bh_lib[prevName];
+			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
+			this.saveLocal();
 		}
 		
 		public function deleteBehaviors(name:String):void
 		{
 			
-			if(behaviors.hasOwnProperty(name))
+			if(this.bh_lib.hasOwnProperty(name))
 			{
 				var isChangeEnemyData:Boolean = false;
-				for each(var btData:Array in enemyBTData)
+				for each(var btData:Array in this.enemy_bh)
 				{
 					var i:int = btData.indexOf(name);
 					if(i >= 0)
@@ -547,20 +501,20 @@ package
 				if(isChangeEnemyData)
 					this.saveEnemyBehaviorData();
 				
-				delete behaviors[name];
-				behaviorsXML = this.parseBehaviorXML(behaviors);
-				this.saveBehaviorData();
+				delete this.bh_lib[name];
+				this.bh_xml = this.parseBehaviorXML(this.bh_lib);
+				this.saveLocal();
 			}
 		}
 		
 		public function addEnemyBehavior(enemyType:String, bName:String):void
 		{
-			if(!enemyBTData.hasOwnProperty(enemyType))
+			if(!this.enemy_bh.hasOwnProperty(enemyType))
 			{
 				trace("addenemybehavior error:enemyType not exist!");
 				return;
 			}
-			var bts:Array = enemyBTData[enemyType] as Array;
+			var bts:Array = this.enemy_bh[enemyType] as Array;
 			if(enemyContainsBehavior(enemyType, bName))
 			{
 				trace("addenemybehavior error:try to add a behavior that has existed!");
@@ -571,17 +525,17 @@ package
 		
 		public function enemyContainsBehavior(enemyType:String, bName:String):Boolean
 		{
-			var bts:Array = enemyBTData[enemyType] as Array;
+			var bts:Array = this.enemy_bh[enemyType] as Array;
 			return bts.indexOf(bName) >= 0;
 		}
 		
 		public function setEnemyBehavior(enemyType:String, bName:String):void
 		{
-			if(this.enemyBTData.hasOwnProperty(enemyType))
+			if(this.enemy_bh.hasOwnProperty(enemyType))
 			{
-				enemyBTData[enemyType] = new Array;
+				this.enemy_bh[enemyType] = new Array;
 				if(bName != "")
-					enemyBTData[enemyType].push(bName);
+					this.enemy_bh[enemyType].push(bName);
 				saveEnemyBehaviorData();
 			}
 			else
@@ -600,36 +554,10 @@ package
 		
 		public function getLevelData(levelName:String):Object
 		{
-			for each(var item in displayData)
+			for each(var item in this.levels)
 				if(item.levelName == levelName)
 					return item;
 			return null;
 		}
-		
-		
-		private function onLoadMatsData(data:Object):void
-		{
-			
-			for(var item in data)
-			{
-				matsData[item] = new Object;
-				matsData[item].sourcePath = data[item].face+".png";
-			}
-			this.dispatchEvent(new Event(Event.COMPLETE));
-		}
-	}
-}
-
-class FunctionObj
-{
-	private var content:String = ""
-	function FunctionObj(_content:String)
-	{
-		content = _content;	
-	}
-	
-	public function toJSON(k):*
-	{
-		return content;
 	}
 }

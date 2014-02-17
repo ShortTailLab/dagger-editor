@@ -108,7 +108,7 @@ package excel
 				enemy["face"] = workSheet.getCellValue("B"+i);
 				enemy["type"] = workSheet.getCellValue("D"+i);
 				
-				var argsData:Object = Data.getInstance().dynamicArgs;
+				var argsData:Object = Data.getInstance().dynamic_args;
 				if(argsData.hasOwnProperty(enemy["type"]))
 					for(var arg in argsData[enemy["type"]])
 					{

@@ -51,9 +51,9 @@ package editEntity
 			
 			var data = Data.getInstance();
 			var face = data.enemyData[this.type].face;
-			if( data.enemySkinDic.hasOwnProperty( face ) )
+			if( data.skins.hasOwnProperty( face ) )
 			{
-				var bmpd:BitmapData = data.enemySkinDic[face];
+				var bmpd:BitmapData = data.skins[face];
 				var skinBmp:Bitmap = new Bitmap(bmpd);
 				skinBmp.scaleX = skinBmp.scaleY = 0.5;
 				skinBmp.x = -skinBmp.width*0.5;

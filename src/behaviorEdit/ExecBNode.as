@@ -87,7 +87,7 @@ package behaviorEdit
 		
 		private function initExecType(type:String):void
 		{
-			var nodes:Array = Data.getInstance().behaviorBaseNode as Array;
+			var nodes:Array = Data.getInstance().bh_node as Array;
 			for each(var d in nodes)
 				if(d.func == type)
 				{

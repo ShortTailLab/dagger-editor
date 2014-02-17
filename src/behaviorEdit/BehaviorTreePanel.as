@@ -25,7 +25,7 @@ package behaviorEdit
 			this.x = 1000;
 			this.addElement(this);
 			btTree = new Tree;
-			btTree.dataProvider = Data.getInstance().behaviorsXML;
+			btTree.dataProvider = Data.getInstance().bh_xml;
 			btTree.enabled = true;
 			btTree.labelField = "@label";
 			btTree.percentWidth = 100;
@@ -45,7 +45,7 @@ package behaviorEdit
 		
 		public function updateTree(e:BehaviorEvent = null):void
 		{
-			btTree.dataProvider = Data.getInstance().behaviorsXML;
+			btTree.dataProvider = Data.getInstance().bh_xml;
 		}
 		
 		private function onBehaviorClick(e:MouseEvent):void
@@ -71,7 +71,7 @@ package behaviorEdit
 			if(e.detail == Alert.OK)
 			{
 				Data.getInstance().deleteBehaviors(btTree.selectedItem.@label);
-				btTree.dataProvider = Data.getInstance().behaviorsXML;
+				btTree.dataProvider = Data.getInstance().bh_xml;
 				controller.getBTs().refresh();
 				EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.BT_REMOVED));
 			}
