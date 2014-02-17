@@ -97,20 +97,21 @@ package
 		// where is the synchronous loader? WTF...
 		private function sync():void
 		{
-			var counter:Number = 0;
-			var error:Boolean = false;
+			//trace("sync");
+			var self:* = this, counter:Number = 0, error:Boolean = false;
 			var alldone:Function = function(item:Object):Function
 			{
 				// [TODO] dispatch handler by item.type
 				var handleTEXT:Function = function(e:Event):void
 				{
+					//trace("sync "+item.suffix+" done");
 					var file:File = File.desktopDirectory.resolvePath("editor/data/"+item.suffix);
 					var stream:FileStream = new FileStream;
 					stream.open(file, FileMode.WRITE);
 					stream.writeUTFBytes(e.target.data);
 					
 					if( ++counter >= syncTargets.length && !error )
-						this.load();
+						self.load();
 				}
 				return handleTEXT;
 			}
@@ -120,7 +121,7 @@ package
 				Alert.show("[WARN]同步服务器出错，将会使用本地数据…");
 				this.load();
 			}
-			syncTargets.forEach(function(item:Object):void
+			syncTargets.forEach(function(item:Object, ...args):void
 			{
 				var loader:URLLoader = new URLLoader;
 				loader.dataFormat = item.type;
@@ -145,8 +146,8 @@ package
 		private function load():void
 		{
 			// saved informations
-			var data:Object = this.loadJson("editor/data.json");
-			if( !data )
+			this.displayData = this.loadJson("editor/data.json") as Array;
+			if( !this.displayData )
 			{
 				this.displayData = new Array;
 				this.displayData.push({
@@ -172,35 +173,45 @@ package
 			// async loading
 			// ---------------------------------------------------------------
 			// exceptional case, bad design, refactor this.
+			//trace("load excel");
+			var self:* = this;
 			this.enemySkinDic = new Dictionary;
 			var onexceldone:Function = function(e:Event):void
-			{
+			{	
+				self.enemyData = ExcelReader.getInstance().enemyData;
 				var length:Number = 0, countor:Number = 0;
-				for(var i:* in this.enemyData) length ++;
-				
-				this.enemyData = ExcelReader.getInstance().enemyData;
-				var alldone:Function = function(item:*):Function
+				var alldone:Function = function(key:String):Function
 				{
 					return function(e:Event):void
 					{
+						var face:String = self.enemyData[key].face;
+						//trace("loading "+face+" done");
 						var loader:Loader = (e.target as LoaderInfo).loader; 
-						this.enemySkinDic[item] = Bitmap(loader.content).bitmapData;
-						if( ++countor >= length ) this.start();
+						self.enemySkinDic[face] = Bitmap(loader.content).bitmapData;
+						if( ++countor >= length ) self.start();
+						//trace("[PROGRESS] "+countor+"/"+length);
 					}
 				}
-				
-				for(var item:* in enemyData)
+					
+				for(var key:String in self.enemyData)
 				{
+					var face:String = self.enemyData[key].face;
+					if( self.enemySkinDic.hasOwnProperty(face) ) continue;
+					
+					length ++;
+					self.enemySkinDic[face] = "icu";
+					
 					var bytes:ByteArray = new ByteArray;
-					var filepath:String = "editor/skins/"+item.face+".png";
+					var filepath:String = "editor/skins/"+self.enemyData[key].face+".png";
 					var file:File = File.desktopDirectory.resolvePath(filepath);
+					
 					var stream:FileStream = new FileStream();
 					stream.open(file, FileMode.READ);
 					stream.readBytes(bytes);
 					stream.close();
 					
 					var loader:Loader = new Loader;
-					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(item));
+					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(key));
 					loader.loadBytes(bytes);
 				}
 				
@@ -233,7 +244,7 @@ package
 			}
 			
 			// let's rock 'n' roll
-			this.dispatchEvent(new Event(Event.COMPLETE));
+			this.dispatchEvent( new Event(Event.COMPLETE) );
 			EventManager.getInstance().dispatchEvent(new GameEvent(EventType.ENEMY_DATA_UPDATE));
 		}
 		

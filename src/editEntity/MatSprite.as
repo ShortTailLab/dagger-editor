@@ -49,9 +49,11 @@ package editEntity
 				setTextWidth(textWidth);
 			}
 			
-			if(Data.getInstance().enemySkinDic.hasOwnProperty(type))
+			var data = Data.getInstance();
+			var face = data.enemyData[this.type].face;
+			if( data.enemySkinDic.hasOwnProperty( face ) )
 			{
-				var bmpd:BitmapData = Data.getInstance().enemySkinDic[type];
+				var bmpd:BitmapData = data.enemySkinDic[face];
 				var skinBmp:Bitmap = new Bitmap(bmpd);
 				skinBmp.scaleX = skinBmp.scaleY = 0.5;
 				skinBmp.x = -skinBmp.width*0.5;
