@@ -1,5 +1,6 @@
 package behaviorEdit
 {
+	import flash.events.Event;
 	import flash.events.MouseEvent;
 	
 	import mx.controls.Alert;
@@ -89,6 +90,21 @@ package behaviorEdit
 			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			this.addEventListener(CloseEvent.CLOSE, onClose);
+			this.addEventListener(Event.ADDED_TO_STAGE, onAddedStage);
+		}
+		
+		private function onAddedStage(e:Event):void
+		{
+			this.addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
+		}
+		
+		private function onWheel(e:MouseEvent):void
+		{
+			if(e.ctrlKey)
+			{
+				var d:Number = Math.max(0.3, Math.min(1.0, editView.scaleX + e.delta*0.1));
+				editView.scaleX = editView.scaleY = d;
+			}
 		}
 		
 		private function onMouseMove(e:MouseEvent):void

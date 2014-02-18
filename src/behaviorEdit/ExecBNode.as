@@ -37,8 +37,19 @@ package behaviorEdit
 			this.horizontalPadding = 40;
 		}
 		
+		override public function active():void
+		{
+			super.active();
+			nodeWidth = 110;
+			nodeHeight = 90;
+			
+			label.defaultTextFormat = new TextFormat(null, 16);
+			label.x = 5;
+			label.y = 5;
+			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+		}
 		
-		override public function init(_view:BTEditView):void
+		/*override public function init(_view:BTEditView):void
 		{
 			super.init(_view);
 			
@@ -54,7 +65,7 @@ package behaviorEdit
 			inputLabel.y = 20;
 			inputLabel.addEventListener(MouseEvent.MOUSE_DOWN, onLabelMouseDown);
 			this.addChild(inputLabel);*/
-		}
+		//}
 		
 		override public function onAdd(nodeType:String):void
 		{
@@ -162,6 +173,7 @@ package behaviorEdit
 		private function addInput(name:String, py:int, type:String):void
 		{
 			var tt:TextField = Utils.getLabel(name+":", 0, py, 14);
+			tt.height = tt.textHeight+5;
 			tt.selectable = false;
 			container.addChild(tt);
 			

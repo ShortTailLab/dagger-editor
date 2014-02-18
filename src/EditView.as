@@ -132,7 +132,6 @@ package
 			setEndTime(canvas.height/speed);
 			setCurrTime(0);
 			
-			
 			onResize();
 			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
 			this.addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
@@ -141,6 +140,7 @@ package
 			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			bg.addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
+			
 		}
 		
 		public function init(_levelName:String):void

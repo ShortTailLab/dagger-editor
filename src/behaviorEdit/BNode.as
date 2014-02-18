@@ -11,11 +11,12 @@ package behaviorEdit
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
-	import mx.controls.Alert;
 	import mx.core.UIComponent;
 	import mx.effects.Move;
 	import mx.effects.Parallel;
 	import mx.events.EffectEvent;
+	
+	import behaviorEdit.bnodeController.BNodeController;
 	
 	import manager.EventManager;
 
@@ -31,13 +32,14 @@ package behaviorEdit
 		public var treeWidth:Number = 0.0;
 		public var treeHeight:Number = 0.0;
 		
-		protected var nodeWidth:Number = 100;
-		protected var nodeHeight:Number = 70;
+		public var nodeWidth:Number = 100;
+		public var nodeHeight:Number = 70;
 		
 		public var horizontalPadding:int = 30;
 		public var verticalPadding:int = 30;
+		
 		public var childNodes:Array = new Array;
-		protected var view:BTEditView = null;
+		public var view:BTEditView = null;
 		protected var isAcceptNode:Boolean = false;
 		protected var color:uint = 0;
 		protected var canMove:Boolean = true;
@@ -50,6 +52,8 @@ package behaviorEdit
 		
 		public var enableDebug:Boolean = false;
 		
+		private var controller:BNodeController;
+		
 		public function BNode(_type:String = "", _color:uint = 0xF0FFF0, isAccept:Boolean = false, enableLayNode:Boolean = false, graphStyle:String = "")
 		{
 			this.type = _type;
@@ -58,10 +62,22 @@ package behaviorEdit
 			this.enableLay = enableLayNode;
 			this.drawStyle = graphStyle;
 			
-			initShape();
-			
 			this.width = nodeWidth;
 			this.height = nodeHeight;
+			initShape();
+		}
+		
+		/*public function setType(_type:String):void
+		{
+			this.type = _type;
+			controller = BTNodeCtrlFactory.getController(this.type);
+			controller.renderNode();
+		}*/
+		
+		public function switchTo(node:BNode):void
+		{
+			var indexInPar:int = this.par.getChildNodeIndex(this);
+			par.childNodes[indexInPar] = node;
 			
 		}
 		
@@ -91,15 +107,12 @@ package behaviorEdit
 			bg.graphics.endFill();
 		}
 		
-		public function init(_view:BTEditView):void
+		
+		public function active():void
 		{
-			this.view = _view;	
-			this.view.addChild(this);
-			
 			if(canMove)
 			{
 				this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-				
 			}
 			
 			if(isAcceptNode)
@@ -114,6 +127,29 @@ package behaviorEdit
 			menu.addItem(btn);
 			this.contextMenu = menu;
 		}
+		
+		/*public function init(_view:BTEditView):void
+		{
+			this.view = _view;	
+			this.view.addChild(this);
+			
+			if(canMove)
+			{
+				this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+			}
+			
+			if(isAcceptNode)
+				this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			
+			var menu:ContextMenu = new ContextMenu;
+			var btn:ContextMenuItem = new ContextMenuItem("删除");
+			btn.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+				BNode(e.contextMenuOwner).removeSelf();
+				EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
+			});
+			menu.addItem(btn);
+			this.contextMenu = menu;
+		}*/
 		
 		public function initPos(dx:Number, dy:Number):void
 		{
@@ -178,6 +214,8 @@ package behaviorEdit
 		protected function onMouseDown(e:MouseEvent):void
 		{
 			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			
+			EventManager.getInstance().addEventListener(MouseEvent.MOUSE_UP, onStageMouseUp);
 			this.startDrag();
 			isPressing = false;
 			hasMouseDown = true;
@@ -188,11 +226,9 @@ package behaviorEdit
 			isPressing = true;
 			draw();
 		}
-		protected function onMouseUp(e:MouseEvent):void
+		
+		private function onStageMouseUp(e:MouseEvent):void
 		{
-			if(view.panel.currSelectBNode)
-				onAdd(view.panel.currSelectBNode.type);
-			
 			if(isPressing)
 			{
 				//dispatch event that accepted by editview. 
@@ -204,6 +240,11 @@ package behaviorEdit
 			hasMouseDown = false;
 			this.stopDrag();
 			this.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+		}
+		protected function onMouseUp(e:MouseEvent):void
+		{
+			if(view.panel.currSelectBNode)
+				onAdd(view.panel.currSelectBNode.type);
 		}
 		
 		public function onLay(node:BNode):void
@@ -226,7 +267,7 @@ package behaviorEdit
 		public function onAdd(nodeType:String):void
 		{
 			var node:BNode = BNodeFactory.createBNode(nodeType);
-			node.init(view);
+			view.addNode(node);
 			add(node);
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.HAS_EDITED));
 		}
