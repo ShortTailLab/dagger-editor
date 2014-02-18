@@ -95,8 +95,7 @@ package excel
 				var arg:String = workSheet.getCellValue(colStr+"2");
 				if(arg != "")
 					argToColDic[arg] = colStr;
-			}
-					
+			}	
 			
 			for (var i:int = 3; ; i++) {
 //				trace("A"+i+" value: " + workSheet.getCellValue("A"+i));
@@ -108,7 +107,7 @@ package excel
 				enemy["face"] = workSheet.getCellValue("B"+i);
 				enemy["type"] = workSheet.getCellValue("D"+i);
 				
-				var argsData:Object = Data.getInstance().dynamicArgs;
+				var argsData:Object = Data.getInstance().dynamic_args;
 				if(argsData.hasOwnProperty(enemy["type"]))
 					for(var arg in argsData[enemy["type"]])
 					{

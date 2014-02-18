@@ -69,12 +69,11 @@
 					saveFile(null);
 			}
 			
-			
 			private function onDataReady(e:Event):void
 			{
 				_tree = new Tree();
 				_tree.selectedIndex = 0;
-				_tree.dataProvider = Data.getInstance().levelXML;
+				_tree.dataProvider = Data.getInstance().level_xml;
 				_tree.enabled = true;
 				_tree.labelField = "@label";
 				_tree.percentWidth = 100;
@@ -84,7 +83,7 @@
 				enemyEdit.addElement(_tree);
 				
 				_enemyEditView = new EditView(this, middleArea);
-				_enemyEditView.init(Data.getInstance().levelXML.level[0].@label);
+				_enemyEditView.init(Data.getInstance().level_xml.level[0].@label);
 				
 				var modelView:Panel = new Panel();
 				modelView.percentHeight = 40;
@@ -198,7 +197,7 @@
 			{
 				_tree.selectedIndex = index;
 				Data.getInstance().currSelectedLevel = index;
-				_enemyEditView.init(Data.getInstance().displayData[index].levelName);
+				_enemyEditView.init(Data.getInstance().levels[index].levelName);
 			}
 			private function onTMXClick(e:MouseEvent):void
 			{
@@ -209,7 +208,7 @@
 			
 			private function onCreateNew(e:ContextMenuEvent):void
 			{
-				var levelLength:int = Data.getInstance().levelXML.level.length()+1;
+				var levelLength:int = Data.getInstance().level_xml.level.length()+1;
 				Data.getInstance().makeNewLevel("level"+levelLength);
 				_enemyEditView.init("level"+levelLength);
 			}
@@ -259,7 +258,7 @@
 					if(index != -1)
 					{
 						Data.getInstance().deleteLevel(index);
-						_tree.dataProvider = Data.getInstance().levelXML;
+						_tree.dataProvider = Data.getInstance().level_xml;
 						_enemyEditView.clear();
 						setCurrLevel(Math.max(index-1, 0));
 					}
@@ -268,8 +267,10 @@
 			private function saveFile(event:Event):void
 			{
 				_enemyEditView.save();
-				Data.getInstance().saveLocal();
-				Data.getInstance().exportJS();
+				if( Data.getInstance().saveLocal() && Data.getInstance().exportJS() )
+				{
+					Alert.show("成功导出数据");
+				}
 			}
 			
 			private function openLevelFile(event:Event):void {
@@ -319,7 +320,7 @@
 				}
 				
 				saveFile(null);
-				if (ServerManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/Resources"), tagInput.text)) {
+				if (ServerManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/export"), tagInput.text)) {
 //					Alert.show("上传成功！");
 				}
 				else {
