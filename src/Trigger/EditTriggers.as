@@ -1,10 +1,10 @@
 // ActionScript file
 package Trigger
 {
-	import mx.controls.Alert;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	
+	import mx.controls.Alert;
 	import mx.controls.Button;
 	import mx.core.UIComponent;
 	import mx.events.CloseEvent;
@@ -44,8 +44,14 @@ package Trigger
 			EventManager.getInstance().addEventListener(TriggerEvent.REMOVE_TRIGGER, onRemoveNode);
 		}
 		
-		private function onAddTrigger(evt:MouseEvent):void
+		private function save():void
 		{
+			
+		}
+		
+		private function validChecking():Boolean
+		{
+			var pairs:Object = {};
 			for( var i:int = 0; i<this.numElements; i++ )
 			{
 				if( !(this.getElementAt(i) is TNode) ) continue;
@@ -54,11 +60,25 @@ package Trigger
 				if( !e.isDone() )
 				{
 					Alert.show("有Trigger未完成填写，请检查");
-					return;
+					return false;
 				}
+				
+				if( pairs.hasOwnProperty(e.getCondType()+e.getResultType()) )
+				{
+					Alert.show("有重复类型的Trigger，请检查");
+					return false;
+				}
+				
+				pairs[e.getCondType()+e.getResultType()] = true;
 			}
 			
-			this.addElement( new TNode("type", "type") );
+			return true;
+		}
+		
+		private function onAddTrigger(evt:MouseEvent):void
+		{
+			if( !this.validChecking() ) return;
+			this.addElement( new TNode() );
 			this.relayout();
 		}
 		

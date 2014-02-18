@@ -152,7 +152,9 @@ package
 			this.levelName = _levelName;
 			matsControl.clear();
 			var level = Data.getInstance().getLevelData(levelName);
-			matsControl.init(level.data);
+			var post:Array = [];
+			for( var key:* in level.data ) post.push(level.data[key]);
+			matsControl.init(post);
 			var end:int = level.endTime != 0? level.endTime : canvas.height/speed;
 			setEndTime(end);
 			setCurrTime(0);	
@@ -169,7 +171,12 @@ package
 		{
 			Data.getInstance().conf.speed = int(unitInput.text);
 			var data:Array = matsControl.getMatsData();
-			Data.getInstance().updateLevelData(levelName, data, endTime);
+			var post:Object = {};
+			for each( var item:* in data )
+			{
+				post[item.id] = item;
+			}
+			Data.getInstance().updateLevelData(levelName, post, endTime);
 		}
 		
 		private function onAddToStage(e:Event):void

@@ -1,5 +1,7 @@
 package Trigger
 {
+	import com.as3xls.xls.Type;
+	
 	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
@@ -9,6 +11,7 @@ package Trigger
 	
 	import mx.collections.ArrayCollection;
 	import mx.controls.ComboBox;
+	import mx.controls.TextInput;
 	import mx.core.UIComponent;
 	
 	import Trigger.TriggerEvent;
@@ -26,8 +29,10 @@ package Trigger
 		
 		public static const BG_COLOR = 0xF0FFF0;
 		
-		private var cond:String = "";
-		private var result:String = "";
+		private var condType:String = "";
+		public function getCondType():String { return this.condType; }
+		private var resultType:String = "";
+		public function getResultType():String { return this.resultType; }
 		
 		private var background:Sprite = null;
 		private var enumCond:ComboBox = null;
@@ -38,21 +43,18 @@ package Trigger
 		private var condItems:Object = {};
 		private var retItems:Object = {};
 		
-		public function TNode(_condType:String = "", _retType = "")
+		public function TNode()
 		{
 			super();
-			this.cond = _condType;
-			this.result = _retType;
-			
 			// create frame
 			this.background = new Sprite;
 			this.addChild(this.background);
 			this.resize(TNode.WIDTH, this.getHeight());
 			
 			this.condArgs = new UIComponent;
-			this.condArgs.x = 10; this.condArgs.y = 45;
+			this.condArgs.x = 10; this.condArgs.y = 35;
 			this.retArgs  = new UIComponent;
-			this.retArgs.x = 180; this.retArgs.y = 45;
+			this.retArgs.x = 180; this.retArgs.y = 35;
 			this.addChild(this.condArgs);
 			this.addChild(this.retArgs);
 			
@@ -66,21 +68,22 @@ package Trigger
 			var cond:TextField = Utils.getLabel("条件类型：", 10, 12.5, 14);
 			this.addChild(cond);
 			this.enumCond = new ComboBox();
-			this.enumCond.dataProvider = new ArrayCollection(conds_arr);
-			this.enumCond.x = 90; this.enumCond.y = 10; 
-			this.enumCond.width = 80; this.enumCond.height = TNode.HEIGHT;
-			this.enumCond.prompt = "条件";
-			this.enumCond.editable = false;
+			with( this.enumCond ) {
+				dataProvider = new ArrayCollection(conds_arr);
+				x = 90; y = 10; width = 80; height = TNode.HEIGHT;
+				prompt = "条件"; editable = false;
+			}
 			this.addChild(this.enumCond);
 			
 			var cond:TextField = Utils.getLabel("结果类型：", 180, 12.5, 14);
 			this.addChild(cond);			
 			this.enumResult = new ComboBox();
-			this.enumResult.dataProvider = new ArrayCollection(rets_arr);
-			this.enumResult.x = 260; this.enumResult.y = 10; 
-			this.enumResult.width = 80; this.enumResult.height = TNode.HEIGHT;
-			this.enumResult.prompt = "功能";
-			this.enumResult.editable = false;
+			with( this.enumResult )
+			{
+				dataProvider = new ArrayCollection(rets_arr);
+				x = 260; y = 10; width = 80; height = TNode.HEIGHT;
+				prompt = "功能"; editable = false;
+			}
 			this.addChild(this.enumResult);
 			
 			var menu:ContextMenu = new ContextMenu;
@@ -101,7 +104,7 @@ package Trigger
 		
 		private function onCondTypeChange(e:Event):void
 		{
-			var type = e.target.selectedItem;
+			var type = this.condType = e.target.selectedItem;
 			var dynamics = Data.getInstance().dynamic_args;
 			
 			this.condArgs.removeChildren();
@@ -112,8 +115,26 @@ package Trigger
 					if( dynamics[type][key] == "float" )
 					{
 						var len = this.condArgs.numChildren;
-						var label:TextField = Utils.getLabel(key, 0, len*(10+TNode.HEIGHT)+-10, 14);
+						var posy = len/2*(10+TNode.HEIGHT)+10;
+						
+						var label:TextField = Utils.getLabel(key, 0, posy, 14);
+						var text:TextInput = new TextInput();
+						var self = this;
+						with(text){
+							x = 80; y = posy; 
+							width = 80; height = TNode.HEIGHT;
+							editable = true; text = self.condItems[key] || ""; 
+							restrict = '0-9';
+						}
+						text.addEventListener(Event.CHANGE, (function(nkey) {
+							return function(e:Event):void
+							{
+								self.condItems[nkey] = e.target.text;
+							}
+						})(key));
+						
 						this.condArgs.addChild(label);
+						this.condArgs.addChild(text);
 					}
 				}
 			}
@@ -123,19 +144,38 @@ package Trigger
 		
 		private function onRetTypeChange(e:Event):void
 		{
-			var type = e.target.selectedItem;
+			var type = this.resultType = e.target.selectedItem;
+			
 			var dynamics = Data.getInstance().dynamic_args;
 			
 			this.retArgs.removeChildren();
 			if( dynamics[type] )
 			{
-				for( var key:* in dynamics[type] )
+				for( var key:String in dynamics[type] )
 				{
 					if( dynamics[type][key] == "float" )
 					{
 						var len = this.retArgs.numChildren;
-						var label:TextField = Utils.getLabel(key, 0, len*(10+TNode.HEIGHT)+-10, 14);
+						var posy = len/2*(10+TNode.HEIGHT)+10;
+						
+						var label:TextField = Utils.getLabel(key, 0, posy, 14);
+						var text:TextInput = new TextInput();
+						var self = this;
+						with(text){
+							x = 80; y = posy; 
+							width = 80; height = TNode.HEIGHT;
+							editable = true; text = self.retItems[key] || ""; 
+							restrict = '0-9';
+						}
+						text.addEventListener(Event.CHANGE, (function(nkey) {
+							return function(e:Event):void
+							{
+								self.retItems[nkey] = e.target.text;
+							}
+						})(key));
+						
 						this.retArgs.addChild(label);
+						this.retArgs.addChild(text);
 					}
 				}
 			}
@@ -150,9 +190,10 @@ package Trigger
 		
 		public function getHeight():int
 		{
-			//var items = Math.max(this.condArgs.numChildren, this.retArgs.numChildren);
-			//var num = this.retArgs.numChildren;
-			var num = 3;
+			var num = 1; 
+			if( this.condArgs && this.retArgs )
+				num += Math.max(this.condArgs.numChildren/2, this.retArgs.numChildren/2);
+			num = Math.max(1, num);
 			return (TNode.HEIGHT+10)*num+10;
 		}
 		
@@ -169,7 +210,20 @@ package Trigger
 		
 		public function isDone():Boolean
 		{
-			return enumCond.selectedIndex != -1 && enumResult.selectedIndex != -1;
+			var condType = this.enumCond.selectedItem;
+			var retType = this.enumResult.selectedItem;
+			if( !condType || !retType ) return false;
+			
+			var dynamics = Data.getInstance().dynamic_args;
+			if( condType in dynamics )
+				for( var key:* in dynamics[condType] )
+					if( !this.condItems.hasOwnProperty(key) || this.condItems[key] == "" ) return false;
+ 			
+			if( retType in dynamics )
+				for( var key:* in dynamics[retType] )
+					if( !this.retItems.hasOwnProperty(key) || this.retItems[key] == "" ) return false;
+			
+			return true;
 		}
 	}
 

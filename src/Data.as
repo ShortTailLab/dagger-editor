@@ -155,7 +155,7 @@ package
 				this.levels.push({
 					levelName 	: "level-1",
 					endTime 	: 0,
-					data 		: new Array
+					data 		: {}
 				});
 			}  
 			this.currSelectedLevel = this.levels.length-1;
@@ -380,10 +380,11 @@ package
 		public function makeNewLevel(name:String):void
 		{
 			this.level_xml.appendChild(new XML("<level label='"+name+"'></level>"));
-			var o:Object = new Object;
-			o.levelName = name;
-			o.data = new Array;
-			this.levels.push(o);
+			this.levels.push({
+				levelName : name,
+				endTime : 0,
+				data : {}
+			});
 		}
 		
 		public function deleteLevel(index:int):void
@@ -394,18 +395,18 @@ package
 				if(this.levels[l].levelName == name)
 				{
 					this.levels.splice(l, 1);
-					saveLocal();
+					this.saveLocal();
 					break;
 				}
 			
-			if(displayData.length == 0)
+			if(this.levels.length == 0)
 			{
-				var level:Object = new Object;
-				level.levelName = "level1";
-				level.endTime = 0;
-				level.data = new Array;
-				displayData.push(level);
-				this.level_xml = parseLevelXML(displayData);
+				this.levels.push({
+					levelName : "Level-1",
+					endTime : 0,
+					data : {}
+				});
+				this.level_xml = parseLevelXML(this.levels);
 			}
 		}
 		
@@ -413,7 +414,7 @@ package
 		{
 			this.level_xml.level[index].@label = name;
 			this.levels[index].levelName = name
-			saveLocal();
+			this.saveLocal();
 		}
 		public function parseLevelXML(data:Object):XML
 		{
@@ -535,7 +536,7 @@ package
 				trace("set enemy data: enemytype not exist!");
 		}
 		
-		public function updateLevelData(name:String, data:Array, endTime:int):void
+		public function updateLevelData(name:String, data:Object, endTime:int):void
 		{
 			var obj:Object = getLevelData(name);
 			if(obj)
@@ -553,25 +554,7 @@ package
 			return null;
 		}
 		
-		public function get displayData():Array
-		{
-			return this.levels;
-		}
-		
-		public function set displayData(value:Array):void
-		{
-			this.levels = value;
-			if(this.levels.length == 0)
-			{
-				var level:Object = new Object;
-				level.levelName = "level-1";
-				level.endTime = 0;
-				level.data = new Array;
-				this.levels.push(level);
-			}
-		}
-		
-		public function appendTriggerToEnemy(ins, cond, result):void
+		public function appendTriggerToEnemy(id, trigger):void
 		{
 			
 		}
