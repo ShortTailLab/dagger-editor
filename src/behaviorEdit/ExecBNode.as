@@ -35,13 +35,12 @@ package behaviorEdit
 		{
 			super(BType.BTYPE_EXEC, 0xF0FFF0, true, false, BNodeDrawStyle.PAR_DRAW);
 			this.horizontalPadding = 40;
+			childNodeLimit = 0;
 		}
 		
 		override public function active():void
 		{
 			super.active();
-			nodeWidth = 110;
-			nodeHeight = 90;
 			
 			label.defaultTextFormat = new TextFormat(null, 16);
 			label.x = 5;
@@ -69,7 +68,7 @@ package behaviorEdit
 		
 		override public function onAdd(nodeType:String):void
 		{
-			if(hasInit && childNodes.length < parmNodes.length)
+			if(hasInit && childNodes.length < childNodeLimit)
 			{
 				super.onAdd(nodeType);
 			}
@@ -87,7 +86,8 @@ package behaviorEdit
 				PopUpManager.addPopUp(window, this, true);
 				PopUpManager.centerPopUp(window);
 			}
-			super.onMouseUp(e);
+			if(view.panel.currSelectBNode)
+				onAdd(view.panel.currSelectBNode.type);
 		}
 		
 		private function onSelectType(e:MsgEvent):void
@@ -166,6 +166,7 @@ package behaviorEdit
 			}
 			nodeWidth = Math.max(120, label.width)+horizontalPadding;
 			nodeHeight = Math.max(70, label.height+yRecord+verticalPadding);
+			childNodeLimit = parmNodes.length;
 			updateBg();
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}

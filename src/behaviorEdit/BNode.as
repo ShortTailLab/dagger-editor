@@ -15,8 +15,10 @@ package behaviorEdit
 	import mx.effects.Move;
 	import mx.effects.Parallel;
 	import mx.events.EffectEvent;
+	import mx.managers.PopUpManager;
 	
 	import behaviorEdit.bnodeController.BNodeController;
+	import behaviorEdit.bnodeController.BTNodeCtrlFactory;
 	
 	import manager.EventManager;
 
@@ -50,6 +52,8 @@ package behaviorEdit
 		private var desX:Number = 0.0;
 		private var desY:Number = 0.0;
 		
+		protected var childNodeLimit:int = -1;
+		
 		public var enableDebug:Boolean = false;
 		
 		private var controller:BNodeController;
@@ -67,19 +71,36 @@ package behaviorEdit
 			initShape();
 		}
 		
-		/*public function setType(_type:String):void
+		public function setType(_type:String):void
 		{
 			this.type = _type;
 			controller = BTNodeCtrlFactory.getController(this.type);
 			controller.renderNode();
-		}*/
+		}
 		
-		public function switchTo(node:BNode):void
+		public function switchTo(type:String):void
 		{
+			var node:BNode = BNodeFactory.createBNode(type);
+			node.x = this.x;
+			node.y = this.y;
+			this.view.addNode(node);
 			var indexInPar:int = this.par.getChildNodeIndex(this);
+			node.par = par;
 			par.childNodes[indexInPar] = node;
 			
+			for(var i:int = 0; i < this.childNodes.length; i++)
+				if(i < node.childNodeLimit || node.childNodeLimit <0)
+				{
+					BNode(this.childNodes[i]).par = node;
+					node.childNodes.push(this.childNodes[i]);
+				}
+				else
+					this.childNodes[i].view.removeChild(this.childNodes[i]);
+			
+			node.view.removeChild(this);
+			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
+		
 		
 		protected function initShape():void
 		{
@@ -229,6 +250,7 @@ package behaviorEdit
 		
 		private function onStageMouseUp(e:MouseEvent):void
 		{
+			
 			if(isPressing)
 			{
 				//dispatch event that accepted by editview. 
@@ -243,8 +265,21 @@ package behaviorEdit
 		}
 		protected function onMouseUp(e:MouseEvent):void
 		{
+			if(hasMouseDown && !isPressing)
+			{
+				var window:NodeTypePanel = new NodeTypePanel;
+				window.addEventListener(MsgEvent.EXEC_TYPE, onSelectType);
+				
+				PopUpManager.addPopUp(window, this, true);
+				PopUpManager.centerPopUp(window);
+			}
 			if(view.panel.currSelectBNode)
 				onAdd(view.panel.currSelectBNode.type);
+		}
+		private function onSelectType(e:MsgEvent):void
+		{
+			var type:String = e.hintMsg;
+			this.switchTo(type);
 		}
 		
 		public function onLay(node:BNode):void

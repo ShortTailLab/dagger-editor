@@ -11,6 +11,8 @@ package behaviorEdit
 	import mx.controls.TextArea;
 	import mx.controls.TextInput;
 	import mx.core.UIComponent;
+	
+	import manager.EventManager;
 
 	public class CondBNode extends BNode
 	{
@@ -23,7 +25,7 @@ package behaviorEdit
 		public function CondBNode()
 		{
 			super(BType.BTYPE_COND, 0x1E90FF, true, true);
-			
+			childNodeLimit = 2;
 		}
 		
 		override protected function initShape():void
@@ -144,6 +146,16 @@ package behaviorEdit
 			else
 				Alert.show("条件节点只能添加两个子节点！");
 			
+		}
+		
+		override public function add(node:BNode):void
+		{
+			if(childNodes.length >= 2)
+				return;
+			node.initPos(this.x, this.y);
+			node.par = this;
+			childNodes.push(node);
+			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
 		
 		override public function drawGraph():void
