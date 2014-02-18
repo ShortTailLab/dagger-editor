@@ -18,9 +18,9 @@ package behaviorEdit
 		{
 			parPanel = par;
 			editTargetType = type;
-			if(!Data.getInstance().enemyBTData.hasOwnProperty(type))
-				Data.getInstance().enemyBTData[type] = new Array;
-			btArray = new ArrayCollection(Data.getInstance().enemyBTData[editTargetType] as Array);
+			if(!Data.getInstance().enemy_profile.hasOwnProperty(type))
+				Data.getInstance().enemy_profile[type] = new Array;
+			btArray = new ArrayCollection(Data.getInstance().enemy_bh[editTargetType] as Array);
 			
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_NEW_BT, onNewBT);
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_DONE, onCreateDone);
@@ -35,10 +35,10 @@ package behaviorEdit
 		public function addBT(bName:String):void
 		{
 			var data:Object = parPanel.editView.export();
-			if(!Data.getInstance().behaviors.hasOwnProperty(bName))
+			if(!Data.getInstance().bh_lib.hasOwnProperty(bName))
 				Data.getInstance().addBehaviors(bName, data);
 			btArray.addItem(bName);
-			Data.getInstance().saveEnemyBehaviorData();
+			Data.getInstance().saveLocal();
 			
 			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_ADDED, bName);
 			EventManager.getInstance().dispatchEvent(evt);
@@ -47,7 +47,7 @@ package behaviorEdit
 		public function removeBTByIndex(index:int):void
 		{
 			btArray.removeItemAt(index);
-			Data.getInstance().saveEnemyBehaviorData();
+			Data.getInstance().saveLocal();
 			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_REMOVED, index);
 			EventManager.getInstance().dispatchEvent(evt);
 			
@@ -103,7 +103,7 @@ package behaviorEdit
 			currEditBehavior = bName;
 			if(currEditBehavior != "")
 			{
-				parPanel.editView.init(Data.getInstance().behaviors[bName]);
+				parPanel.editView.init(Data.getInstance().bh_lib[bName]);
 				parPanel.bar.selectedItem = currEditBehavior;
 			}
 			else
@@ -115,7 +115,7 @@ package behaviorEdit
 			if(e.msg != "")
 			{
 				currEditBehavior = "";
-				parPanel.editView.init(Data.getInstance().behaviors[e.msg]);
+				parPanel.editView.init(Data.getInstance().bh_lib[e.msg]);
 			}
 			else if(currEditBehavior != "")
 				this.setCurrEditBehavior("");

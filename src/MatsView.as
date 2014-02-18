@@ -74,7 +74,7 @@ package
 			triggerMat.trim(70);
 			add(triggerMat);
 			
-			var data:Object = Data.getInstance().enemyData;
+			var data:Object = Data.getInstance().enemy_profile;
 			for(var item in data)
 			{
 				var view:EditBase = new MatSprite(null, item, 100, 70);

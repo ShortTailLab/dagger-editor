@@ -22,6 +22,7 @@ package editEntity
 		private var typeText:TextField = null;
 		private var typeSpr:Sprite = null;
 		private var textWidth:int = 0;
+		public var triggers:Array = null;
 		
 		public function MatSprite(_editView:EditView = null, _type:String = "", size:int = -1, _textWidth:int = -1)
 		{
@@ -29,6 +30,7 @@ package editEntity
 			this.trimSize = size;
 			this.textWidth = _textWidth;
 			init();
+			triggers = new Array();
 		}
 		private function init():void
 		{
@@ -49,9 +51,11 @@ package editEntity
 				setTextWidth(textWidth);
 			}
 			
-			if(Data.getInstance().enemySkinDic.hasOwnProperty(type))
+			var data = Data.getInstance();
+			var face = data.enemy_profile[this.type].face;
+			if( data.skins.hasOwnProperty( face ) )
 			{
-				var bmpd:BitmapData = Data.getInstance().enemySkinDic[type];
+				var bmpd:BitmapData = data.skins[face];
 				var skinBmp:Bitmap = new Bitmap(bmpd);
 				skinBmp.scaleX = skinBmp.scaleY = 0.5;
 				skinBmp.x = -skinBmp.width*0.5;
@@ -155,29 +159,33 @@ package editEntity
 			typeSpr.scaleX = typeSpr.scaleY = scale;
 		}
 		
+		public function setTriggers(t:Array):void
+		{
+			this.triggers = t;
+		}
+		
 		override public function initFromData(data:Object):void
 		{
 			this.id = data.id;
 			this.x = data.x/2;
 			this.y = -data.y/2;
-			if(data.hasOwnProperty("triggerTime"))
-				this.triggerTime = data.triggerTime;
-			if(data.hasOwnProperty("triggerId") && editView.matsControl.getMat(data.triggerId))
-				this.triggerId = data.triggerId;
+			if( data.hasOwnProperty("triggerTime") ) this.triggerTime = data.triggerTime;
+		
+			if( data.hasOwnProperty("triggers") ) this.triggers = Utils.deepCopy(data.triggers) as Array;
+			else this.triggers = [];
 		}
 		
 		override public function toExportData():Object
 		{
 			var obj:Object = new Object;
 			obj.id = this.id;
-			obj.type = type;
-			obj.x = x*2;
-			obj.y = Number(-y*2);
-			obj.id = id;
-			if(this.triggerTime > 0)
-				obj.triggerTime = this.triggerTime;
-			if(this.triggerId != "")
-				obj.triggerId = this.triggerId;
+			obj.type = this.type;
+			obj.x = this.x*2;
+			obj.y = Number(-this.y*2);
+			
+			if( this.triggerTime > 0 ) obj.triggerTime = this.triggerTime;
+			obj.triggers = Utils.deepCopy(this.triggers) as Array;
+			
 			return obj;
 		}
 	}

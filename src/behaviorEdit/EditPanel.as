@@ -206,79 +206,79 @@ package behaviorEdit
 			initActions();
 			this.addEventListener(CloseEvent.CLOSE, onClose);
 			
-			if(Data.getInstance().enemyEditData.hasOwnProperty(target.type))
-			{
-				var data:Object = Data.getInstance().enemyEditData[target.type];
-				if(data.hasOwnProperty("move_type"))
-				{
-					var moveType:String = data["move_type"];
-					for(var i:int = 0;  i < user1.length; i++)
-						if(user1[i].data == moveType)
-						{
-							moveTypeBox.selectedIndex = i;
-							break;
-						}
-					actions.setCurrId(moveTypeBox.selectedItem.data);
-					if(data.hasOwnProperty("move_args"))
-					{
-						speedInput.text = Data.getInstance().enemyEditData[target.type]["move_args"]["speed"];
-						var recordDots:Array = null;
-						if(moveType == MoveType.Wander && data["move_args"].hasOwnProperty("loop"))
-							recordDots = Data.getInstance().enemyEditData[target.type]["move_args"].loop;
-						else if((moveType == MoveType.CurveWalk || moveType == MoveType.CurveAndOut) && data["move_args"].hasOwnProperty("route"))
-						{
-							var route:Array = data["move_args"].route;
-							for(var i:int = 0; i < route.length; i++)
-							{
-								var color:uint = i%2==0 ? 0xff0000 : 0x00ff00;
-								var pos:Array = route[i] as Array;
-								makeDot(color, pos[0]*0.5, 480-pos[1]*0.5);
-							}
-							render();
-						}
-						if(moveType == MoveType.LineWalk)
-						{
-							var pos:Array = Data.getInstance().enemyEditData[target.type]["move_args"].dir as Array;
-							dirXInput.text = pos[0];
-							dirYInput.text = pos[1];
-						}
-						if(recordDots)
-							for(var d in recordDots)
-							{
-								var pos:Array = recordDots[d] as Array;
-								addDot(pos[0]*0.5, 480-pos[1]*0.5);
-							}
-					}
-					
-				}
-				
-				if(data.hasOwnProperty("attack_type"))
-				{
-					for(var i:int = 0;  i < atkData.length; i++)
-						if(atkData[i].label == data["attack_type"])
-						{
-							attackTypeBox.selectedIndex = i;
-							break;
-						}
-					attackBullet.visible = data["attack_type"] == "R";
-				}
-				
-				if(data.hasOwnProperty("attack_args"))
-				{
-					if(data["attack_args"].hasOwnProperty("radius"))
-						radiusInput.text = data["attack_args"].radius;
-					if(data["attack_args"].hasOwnProperty("interval"))
-						intervalInput.text = data["attack_args"].interval;
-					attackDamageInput.text = data["attack_args"].damage;
-					if(data["attack_args"].hasOwnProperty("bullet"))
-						attackBullet.text = data["attack_args"].bullet;
-				}
-				
-				if(data.hasOwnProperty("type"))
-				{
-					typeBox.selectedIndex = data["typeIndex"];
-				}
-			}
+//			if(Data.getInstance().enemyEditData.hasOwnProperty(target.type))
+//			{
+//				var data:Object = Data.getInstance().enemyEditData[target.type];
+//				if(data.hasOwnProperty("move_type"))
+//				{
+//					var moveType:String = data["move_type"];
+//					for(var i:int = 0;  i < user1.length; i++)
+//						if(user1[i].data == moveType)
+//						{
+//							moveTypeBox.selectedIndex = i;
+//							break;
+//						}
+//					actions.setCurrId(moveTypeBox.selectedItem.data);
+//					if(data.hasOwnProperty("move_args"))
+//					{
+//						speedInput.text = Data.getInstance().enemyEditData[target.type]["move_args"]["speed"];
+//						var recordDots:Array = null;
+//						if(moveType == MoveType.Wander && data["move_args"].hasOwnProperty("loop"))
+//							recordDots = Data.getInstance().enemyEditData[target.type]["move_args"].loop;
+//						else if((moveType == MoveType.CurveWalk || moveType == MoveType.CurveAndOut) && data["move_args"].hasOwnProperty("route"))
+//						{
+//							var route:Array = data["move_args"].route;
+//							for(var i:int = 0; i < route.length; i++)
+//							{
+//								var color:uint = i%2==0 ? 0xff0000 : 0x00ff00;
+//								var pos:Array = route[i] as Array;
+//								makeDot(color, pos[0]*0.5, 480-pos[1]*0.5);
+//							}
+//							render();
+//						}
+//						if(moveType == MoveType.LineWalk)
+//						{
+//							var pos:Array = Data.getInstance().enemyEditData[target.type]["move_args"].dir as Array;
+//							dirXInput.text = pos[0];
+//							dirYInput.text = pos[1];
+//						}
+//						if(recordDots)
+//							for(var d in recordDots)
+//							{
+//								var pos:Array = recordDots[d] as Array;
+//								addDot(pos[0]*0.5, 480-pos[1]*0.5);
+//							}
+//					}
+//					
+//				}
+//				
+//				if(data.hasOwnProperty("attack_type"))
+//				{
+//					for(var i:int = 0;  i < atkData.length; i++)
+//						if(atkData[i].label == data["attack_type"])
+//						{
+//							attackTypeBox.selectedIndex = i;
+//							break;
+//						}
+//					attackBullet.visible = data["attack_type"] == "R";
+//				}
+//				
+//				if(data.hasOwnProperty("attack_args"))
+//				{
+//					if(data["attack_args"].hasOwnProperty("radius"))
+//						radiusInput.text = data["attack_args"].radius;
+//					if(data["attack_args"].hasOwnProperty("interval"))
+//						intervalInput.text = data["attack_args"].interval;
+//					attackDamageInput.text = data["attack_args"].damage;
+//					if(data["attack_args"].hasOwnProperty("bullet"))
+//						attackBullet.text = data["attack_args"].bullet;
+//				}
+//				
+//				if(data.hasOwnProperty("type"))
+//				{
+//					typeBox.selectedIndex = data["typeIndex"];
+//				}
+//			}
 		}
 		
 		
@@ -426,59 +426,59 @@ package behaviorEdit
 				route.push(pos);
 			}
 			
-			if(!Data.getInstance().enemyEditData.hasOwnProperty(editTarget.type))
-				Data.getInstance().enemyEditData[editTarget.type] = new Object;
-			var enemyData:Object = Data.getInstance().enemyEditData[editTarget.type];
-			if(type == MoveType.Default && enemyData.hasOwnProperty("move_type"))
-			{
-				delete enemyData["move_type"];
-				delete enemyData["move_args"];
-			}
-			else
-			{
-				enemyData["move_type"] = type;
-				enemyData["move_args"] = new Object;
-				enemyData["move_args"].speed = int(speedInput.text);
-				if(type == MoveType.Wander)
-					enemyData["move_args"].loop = route;
-				else if(type == MoveType.CurveWalk || type == MoveType.CurveAndOut)
-				{
-					enemyData["move_args"].route = route;
-				}
-				else if(type == MoveType.LineWalk)
-				{
-					var pos:Array = new Array;
-					pos.push(dirXInput.text.length>0?Number(dirXInput.text):0);
-					pos.push(dirYInput.text.length>0?Number(dirYInput.text):0);
-					enemyData["move_args"].dir = pos;
-				}
-			}
-				
-			var atkType:int = attackTypeBox.selectedItem.data;
-			if(atkType == 0 && enemyData.hasOwnProperty("attack_type"))
-			{
-				delete enemyData["attack_type"];
-				delete enemyData["attack_args"];
-			}
-			else
-			{
-				Data.getInstance().enemyEditData[editTarget.type]["attack_type"] = attackTypeBox.selectedItem.label;
-				Data.getInstance().enemyEditData[editTarget.type]["attack_args"] = new Object;
-				if(intervalInput.text.length > 0)
-					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].interval = intervalInput.text;
-				if(radiusInput.text.length >= 0)
-					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].radius = radiusInput.text;
-				if(attackDamageInput.text.length > 0)
-					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].damage = attackDamageInput.text;
-				if(attackBullet.text.length > 0)
-					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].bullet = attackBullet.text;
-			}
-			
-			enemyData["type"] = typeBox.selectedItem.label;
-			enemyData["typeIndex"] = typeBox.selectedIndex;
-				
-			Data.getInstance().saveEnemyData();
-			Alert.show("保存成功");
+//			if(!Data.getInstance().enemyEditData.hasOwnProperty(editTarget.type))
+//				Data.getInstance().enemyEditData[editTarget.type] = new Object;
+//			var enemyData:Object = Data.getInstance().enemyEditData[editTarget.type];
+//			if(type == MoveType.Default && enemyData.hasOwnProperty("move_type"))
+//			{
+//				delete enemyData["move_type"];
+//				delete enemyData["move_args"];
+//			}
+//			else
+//			{
+//				enemyData["move_type"] = type;
+//				enemyData["move_args"] = new Object;
+//				enemyData["move_args"].speed = int(speedInput.text);
+//				if(type == MoveType.Wander)
+//					enemyData["move_args"].loop = route;
+//				else if(type == MoveType.CurveWalk || type == MoveType.CurveAndOut)
+//				{
+//					enemyData["move_args"].route = route;
+//				}
+//				else if(type == MoveType.LineWalk)
+//				{
+//					var pos:Array = new Array;
+//					pos.push(dirXInput.text.length>0?Number(dirXInput.text):0);
+//					pos.push(dirYInput.text.length>0?Number(dirYInput.text):0);
+//					enemyData["move_args"].dir = pos;
+//				}
+//			}
+//				
+//			var atkType:int = attackTypeBox.selectedItem.data;
+//			if(atkType == 0 && enemyData.hasOwnProperty("attack_type"))
+//			{
+//				delete enemyData["attack_type"];
+//				delete enemyData["attack_args"];
+//			}
+//			else
+//			{
+//				Data.getInstance().enemyEditData[editTarget.type]["attack_type"] = attackTypeBox.selectedItem.label;
+//				Data.getInstance().enemyEditData[editTarget.type]["attack_args"] = new Object;
+//				if(intervalInput.text.length > 0)
+//					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].interval = intervalInput.text;
+//				if(radiusInput.text.length >= 0)
+//					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].radius = radiusInput.text;
+//				if(attackDamageInput.text.length > 0)
+//					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].damage = attackDamageInput.text;
+//				if(attackBullet.text.length > 0)
+//					Data.getInstance().enemyEditData[editTarget.type]["attack_args"].bullet = attackBullet.text;
+//			}
+//			
+//			enemyData["type"] = typeBox.selectedItem.label;
+//			enemyData["typeIndex"] = typeBox.selectedIndex;
+//				
+//			Data.getInstance().saveEnemyData();
+//			Alert.show("保存成功");
 		}
 		
 		private function render():void

@@ -206,6 +206,16 @@ package
 			return objByte.readObject();
 		}
 		
+		static public function write(src:String, path:String):Boolean
+		{
+			var file:File = File.desktopDirectory.resolvePath(path);
+			var stream:FileStream = new FileStream;
+			stream.open(file, FileMode.WRITE);
+			stream.writeUTFBytes( src );
+			stream.close();
+			return true;
+		}
+		
 		static public function loadJsonFileToObject(path:String):Object
 		{
 			var file:File = File.desktopDirectory.resolvePath(path);
@@ -220,5 +230,16 @@ package
 			return result;
 		}
 		
+		static public function writeObjectToJsonFile(item:Object, filepath:String):Boolean
+		{
+			return Utils.write( JSON.stringify(item), filepath );
+		}
+		
+		static public function copyDirectoryTo(from:String, to:String):void
+		{
+			var f:File = File.desktopDirectory.resolvePath(from);
+			var t:File = File.desktopDirectory.resolvePath(to);
+			f.copyTo(t, true);
+		}
 	}
 }
