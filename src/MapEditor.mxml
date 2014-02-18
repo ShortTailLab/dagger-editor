@@ -320,7 +320,7 @@
 				}
 				
 				saveFile(null);
-				if (ServerManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/Resources"), tagInput.text)) {
+				if (ServerManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/export"), tagInput.text)) {
 //					Alert.show("上传成功！");
 				}
 				else {
