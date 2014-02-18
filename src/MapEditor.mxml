@@ -197,7 +197,7 @@
 			{
 				_tree.selectedIndex = index;
 				Data.getInstance().currSelectedLevel = index;
-				_enemyEditView.init(Data.getInstance().displayData[index].levelName);
+				_enemyEditView.init(Data.getInstance().levels[index].levelName);
 			}
 			private function onTMXClick(e:MouseEvent):void
 			{

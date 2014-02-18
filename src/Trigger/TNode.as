@@ -29,11 +29,6 @@ package Trigger
 		
 		public static const BG_COLOR = 0xF0FFF0;
 		
-		private var condType:String = "";
-		public function getCondType():String { return this.condType; }
-		private var resultType:String = "";
-		public function getResultType():String { return this.resultType; }
-		
 		private var background:Sprite = null;
 		private var enumCond:ComboBox = null;
 		private var enumResult:ComboBox = null;
@@ -42,6 +37,9 @@ package Trigger
 		private var retArgs:UIComponent = null;
 		private var condItems:Object = {};
 		private var retItems:Object = {};
+		
+		public function getCondType():String { return this.enumCond.selectedItem as String; }
+		public function getResultType():String { return this.enumResult.selectedItem as String; }
 		
 		public function TNode()
 		{
@@ -100,11 +98,26 @@ package Trigger
 			
 			this.enumCond.addEventListener(Event.CHANGE, onCondTypeChange);
 			this.enumResult.addEventListener(Event.CHANGE, onRetTypeChange);
+			
+			this.onCondTypeChange();
+			this.onRetTypeChange();
 		}
 		
-		private function onCondTypeChange(e:Event):void
+		public function reset(trigger:Object):void
 		{
-			var type = this.condType = e.target.selectedItem;
+			this.enumCond.selectedItem = trigger.cond.type;
+			this.enumResult.selectedItem = trigger.result.type;
+			
+			this.condItems = Utils.deepCopy(trigger.cond);
+			this.retItems = Utils.deepCopy(trigger.result);
+			
+			this.onCondTypeChange();
+			this.onRetTypeChange();
+		}
+		
+		private function onCondTypeChange(e:Event=null):void
+		{
+			var type = this.enumCond.selectedItem;
 			var dynamics = Data.getInstance().dynamic_args;
 			
 			this.condArgs.removeChildren();
@@ -142,10 +155,9 @@ package Trigger
 			this.resize( TNode.WIDTH, this.getHeight() );
 		}
 		
-		private function onRetTypeChange(e:Event):void
+		private function onRetTypeChange(e:Event=null):void
 		{
-			var type = this.resultType = e.target.selectedItem;
-			
+			var type = this.enumResult.selectedItem;
 			var dynamics = Data.getInstance().dynamic_args;
 			
 			this.retArgs.removeChildren();
@@ -224,6 +236,28 @@ package Trigger
 					if( !this.retItems.hasOwnProperty(key) || this.retItems[key] == "" ) return false;
 			
 			return true;
+		}
+
+		public function serialize():Object
+		{
+			var condType = this.enumCond.selectedItem;
+			var resultType = this.enumResult.selectedItem;
+			
+			var trigger:Object = {}, data:Object = Data.getInstance().dynamic_args;
+			trigger.cond = {}; trigger.result = {};
+			
+			trigger.cond.type = condType; 
+			if( data.hasOwnProperty(condType) )
+				for( var key:* in data[condType] )
+					trigger.cond[key] = this.condItems[key];
+				
+			trigger.result.type = resultType;
+			if( data.hasOwnProperty(resultType) )
+				for( var key:* in data[resultType] )
+					trigger.result[key] = this.retItems[key];
+			
+			
+			return trigger;
 		}
 	}
 

@@ -42,12 +42,25 @@ package Trigger
 		
 			this.addEventListener(CloseEvent.CLOSE, onClose);
 			EventManager.getInstance().addEventListener(TriggerEvent.REMOVE_TRIGGER, onRemoveNode);
+			
+			if( this.host.triggers )
+			{
+				for each( var item:* in this.host.triggers )
+					this.factory(item);
+			}
 		}
 		
 		private function save():void
 		{
-			
-		}
+			var triggers:Array = [];
+			for( var i:int=0; i<this.numElements; i++ )
+			{
+				if( !(this.getElementAt(i) is TNode) ) continue;
+				var e:TNode = this.getElementAt(i) as TNode;
+				triggers.push(e.serialize());
+			}
+			this.host.setTriggers(triggers);
+		} 
 		
 		private function validChecking():Boolean
 		{
@@ -75,24 +88,31 @@ package Trigger
 			return true;
 		}
 		
+		private function factory(trigger:Object = null):void
+		{
+			var node:TNode = new TNode;
+			if( trigger ) node.reset(trigger);
+			this.addElement( node );
+			this.relayout();
+		}
+		
 		private function onAddTrigger(evt:MouseEvent):void
 		{
 			if( !this.validChecking() ) return;
-			this.addElement( new TNode() );
-			this.relayout();
+			this.factory();
 		}
 		
 		private function onClose(e:CloseEvent):void
 		{
-			// remove self 
-			PopUpManager.removePopUp(this);
+			if( !this.validChecking() ) return;
 			
-			// save all the configs
+			this.save();
+			PopUpManager.removePopUp(this);
 		}
 		
 		private function relayout():void
 		{
-			var y = 50;
+			var y:int = 50;
 			for( var i:int = 0; i<this.numElements; i++ )
 			{
 				var e:* = this.getElementAt(i);
@@ -107,6 +127,7 @@ package Trigger
 		{
 			this.removeElement( e.from );
 			this.relayout();
+			this.save();
 		}
 	}
 }

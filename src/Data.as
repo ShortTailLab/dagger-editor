@@ -149,13 +149,14 @@ package
 		{
 			// saved informations
 			this.levels = this.loadJson("editor/saved/levels.json") as Array;
+
 			if( !this.levels ) 
 			{
 				this.levels = new Array;
 				this.levels.push({
 					levelName 	: "level-1",
 					endTime 	: 0,
-					data 		: {}
+					data 		: new Array
 				});
 			}  
 			this.currSelectedLevel = this.levels.length-1;
@@ -253,7 +254,7 @@ package
 		// persistence
 		public function saveLocal(e:TimerEvent=null):Boolean
 		{
-			Utils.copyDirectoryTo("editor/data/","editor/backup/");
+			Utils.copyDirectoryTo("editor/saved/","editor/backup/");
 			
 			Utils.writeObjectToJsonFile(this.levels, "editor/saved/levels.json");
 			Utils.writeObjectToJsonFile(this.conf, "editor/saved/conf.json");
@@ -383,7 +384,7 @@ package
 			this.levels.push({
 				levelName : name,
 				endTime : 0,
-				data : {}
+				data : new Array
 			});
 		}
 		
@@ -404,7 +405,7 @@ package
 				this.levels.push({
 					levelName : "Level-1",
 					endTime : 0,
-					data : {}
+					data : new Array
 				});
 				this.level_xml = parseLevelXML(this.levels);
 			}
@@ -450,8 +451,8 @@ package
 		
 		public function updateBehavior(name:String, data:Object):void
 		{
-				this.bh_lib[name] = data;
-				this.saveLocal();
+			this.bh_lib[name] = data;
+			this.saveLocal();
 		}
 		
 		public function renameBehavior(prevName:String, currName:String):void
@@ -536,9 +537,11 @@ package
 				trace("set enemy data: enemytype not exist!");
 		}
 		
-		public function updateLevelData(name:String, data:Object, endTime:int):void
+		public function updateLevelData(name:String, data:Array, endTime:int):void
 		{
 			var obj:Object = getLevelData(name);
+			
+			// merge
 			if(obj)
 			{
 				obj.endTime = endTime;
@@ -552,11 +555,6 @@ package
 				if(item.levelName == levelName)
 					return item;
 			return null;
-		}
-		
-		public function appendTriggerToEnemy(id, trigger):void
-		{
-			
 		}
 	}
 }
