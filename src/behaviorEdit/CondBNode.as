@@ -51,6 +51,30 @@ package behaviorEdit
 			label.y = bg.height*0.5-label.textHeight*0.5;
 		}
 		
+		override public function active():void
+		{
+			super.active();
+			nodeWidth = 200;
+			nodeHeight = 120;
+			
+			bg.graphics.clear();
+			bg.graphics.lineStyle(1);
+			bg.graphics.beginFill(color);
+			bg.graphics.drawRect(0, 0, nodeWidth-horizontalPadding, nodeHeight-verticalPadding);
+			bg.graphics.endFill();
+			label.setTextFormat(new TextFormat(null, 16));
+			label.x = 5;
+			label.y = 5;
+			
+			inputLabel = new TextArea();
+			inputLabel.width = 150;
+			inputLabel.height = 60;
+			inputLabel.x = 10;
+			inputLabel.y = 20;
+			inputLabel.addEventListener(MouseEvent.MOUSE_DOWN, onLabelMouseDown);
+			this.addChild(inputLabel);
+		}
+		
 		/*override public function init(_view:BTEditView):void
 		{
 			super.init(_view);

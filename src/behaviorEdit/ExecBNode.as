@@ -37,6 +37,17 @@ package behaviorEdit
 			this.horizontalPadding = 40;
 		}
 		
+		override public function active():void
+		{
+			super.active();
+			nodeWidth = 110;
+			nodeHeight = 90;
+			
+			label.defaultTextFormat = new TextFormat(null, 16);
+			label.x = 5;
+			label.y = 5;
+			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+		}
 		
 		/*override public function init(_view:BTEditView):void
 		{

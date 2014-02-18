@@ -17,8 +17,6 @@ package behaviorEdit
 	import mx.events.EffectEvent;
 	
 	import behaviorEdit.bnodeController.BNodeController;
-	import behaviorEdit.bnodeController.BTNodeCtrlFactory;
-	import behaviorEdit.bnodeController.SeqController;
 	
 	import manager.EventManager;
 
@@ -58,6 +56,7 @@ package behaviorEdit
 		
 		public function BNode(_type:String = "", _color:uint = 0xF0FFF0, isAccept:Boolean = false, enableLayNode:Boolean = false, graphStyle:String = "")
 		{
+			this.type = _type;
 			this.color = _color;
 			this.isAcceptNode = isAccept; 
 			this.enableLay = enableLayNode;
@@ -65,14 +64,21 @@ package behaviorEdit
 			
 			this.width = nodeWidth;
 			this.height = nodeHeight;
-			setType(_type);
+			initShape();
 		}
 		
-		public function setType(_type:String):void
+		/*public function setType(_type:String):void
 		{
 			this.type = _type;
 			controller = BTNodeCtrlFactory.getController(this.type);
 			controller.renderNode();
+		}*/
+		
+		public function switchTo(node:BNode):void
+		{
+			var indexInPar:int = this.par.getChildNodeIndex(this);
+			par.childNodes[indexInPar] = node;
+			
 		}
 		
 		protected function initShape():void
@@ -111,6 +117,15 @@ package behaviorEdit
 			
 			if(isAcceptNode)
 				this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			
+			var menu:ContextMenu = new ContextMenu;
+			var btn:ContextMenuItem = new ContextMenuItem("删除");
+			btn.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+				BNode(e.contextMenuOwner).removeSelf();
+				EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
+			});
+			menu.addItem(btn);
+			this.contextMenu = menu;
 		}
 		
 		/*public function init(_view:BTEditView):void

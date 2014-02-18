@@ -25,8 +25,6 @@ package behaviorEdit
 			EventManager.getInstance().addEventListener(BTEvent.TREE_CHANGE, onTreeChange);
 			EventManager.getInstance().addEventListener(BTEvent.LAID, onNodeLaid);
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-			
-			//this.scaleX = this.scaleY = 0.5;
 		}
 		
 		public function init(data:Object):void
