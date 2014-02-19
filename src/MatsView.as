@@ -17,6 +17,8 @@ package
 	
 	import spark.components.TextInput;
 	
+	import Trigger.EditTriggers;
+	
 	import behaviorEdit.BTEditPanel;
 	import behaviorEdit.EditPanel;
 	
@@ -101,6 +103,22 @@ package
 				if(target)
 					editBT(target);
 			});
+			var trigger:ContextMenuItem = new ContextMenuItem("触发器");
+			var self = this;
+			trigger.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,
+				function(e:ContextMenuEvent)
+				{
+					var target:MatSprite = e.contextMenuOwner as MatSprite;
+					if(target)
+					{
+						var win:EditTriggers = new EditTriggers(target);
+						PopUpManager.addPopUp(win, self);
+						PopUpManager.centerPopUp(win);
+						win.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-win.width/2;
+						win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
+					}
+				});
+			menu.addItem(trigger);
 			menu.addItem(btn2);
 			
 			view.contextMenu = menu;
