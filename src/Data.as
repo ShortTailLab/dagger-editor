@@ -35,6 +35,7 @@ package
 		// definition of enemies
 		public var enemy_bh:Object = null;
 		public var enemy_profile:Object = null;
+		public var enemy_trigger:Object = null;
 		
 		// instances of enemy and map configs for every level
 		public var levels:Array = null;
@@ -169,7 +170,8 @@ package
 			this.conf = this.loadJson("editor/saved/conf.json", false);
 			if( !this.conf ) this.conf = { speed: 32};
 			//this record the behaviors' name of each enemy
-			this.enemy_bh = this.loadJson("editor/saved/enemy_bh.json");
+			this.enemy_bh = this.loadJson("editor/saved/enemy_bh.json", false) || {};
+			this.enemy_trigger = this.loadJson("editor/saved/enemy_trigger.json", false) || {};
 
 			// load configs 
 			this.dynamic_args = this.loadJson("editor/data/dynamic_args.json");
@@ -181,6 +183,7 @@ package
 			var self:* = this; this.skins = new Dictionary;
 			var onexceldone:Function = function(e:Event):void
 			{	
+				// enemy_profile
 				self.enemy_profile = ExcelReader.getInstance().enemyData;
 				var length:Number = 0, countor:Number = 0;
 				var alldone:Function = function(key:String):Function
@@ -258,6 +261,7 @@ package
 			
 			Utils.writeObjectToJsonFile(this.levels, "editor/saved/levels.json");
 			Utils.writeObjectToJsonFile(this.conf, "editor/saved/conf.json");
+			Utils.writeObjectToJsonFile(this.enemy_trigger, "editor/saved/enemy_trigger.json");
 			Utils.writeObjectToJsonFile(this.enemy_bh, "editor/saved/enemy_bh.json");
 			Utils.writeObjectToJsonFile(this.bh_lib, "editor/saved/bh_lib.json");
 			
@@ -305,10 +309,9 @@ package
 				else traps[item.type] = data;
 				
 				var t:Number = item.triggerTime || item.y;
-				var triggers:Array = item.triggers || [];
 				export.objects[item.id] = {
 					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@",
-					time : t, triggers : triggers
+					time : t
 				};
 			}
 			
@@ -323,6 +326,7 @@ package
 				
 				export.actor[key] = Utils.deepCopy(actors[key]);	
 				export.actor[key].behaviors = this.enemy_bh[key];
+				export.actor[key].triggers = this.enemy_trigger[key] || [];
 				this.enemy_bh[key].forEach(function(item:*, ...args):void {
 					bhs[item] = true;
 				}, null);
@@ -344,7 +348,6 @@ package
 			for(  var key:* in traps )
 				export.trap[key] = Utils.deepCopy(traps[key]);
 			
-		
 			// export bullet
 			export.bullet = new Object;
 			for( var key:* in this.enemy_profile ) {
@@ -555,6 +558,11 @@ package
 				if(item.levelName == levelName)
 					return item;
 			return null;
+		}
+		
+		public function setEnemyTrigger(id:String, triggers:Object):void
+		{
+			this.enemy_trigger[id] = triggers;
 		}
 	}
 }

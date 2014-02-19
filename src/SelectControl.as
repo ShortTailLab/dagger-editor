@@ -118,26 +118,10 @@ package
 					view.matsControl.remove(m.id);
 				}
 			});
-			var editTrigger:ContextMenuItem = new ContextMenuItem("触发器");
-			var self = this;
-			editTrigger.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,
-				function(e:ContextMenuEvent)
-				{
-					var target:MatSprite = e.contextMenuOwner as MatSprite;
-					if(target)
-					{
-						var win:EditTriggers = new EditTriggers(target);
-						PopUpManager.addPopUp(win, self.view);
-						PopUpManager.centerPopUp(win);
-						win.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-win.width/2;
-						win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
-					}
-				});
 		
 			menu.addItem(item);
 			menu.addItem(item2);
 			menu.addItem(item3);
-			menu.addItem(editTrigger);
 			
 			target.parent.setChildIndex(target, target.parent.numChildren-1);
 			target.contextMenu = menu;

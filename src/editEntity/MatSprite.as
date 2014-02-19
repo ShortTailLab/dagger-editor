@@ -22,7 +22,6 @@ package editEntity
 		private var typeText:TextField = null;
 		private var typeSpr:Sprite = null;
 		private var textWidth:int = 0;
-		public var triggers:Array = null;
 		
 		public function MatSprite(_editView:EditView = null, _type:String = "", size:int = -1, _textWidth:int = -1)
 		{
@@ -30,7 +29,6 @@ package editEntity
 			this.trimSize = size;
 			this.textWidth = _textWidth;
 			init();
-			triggers = new Array();
 		}
 		private function init():void
 		{
@@ -159,20 +157,12 @@ package editEntity
 			typeSpr.scaleX = typeSpr.scaleY = scale;
 		}
 		
-		public function setTriggers(t:Array):void
-		{
-			this.triggers = t;
-		}
-		
 		override public function initFromData(data:Object):void
 		{
 			this.id = data.id;
 			this.x = data.x/2;
 			this.y = -data.y/2;
 			if( data.hasOwnProperty("triggerTime") ) this.triggerTime = data.triggerTime;
-		
-			if( data.hasOwnProperty("triggers") ) this.triggers = Utils.deepCopy(data.triggers) as Array;
-			else this.triggers = [];
 		}
 		
 		override public function toExportData():Object
@@ -184,7 +174,6 @@ package editEntity
 			obj.y = Number(-this.y*2);
 			
 			if( this.triggerTime > 0 ) obj.triggerTime = this.triggerTime;
-			obj.triggers = Utils.deepCopy(this.triggers) as Array;
 			
 			return obj;
 		}
