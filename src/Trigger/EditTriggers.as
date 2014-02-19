@@ -106,7 +106,7 @@ package Trigger
 		private function onClose(e:CloseEvent):void
 		{
 			if( !this.validChecking() ) return;
-			
+			EventManager.getInstance().removeEventListener(TriggerEvent.REMOVE_TRIGGER, onRemoveNode);
 			this.save();
 			PopUpManager.removePopUp(this);
 		}
