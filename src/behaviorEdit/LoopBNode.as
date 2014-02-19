@@ -3,12 +3,11 @@ package behaviorEdit
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.MouseEvent;
-	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	
-	import mx.controls.TextArea;
 	import mx.controls.TextInput;
+	import behaviorEdit.bnodePainter.LoopGraphPainter;
 
 	public class LoopBNode extends BNode
 	{
@@ -16,7 +15,8 @@ package behaviorEdit
 		
 		public function LoopBNode()
 		{
-			super(BType.BTYPE_LOOP, 0xFFD700, true , true, BNodeDrawStyle.LOOP_DRAW);
+			super(BType.BTYPE_LOOP, 0xFFD700, true , true);
+			this.graphPainter = new LoopGraphPainter(this);
 		}
 		
 		override protected function initShape():void
@@ -24,7 +24,7 @@ package behaviorEdit
 			bg = new Sprite;
 			bg.graphics.lineStyle(1);
 			bg.graphics.beginFill(color);
-			bg.graphics.drawEllipse(0, 0, nodeWidth-horizontalPadding, nodeHeight-verticalPadding);
+			bg.graphics.drawEllipse(0, 0, nodeWidth, nodeHeight);
 			bg.graphics.endFill();
 			this.addChild(bg);
 			
@@ -42,13 +42,13 @@ package behaviorEdit
 		{
 			super.active();
 			
-			nodeWidth = 110;
-			nodeHeight = 90;
+			nodeWidth = 80;
+			nodeHeight = 60;
 			
 			bg.graphics.clear();
 			bg.graphics.lineStyle(1);
 			bg.graphics.beginFill(color);
-			bg.graphics.drawEllipse(0, 0, nodeWidth-horizontalPadding, nodeHeight-verticalPadding);
+			bg.graphics.drawEllipse(0, 0, nodeWidth, nodeHeight);
 			bg.graphics.endFill();
 			
 			label.text = "循环次数:"

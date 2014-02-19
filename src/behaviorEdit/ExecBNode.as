@@ -1,21 +1,20 @@
 package behaviorEdit
 {
-	import flash.display.Sprite;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
-	import flash.utils.Dictionary;
 	
 	import mx.collections.ArrayCollection;
 	import mx.controls.Alert;
-	import mx.controls.Button;
 	import mx.controls.TextArea;
 	import mx.core.UIComponent;
 	import mx.managers.PopUpManager;
 	
 	import spark.components.ComboBox;
 	import spark.components.TextInput;
+	
+	import behaviorEdit.bnodePainter.ParGraphPainter;
 	
 	import manager.EventManager;
 
@@ -25,7 +24,7 @@ package behaviorEdit
 		private var container:UIComponent = null;
 		private var hasInit:Boolean = false;
 		
-		private var parmNodes:Array = null;
+		public var parmNodes:Array = null;
 		private var parmInput:Array = null;
 		
 		private var execType:String = "";
@@ -33,9 +32,11 @@ package behaviorEdit
 		
 		public function ExecBNode()
 		{
-			super(BType.BTYPE_EXEC, 0xF0FFF0, true, false, BNodeDrawStyle.PAR_DRAW);
+			super(BType.BTYPE_EXEC, 0xF0FFF0, true, false);
 			this.horizontalPadding = 40;
 			childNodeLimit = 0;
+			this.graphPainter = new ParGraphPainter(this);
+			this.graphPainter.setDefaultColor(0);
 		}
 		
 		override public function active():void
@@ -47,24 +48,6 @@ package behaviorEdit
 			label.y = 5;
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 		}
-		
-		/*override public function init(_view:BTEditView):void
-		{
-			super.init(_view);
-			
-			label.defaultTextFormat = new TextFormat(null, 16);
-			label.x = 5;
-			label.y = 5;
-			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-			
-			/*inputLabel = new TextArea();
-			inputLabel.width = 150;
-			inputLabel.height = 60;
-			inputLabel.x = 10;
-			inputLabel.y = 20;
-			inputLabel.addEventListener(MouseEvent.MOUSE_DOWN, onLabelMouseDown);
-			this.addChild(inputLabel);*/
-		//}
 		
 		override public function onAdd(nodeType:String):void
 		{
@@ -94,7 +77,6 @@ package behaviorEdit
 		{
 			initExecType(e.hintMsg);
 		}
-		
 		
 		private function initExecType(type:String):void
 		{
@@ -164,8 +146,9 @@ package behaviorEdit
 				}
 					
 			}
-			nodeWidth = Math.max(120, label.width)+horizontalPadding;
-			nodeHeight = Math.max(70, label.height+yRecord+verticalPadding);
+			nodeWidth = Math.max(120, label.width);
+			nodeHeight = Math.max(70, label.height+yRecord);
+			
 			childNodeLimit = parmNodes.length;
 			updateBg();
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
@@ -301,45 +284,35 @@ package behaviorEdit
 					data.value = TextInput(o.input).text;
 					
 				obj.parm.push(data);
+				
 			}
 			return obj;
 		}
 		
 		override public function drawGraph():void
 		{
-			this.graphics.clear();
-			
-			if(parmNodes)
+			if(parmNodes && parmNodes.length > 0)
 			{
+				super.drawGraph();
 				var selfPoint:Point = convertToLocal(this.getRightPoint());
 				var startPoint:Point = new Point(selfPoint.x+5, selfPoint.y);
-				var endPoint:Point = new Point(this.nodeWidth, 0);
+				var endPoint:Point = new Point(this.boundingBox.width, selfPoint.y);
 				for(var i:int = 0; i <  parmNodes.length; i++)
 				{
+					if(i < this.childNodes.length)
+						endPoint = this.convertToLocal(BNode(this.childNodes[i]).getLeftPoint());
+					else if(i > 0)
+						endPoint.y += 40;
 					var label:TextField = new TextField;
 					label.defaultTextFormat = new TextFormat(null, 16, 0xff0000);
 					label.text = parmNodes[i];
 					label.x = endPoint.x - label.textWidth-3;
 					label.y = endPoint.y -label.textHeight-3;
-					container.addChild(label);
-					
-					Utils.squareConnect(this, selfPoint, startPoint, 2);
-					if(i < childNodes.length)
-					{
-						endPoint = convertToLocal(childNodes[i].getLeftPoint());
-						Utils.squareConnect(this, startPoint, endPoint);
-						if(i == childNodes.length-1)
-							endPoint = convertToLocal(childNodes[i].getBottomMiddle());
-					}
-					else
-					{
-						endPoint.y += 20;
-						Utils.squareConnect(this, startPoint, endPoint);
-						this.graphics.drawCircle(endPoint.x+8, endPoint.y, 8);
-					}
+					graphPainter.getCanvas().addChild(label);
 				}
 			}
-			
+			else
+				graphPainter.clear();
 		}
 		
 		private function onLabelMouseDown(e:MouseEvent):void

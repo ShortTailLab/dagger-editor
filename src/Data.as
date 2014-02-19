@@ -246,6 +246,9 @@ package
 						if(!this.bh_lib.hasOwnProperty(behaviorsOfEnemy[j]))
 							behaviorsOfEnemy.splice(j--, 1);
 				}
+				for(var bName in this.enemy_profile)
+					if(!enemy_bh.hasOwnProperty(bName))
+						enemy_bh[bName] = new Array;
 			}
 			
 			// let's rock 'n' roll

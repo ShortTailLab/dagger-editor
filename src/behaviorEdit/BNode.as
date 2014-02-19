@@ -18,32 +18,31 @@ package behaviorEdit
 	import mx.managers.PopUpManager;
 	
 	import behaviorEdit.bnodeController.BNodeController;
-	import behaviorEdit.bnodeController.BTNodeCtrlFactory;
+	import behaviorEdit.bnodePainter.BasePainer;
 	
 	import manager.EventManager;
 
 	public class BNode extends UIComponent
 	{
-		
 		public var nodeId:int = -1;
 		public var type:String = "";
 		public var par:BNode = null;
-		protected var enableLay:Boolean = false;
-		protected var drawStyle:String = "";
-		
+		public var color:uint = 0;
 		public var treeWidth:Number = 0.0;
 		public var treeHeight:Number = 0.0;
+		public var boundingBox:Rectangle;
 		
-		public var nodeWidth:Number = 100;
-		public var nodeHeight:Number = 70;
+		protected var enableLay:Boolean = false;
 		
-		public var horizontalPadding:int = 30;
-		public var verticalPadding:int = 30;
-		
+		protected var _nodeWidth:Number = 0.0;
+		protected var _nodeHeight:Number = 0.0;
+		protected var _horizontalPadding:int = 30;
+		protected var _verticalPadding:int = 30;
+
 		public var childNodes:Array = new Array;
 		public var view:BTEditView = null;
 		protected var isAcceptNode:Boolean = false;
-		protected var color:uint = 0;
+		
 		protected var canMove:Boolean = true;
 		
 		protected var bg:Sprite;
@@ -58,24 +57,25 @@ package behaviorEdit
 		
 		private var controller:BNodeController;
 		
-		public function BNode(_type:String = "", _color:uint = 0xF0FFF0, isAccept:Boolean = false, enableLayNode:Boolean = false, graphStyle:String = "")
+		//painter make a canvas added to node.
+		//clear painter should use the painter's dispose func.
+		protected var graphPainter:BasePainer = null;
+		
+		public function BNode(_type:String = "", _color:uint = 0xF0FFF0, isAccept:Boolean = false, enableLayNode:Boolean = false)
 		{
 			this.type = _type;
 			this.color = _color;
 			this.isAcceptNode = isAccept; 
 			this.enableLay = enableLayNode;
-			this.drawStyle = graphStyle;
 			
-			this.width = nodeWidth;
-			this.height = nodeHeight;
+			this.boundingBox = new Rectangle;
+			this.nodeWidth = 70;
+			this.nodeHeight = 40;
+			this.verticalPadding = 30;
+			this.horizontalPadding = 30;
+			this.width = boundingBox.width;
+			this.height = boundingBox.height;
 			initShape();
-		}
-		
-		public function setType(_type:String):void
-		{
-			this.type = _type;
-			controller = BTNodeCtrlFactory.getController(this.type);
-			controller.renderNode();
 		}
 		
 		public function switchTo(type:String):void
@@ -124,10 +124,9 @@ package behaviorEdit
 			bg.graphics.clear();
 			bg.graphics.lineStyle(1);
 			bg.graphics.beginFill(color);
-			bg.graphics.drawRect(0, 0, nodeWidth-horizontalPadding, nodeHeight-verticalPadding);
+			bg.graphics.drawRect(0, 0, nodeWidth, nodeHeight);
 			bg.graphics.endFill();
 		}
-		
 		
 		public function active():void
 		{
@@ -149,43 +148,15 @@ package behaviorEdit
 			this.contextMenu = menu;
 		}
 		
-		/*public function init(_view:BTEditView):void
-		{
-			this.view = _view;	
-			this.view.addChild(this);
-			
-			if(canMove)
-			{
-				this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-			}
-			
-			if(isAcceptNode)
-				this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-			
-			var menu:ContextMenu = new ContextMenu;
-			var btn:ContextMenuItem = new ContextMenuItem("删除");
-			btn.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
-				BNode(e.contextMenuOwner).removeSelf();
-				EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
-			});
-			menu.addItem(btn);
-			this.contextMenu = menu;
-		}*/
-		
 		public function initPos(dx:Number, dy:Number):void
 		{
 			this.x = desX = dx;
 			this.y = desY = dy;
 		}
 		
-		public function initData(data:Object):void
-		{
-		}
-		
-		public function exportData():Object
-		{
-			return null;
-		}
+		//these two func should be overrided to restore node data. 
+		public function initData(data:Object):void{}
+		public function exportData():Object{return null;}
 		
 		public function update(dt:Number):void
 		{
@@ -197,7 +168,7 @@ package behaviorEdit
 		
 		public function getInteractiveRect():Rectangle
 		{
-			return new Rectangle(this.x+nodeWidth, this.y-nodeHeight, nodeWidth, treeHeight+nodeHeight);
+			return new Rectangle(this.x+boundingBox.width, this.y-boundingBox.height, boundingBox.width, treeHeight+boundingBox.height);
 		}
 		
 		public function getChildNodeIndex(node:BNode):int
@@ -210,7 +181,7 @@ package behaviorEdit
 		
 		public function getCenterPoint():Point
 		{
-			return new Point(this.x+(nodeWidth-horizontalPadding)*0.5, this.y+(nodeHeight-verticalPadding)*0.5);
+			return new Point(this.x+nodeWidth*0.5, this.y+nodeHeight*0.5);
 		}
 		public function getLeftPoint():Point
 		{
@@ -218,17 +189,62 @@ package behaviorEdit
 		}
 		public function getRightPoint():Point
 		{
-			return new Point(this.x+(nodeWidth-horizontalPadding), this.y+20);
+			return new Point(this.x+nodeWidth, this.y+20);
 		}
 		
 		public function getTopMiddle():Point
 		{
-			return new Point(this.x+(nodeWidth-horizontalPadding)*0.5, this.y);
+			return new Point(this.x+nodeWidth*0.5, this.y);
 		}
 		public function getBottomMiddle():Point
 		{
-			return new Point(this.x+(nodeWidth-horizontalPadding)*0.5, this.y+(nodeHeight-verticalPadding));
+			return new Point(this.x+nodeWidth*0.5, this.y+nodeHeight);
 		}
+		
+		public function get verticalPadding():int
+		{
+			return _verticalPadding;
+		}
+		
+		public function set verticalPadding(value:int):void
+		{
+			_verticalPadding = value;
+			this.boundingBox.height = this.nodeHeight+this.verticalPadding;
+		}
+		
+		public function get horizontalPadding():int
+		{
+			return _horizontalPadding;
+		}
+		
+		public function set horizontalPadding(value:int):void
+		{
+			_horizontalPadding = value;
+			boundingBox.width = this.nodeWidth+this.horizontalPadding;
+		}
+		
+		public function get nodeHeight():Number
+		{
+			return _nodeHeight;
+		}
+		
+		public function set nodeHeight(value:Number):void
+		{
+			_nodeHeight = value;
+			this.boundingBox.height = this.nodeHeight+this.verticalPadding;
+		}
+		
+		public function get nodeWidth():Number
+		{
+			return _nodeWidth;
+		}
+		
+		public function set nodeWidth(value:Number):void
+		{
+			_nodeWidth = value;
+			boundingBox.width = this.nodeWidth+this.horizontalPadding;
+		}
+		
 		
 		protected var hasMouseDown:Boolean = false;
 		protected var isPressing:Boolean = false;
@@ -353,7 +369,7 @@ package behaviorEdit
 				var parActions:Parallel = new Parallel;
 				for(var i:int = 0; i < childNodes.length; i++)
 				{
-					childNodes[i].desX = this.desX + nodeWidth;
+					childNodes[i].desX = this.desX + boundingBox.width;
 					childNodes[i].desY = this.desY + treeHeight ;
 					var action:Move = new Move(childNodes[i]);
 					action.xFrom = childNodes[i].x;
@@ -364,7 +380,7 @@ package behaviorEdit
 					parActions.addChild(action);
 					
 					childNodes[i].drawWithAnim();
-					treeWidth = Math.max(treeWidth, nodeWidth + childNodes[i].treeWidth);
+					treeWidth = Math.max(treeWidth, boundingBox.width + childNodes[i].treeWidth);
 					treeHeight += childNodes[i].treeHeight;
 				}
 				parActions.addEventListener(EffectEvent.EFFECT_END, onMoveEnd);
@@ -373,14 +389,14 @@ package behaviorEdit
 			else
 				drawGraph();
 			
-			treeWidth = Math.max(treeWidth, nodeWidth);
-			treeHeight = Math.max(treeHeight, nodeHeight);
+			treeWidth = Math.max(treeWidth, boundingBox.width);
+			treeHeight = Math.max(treeHeight, boundingBox.height);
 			
 			if(false)
 			{
 				this.graphics.clear();
 				this.graphics.lineStyle(1);
-				this.graphics.drawRect(nodeWidth, 0, treeWidth, treeHeight);
+				this.graphics.drawRect(boundingBox.width, 0, treeWidth, treeHeight);
 			}
 		}
 		
@@ -395,82 +411,20 @@ package behaviorEdit
 			treeHeight = 0;
 			for(var i:int = 0; i < childNodes.length; i++)
 			{
-				childNodes[i].x = this.x + nodeWidth;
+				childNodes[i].x = this.x + boundingBox.width;
 				childNodes[i].y = this.y + treeHeight;
 				childNodes[i].draw();
 				treeWidth = Math.max(treeWidth, childNodes[i].treeWidth);
 				treeHeight += childNodes[i].treeHeight;
 			}
-			treeWidth = Math.max(treeWidth, nodeWidth);
-			treeHeight = Math.max(treeHeight, nodeHeight);
+			treeWidth = Math.max(treeWidth, boundingBox.width);
+			treeHeight = Math.max(treeHeight, boundingBox.height);
 		}
 		
 		public function drawGraph():void
 		{
-			if(drawStyle == BNodeDrawStyle.SEQ_DRAW)
-			{
-				this.graphics.clear();
-				if(childNodes.length > 0)
-				{
-					this.graphics.lineStyle(2, color);
-					Utils.horConnect(this, convertToLocal(this.getRightPoint()), convertToLocal(childNodes[0].getLeftPoint()), 2, color);
-					for(var i:int = 0; i < childNodes.length-1; i++)
-					{
-						Utils.connect(this, convertToLocal(childNodes[i].getBottomMiddle()), convertToLocal(childNodes[i+1].getTopMiddle()), 2, color);
-					}
-				}
-				else
-				{
-					var rpos:Point = convertToLocal(this.getRightPoint());
-					Utils.horConnect(this, rpos, new Point(this.nodeWidth, rpos.y), 2, color);
-					this.graphics.drawCircle(this.nodeWidth+8, rpos.y, 8);
-				}
-				
-			}
-			else if(drawStyle == BNodeDrawStyle.PAR_DRAW)
-			{
-				this.graphics.clear();
-				if(childNodes.length > 0)
-				{
-					this.graphics.lineStyle(2, color);
-					Utils.horConnect(this, convertToLocal(this.getRightPoint()), convertToLocal(childNodes[0].getLeftPoint()), 2, color);
-					for(var i:int = 0; i < childNodes.length-1; i++)
-					{
-						var startPoint:Point = convertToLocal(this.getRightPoint());
-						Utils.squareConnect(this, new Point(startPoint.x+5, startPoint.y), convertToLocal(childNodes[i+1].getLeftPoint()), 2, color);
-					}
-				}
-				else
-				{
-					var rpos:Point = convertToLocal(this.getRightPoint());
-					Utils.horConnect(this, rpos, new Point(this.nodeWidth, rpos.y), 2, color);
-					this.graphics.drawCircle(this.nodeWidth+8, rpos.y, 8);
-				}
-			}
-			else if(drawStyle == BNodeDrawStyle.LOOP_DRAW)
-			{
-				this.graphics.clear();
-				if(childNodes.length > 0)
-				{
-					this.graphics.lineStyle(2, color);
-					var startPoint:Point = convertToLocal(this.getRightPoint());
-					Utils.horConnect(this, startPoint, convertToLocal(childNodes[0].getLeftPoint()), 2, color);
-					for(var i:int = 0; i < childNodes.length-1; i++)
-					{
-						Utils.connect(this, convertToLocal(childNodes[i].getBottomMiddle()), convertToLocal(childNodes[i+1].getTopMiddle()), 2, color);
-					}
-					var lastPos:Point = convertToLocal(childNodes[childNodes.length-1].getBottomMiddle());
-					var bottomPos:Point = new Point(lastPos.x, lastPos.y+10);
-					Utils.verConnect(this, lastPos, bottomPos, 2, color);
-					Utils.squareConnect(this, new Point(startPoint.x+5, startPoint.y), bottomPos, 2, color);
-				}
-				else
-				{
-					var rpos:Point = convertToLocal(this.getRightPoint());
-					Utils.horConnect(this, rpos, new Point(this.nodeWidth, rpos.y));
-					this.graphics.drawCircle(this.nodeWidth+8, rpos.y, 8);
-				}
-			}
+			if(graphPainter)
+				graphPainter.paint();
 		}
 		
 		public function convertToLocal(p:Point):Point

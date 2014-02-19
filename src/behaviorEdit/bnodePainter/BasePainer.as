@@ -1,20 +1,41 @@
 package behaviorEdit.bnodePainter
 {
-	import behaviorEdit.bnodeController.BNodeController;
+	import mx.core.UIComponent;
+	
+	import behaviorEdit.BNode;
 
 	public class BasePainer
 	{
-		protected var controller:BNodeController;
+		protected var targetNode:BNode = null;
+		protected var graphCanvas:UIComponent;
+		protected var defaultColor:uint;
 		
-		public function BasePainer(ctrl:BNodeController)
+		public function BasePainer(node:BNode)
 		{
-			controller = ctrl;
-		
+			targetNode = node;
+			graphCanvas = new UIComponent;
+			defaultColor = targetNode.color;
+			targetNode.addChild(graphCanvas);
 		}
 		
-		public function paint():void
+		public function setDefaultColor(color:uint):void
 		{
-			
+			defaultColor = color;
+		}
+		public function getCanvas():UIComponent
+		{
+			return graphCanvas;
+		}
+		public function paint():void{}
+		public function clear():void
+		{
+			graphCanvas.removeChildren();
+			graphCanvas.graphics.clear();
+		}
+		public function dispose():void
+		{
+			targetNode.removeChild(graphCanvas);
+			graphCanvas = null;
 		}
 		
 	}

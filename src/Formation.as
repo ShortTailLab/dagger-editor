@@ -1,3 +1,8 @@
+/*
+阵型
+
+*/
+
 package
 {
 	import flash.events.EventDispatcher;
@@ -37,7 +42,6 @@ package
 					formations[getName()] = arr;
 				}
 			}
-			
 		}
 		
 		public function add(mats:Array):void

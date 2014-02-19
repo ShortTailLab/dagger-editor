@@ -3,33 +3,31 @@ package behaviorEdit.bnodePainter
 	import flash.geom.Point;
 	
 	import behaviorEdit.BNode;
-	import behaviorEdit.bnodeController.BNodeController;
 	
 	public class SeqGraphPainter extends BasePainer
 	{
-		public function SeqGraphPainter(ctrl:BNodeController)
+		public function SeqGraphPainter(node:BNode)
 		{
-			super(ctrl);
+			super(node);
 		}
 		
 		override public function paint():void
 		{
-			var paintNode:BNode = controller.node
-			paintNode.graphics.clear();
-			if(paintNode.childNodes.length > 0)
+			this.clear();
+			if(targetNode.childNodes.length > 0)
 			{
-				controller.node.graphics.lineStyle(2, controller.color);
-				Utils.horConnect(paintNode, paintNode.convertToLocal(paintNode.getRightPoint()), paintNode.convertToLocal(paintNode.childNodes[0].getLeftPoint()), 2, controller.color);
-				for(var i:int = 0; i < paintNode.childNodes.length-1; i++)
+				graphCanvas.graphics.lineStyle(2, defaultColor);
+				Utils.horConnect(graphCanvas, targetNode.convertToLocal(targetNode.getRightPoint()), targetNode.convertToLocal(targetNode.childNodes[0].getLeftPoint()), 2, defaultColor);
+				for(var i:int = 0; i < targetNode.childNodes.length-1; i++)
 				{
-					Utils.connect(paintNode, paintNode.convertToLocal(paintNode.childNodes[i].getBottomMiddle()), paintNode.convertToLocal(paintNode.childNodes[i+1].getTopMiddle()), 2, controller.color);
+					Utils.connect(graphCanvas, targetNode.convertToLocal(targetNode.childNodes[i].getBottomMiddle()), targetNode.convertToLocal(targetNode.childNodes[i+1].getTopMiddle()), 2, defaultColor);
 				}
 			}
 			else
 			{
-				var rpos:Point = paintNode.convertToLocal(paintNode.getRightPoint());
-				Utils.horConnect(paintNode, rpos, new Point(paintNode.nodeWidth, rpos.y), 2, controller.color);
-				paintNode.graphics.drawCircle(paintNode.nodeWidth+8, rpos.y, 8);
+				var rpos:Point = targetNode.convertToLocal(targetNode.getRightPoint());
+				Utils.horConnect(graphCanvas, rpos, new Point(targetNode.boundingBox.width, rpos.y), 2, defaultColor);
+				graphCanvas.graphics.drawCircle(targetNode.boundingBox.width+8, rpos.y, 8);
 			}
 		}
 	}

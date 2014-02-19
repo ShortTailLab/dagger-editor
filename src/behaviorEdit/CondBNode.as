@@ -12,6 +12,8 @@ package behaviorEdit
 	import mx.controls.TextInput;
 	import mx.core.UIComponent;
 	
+	import behaviorEdit.bnodePainter.CondGraphPainter;
+	
 	import manager.EventManager;
 
 	public class CondBNode extends BNode
@@ -26,6 +28,7 @@ package behaviorEdit
 		{
 			super(BType.BTYPE_COND, 0x1E90FF, true, true);
 			childNodeLimit = 2;
+			this.graphPainter = new CondGraphPainter(this);
 		}
 		
 		override protected function initShape():void
@@ -56,13 +59,13 @@ package behaviorEdit
 		override public function active():void
 		{
 			super.active();
-			nodeWidth = 200;
-			nodeHeight = 120;
+			nodeWidth = 170;
+			nodeHeight = 90;
 			
 			bg.graphics.clear();
 			bg.graphics.lineStyle(1);
 			bg.graphics.beginFill(color);
-			bg.graphics.drawRect(0, 0, nodeWidth-horizontalPadding, nodeHeight-verticalPadding);
+			bg.graphics.drawRect(0, 0, nodeWidth, nodeHeight);
 			bg.graphics.endFill();
 			label.setTextFormat(new TextFormat(null, 16));
 			label.x = 5;
@@ -160,26 +163,7 @@ package behaviorEdit
 		
 		override public function drawGraph():void
 		{
-			this.graphics.clear();
-			if(childNodes.length > 0)
-			{
-				this.graphics.lineStyle(2);
-				Utils.horConnect(this, convertToLocal(this.getRightPoint()), convertToLocal(childNodes[0].getLeftPoint()), 2, color);
-				for(var i:int = 0; i < childNodes.length-1; i++)
-				{
-					var startPoint:Point = convertToLocal(this.getRightPoint());
-					Utils.squareConnect(this, new Point(startPoint.x+5, startPoint.y), convertToLocal(childNodes[i+1].getLeftPoint()), 2, color);
-				}
-			}
-			else
-			{
-				var rpos:Point = convertToLocal(this.getRightPoint());
-				Utils.squareConnect(this, rpos, new Point(this.nodeWidth, rpos.y), 2, color);
-				this.graphics.drawCircle(this.nodeWidth+8, rpos.y, 8);
-				Utils.squareConnect(this, rpos, new Point(this.nodeWidth, rpos.y+30), 2, color);
-				this.graphics.drawCircle(this.nodeWidth+8, rpos.y+30, 8);
-			}
-			
+			super.drawGraph();
 			updateSwitcher();
 		}
 		

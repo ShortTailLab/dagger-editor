@@ -166,7 +166,7 @@ package editEntity
 		
 		private function findId(globalPos:Point):String
 		{
-			var mats:Array = editView.matsControl.getMatByPoint(globalPos);
+			var mats:Array = editView.matsControl.getMatsByPoint(globalPos);
 			for each(var m:EditBase in mats)
 				if(m.id != this.id)
 					return m.id;

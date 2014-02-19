@@ -4,14 +4,17 @@ package behaviorEdit
 	
 	import mx.controls.Alert;
 	
+	import behaviorEdit.bnodePainter.SeqGraphPainter;
+	
 	import manager.EventManager;
 
 	public class RootBNode extends BNode
 	{
 		public function RootBNode()
 		{
-			super(BType.BTYPE_ROOT, 0x228B22, true, false, BNodeDrawStyle.SEQ_DRAW);
+			super(BType.BTYPE_ROOT, 0x228B22, true, false);
 			this.canMove = false;
+			this.graphPainter = new SeqGraphPainter(this);
 		}
 		
 		override public function onAdd(nodeType:String):void

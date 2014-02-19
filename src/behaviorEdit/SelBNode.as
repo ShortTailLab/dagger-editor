@@ -1,12 +1,15 @@
 package behaviorEdit
 {
 	import flash.geom.Point;
+	
+	import behaviorEdit.bnodePainter.SeqGraphPainter;
 
 	public class SelBNode extends BNode
 	{
 		public function SelBNode()
 		{
-			super(BType.BTYPE_SEL, 0xD15FEE, true, true, BNodeDrawStyle.SEQ_DRAW);
+			super(BType.BTYPE_SEL, 0xD15FEE, true, true);
+			this.graphPainter = new SeqGraphPainter(this);
 		}
 		
 		override public function onLay(node:BNode):void

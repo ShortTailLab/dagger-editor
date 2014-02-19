@@ -9,17 +9,7 @@ package
 	import flash.geom.Rectangle;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
-	
-	import mx.containers.Tile;
-	import mx.core.FlexGlobals;
-	import mx.managers.PopUpManager;
-	
-	import Trigger.EditTriggers;
-	
-	import behaviorEdit.EditPanel;
-	
 	import editEntity.EditBase;
-	import editEntity.MatSprite;
 	
 	
 	public class SelectControl extends EventDispatcher
@@ -46,15 +36,51 @@ package
 			add(target);
 			this.dispatchEvent(new Event(Event.CHANGE));
 		}
+		public function selectMul(targetArr:Array):void
+		{
+			if(targetArr.length == 0)
+				return;
+			unselect();
+			while(targetArr.length > 0)
+				add(targetArr.pop());
+			this.dispatchEvent(new Event(Event.CHANGE));
+		}
 		
 		public function isSelecting():Boolean
 		{
 			return selectFrame;
 		}
 		
-		public function update(dt:int):void
+		public function unselect(target:EditBase = null):void
 		{
-			
+			for(var i:int = targets.length-1; i >= 0; i--)
+				if(!target)
+				{
+					var o:EditBase = targets.pop()
+					o.select(false);
+					o.enablePosChangeDispatch(false);
+					o.removeEventListener(Event.REMOVED_FROM_STAGE , onRemoved);
+					o.contextMenu = null
+				}
+				else if(target == targets[i])
+				{
+					target.select(false);
+					target.enablePosChangeDispatch(false);
+					target.removeEventListener(Event.REMOVED_FROM_STAGE , onRemoved);
+					targets.splice(i, 1);
+					break;
+				}
+			this.dispatchEvent(new Event(Event.CHANGE));
+		}
+		
+		public function copySelect():void
+		{
+			var newMats:Array = new Array;
+			for each(var m:EditBase in targets)
+			{
+				newMats.push(view.matsControl.add(m.type, m.x+30, m.y+30));
+			}
+			selectMul(newMats);
 		}
 		
 		private function onMouseDown(e:MouseEvent):void
@@ -131,47 +157,7 @@ package
 			targets.push(target);
 		}
 		
-		public function selectMul(targetArr:Array):void
-		{
-			if(targetArr.length == 0)
-				return;
-			unselect();
-			while(targetArr.length > 0)
-				add(targetArr.pop());
-			this.dispatchEvent(new Event(Event.CHANGE));
-		}
 		
-		public function unselect(target:EditBase = null):void
-		{
-			for(var i:int = targets.length-1; i >= 0; i--)
-				if(!target)
-				{
-					var o:EditBase = targets.pop()
-					o.select(false);
-					o.enablePosChangeDispatch(false);
-					o.removeEventListener(Event.REMOVED_FROM_STAGE , onRemoved);
-					o.contextMenu = null
-				}
-				else if(target == targets[i])
-				{
-					target.select(false);
-					target.enablePosChangeDispatch(false);
-					target.removeEventListener(Event.REMOVED_FROM_STAGE , onRemoved);
-					targets.splice(i, 1);
-					break;
-				}
-			this.dispatchEvent(new Event(Event.CHANGE));
-		}
-		
-		public function copySelect():void
-		{
-			var newMats:Array = new Array;
-			for each(var m:EditBase in targets)
-			{
-				newMats.push(view.matsControl.add(m.type, m.x+30, m.y+30));
-			}
-			selectMul(newMats);
-		}
 		
 		private function onRemoved(e:Event):void
 		{

@@ -16,7 +16,7 @@ package
 	import editEntity.MatFactory;
 	import editEntity.MatSprite;
 	
-	public class SelectBoard extends UIComponent
+	public class MatInputForm extends UIComponent
 	{
 		private var selectContainer:Sprite = null;
 		private var timeInput:TextInput = null;
@@ -25,7 +25,7 @@ package
 		
 		private var control:SelectControl = null;
 		
-		public function SelectBoard(_control:SelectControl)
+		public function MatInputForm(_control:SelectControl)
 		{
 			this.control = _control;
 			control.addEventListener(Event.CHANGE, onChange);

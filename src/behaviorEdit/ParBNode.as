@@ -1,12 +1,13 @@
 package behaviorEdit
 {
-	import flash.geom.Point;
+	import behaviorEdit.bnodePainter.ParGraphPainter;
 
 	public class ParBNode extends BNode
 	{
 		public function ParBNode(_type:String="")
 		{
-			super(BType.BTYPE_PAR, 0xF4A460, true, true, BNodeDrawStyle.PAR_DRAW);
+			super(BType.BTYPE_PAR, 0xF4A460, true, true);
+			this.graphPainter = new ParGraphPainter(this);
 		}
 		
 		override public function onLay(node:BNode):void

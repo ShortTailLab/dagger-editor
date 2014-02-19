@@ -24,7 +24,6 @@ package
 		
 		public function init(data:Object):void
 		{
-			
 			for each(var item:Object in data)
 			{
 				if(!item.hasOwnProperty("id"))
@@ -57,7 +56,7 @@ package
 			return null;
 		}
 		
-		public function getMatByPoint(pos:Point):Array
+		public function getMatsByPoint(pos:Point):Array
 		{
 			var localPos:Point = view.map.globalToLocal(pos);
 			var result:Array = new Array;
@@ -93,10 +92,7 @@ package
 			mat.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);	
 		}
 		
-		private function getUID():String
-		{
-			return new Date().time+String(idCount++);
-		}
+
 		
 		public function remove(id:String):void
 		{
@@ -118,6 +114,11 @@ package
 			for each(var m:EditBase in mats)
 				view.map.removeChild(m);
 			mats.splice(0, mats.length);
+		}
+		
+		private function getUID():String
+		{
+			return new Date().time+String(idCount++);
 		}
 		
 		private var draggingMats:Array = null;
