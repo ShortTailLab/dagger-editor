@@ -16,7 +16,7 @@ package behaviorEdit
 		
 		public function LoopBNode()
 		{
-			super(BType.BTYPE_LOOP, 0xffff00, true , true, BNodeDrawStyle.LOOP_DRAW);
+			super(BType.BTYPE_LOOP, 0xFFD700, true , true, BNodeDrawStyle.LOOP_DRAW);
 		}
 		
 		override protected function initShape():void
