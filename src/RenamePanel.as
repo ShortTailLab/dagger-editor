@@ -34,7 +34,7 @@ package
 			this.addElement(btn);
 			
 			this.addEventListener(CloseEvent.CLOSE, onClose);
-			//this.addEventListener(Event.ADDED_TO_STAGE, onAdded);
+			this.addEventListener(Event.ADDED_TO_STAGE, onAdded);
 		}
 		
 		private function onClose(e:CloseEvent):void
@@ -62,6 +62,7 @@ package
 				evt.hintMsg = input.text;
 				this.dispatchEvent(evt);
 			}
+			stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			PopUpManager.removePopUp(this);
 		}
 	}
