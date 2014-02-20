@@ -166,7 +166,7 @@ package editEntity
 		
 		private function findId(globalPos:Point):String
 		{
-			var mats:Array = editView.matsControl.getMatByPoint(globalPos);
+			var mats:Array = editView.matsControl.getMatsByPoint(globalPos);
 			for each(var m:EditBase in mats)
 				if(m.id != this.id)
 					return m.id;
@@ -364,7 +364,6 @@ package editEntity
 		private var currId:int = -1;
 		private function onMouseDown(e:MouseEvent):void
 		{
-			trace("dot mouse down");
 			e.stopPropagation();
 			var dot:Sprite = e.currentTarget as Sprite;
 			for(var i:int = 0; i < 4; i++)

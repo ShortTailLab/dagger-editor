@@ -1,8 +1,7 @@
 package behaviorEdit
 {
-	import flash.geom.Point;
 	
-	import mx.controls.Alert;
+	import behaviorEdit.bnodePainter.SeqGraphPainter;
 	
 	import manager.EventManager;
 
@@ -10,25 +9,15 @@ package behaviorEdit
 	{
 		public function RootBNode()
 		{
-			super(BType.BTYPE_ROOT, 0x228B22, true, false, BNodeDrawStyle.SEQ_DRAW);
+			super(BType.BTYPE_ROOT, 0x228B22, true, false, 1);
 			this.canMove = false;
+			this.graphPainter = new SeqGraphPainter(this);
 		}
 		
-		override public function onAdd(nodeType:String):void
-		{
-			if(childNodes.length == 0)
-			{
-				super.onAdd(nodeType);
-			}
-			else
-				Alert.show("Root节点只能添加一个子节点");
-			
-		}
-		
-		override public function removeSelf():void
+		override public function removeFromView():void
 		{
 			while(childNodes.length > 0)
-				BNode(childNodes.pop()).removeSelf();
+				BNode(childNodes.pop()).removeFromView();
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
 		

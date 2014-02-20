@@ -241,5 +241,13 @@ package
 			var t:File = File.desktopDirectory.resolvePath(to);
 			f.copyTo(t, true);
 		}
+		
+		static public function parseObjToXML(obj:Object):XML
+		{
+			var xml:XML = <Root></Root>;
+			for(var b:* in obj)
+				xml.appendChild(new XML("<parm label='"+b+"'></parm>"));
+			return xml;
+		}
 	}
 }

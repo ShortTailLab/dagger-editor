@@ -21,11 +21,11 @@ package behaviorEdit
 			this.title = "选择节点类型";
 			this.setStyle("backgroundColor", 0x00BFFF);
 			
-			this.width = 100;
+			this.width = 95;
 			this.height = 350;
 			
-			var btypes:Array = [BType.BTYPE_EXEC, BType.BTYPE_SEQ, BType.BTYPE_SEL,
-				BType.BTYPE_PAR, BType.BTYPE_COND, BType.BTYPE_LOOP];
+			var btypes:Array = [BType.BTYPE_SEQ, BType.BTYPE_SEL,
+				BType.BTYPE_PAR, BType.BTYPE_COND, BType.BTYPE_LOOP, BType.BTYPE_EXEC];
 			var node:BNode;
 			for(var i:int = 0; i < btypes.length; i++)
 			{

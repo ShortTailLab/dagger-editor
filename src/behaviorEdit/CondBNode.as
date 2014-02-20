@@ -9,8 +9,8 @@ package behaviorEdit
 	
 	import mx.controls.Alert;
 	import mx.controls.TextArea;
-	import mx.controls.TextInput;
-	import mx.core.UIComponent;
+	
+	import behaviorEdit.bnodePainter.CondGraphPainter;
 	
 	import manager.EventManager;
 
@@ -24,8 +24,8 @@ package behaviorEdit
 		
 		public function CondBNode()
 		{
-			super(BType.BTYPE_COND, 0x1E90FF, true, true);
-			childNodeLimit = 2;
+			super(BType.BTYPE_COND, 0x1E90FF, true, true, 2);
+			this.graphPainter = new CondGraphPainter(this);
 		}
 		
 		override protected function initShape():void
@@ -56,13 +56,13 @@ package behaviorEdit
 		override public function active():void
 		{
 			super.active();
-			nodeWidth = 200;
-			nodeHeight = 120;
+			nodeWidth = 170;
+			nodeHeight = 90;
 			
 			bg.graphics.clear();
 			bg.graphics.lineStyle(1);
 			bg.graphics.beginFill(color);
-			bg.graphics.drawRect(0, 0, nodeWidth-horizontalPadding, nodeHeight-verticalPadding);
+			bg.graphics.drawRect(0, 0, nodeWidth, nodeHeight);
 			bg.graphics.endFill();
 			label.setTextFormat(new TextFormat(null, 16));
 			label.x = 5;
@@ -76,30 +76,6 @@ package behaviorEdit
 			inputLabel.addEventListener(MouseEvent.MOUSE_DOWN, onLabelMouseDown);
 			this.addChild(inputLabel);
 		}
-		
-		/*override public function init(_view:BTEditView):void
-		{
-			super.init(_view);
-			nodeWidth = 200;
-			nodeHeight = 120;
-			
-			bg.graphics.clear();
-			bg.graphics.lineStyle(1);
-			bg.graphics.beginFill(color);
-			bg.graphics.drawRect(0, 0, nodeWidth-horizontalPadding, nodeHeight-verticalPadding);
-			bg.graphics.endFill();
-			label.setTextFormat(new TextFormat(null, 16));
-			label.x = 5;
-			label.y = 5;
-			
-			inputLabel = new TextArea();
-			inputLabel.width = 150;
-			inputLabel.height = 60;
-			inputLabel.x = 10;
-			inputLabel.y = 20;
-			inputLabel.addEventListener(MouseEvent.MOUSE_DOWN, onLabelMouseDown);
-			this.addChild(inputLabel);
-		}*/
 		
 		override public function initData(data:Object):void
 		{
@@ -120,7 +96,7 @@ package behaviorEdit
 			e.stopPropagation();
 		}
 		
-		override public function onLay(node:BNode):void
+		override public function onDragIn(node:BNode):void
 		{
 			if(this.childNodes.length < 2 || node.par == this)
 			{
@@ -130,56 +106,16 @@ package behaviorEdit
 				
 				if(node.par == this && getChildNodeIndex(node) < i)
 					i--;
-				node.par.removeChildNode(node.nodeId);
+				node.par.removeChildNodeById(node.nodeId);
 				childNodes.splice(i, 0, node);
 				
 				node.par = this;
 			}
 		}
 		
-		override public function onAdd(nodeType:String):void
-		{
-			if(childNodes.length < 2)
-			{
-				super.onAdd(nodeType);
-			}
-			else
-				Alert.show("条件节点只能添加两个子节点！");
-			
-		}
-		
-		override public function add(node:BNode):void
-		{
-			if(childNodes.length >= 2)
-				return;
-			node.initPos(this.x, this.y);
-			node.par = this;
-			childNodes.push(node);
-			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
-		}
-		
 		override public function drawGraph():void
 		{
-			this.graphics.clear();
-			if(childNodes.length > 0)
-			{
-				this.graphics.lineStyle(2);
-				Utils.horConnect(this, convertToLocal(this.getRightPoint()), convertToLocal(childNodes[0].getLeftPoint()), 2, color);
-				for(var i:int = 0; i < childNodes.length-1; i++)
-				{
-					var startPoint:Point = convertToLocal(this.getRightPoint());
-					Utils.squareConnect(this, new Point(startPoint.x+5, startPoint.y), convertToLocal(childNodes[i+1].getLeftPoint()), 2, color);
-				}
-			}
-			else
-			{
-				var rpos:Point = convertToLocal(this.getRightPoint());
-				Utils.squareConnect(this, rpos, new Point(this.nodeWidth, rpos.y), 2, color);
-				this.graphics.drawCircle(this.nodeWidth+8, rpos.y, 8);
-				Utils.squareConnect(this, rpos, new Point(this.nodeWidth, rpos.y+30), 2, color);
-				this.graphics.drawCircle(this.nodeWidth+8, rpos.y+30, 8);
-			}
-			
+			super.drawGraph();
 			updateSwitcher();
 		}
 		

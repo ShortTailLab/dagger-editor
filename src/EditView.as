@@ -1,3 +1,8 @@
+/*
+
+all operation about add or remove mat on editView should be through matsControl
+
+*/
 package
 {
 	import flash.display.DisplayObject;
@@ -54,7 +59,7 @@ package
 		
 		public var matsControl:EditMatsControl;
 		public var selectControl:SelectControl;
-		private var selectBoard:SelectBoard;
+		private var selectBoard:MatInputForm;
 		
 		private var main:MapEditor = null;
 		
@@ -126,7 +131,7 @@ package
 			matsControl = new EditMatsControl(this);
 			selectControl = new SelectControl(this);
 			
-			selectBoard = new SelectBoard(selectControl);
+			selectBoard = new MatInputForm(selectControl);
 			this.addChild(selectBoard);
 			
 			setEndTime(canvas.height/speed);
@@ -140,7 +145,6 @@ package
 			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			bg.addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
-			
 		}
 		
 		public function init(_levelName:String):void
@@ -156,7 +160,6 @@ package
 			var end:int = level.endTime != 0? level.endTime : canvas.height/speed;
 			setEndTime(end);
 			setCurrTime(0);	
-			
 		}
 		
 		public function clear():void
@@ -172,9 +175,67 @@ package
 			Data.getInstance().updateLevelData(levelName, data, endTime);
 		}
 		
+		public function setCurrTime(value:Number):void
+		{
+			if(value < 0)
+			{
+				return;
+			}
+			currTime = value;
+			if(currTime > endTime)
+				setEndTime(currTime);
+			updateSlider();
+			timeLine.setCurrTime(currTime);
+		}
+		
+		public function setEndTime(value:Number):void
+		{
+			if(value < 0)
+			{
+				return;
+			}
+			if(value != endTime)
+			{
+				endTime = value;
+			}
+		}
+		
+		public function switchMap():void
+		{
+			for(var m in mapPieces)
+			{
+				mapBg.removeChild(mapPieces[m]);
+			}
+			mapPieces = new Dictionary;
+			while(mapFreePieces.length > 0)
+				mapFreePieces.pop();
+			
+			oneMapHigh = EditMapControl.getInstance().mapHeight;
+		}
+		
 		private function onAddToStage(e:Event):void
 		{
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+		}
+		private function onKeyDown(e:KeyboardEvent):void
+		{
+			var code:uint = e.keyCode;
+			if(code == Keyboard.C && e.ctrlKey && selectControl.targets.length > 0)
+			{
+				selectControl.copySelect();
+			}
+			if(code == Keyboard.F && e.ctrlKey && selectControl.targets.length > 0)
+			{
+				Formation.getInstance().add(selectControl.targets);
+			}
+			if(code == Keyboard.DELETE && selectControl.targets.length > 0)
+			{
+				var copy:Array = selectControl.targets.slice(0, selectControl.targets.length);
+				for each(var m:EditBase in copy)
+				{
+					matsControl.remove(m.id);
+				}
+			}
 		}
 		private function onCurrTimeSubmit(e:FlexEvent):void
 		{
@@ -202,26 +263,7 @@ package
 		private function onWheel(e:MouseEvent):void{
 			setCurrTime(currTime+e.delta);
 		}
-		private function onKeyDown(e:KeyboardEvent):void
-		{
-			var code:uint = e.keyCode;
-			if(code == Keyboard.C && e.ctrlKey && selectControl.targets.length > 0)
-			{
-				selectControl.copySelect();
-			}
-			if(code == Keyboard.F && e.ctrlKey && selectControl.targets.length > 0)
-			{
-				Formation.getInstance().add(selectControl.targets);
-			}
-			if(code == Keyboard.DELETE && selectControl.targets.length > 0)
-			{
-				var copy:Array = selectControl.targets.slice(0, selectControl.targets.length);
-				for each(var m:EditBase in copy)
-				{
-					matsControl.remove(m.id);
-				}
-			}
-		}
+		
 		private function onClick(e:MouseEvent):void
 		{
 			if(main.matsView.selected)
@@ -357,32 +399,6 @@ package
 		}
 		
 		
-		public function setCurrTime(value:Number):void
-		{
-			if(value < 0)
-			{
-				return;
-			}
-			currTime = value;
-			if(currTime > endTime)
-				setEndTime(currTime);
-			updateSlider();
-			timeLine.setCurrTime(currTime);
-		}
-		
-		public function setEndTime(value:Number):void
-		{
-			if(value < 0)
-			{
-				return;
-			}
-			if(value != endTime)
-			{
-				endTime = value;
-			}
-		}
-		
-		
 		private function updateSlider():void
 		{
 			slider.maximum = endTime;
@@ -420,19 +436,6 @@ package
 					mapBg.addChild(img);
 					mapPieces[j] = img;
 				}
-		}
-		
-		public function switchMap():void
-		{
-			for(var m in mapPieces)
-			{
-				mapBg.removeChild(mapPieces[m]);
-			}
-			mapPieces = new Dictionary;
-			while(mapFreePieces.length > 0)
-				mapFreePieces.pop();
-			
-			oneMapHigh = EditMapControl.getInstance().mapHeight;
 		}
 		
 	}

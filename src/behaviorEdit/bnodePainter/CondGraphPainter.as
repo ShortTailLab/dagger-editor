@@ -4,9 +4,9 @@ package behaviorEdit.bnodePainter
 	
 	import behaviorEdit.BNode;
 	
-	public class ParGraphPainter extends BasePainer
+	public class CondGraphPainter extends BasePainer
 	{
-		public function ParGraphPainter(node:BNode)
+		public function CondGraphPainter(node:BNode)
 		{
 			super(node);
 		}
@@ -16,7 +16,7 @@ package behaviorEdit.bnodePainter
 			this.clear();
 			if(targetNode.childNodes.length > 0)
 			{
-				graphCanvas.graphics.lineStyle(2, defaultColor);
+				graphCanvas.graphics.lineStyle(2);
 				Utils.horConnect(graphCanvas, targetNode.convertToLocal(targetNode.getRightPoint()), targetNode.convertToLocal(targetNode.childNodes[0].getLeftPoint()), 2, defaultColor);
 				for(var i:int = 0; i < targetNode.childNodes.length-1; i++)
 				{
@@ -27,8 +27,10 @@ package behaviorEdit.bnodePainter
 			else
 			{
 				var rpos:Point = targetNode.convertToLocal(targetNode.getRightPoint());
-				Utils.horConnect(graphCanvas, rpos, new Point(targetNode.boundingBox.width, rpos.y), 2, defaultColor);
+				Utils.squareConnect(graphCanvas, rpos, new Point(targetNode.boundingBox.width, rpos.y), 2, defaultColor);
 				graphCanvas.graphics.drawCircle(targetNode.boundingBox.width+8, rpos.y, 8);
+				Utils.squareConnect(graphCanvas, rpos, new Point(targetNode.boundingBox.width, rpos.y+30), 2, defaultColor);
+				graphCanvas.graphics.drawCircle(targetNode.boundingBox.width+8, rpos.y+30, 8);
 			}
 		}
 	}
