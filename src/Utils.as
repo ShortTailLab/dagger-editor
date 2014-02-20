@@ -88,7 +88,7 @@ package
 				
 				if(sourceData.type == BType.BTYPE_EXEC)
 				{
-					result += sourceData.data.execType+"(actor";
+					result += sourceData.data.execType+"(";
 					//the format of data refer to execNode.exportData()
 					var parms:Array = sourceData.data.parm as Array
 					for(var i:int = 0; i < parms.length; i++)
@@ -96,7 +96,7 @@ package
 						if(parms[i].hasOwnProperty("value") && parms[i].value == "")
 							return "";
 						
-						result += ",";
+						if(i!=0) result += ",";
 						if(parms[i].type == "ccp")
 						{
 							result += "cc.p("+parms[i].value+","+parms[++i].value+")";
