@@ -1,7 +1,5 @@
 package behaviorEdit
 {
-	import flash.display.DisplayObject;
-	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	
@@ -19,7 +17,7 @@ package behaviorEdit
 			panel = _panel; 
 			
 			rootNode = new RootBNode;
-			rootNode.initPos(50, 20);
+			rootNode.setPos(50, 20);
 			this.addNode(rootNode);
 			
 			EventManager.getInstance().addEventListener(BTEvent.TREE_CHANGE, onTreeChange);
@@ -36,7 +34,7 @@ package behaviorEdit
 		
 		public function clear():void
 		{
-			rootNode.removeSelf();
+			rootNode.removeFromView();
 		}
 		
 		public function initNode(par:BNode, nodeData:Object):void
@@ -45,6 +43,7 @@ package behaviorEdit
 			this.addNode(node);
 			node.initData(nodeData.data);
 			par.add(node);
+			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 			var children:Array = nodeData.children as Array;
 			for(var i:int = 0; i < children.length; i++)
 				initNode(node, children[i]);
@@ -52,7 +51,7 @@ package behaviorEdit
 		
 		public function addNode(childNode:BNode):void
 		{
-			childNode.view = this;
+			childNode.setView(this);
 			childNode.active();
 			this.addChild(childNode);
 		}
@@ -96,12 +95,8 @@ package behaviorEdit
 				return n.getInteractiveRect().containsPoint(new Point(node.x, node.y));
 			});
 			if(result)
-				result.onLay(node);
+				result.onDragIn(node);
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
-		}
-		private function onEnterFrame(e:Event):void
-		{
-			rootNode.update(1);
 		}
 		
 		private function check(node:BNode, condFunc:Function):BNode

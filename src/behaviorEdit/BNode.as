@@ -1,5 +1,7 @@
 package behaviorEdit
 {
+	import com.hurlant.crypto.symmetric.NullPad;
+	
 	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
@@ -11,13 +13,13 @@ package behaviorEdit
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
+	import mx.controls.Alert;
 	import mx.core.UIComponent;
 	import mx.effects.Move;
 	import mx.effects.Parallel;
 	import mx.events.EffectEvent;
 	import mx.managers.PopUpManager;
 	
-	import behaviorEdit.bnodeController.BNodeController;
 	import behaviorEdit.bnodePainter.BasePainer;
 	
 	import manager.EventManager;
@@ -31,42 +33,38 @@ package behaviorEdit
 		public var treeWidth:Number = 0.0;
 		public var treeHeight:Number = 0.0;
 		public var boundingBox:Rectangle;
+		public var childNodes:Array = new Array;
 		
-		protected var enableLay:Boolean = false;
-		
+		protected var view:BTEditView = null;
+		protected var enableAddNode:Boolean = false;
+		protected var enableDragNodeIn:Boolean = false;
 		protected var _nodeWidth:Number = 0.0;
 		protected var _nodeHeight:Number = 0.0;
 		protected var _horizontalPadding:int = 30;
 		protected var _verticalPadding:int = 30;
-
-		public var childNodes:Array = new Array;
-		public var view:BTEditView = null;
-		protected var isAcceptNode:Boolean = false;
-		
 		protected var canMove:Boolean = true;
-		
 		protected var bg:Sprite;
 		protected var label:TextField;
 		
 		private var desX:Number = 0.0;
 		private var desY:Number = 0.0;
 		
+		//-1 means no limit for child nodes num
 		protected var childNodeLimit:int = -1;
 		
-		public var enableDebug:Boolean = false;
-		
-		private var controller:BNodeController;
-		
 		//painter make a canvas added to node.
-		//clear painter should use the painter's dispose func.
+		//clear painter should use the painter's dispose() func.
 		protected var graphPainter:BasePainer = null;
 		
-		public function BNode(_type:String = "", _color:uint = 0xF0FFF0, isAccept:Boolean = false, enableLayNode:Boolean = false)
+		public function BNode(_type:String = "", _color:uint = 0xF0FFF0, enableAdd:Boolean = false, enableDragIn:Boolean = false, childNodeLimit:int = -1)
 		{
 			this.type = _type;
 			this.color = _color;
-			this.isAcceptNode = isAccept; 
-			this.enableLay = enableLayNode;
+			//this flag control
+			this.enableAddNode = enableAdd; 
+			//this flag control whether handle when a node is dragged in
+			this.enableDragNodeIn = enableDragIn;
+			this.childNodeLimit = childNodeLimit;
 			
 			this.boundingBox = new Rectangle;
 			this.nodeWidth = 70;
@@ -77,8 +75,8 @@ package behaviorEdit
 			this.height = boundingBox.height;
 			initShape();
 		}
-		
-		public function switchTo(type:String):void
+		//switch the node Type.it will destroy curr one and make a new one instead.
+		public function switchType(type:String):void
 		{
 			var node:BNode = BNodeFactory.createBNode(type);
 			node.x = this.x;
@@ -98,36 +96,8 @@ package behaviorEdit
 					this.childNodes[i].view.removeChild(this.childNodes[i]);
 			
 			node.view.removeChild(this);
-			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
-		
-		
-		protected function initShape():void
-		{
-			bg = new Sprite;
-			this.addChild(bg);
-			updateBg();
-			
-			label = new TextField;
-			label.defaultTextFormat = new TextFormat(null, 24);
-			label.text = type;
-			label.selectable = false;
-			label.width = label.textWidth+5;
-			label.height = label.textHeight+5;
-			this.addChild(label);
-			label.x = bg.width*0.5-label.textWidth*0.5;
-			label.y = bg.height*0.5-label.textHeight*0.5;
-		}
-		
-		protected function updateBg():void
-		{
-			bg.graphics.clear();
-			bg.graphics.lineStyle(1);
-			bg.graphics.beginFill(color);
-			bg.graphics.drawRect(0, 0, nodeWidth, nodeHeight);
-			bg.graphics.endFill();
-		}
-		
+		//make it be interactive with user.usually used when it is added to editview.
 		public function active():void
 		{
 			if(canMove)
@@ -135,20 +105,25 @@ package behaviorEdit
 				this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			}
 			
-			if(isAcceptNode)
+			if(enableAddNode)
 				this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			
 			var menu:ContextMenu = new ContextMenu;
 			var btn:ContextMenuItem = new ContextMenuItem("删除");
 			btn.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
-				BNode(e.contextMenuOwner).removeSelf();
+				BNode(e.contextMenuOwner).removeFromView();
 				EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 			});
 			menu.addItem(btn);
 			this.contextMenu = menu;
 		}
 		
-		public function initPos(dx:Number, dy:Number):void
+		public function setView(view:BTEditView):void
+		{
+			this.view = view;
+		}
+		
+		public function setPos(dx:Number, dy:Number):void
 		{
 			this.x = desX = dx;
 			this.y = desY = dy;
@@ -157,14 +132,6 @@ package behaviorEdit
 		//these two func should be overrided to restore node data. 
 		public function initData(data:Object):void{}
 		public function exportData():Object{return null;}
-		
-		public function update(dt:Number):void
-		{
-			for each(var n:BNode in childNodes)
-				n.update(dt);
-			drawGraph();
-		}
-		
 		
 		public function getInteractiveRect():Rectangle
 		{
@@ -245,6 +212,142 @@ package behaviorEdit
 			boundingBox.width = this.nodeWidth+this.horizontalPadding;
 		}
 		
+		public function onDragIn(node:BNode):void
+		{
+			if(enableDragNodeIn && this.getChildNodesNum()<this.childNodeLimit)
+			{
+				for(var i:int = 0; i < childNodes.length; i++)
+					if(node.y < childNodes[i].y)
+						break;
+				
+				if(node.par == this && getChildNodeIndex(node) < i)
+					i--;
+				node.par.removeChildNodeById(node.nodeId);
+				childNodes.splice(i, 0, node);
+				
+				node.par = this;
+			}
+		}
+		
+		public function onAdd(nodeType:String):void
+		{
+			if(childNodeLimit<0 || this.childNodes.length < this.childNodeLimit)
+			{
+				var node:BNode = BNodeFactory.createBNode(nodeType);
+				view.addNode(node);
+				add(node);
+				EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
+			}
+			else
+				Alert.show("该节点只能接受"+this.childNodeLimit+"个子节点!");
+		}
+		
+		public function add(node:BNode):void
+		{
+			if(childNodeLimit<0 || this.childNodes.length < this.childNodeLimit)
+			{
+				node.setPos(this.x, this.y);
+				node.par = this;
+				childNodes.push(node);
+			}
+			else
+				throw new Error("childnodes num has reach the limit!");
+		}
+		
+		public function getChildNodesNum():int
+		{
+			return this.childNodes.length;
+		}
+		
+		public function removeFromView():void
+		{
+			while(childNodes.length > 0)
+				BNode(childNodes.pop()).removeFromView();
+			if(this.par)
+			{
+				this.par.removeChildNodeById(this.nodeId);
+				this.par = null;
+			}
+			view.removeChild(this);
+		}
+		
+		public function clearAllChildren():void
+		{
+			for each(var node:BNode in childNodes) node.removeFromView();
+		}
+		
+		public function removeChildNodeById(id:int, isRemoveFromView:Boolean = false):void
+		{
+			for(var i:int = 0; i < childNodes.length; i++)
+				if(childNodes[i].nodeId == id)
+				{
+					var node:BNode = childNodes.splice(i, 1)[0];
+					node.par = null;
+					if(isRemoveFromView)
+						node.removeFromView();
+					return;
+				}
+		}
+		
+		public function drawWithAnim():void
+		{
+			treeWidth = 0;
+			treeHeight = 0;
+			if(childNodes.length > 0)
+			{
+				var parActions:Parallel = new Parallel;
+				for(var i:int = 0; i < childNodes.length; i++)
+				{
+					childNodes[i].desX = this.desX + boundingBox.width;
+					childNodes[i].desY = this.desY + treeHeight ;
+					var action:Move = new Move(childNodes[i]);
+					action.xFrom = childNodes[i].x;
+					action.yFrom = childNodes[i].y;
+					action.xTo = childNodes[i].desX;
+					action.yTo = childNodes[i].desY;
+					action.duration = 200;
+					parActions.addChild(action);
+					
+					childNodes[i].drawWithAnim();
+					treeWidth = Math.max(treeWidth, boundingBox.width + childNodes[i].treeWidth);
+					treeHeight += childNodes[i].treeHeight;
+				}
+				parActions.addEventListener(EffectEvent.EFFECT_END, onMoveEnd);
+				parActions.play();
+			}
+			else
+				drawGraph();
+			
+			treeWidth = Math.max(treeWidth, boundingBox.width);
+			treeHeight = Math.max(treeHeight, boundingBox.height);
+		}
+		
+		protected function initShape():void
+		{
+			bg = new Sprite;
+			this.addChild(bg);
+			updateBg();
+			
+			label = new TextField;
+			label.defaultTextFormat = new TextFormat(null, 24);
+			label.text = type;
+			label.selectable = false;
+			label.width = label.textWidth+5;
+			label.height = label.textHeight+5;
+			this.addChild(label);
+			label.x = bg.width*0.5-label.textWidth*0.5;
+			label.y = bg.height*0.5-label.textHeight*0.5;
+		}
+		
+		protected function updateBg():void
+		{
+			bg.graphics.clear();
+			bg.graphics.lineStyle(1);
+			bg.graphics.beginFill(color);
+			bg.graphics.drawRect(0, 0, nodeWidth, nodeHeight);
+			bg.graphics.endFill();
+		}
+		
 		
 		protected var hasMouseDown:Boolean = false;
 		protected var isPressing:Boolean = false;
@@ -295,110 +398,11 @@ package behaviorEdit
 		private function onSelectType(e:MsgEvent):void
 		{
 			var type:String = e.hintMsg;
-			this.switchTo(type);
-		}
-		
-		public function onLay(node:BNode):void
-		{
-			if(enableLay)
-			{
-				for(var i:int = 0; i < childNodes.length; i++)
-					if(node.y < childNodes[i].y)
-						break;
-				
-				if(node.par == this && getChildNodeIndex(node) < i)
-					i--;
-				node.par.removeChildNode(node.nodeId);
-				childNodes.splice(i, 0, node);
-				
-				node.par = this;
-			}
-		}
-		
-		public function onAdd(nodeType:String):void
-		{
-			var node:BNode = BNodeFactory.createBNode(nodeType);
-			view.addNode(node);
-			add(node);
-			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.HAS_EDITED));
-		}
-		
-		public function add(node:BNode):void
-		{
-			node.initPos(this.x, this.y);
-			node.par = this;
-			childNodes.push(node);
+			this.switchType(type);
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
 		
-		public function removeSelf():void
-		{
-			while(childNodes.length > 0)
-				BNode(childNodes.pop()).removeSelf();
-			if(this.par)
-			{
-				this.par.removeChildNode(this.nodeId);
-				this.par = null;
-			}
-			
-			view.removeChild(this);
-		}
 		
-		public function clearAllChildren():void
-		{
-			for each(var node:BNode in childNodes)
-				node.removeSelf();
-		}
-		
-		public function removeChildNode(id:int):void
-		{
-			for(var i:int = 0; i < childNodes.length; i++)
-				if(childNodes[i].nodeId == id)
-				{
-					childNodes.splice(i, 1);
-					return;
-				}
-		}
-		
-		public function drawWithAnim():void
-		{
-			treeWidth = 0;
-			treeHeight = 0;
-			if(childNodes.length > 0)
-			{
-				var parActions:Parallel = new Parallel;
-				for(var i:int = 0; i < childNodes.length; i++)
-				{
-					childNodes[i].desX = this.desX + boundingBox.width;
-					childNodes[i].desY = this.desY + treeHeight ;
-					var action:Move = new Move(childNodes[i]);
-					action.xFrom = childNodes[i].x;
-					action.yFrom = childNodes[i].y;
-					action.xTo = childNodes[i].desX;
-					action.yTo = childNodes[i].desY;
-					action.duration = 200;
-					parActions.addChild(action);
-					
-					childNodes[i].drawWithAnim();
-					treeWidth = Math.max(treeWidth, boundingBox.width + childNodes[i].treeWidth);
-					treeHeight += childNodes[i].treeHeight;
-				}
-				parActions.addEventListener(EffectEvent.EFFECT_END, onMoveEnd);
-				parActions.play();
-			}
-			else
-				drawGraph();
-			
-			treeWidth = Math.max(treeWidth, boundingBox.width);
-			treeHeight = Math.max(treeHeight, boundingBox.height);
-			
-			if(false)
-			{
-				this.graphics.clear();
-				this.graphics.lineStyle(1);
-				this.graphics.drawRect(boundingBox.width, 0, treeWidth, treeHeight);
-			}
-		}
 		
 		private function onMoveEnd(e:EffectEvent):void
 		{

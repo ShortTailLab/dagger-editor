@@ -364,7 +364,6 @@ package editEntity
 		private var currId:int = -1;
 		private function onMouseDown(e:MouseEvent):void
 		{
-			trace("dot mouse down");
 			e.stopPropagation();
 			var dot:Sprite = e.currentTarget as Sprite;
 			for(var i:int = 0; i < 4; i++)

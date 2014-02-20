@@ -9,8 +9,6 @@ package behaviorEdit
 	
 	import mx.controls.Alert;
 	import mx.controls.TextArea;
-	import mx.controls.TextInput;
-	import mx.core.UIComponent;
 	
 	import behaviorEdit.bnodePainter.CondGraphPainter;
 	
@@ -26,8 +24,7 @@ package behaviorEdit
 		
 		public function CondBNode()
 		{
-			super(BType.BTYPE_COND, 0x1E90FF, true, true);
-			childNodeLimit = 2;
+			super(BType.BTYPE_COND, 0x1E90FF, true, true, 2);
 			this.graphPainter = new CondGraphPainter(this);
 		}
 		
@@ -80,30 +77,6 @@ package behaviorEdit
 			this.addChild(inputLabel);
 		}
 		
-		/*override public function init(_view:BTEditView):void
-		{
-			super.init(_view);
-			nodeWidth = 200;
-			nodeHeight = 120;
-			
-			bg.graphics.clear();
-			bg.graphics.lineStyle(1);
-			bg.graphics.beginFill(color);
-			bg.graphics.drawRect(0, 0, nodeWidth-horizontalPadding, nodeHeight-verticalPadding);
-			bg.graphics.endFill();
-			label.setTextFormat(new TextFormat(null, 16));
-			label.x = 5;
-			label.y = 5;
-			
-			inputLabel = new TextArea();
-			inputLabel.width = 150;
-			inputLabel.height = 60;
-			inputLabel.x = 10;
-			inputLabel.y = 20;
-			inputLabel.addEventListener(MouseEvent.MOUSE_DOWN, onLabelMouseDown);
-			this.addChild(inputLabel);
-		}*/
-		
 		override public function initData(data:Object):void
 		{
 			if(data)
@@ -123,7 +96,7 @@ package behaviorEdit
 			e.stopPropagation();
 		}
 		
-		override public function onLay(node:BNode):void
+		override public function onDragIn(node:BNode):void
 		{
 			if(this.childNodes.length < 2 || node.par == this)
 			{
@@ -133,32 +106,11 @@ package behaviorEdit
 				
 				if(node.par == this && getChildNodeIndex(node) < i)
 					i--;
-				node.par.removeChildNode(node.nodeId);
+				node.par.removeChildNodeById(node.nodeId);
 				childNodes.splice(i, 0, node);
 				
 				node.par = this;
 			}
-		}
-		
-		override public function onAdd(nodeType:String):void
-		{
-			if(childNodes.length < 2)
-			{
-				super.onAdd(nodeType);
-			}
-			else
-				Alert.show("条件节点只能添加两个子节点！");
-			
-		}
-		
-		override public function add(node:BNode):void
-		{
-			if(childNodes.length >= 2)
-				return;
-			node.initPos(this.x, this.y);
-			node.par = this;
-			childNodes.push(node);
-			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
 		
 		override public function drawGraph():void
