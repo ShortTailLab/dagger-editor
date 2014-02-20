@@ -9,6 +9,10 @@ package
 	import flash.geom.Rectangle;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
+	
+	import mx.controls.Alert;
+	import mx.managers.PopUpManager;
+	
 	import editEntity.EditBase;
 	
 	
@@ -134,7 +138,7 @@ package
 			});
 			var item2:ContextMenuItem = new ContextMenuItem("设为阵型");
 			item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
-				Formation.getInstance().add(targets);
+				setSelectMatToFormation();
 			});
 			var item3:ContextMenuItem = new ContextMenuItem("删除");
 			item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
@@ -157,6 +161,19 @@ package
 			targets.push(target);
 		}
 		
+		public function setSelectMatToFormation():void
+		{
+			var window:RenamePanel = new RenamePanel;
+			window.addEventListener(MsgEvent.RENAME_LEVEL, function(e:MsgEvent):void{
+				if(Formation.getInstance().hasFormation(e.hintMsg))
+					Alert.show("该阵型名已经存在！");
+				else
+					Formation.getInstance().add(e.hintMsg, targets);
+			});
+			
+			PopUpManager.addPopUp(window, this.view.parent, true);
+			PopUpManager.centerPopUp(window);
+		}
 		
 		
 		private function onRemoved(e:Event):void

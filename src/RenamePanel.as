@@ -5,12 +5,12 @@ package
 	import flash.events.MouseEvent;
 	import flash.ui.Keyboard;
 	
-	import spark.components.TitleWindow;
 	import mx.controls.TextInput;
 	import mx.events.CloseEvent;
 	import mx.managers.PopUpManager;
 	
 	import spark.components.Button;
+	import spark.components.TitleWindow;
 	
 	public class RenamePanel extends TitleWindow
 	{
@@ -34,7 +34,7 @@ package
 			this.addElement(btn);
 			
 			this.addEventListener(CloseEvent.CLOSE, onClose);
-			this.addEventListener(Event.ADDED_TO_STAGE, onAdded);
+			//this.addEventListener(Event.ADDED_TO_STAGE, onAdded);
 		}
 		
 		private function onClose(e:CloseEvent):void

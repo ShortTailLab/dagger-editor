@@ -9,6 +9,7 @@ package
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
+	
 	import editEntity.MatSprite;
 
 	public class Formation extends EventDispatcher
@@ -26,38 +27,57 @@ package
 		
 		public function Formation()
 		{
-			formations = new Object;
 			var file:File = File.desktopDirectory.resolvePath("editor/formations.json");
 			if(file.exists)
 			{
 				var stream:FileStream = new FileStream;
 				stream.open(file, FileMode.READ);
-				var data:Object = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				formations = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
-				for each(var item in data)
+			}
+		}
+		public function hasFormation(name:String):Boolean
+		{
+			return formations.hasOwnProperty(name);
+		}
+		
+		public function add(name:String, mats:Array):void
+		{
+			if(!formations.hasOwnProperty(name))
+			{
+				formations[name] = format(mats);
+				save();
+				this.dispatchEvent(new MsgEvent(MsgEvent.ADD_FORMATION, name));
+			}
+			else
+				throw new Error("name is invalid!");
+		}
+		
+		public function rename(from:String, to:String):void
+		{
+			if(from != to)
+			{
+				if(!this.hasFormation(from))
+					throw new Error("from is invalid!");
+				else if(this.hasFormation(to))
+					throw new Error("to has exsited!");
+				else
 				{
-					var arr:Array = new Array;
-					for each(var p in item)
-						arr.push(p);
-					formations[getName()] = arr;
+					formations[to] = formations[from];
+					delete formations[from];
 				}
 			}
 		}
 		
-		public function add(mats:Array):void
-		{
-			var name:String = getName();
-			formations[name] = format(mats);
-			save();
-			
-			this.dispatchEvent(new MsgEvent(MsgEvent.ADD_FORMATION, name));
-		}
-		
 		public function remove(name:String):void
 		{
-			delete formations[name];
-			save();
-			this.dispatchEvent(new MsgEvent(MsgEvent.REMOVE_FORMATION));
+			if(this.hasFormation(name))
+			{
+				delete formations[name];
+				save();
+			}
+			else
+				throw new Error("trying to remove a unexist formatiom!");
 		}
 		
 		public function save():void

@@ -226,7 +226,7 @@ package
 			}
 			if(code == Keyboard.F && e.ctrlKey && selectControl.targets.length > 0)
 			{
-				Formation.getInstance().add(selectControl.targets);
+				selectControl.setSelectMatToFormation();
 			}
 			if(code == Keyboard.DELETE && selectControl.targets.length > 0)
 			{
