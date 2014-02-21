@@ -47,7 +47,7 @@ package
 		// behavior 
 		public var bh_lib:Object = null;
 		public var bh_node:Object = null;
-		public var bh_xml:Object = null;
+		public var bh_xml:XML = null;
 		
 		// misc
 		public var dynamic_args:Object = null;

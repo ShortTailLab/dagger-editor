@@ -3,6 +3,7 @@ package behaviorEdit
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.net.dns.AAAARecord;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
@@ -35,7 +36,7 @@ package behaviorEdit
 			searchFrame.addEventListener(Event.CHANGE, onSearching);
 			this.addElement(searchFrame);
 			
-			btTree = new Tree;
+			/*btTree = new Tree;
 			btTree.enabled = true;
 			btTree.labelField = "@label";
 			btTree.percentWidth = 100;
@@ -50,7 +51,16 @@ package behaviorEdit
 			var item0:ContextMenuItem = new ContextMenuItem("删除当前");
 			item0.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteBT);
 			treeMenu.addItem(item0);
-			btTree.contextMenu = treeMenu;
+			btTree.contextMenu = treeMenu;*/
+			
+			var tree:XMLDisplayer = new XMLDisplayer;
+			tree.dataProvider = Data.getInstance().bh_xml;
+			tree.labelField = "label";
+			tree.width = 150;
+			tree.x = 0;
+			tree.y = 20;
+			this.addElement(tree);
+			tree.display();
 			
 			EventManager.getInstance().addEventListener(BehaviorEvent.BT_XML_APPEND, updateTree);
 			EventManager.getInstance().addEventListener(BehaviorEvent.BT_ADDED, updateTree);

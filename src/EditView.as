@@ -261,7 +261,15 @@ package
 		}
 		
 		private function onWheel(e:MouseEvent):void{
-			setCurrTime(currTime+e.delta);
+			if(e.ctrlKey)
+			{
+				for each(var m in matsControl.mats)
+				{
+					m.y *= (1+e.delta*0.05);
+				}
+			}
+			else
+				setCurrTime(currTime+e.delta);
 		}
 		
 		private function onClick(e:MouseEvent):void
