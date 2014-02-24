@@ -249,5 +249,13 @@ package
 				xml.appendChild(new XML("<parm label='"+b+"'></parm>"));
 			return xml;
 		}
+		
+		static public function getObjectLength(obj:Object):uint
+		{
+			var length:uint = 0;
+			for( var s:* in obj )
+				length ++;
+			return length;
+		}
 	}
 }
