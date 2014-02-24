@@ -203,13 +203,14 @@ package
 					var face:String = self.enemy_profile[key].face;
 					if( self.skins.hasOwnProperty(face) ) continue;
 					
-					length ++;
 					self.skins[face] = "icu";
 					
 					var bytes:ByteArray = new ByteArray;
 					var filepath:String = "editor/skins/"+self.enemy_profile[key].face+".png";
 					var file:File = File.desktopDirectory.resolvePath(filepath);
+					if( !file.exists ) continue;
 					
+					length ++;
 					var stream:FileStream = new FileStream();
 					stream.open(file, FileMode.READ);
 					stream.readBytes(bytes);

@@ -299,17 +299,17 @@
 				});
 			}
 			
-			private function openExcelFile(event:Event):void {
-				var file:File = File.desktopDirectory;
-				var tip:String = "请选择怪物Excel配置文件";
-				var filter:FileFilter = new FileFilter("XLSX","*.xlsx");
-				file.browseForOpen(tip, [filter]);
-				file.addEventListener(Event.SELECT, function (e:Event):void {
-					var file:File = e.target as File;
-					ExcelReader.getInstance().initWithNativePath(file.nativePath);
-				});
-			}
-			
+//			private function openExcelFile(event:Event):void {
+//				var file:File = File.desktopDirectory;
+//				var tip:String = "请选择怪物Excel配置文件";
+//				var filter:FileFilter = new FileFilter("XLSX","*.xlsx");
+//				file.browseForOpen(tip, [filter]);
+//				file.addEventListener(Event.SELECT, function (e:Event):void {
+//					var file:File = e.target as File;
+//					ExcelReader.getInstance().initWithNativePath(file.nativePath);
+//				});
+//			}
+//			
 			var process:NativeProcess;
 			private function sendToServer(e:Event):void
 			{
@@ -353,7 +353,6 @@
 				<s:Button id="openBtn" label="打开关卡配置" click="openLevelFile(event)"/>
 				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
 				<s:Button id="openBgBtn" label="添加背景地图" click="openBgFile(event)"/>
-				<s:Button id="openExcelBtn" label="打开怪物Excel" click="openExcelFile(event)"/>
 				<s:Button id="sendBtn" label="上传" click="sendToServer(event)"/>
 				<s:Label text="服务器Tag" color="0x777777"/>
 				<s:TextInput id="tagInput" width="100" text="zwf"/>

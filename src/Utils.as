@@ -262,8 +262,19 @@ package
 		{
 			var ret:Object = {};
 			for( var key:String in left )
-				ret[key] = ( right[key] != null ) ? right[key] : left[key];
+				ret[key] = left[key];
+			for( var key:String in right )
+				ret[key] = right[key];
 			return ret;
+		}
+		
+		static public function dumpObject( obj : *, level : int = 0 ) : void{
+			var tabs : String = "";
+			for ( var i : int = 0 ; i < level ; i++, tabs += "\t" );
+			for ( var prop : String in obj ){
+				trace( tabs + "[" + prop + "] -> " + obj[ prop ] );
+				dumpObject( obj[ prop ], level + 1 );
+			}
 		}
 	}
 }
