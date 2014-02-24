@@ -38,8 +38,9 @@ package
 		public var enemy_trigger:Object = null;
 		
 		// instances of enemy and map configs for every level
-		public var levels:Array = null;
+		public var levels:Object = null;
 		public var level_xml:XML = null;
+		public var level_list:Array = null;
 		
 		// static image of enemies
 		public var skins:Dictionary; 
@@ -54,7 +55,7 @@ package
 		public var excel_reader:ExcelReader = null;
 		
 		// anchors
-		public var currSelectedLevel:int = -1;
+		public var currSelectedLevel:String = "";
 		private var autoSaveTimer:Timer;
 		
 		// -------------------------------------------------
@@ -150,20 +151,7 @@ package
 		private function load():void
 		{
 			// saved informations
-			this.levels = this.loadJson("editor/saved/levels.json") as Array;
-
-			if( !this.levels ) 
-			{
-				this.levels = new Array;
-				this.levels.push({
-					levelName 	: "level-1",
-					endTime 	: 0,
-					data 		: new Array
-				});
-			}  
-			this.currSelectedLevel = this.levels.length-1;
-			this.level_xml = this.parseLevelXML(this.levels);
-			
+			this.levels = this.loadJson("editor/saved/levels.json", false) as Object || {};
 			this.bh_lib = this.loadJson("editor/saved/bh_lib.json", false);
 			if( !this.bh_lib )  this.bh_lib = new Object;
 			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
@@ -186,6 +174,11 @@ package
 			{	
 				// enemy_profile
 				self.enemy_profile = self.excel_reader.data;
+				
+				self.level_xml = self.excel_reader.genLevelXML();
+				self.level_list = self.excel_reader.genLevelIdList();
+				self.currSelectedLevel = self.level_list[0];
+				
 				var length:Number = 0, countor:Number = 0;
 				var alldone:Function = function(key:String):Function
 				{
@@ -276,7 +269,7 @@ package
 		
 		public function exportJS():Boolean
 		{
-			if( this.currSelectedLevel < 0 ) {
+			if( this.currSelectedLevel == "" ) {
 				Alert.show("无被选中的关卡");
 				return false;
 			}
@@ -384,53 +377,6 @@ package
 			var result:String = "";
 			result = js.replace(reg1, "");
 			return result;
-		}
-		
-		public function makeNewLevel(name:String):void
-		{
-			this.level_xml.appendChild(new XML("<level label='"+name+"'></level>"));
-			this.levels.push({
-				levelName : name,
-				endTime : 0,
-				data : new Array
-			});
-		}
-		
-		public function deleteLevel(index:int):void
-		{
-			var name:String = this.level_xml.level[index].@label;
-			delete this.level_xml.level[index];
-			for(var l:String in this.levels)
-				if(this.levels[l].levelName == name)
-				{
-					this.levels.splice(l, 1);
-					this.saveLocal();
-					break;
-				}
-			
-			if(this.levels.length == 0)
-			{
-				this.levels.push({
-					levelName : "Level-1",
-					endTime : 0,
-					data : new Array
-				});
-				this.level_xml = parseLevelXML(this.levels);
-			}
-		}
-		
-		public function renameLevel(index:int, name:String):void
-		{
-			this.level_xml.level[index].@label = name;
-			this.levels[index].levelName = name
-			this.saveLocal();
-		}
-		public function parseLevelXML(data:Object):XML
-		{
-			var levels:XML = <Root></Root>;
-			for each(var item:* in data)
-				levels.appendChild(new XML("<level label='"+item.levelName+"'></level>"));
-			return levels;
 		}
 		
 		public function parseBehaviorXML(data:Object):XML
@@ -544,24 +490,25 @@ package
 				trace("set enemy data: enemytype not exist!");
 		}
 		
-		public function updateLevelData(name:String, data:Array, endTime:int):void
+		public function updateLevelById(lid:String, data:Array, endTime:int):Object
 		{
-			var obj:Object = getLevelData(name);
-			
-			// merge
-			if(obj)
-			{
-				obj.endTime = endTime;
-				obj.data = data;
-			}
+			var ret:Object = this.getLevelDataById(lid);
+			ret.data = data;
+			ret.endTime = endTime;
+			this.levels[lid] = ret;
+			this.saveLocal();
+			return ret;
 		}
 		
-		public function getLevelData(levelName:String):Object
+		public function getLevelDataById(lid:String):Object
 		{
-			for each(var item:* in this.levels)
-				if(item.levelName == levelName)
-					return item;
-			return null;
+			var ret:Object = {
+				data : [],
+				endTime : 0
+			};
+			if( lid in this.levels ) return this.levels[lid];
+			this.levels[lid] = ret;
+			return ret;
 		}
 		
 		public function setEnemyTrigger(id:String, triggers:Object):void

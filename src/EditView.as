@@ -52,7 +52,7 @@ package
 		
 		private var endTime:Number = -1;
 		private var currTime:Number = -1;
-		public var levelName:String = "";
+		private var level_id:String = "";
 		
 		private var mapPieces:Dictionary;
 		private var mapFreePieces:Array;
@@ -147,32 +147,32 @@ package
 			bg.addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
 		}
 		
-		public function init(_levelName:String):void
+		public function init(lid:String):void
 		{
-			if(levelName != "")
+			if(this.level_id != "")
 			{
 				save();
 			}
-			this.levelName = _levelName;
+			this.level_id = lid;
 			matsControl.clear();
-			var level = Data.getInstance().getLevelData(levelName);
+			var level = Data.getInstance().getLevelDataById(lid);
 			matsControl.init(level.data);
 			var end:int = level.endTime != 0? level.endTime : canvas.height/speed;
 			setEndTime(end);
 			setCurrTime(0);	
 		}
-		
-		public function clear():void
-		{
-			this.levelName = "";
-			matsControl.clear();
-		}
-		
+//		
+//		public function clear():void
+//		{
+//			this.level_id = "";
+//			matsControl.clear();
+//		}
+//		
 		public function save():void
 		{
 			Data.getInstance().conf.speed = int(unitInput.text);
 			var data:Array = matsControl.getMatsData();
-			Data.getInstance().updateLevelData(levelName, data, endTime);
+			Data.getInstance().updateLevelById(this.level_id, data, endTime);
 		}
 		
 		public function setCurrTime(value:Number):void

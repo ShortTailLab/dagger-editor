@@ -105,7 +105,7 @@ package excel
 			var enum_type:Array = ["Chapter", "Level", "Monster", "Bullet"];
 			var enum_must:Array = [
 				{"chapter_id":"string"},
-				{"level_id":"string"},
+				{"level_id":"string","level_name":"string"},
 				{"monster_id":"string", "monster_type":"string",
 				 "monster_name":"string", "face":"string"}
 			];
@@ -128,6 +128,8 @@ package excel
 					nowChapter = configs[enum_key[0]];
 					if( !(nowChapter in this.mRawData) ) 
 						this.mRawData[nowChapter] = {};
+					else 
+						Alert.show("存在重复的章节编号"+nowChapter);
 					this.mRawData[nowChapter].r = configs;
 					this.mRawData[nowChapter].c = {}; 
 					flag = true;
@@ -140,6 +142,8 @@ package excel
 					nowLevel = configs[enum_key[1]];
 					if( !(nowLevel in this.mRawData[nowChapter].c) )
 						this.mRawData[nowChapter].c[nowLevel] = {};
+					else 
+						Alert.show("存在重复的关卡编号"+nowLevel);
 					this.mRawData[nowChapter].c[nowLevel].r = configs;
 					this.mRawData[nowChapter].c[nowLevel].c = {};
 					flag = true;
@@ -212,6 +216,39 @@ package excel
 		private function is_cell_valuable(key:String, line:int):Boolean
 		{
 			return mSheet.getCellValue((mTitle2col[key]+String(line))) != "";
+		}
+		
+		public function genLevelIdList():Array
+		{
+			var ret:Array = [];
+			for each( var item:* in this.mRawData )
+			{
+				var kids:Object = item.c;
+				for each( var l:* in kids )
+				{ 
+					var level:Object = l.r;
+					ret.push(level.level_id);
+				}
+			}
+			return ret;
+		}
+		
+		public function genLevelXML():XML 
+		{
+			var ret:XML = <Root></Root>;
+			for each( var item:* in this.mRawData )
+			{
+				var chapter:Object = item.r;
+				var kids:Object = item.c;
+				for each( var l:* in kids )
+				{ 
+					var level:Object = l.r;
+					ret.appendChild(
+						new XML("<level label='["+chapter.chapter_name+"]"+level.level_name+"'></level>")
+					);
+				}
+			}
+			return ret;
 		}
 
 		public function get data():Object {
