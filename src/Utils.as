@@ -257,5 +257,13 @@ package
 				length ++;
 			return length;
 		}
+		
+		static public function merge2Object(left:Object, right:Object):Object
+		{
+			var ret:Object = {};
+			for( var key:String in left )
+				ret[key] = ( right[key] != null ) ? right[key] : left[key];
+			return ret;
+		}
 	}
 }

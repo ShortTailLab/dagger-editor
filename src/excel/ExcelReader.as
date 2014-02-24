@@ -72,9 +72,11 @@ package excel
 				if(val != "")
 					mTitle2col[val] = target_cols[k];
 			}	
+			
+			
 		}
 		
-		public function parse():Boolean
+		private function parse():Boolean
 		{
 			// get data stucture
 			var struct:Object = Data.getInstance().dynamic_args;
@@ -88,26 +90,120 @@ package excel
 			this.mChapterLength = Utils.getObjectLength(struct.Chapter);
 			this.mLevelLength = Utils.getObjectLength(struct.Level);
 			
-			// protocal : -1 -> 'stop', -2 -> 'error' 
-			var next:int = this.loadChapter(mStartLine, struct);
-			if( next == -2 ) return false;
-			while( next != -1 )
-			{
-				if( next == -2 ) return false;
-				next = this.loadChapter(next, struct);
+			var enum_type:Array = ["Chapter", "Level", "Monster"];
+			var enum_must:Array = [
+				{"id":"string"},
+				{"level_id":"string"},
+				{"monster_id":"string", "monster_face":"string", "monster_name":"string"}
+			];
+			var enum_key:Array  = ["id", "level_id", "monster_id"];
+			var enum_configs:Array = [
+				Utils.merge2Object(struct[enum_type[0]], enum_must[0]),
+				Utils.merge2Object(struct[enum_type[1]], enum_must[1]),
+				Utils.merge2Object(struct[enum_type[2]], enum_must[2])
+			];
+				
+			var iterLine:int = this.mStartLine;
+			var nowChapter:String = "";
+			var nowLevel:String = "";
+			while(true)
+			{	
+				var flag = false;
+				if( this.is_cell_valuable(enum_key[0], iterLine) ) // Chapter 
+				{
+					var configs = this.loadItems(enum_type[0], enum_configs[0], iterLine);
+					if( !configs ) return false;
+					nowChapter = configs[enum_key[0]];
+					this.mRawData[nowChapter].r = configs;
+					this.mRawData[nowChapter].c = {}; 
+					flag = true;
+				}
+				if( nowChapter != "" &&
+					this.is_cell_valuable(enum_key[1], iterLine) ) // Level	
+				{
+					var configs = this.loadItems(enum_type[1], enum_configs[1], iterLine);
+					if( !configs ) return false;
+					nowLevel = configs[enum_key[1]];
+					this.mRawData[nowChapter].c[nowLevel].r = configs;
+					this.mRawData[nowChapter].c[nowLevel].c = {};
+					flag = true;
+				}
+				if( nowChapter != "" && nowLevel != "" &&
+					this.is_cell_valuable(enum_key[2], iterLine) ) // Monster  
+				{
+					var configs = this.loadItems(enum_type[2], enum_configs[2], iterLine);
+					if( !configs ) return false;
+					var nowMonster = configs[enum_key[2]];
+					this.mRawData[nowChapter].c[nowLevel].c[nowMonster] = configs;
+					flag = true;
+				}
+				if(!flag) break;
+				iterLine ++;
 			}
 			return true;
 		}
-
-		private function loadChapter(line:int, struct:Object):int
+		
+		private function process_val(prefix:String, key:String, value:String):*
 		{
-			var must:Object = {"id":true};
+			var struct:Object = Data.getInstance().dynamic_args;
+			var argType:String = struct[prefix][key];
+			if(argType == "ccp")
+				return Utils.arrayStr2ccpStr(value);
+			else if(argType == "ccsize")
+				return Utils.arrayStr2ccsStr(value);
+			else if(argType == "int")
+				return int(value);
+			else if(argType == "float")
+				return Number(value);
+			else
+				return value;
+		}
+		
+		private function loadItems(type:String, configs:Object, line:int):Object
+		{
+			var ret:Object = {};
+			for( var key:String in configs )
+			{
+				if( !this.mTitle2col.hasOwnProperty(key) )
+				{
+					Alert.show(type+" 未定义需要的字段 : "+key);
+					return null;
+				}
+				var val = this.mSheet.getCellValue(this.mTitle2col[key]+String(line));
+				ret[key] = this.process_val(type, key, val);
+				if( ret[key] == "" )
+				{
+					Alert.show(type+" 未定义需要的字段 : "+key);
+					return null;
+				}
+			}
+			return ret;
+		}
+		
+		private function is_cell_valuable(key:String, line:int):Boolean
+		{
+			return mSheet.getCellValue(mTitle2col[key]+String(line)) != "";
+		}
+
+		private function loadChapter(line:int, m:Object):int
+		{
+			var container:Object = {};
+			var must:String = ["id"];
 			for( var item:* in must )
 			{
-				
+				if( !this.mTitle2col.hasOwnProperty(item) ) 
+				{
+					Alert.show("Chapter 缺少必有字段："+item);
+					return -2;
+				}
+				var val = this.mSheet.getCellValue(this.mTitle2col[item]+String(line));
+				container[item] = this.process_val("Chapter", item, val);
 			}
+			
 			for( var item:* in struct )
 			{
+				if( 
+				var val = this.mSheet
 			}
 			return 0;
 		}
