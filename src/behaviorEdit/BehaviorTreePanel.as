@@ -53,9 +53,9 @@ package behaviorEdit
 			treeMenu.addItem(item0);
 			btTree.contextMenu = treeMenu;
 			
-			/*var tree:XMLDisplayer = new XMLDisplayer;
-			tree.dataProvider = Data.getInstance().bh_xml;
-			tree.labelField = "label";
+			/*var tree:Folder = new Folder;
+			tree.dataProvider = Data.getInstance().bh_lib;
+			tree.setLabelField("");
 			tree.width = 150;
 			tree.x = 0;
 			tree.y = 20;

@@ -34,6 +34,7 @@ package
 			if(this.dataProvider)
 			{
 				displayXML(this.dataProvider, new Rectangle(0, 0, this.width, 20), true);
+				
 			}
 		}
 
