@@ -55,14 +55,19 @@ package excel
 
 			mRawData = {};
 			mSheet = mExcelLoader.worksheet("新表");
+			mExcelLoader.close();
 			var argToColDic:Dictionary = new Dictionary;
 			
 			// colume search range
 			var target_cols:Array = [];
-			for( var i:int ='A'; i<='Z'; i++ ) target_cols.push(i);
-			for( var i:int ='A'; i<='Z'; i++ )
-				for( var j:int='A'; j<'Z'; j++ )
-					target_cols.push(String(i)+String(j));
+			var a_z:String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+			var i:uint = 0, j:uint = 0;
+			for( i=0; i<26; i++ ) target_cols.push( a_z.charAt(i) );
+			for( i=0; i<26; i++ )
+				for( j=0; j<26; j++ )
+				{
+					target_cols.push(a_z.charAt(i)+a_z.charAt(j));
+				}
 			
 			// mapping table
 			mTitle2col = {};
@@ -73,7 +78,12 @@ package excel
 					mTitle2col[val] = target_cols[k];
 			}	
 			
-			
+			if( this.parse() )
+			{
+				EventManager.getInstance().dispatchEvent(
+					new GameEvent(EventType.EXCEL_DATA_CHANGE)
+				);
+			}
 		}
 		
 		private function parse():Boolean
@@ -108,10 +118,10 @@ package excel
 			var nowLevel:String = "";
 			while(true)
 			{	
-				var flag = false;
+				var flag:Boolean = false; var configs:Object = null;
 				if( this.is_cell_valuable(enum_key[0], iterLine) ) // Chapter 
 				{
-					var configs = this.loadItems(enum_type[0], enum_configs[0], iterLine);
+					configs = this.loadItems(enum_type[0], enum_configs[0], iterLine);
 					if( !configs ) return false;
 					nowChapter = configs[enum_key[0]];
 					this.mRawData[nowChapter].r = configs;
@@ -121,7 +131,7 @@ package excel
 				if( nowChapter != "" &&
 					this.is_cell_valuable(enum_key[1], iterLine) ) // Level	
 				{
-					var configs = this.loadItems(enum_type[1], enum_configs[1], iterLine);
+					configs = this.loadItems(enum_type[1], enum_configs[1], iterLine);
 					if( !configs ) return false;
 					nowLevel = configs[enum_key[1]];
 					this.mRawData[nowChapter].c[nowLevel].r = configs;
@@ -131,11 +141,13 @@ package excel
 				if( nowChapter != "" && nowLevel != "" &&
 					this.is_cell_valuable(enum_key[2], iterLine) ) // Monster  
 				{
-					var configs = this.loadItems(enum_type[2], enum_configs[2], iterLine);
+					configs = this.loadItems(enum_type[2], enum_configs[2], iterLine);
 					if( !configs ) return false;
-					var nowMonster = configs[enum_key[2]];
+					var nowMonster:String = configs[enum_key[2]];
 					this.mRawData[nowChapter].c[nowLevel].c[nowMonster] = configs;
 					flag = true;
+					
+					this.mMonsterData[nowMonster] = configs;
 				}
 				if(!flag) break;
 				iterLine ++;
@@ -169,7 +181,7 @@ package excel
 					Alert.show(type+" 未定义需要的字段 : "+key);
 					return null;
 				}
-				var val = this.mSheet.getCellValue(this.mTitle2col[key]+String(line));
+				var val:String = this.mSheet.getCellValue(this.mTitle2col[key]+String(line));
 				ret[key] = this.process_val(type, key, val);
 				if( ret[key] == "" )
 				{
@@ -185,90 +197,12 @@ package excel
 			return mSheet.getCellValue(mTitle2col[key]+String(line)) != "";
 		}
 
-		private function loadChapter(line:int, m:Object):int
-		{
-			var container:Object = {};
-			var must:String = ["id"];
-			for( var item:* in must )
-			{
-				if( !this.mTitle2col.hasOwnProperty(item) ) 
-				{
-					Alert.show("Chapter 缺少必有字段："+item);
-					return -2;
-				}
-				var val = this.mSheet.getCellValue(this.mTitle2col[item]+String(line));
-				container[item] = this.process_val("Chapter", item, val);
-			}
-			
-			for( var item:* in struct )
-			{
-				if( 
-				var val = this.mSheet
-			}
-			return 0;
-		}
-		
-		private function loadLevel()
-		{
-		}
-		
-		private function loadMonster()
-		{
-			for (var i:int = 3; ; i++) {
-//				trace("A"+i+" value: " + workSheet.getCellValue("A"+i));
-				if (workSheet.getCellValue("A"+i) == "") {
-					break;
-				}
-				var enemy:Object = new Object();
-				mRawData[workSheet.getCellValue("A"+i)] = enemy;
-				enemy["face"] = workSheet.getCellValue("B"+i);
-				enemy["type"] = workSheet.getCellValue("D"+i);
-				
-				var argsData:Object = Data.getInstance().dynamic_args;
-				if(argsData.hasOwnProperty(enemy["type"]))
-					for(var arg in argsData[enemy["type"]])
-					{
-						if(enemy["type"] == "bullet" || enemy["type"] == "actor")
-							enemy["nameCN"] = workSheet.getCellValue("C"+i);
-						
-						if(argToColDic.hasOwnProperty(arg))
-						{
-							var argType:String = argsData[enemy["type"]][arg];
-							var value:String = workSheet.getCellValue(argToColDic[arg]+i);
-							if(argType == "ccp")
-								enemy[arg] = Utils.arrayStr2ccpStr(value);
-							else if(argType == "ccsize")
-								enemy[arg] = Utils.arrayStr2ccsStr(value);
-							else if(argType == "int")
-								enemy[arg] = int(value);
-							else if(argType == "float")
-								enemy[arg] = Number(value);
-							else
-								enemy[arg] = value;
-						}
-					}
-			}
-			mExcelLoader.close();
-
-			if (_onComplete != null) {
-				_onComplete.apply();
-				_onComplete = null;
-			}
-			
-			EventManager.getInstance().dispatchEvent(new GameEvent(EventType.EXCEL_DATA_CHANGE));
-		}
-		
-		private function addressVal()
-		{
-			
-		}
-		
 		public function get data():Object {
-			return mMonsterData;
+			return this.mMonsterData;
 		}
 		
 		public function get raw():Object {
-			return mRawData;
+			return this.mRawData;
 		}
 	}
 }

@@ -51,6 +51,7 @@ package
 		
 		// misc
 		public var dynamic_args:Object = null;
+		public var excel_reader:ExcelReader = null;
 		
 		// anchors
 		public var currSelectedLevel:int = -1;
@@ -184,7 +185,7 @@ package
 			var onexceldone:Function = function(e:Event):void
 			{	
 				// enemy_profile
-				self.enemy_profile = ExcelReader.getInstance().enemyData;
+				self.enemy_profile = self.excel_reader.data;
 				var length:Number = 0, countor:Number = 0;
 				var alldone:Function = function(key:String):Function
 				{
@@ -218,13 +219,13 @@ package
 					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(key));
 					loader.loadBytes(bytes);
 				}
-				
 			}
 			var file:File = File.desktopDirectory.resolvePath("editor/data/profiles.xlsx");
 			if(file.exists)
 			{
 				EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onexceldone);
-				ExcelReader.getInstance().initWithNativePath(file.nativePath);
+				this.excel_reader = new ExcelReader();
+				this.excel_reader.initWithNativePath(file.nativePath);
 			}
 			else Alert.show("profiles.xlsx 丢失！");
 			// ---------------------------------------------------------------
