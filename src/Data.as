@@ -48,7 +48,7 @@ package
 		// behavior 
 		public var bh_lib:Object = null;
 		public var bh_node:Object = null;
-		public var bh_xml:Object = null;
+		public var bh_xml:XML = null;
 		
 		// misc
 		private var level2monster:Object = null;

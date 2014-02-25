@@ -5,12 +5,12 @@ package
 	import flash.events.MouseEvent;
 	import flash.ui.Keyboard;
 	
-	import spark.components.TitleWindow;
 	import mx.controls.TextInput;
 	import mx.events.CloseEvent;
 	import mx.managers.PopUpManager;
 	
 	import spark.components.Button;
+	import spark.components.TitleWindow;
 	
 	public class RenamePanel extends TitleWindow
 	{
@@ -62,6 +62,7 @@ package
 				evt.hintMsg = input.text;
 				this.dispatchEvent(evt);
 			}
+			stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			PopUpManager.removePopUp(this);
 		}
 	}

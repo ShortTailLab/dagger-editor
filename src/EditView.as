@@ -226,7 +226,7 @@ package
 			}
 			if(code == Keyboard.F && e.ctrlKey && selectControl.targets.length > 0)
 			{
-				Formation.getInstance().add(selectControl.targets);
+				selectControl.setSelectMatToFormation();
 			}
 			if(code == Keyboard.DELETE && selectControl.targets.length > 0)
 			{
@@ -261,7 +261,15 @@ package
 		}
 		
 		private function onWheel(e:MouseEvent):void{
-			setCurrTime(currTime+e.delta);
+			if(e.ctrlKey)
+			{
+				for each(var m in matsControl.mats)
+				{
+					m.y *= (1+e.delta*0.05);
+				}
+			}
+			else
+				setCurrTime(currTime+e.delta);
 		}
 		
 		private function onClick(e:MouseEvent):void

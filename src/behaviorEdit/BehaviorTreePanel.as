@@ -3,6 +3,7 @@ package behaviorEdit
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.net.dns.AAAARecord;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
@@ -51,6 +52,15 @@ package behaviorEdit
 			item0.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteBT);
 			treeMenu.addItem(item0);
 			btTree.contextMenu = treeMenu;
+			
+			/*var tree:Folder = new Folder;
+			tree.dataProvider = Data.getInstance().bh_lib;
+			tree.setLabelField("");
+			tree.width = 150;
+			tree.x = 0;
+			tree.y = 20;
+			this.addElement(tree);
+			tree.display();*/
 			
 			EventManager.getInstance().addEventListener(BehaviorEvent.BT_XML_APPEND, updateTree);
 			EventManager.getInstance().addEventListener(BehaviorEvent.BT_ADDED, updateTree);

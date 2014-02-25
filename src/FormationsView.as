@@ -1,13 +1,16 @@
 package
 {
-	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
+	import mx.controls.Alert;
 	import mx.core.UIComponent;
+	import mx.managers.PopUpManager;
+	
+	import manager.EventManager;
 	
 	public class FormationsView extends UIComponent
 	{
@@ -19,7 +22,7 @@ package
 			init();
 			
 			Formation.getInstance().addEventListener(MsgEvent.ADD_FORMATION, onAdd);
-			Formation.getInstance().addEventListener(MsgEvent.REMOVE_FORMATION, onRemove);
+			EventManager.getInstance().addEventListener(MsgEvent.FORMATION_CHANGE, onChange);
 		}
 		
 		private function init():void
@@ -37,7 +40,7 @@ package
 		{
 			add(e.hintMsg);
 		}
-		private function onRemove(e:MsgEvent):void
+		private function onChange(e:MsgEvent):void
 		{
 			init();
 		}
@@ -48,8 +51,29 @@ package
 			var item:ContextMenuItem = new ContextMenuItem("删除");
 			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
 				Formation.getInstance().remove(logo.fName);
+				EventManager.getInstance().dispatchEvent(new MsgEvent(MsgEvent.FORMATION_CHANGE));
+			});
+			var item2:ContextMenuItem = new ContextMenuItem("重命名");
+			var self:FormationsView = this;
+			item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+				var from:String = (e.contextMenuOwner as FormationSprite).fName;
+				var window:RenamePanel = new RenamePanel;
+				window.addEventListener(MsgEvent.RENAME_LEVEL, function(e:MsgEvent):void{
+					var to:String = e.hintMsg;
+					if(Formation.getInstance().hasFormation(to))
+						Alert.show("命名已存在！");
+					else
+					{
+						Formation.getInstance().rename(from, to);
+						EventManager.getInstance().dispatchEvent(new MsgEvent(MsgEvent.FORMATION_CHANGE));
+					}
+				});
+				
+				PopUpManager.addPopUp(window, self, true);
+				PopUpManager.centerPopUp(window);
 			});
 			menu.addItem(item);
+			menu.addItem(item2);
 			
 			var logo:FormationSprite = new FormationSprite(name);
 			var pos:Point = Utils.makeGrid(new Point(20, 60), 80, 3, formsNum++);
@@ -61,6 +85,7 @@ package
 			addChild(logo);
 			this.height = logo.y+20;
 		}
+		
 		private function onClick(e:MouseEvent):void
 		{
 			var target:FormationSprite = e.currentTarget as FormationSprite;
