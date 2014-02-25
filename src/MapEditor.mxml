@@ -234,8 +234,8 @@
 			private function syncServer(e:Event):void
 			{
 				var dataList:Array = Data.getInstance().getLevelDataForServer();
-				Utils.dumpObject(dataList);
-				//SyncManager.getInstance().uploadLevelsToServer(
+				//Utils.dumpObject(dataList);
+				SyncManager.getInstance().uploadLevelsToServer(dataList);
 			}
 			
 			private function onAccordionClick(e:Event):void {

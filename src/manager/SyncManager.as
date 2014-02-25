@@ -19,6 +19,7 @@ package manager
 	import flash.utils.ByteArray;
 	
 	import mx.controls.Alert;
+	import mx.rpc.events.HeaderEvent;
 	
 	import by.blooddy.crypto.Base64;
 	import by.blooddy.crypto.MD5;
@@ -62,15 +63,15 @@ package manager
 			var details:String = "";
 			for each( var data:Object in dataList )
 			{
-				var json:Object = JSON.stringify(data);
-			
-				var urlVar:URLVariables = new URLVariables();
-				urlVar.json = json;
-			
+				data.key = "nimei123.J$p1ter";
+				var json:String = JSON.stringify(data);
+				//Utils.dumpObject(data);
+				
 				var request:URLRequest = new URLRequest(this.GAMELEVEL_API_ADDRESS);
 				request.method = URLRequestMethod.POST;
-				request.data = urlVar;
-			
+				request.contentType = "application/json";
+				request.data = json;
+
 				var loader:URLLoader = new URLLoader();
 				loader.addEventListener(Event.COMPLETE, function(e:Event):void
 				{
@@ -84,12 +85,14 @@ package manager
 				loader.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, 
 					function(e:HTTPStatusEvent):void
 					{
-						details += "上传: "+e.responseURL+"\n状态: ";
+						details += "\n上传: "+e.responseURL+"\n状态: ";
 						if(e.status==200)
 							details+="成功"
 						else 
 							details+=("失败 "+e.status+"\n");
 					});
+				
+				loader.load( request );
 			}
 		}
 		

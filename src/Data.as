@@ -527,8 +527,9 @@ package
 		public function getLevelDataForServer():Array
 		{
 			var ret:Array = [];
-			for( var lid:String in this.level_list )
+			for( var ind:* in this.level_list )
 			{
+				var lid:String = this.level_list[ind];
 				var l_path:String = "level/"+lid+".js";
 				var enemies:Object = {}; 
 				if ( !(lid in this.levels) )
@@ -543,7 +544,7 @@ package
 					{
 						var m:Object = this.level2monster[lid][item.type];
 						enemies[item.type] = {
-							type 	: item.type,
+							type 	: int(item.type),
 							count 	: 0,
 							coins 	: m.coins || "",
 							items 	: m.items || ""
