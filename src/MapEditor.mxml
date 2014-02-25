@@ -27,7 +27,7 @@
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.GameEvent;
-			import manager.ServerManager;
+			import manager.SyncManager;
 			
 			
 			public var fView:FormationsView = null;
@@ -201,20 +201,6 @@
 				}
 			}
 			
-			private function openLevelFile(event:Event):void {
-				var file:File = File.desktopDirectory;
-				var tip:String = "请选择关卡配置文件";
-				var filter:FileFilter = new FileFilter("JSON","*.json;*.txt");
-				file.browseForOpen(tip, [filter]);
-				file.addEventListener(Event.SELECT, function (e:Event):void {
-					var file:File = e.target as File;
-					var fileStream:FileStream = new FileStream();
-					fileStream.open(file, FileMode.READ);
-					var config:Object = JSON.parse(fileStream.readUTFBytes(fileStream.bytesAvailable));
-					// add to Data.getInstance();
-				});
-			}
-			
 			private function openBgFile(event:Event):void {
 				var browseForOpenFile:File = File.desktopDirectory;
 				var tip:String = "请选择背景地图文件(.tmx)";
@@ -226,20 +212,9 @@
 					_enemyEditView.switchMap();
 				});
 			}
-			
-//			private function openExcelFile(event:Event):void {
-//				var file:File = File.desktopDirectory;
-//				var tip:String = "请选择怪物Excel配置文件";
-//				var filter:FileFilter = new FileFilter("XLSX","*.xlsx");
-//				file.browseForOpen(tip, [filter]);
-//				file.addEventListener(Event.SELECT, function (e:Event):void {
-//					var file:File = e.target as File;
-//					ExcelReader.getInstance().initWithNativePath(file.nativePath);
-//				});
-//			}
-//			
+				
 			var process:NativeProcess;
-			private function sendToServer(e:Event):void
+			private function sendToStaticServer(e:Event):void
 			{
 				if(_tree.selectedIndex == -1)
 				{
@@ -248,12 +223,19 @@
 				}
 				
 				saveFile(null);
-				if (ServerManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/export"), tagInput.text)) {
+				if (SyncManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/export"), tagInput.text)) {
 //					Alert.show("上传成功！");
 				}
 				else {
 					Alert.show("上传失败！"); 
 				}
+			}
+			
+			private function syncServer(e:Event):void
+			{
+				var dataList:Array = Data.getInstance().getLevelDataForServer();
+				Utils.dumpObject(dataList);
+				//SyncManager.getInstance().uploadLevelsToServer(
 			}
 			
 			private function onAccordionClick(e:Event):void {
@@ -278,10 +260,11 @@
 	</s:layout>
 	<s:VGroup height="100%" width="100%" paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="5">
 		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
-				<s:Button id="openBtn" label="打开关卡配置" click="openLevelFile(event)"/>
+				<s:Button id="sendBtn" label="关卡同步" click="syncServer(event)"/>
 				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
 				<s:Button id="openBgBtn" label="添加背景地图" click="openBgFile(event)"/>
-				<s:Button id="sendBtn" label="上传" click="sendToServer(event)"/>
+				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
+			
 				<s:Label text="服务器Tag" color="0x777777"/>
 				<s:TextInput id="tagInput" width="100" text="zwf"/>
 		</s:HGroup>

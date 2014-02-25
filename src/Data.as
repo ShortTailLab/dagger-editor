@@ -510,6 +510,60 @@ package
 			else
 				trace("set enemy data: enemytype not exist!");
 		}
+		/*
+		{
+			"id": int,
+			"path": string,
+			"enemies": [
+				{
+					"type": int,
+					"count": int,
+					"coins": string,
+					"items": string,
+				}
+			]
+		}*/
+		
+		public function getLevelDataForServer():Array
+		{
+			var ret:Array = [];
+			for( var lid:String in this.level_list )
+			{
+				var l_path:String = "level/"+lid+".js";
+				var enemies:Object = {}; 
+				if ( !(lid in this.levels) )
+				{
+					ret.push( { id : lid, path: l_path, enemies : [] });
+					continue;
+				}
+				for( var iter:* in this.levels[lid].data )
+				{
+					var item:Object = this.levels[lid].data[iter];
+					if( !(item.type in enemies) ) 
+					{
+						var m:Object = this.level2monster[lid][item.type];
+						enemies[item.type] = {
+							type 	: item.type,
+							count 	: 0,
+							coins 	: m.coins || "",
+							items 	: m.items || ""
+						};
+					}
+					enemies[item.type].count ++;
+				}
+				var l_enemies:Array = [];
+				for each( var mon:* in enemies )
+				{
+					l_enemies.push(mon);
+				}
+				ret.push( {
+					id : lid,
+					path : l_path,
+					enemies : l_enemies
+				});
+			}
+			return ret;
+		}
 		
 		public function getCurrentLevelEnemyProfile():Object
 		{
