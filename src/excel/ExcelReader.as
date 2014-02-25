@@ -4,7 +4,6 @@ package excel
 	import com.childoftv.xlsxreader.XLSXLoader;
 	
 	import flash.events.Event;
-	import flash.events.TimerEvent;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
@@ -12,191 +11,266 @@ package excel
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
 	
+	import mx.controls.Alert;
+	
 	import manager.EventManager;
 	import manager.EventType;
 	import manager.GameEvent;
 
 	public class ExcelReader
 	{
-		public function ExcelReader()
-		{
-			
-		}
+		private var _onComplete:Function;
+		private var _timer:Timer;
+		private var _lastModifiedDate:Date;
 		
-		public static function getInstance():ExcelReader {
-			if (!_instance) {
-				_instance = new ExcelReader();
-			}
-			return _instance;
-		}
+		private var mExcelLoader:XLSXLoader;
+		private var mSheet:Worksheet;
+		private var mExcelPath:String;
+		private var mRawData:Object;
+		private var mMonsterData:Object = {};
 		
-		public function initWithRelativePath( relativePath:String, onComplete:Function=null):void {
-			_path = relativePath;
-			_isPathNative = false;
-			var file:File = new File(File.applicationDirectory.nativePath+"/"+relativePath);
-			_lastModifiedDate = file.modificationDate;
-			
-			_onComplete = onComplete;
-			_excelLoader = new XLSXLoader();
-			_excelLoader.addEventListener(Event.COMPLETE, onExcelLoad);
-			_excelLoader.load(relativePath);
-			
-			if (!_timer) {
-				_timer = new Timer(5000);
-				_timer.addEventListener(TimerEvent.TIMER, onTimer);
-				_timer.start();
-			}
-		}
+		private var mStartLine:int = 3;
+		private var mTitle2col:Object;
 		
+		private var mChapterLength:int;
+		private var mLevelLength:int;
+		
+		public function ExcelReader() {}
 		public function initWithNativePath( nativePath:String ):void {
-			_path = nativePath;
-			_isPathNative = true;
+			mExcelPath = nativePath;
 			var file:File = new File(nativePath);
-			_lastModifiedDate = file.modificationDate;
 
 			var fileStream:FileStream = new FileStream();
 			fileStream.open(file, FileMode.READ);
 			var byteArray:ByteArray = new ByteArray();
 			fileStream.readBytes(byteArray,0,fileStream.bytesAvailable);
 			
-			_excelLoader = new XLSXLoader();
-			_excelLoader.addEventListener(Event.COMPLETE, onExcelLoad);
-			_excelLoader.loadFromByteArray(byteArray);
-		}
-		
-		private function onTimer(e:TimerEvent):void {
-			var file:File;
-			if (_isPathNative) {
-				file = new File(_path);
-				if (file.exists && file.modificationDate.getTime() != _lastModifiedDate.getTime()) {
-					trace("refreshing excel data from "+file.nativePath);
-					initWithNativePath(_path);
-				}
-			}
-			else {
-				file = new File(File.applicationDirectory.nativePath+"/"+_path); 
-				if (file.exists && file.modificationDate.getTime() != _lastModifiedDate.getTime()) {
-					trace("refreshing excel data from "+file.nativePath);
-					initWithRelativePath(_path);
-				}
-			}
+			mExcelLoader = new XLSXLoader();
+			mExcelLoader.addEventListener(Event.COMPLETE, onExcelLoad);
+			mExcelLoader.loadFromByteArray(byteArray);
 		}
 		
 		private function onExcelLoad(e:Event):void {
-			_excelLoader.removeEventListener(Event.COMPLETE, onExcelLoad);
+			mExcelLoader.removeEventListener(Event.COMPLETE, onExcelLoad);
 
-			_enemyData = new Object();
-			var workSheet:Worksheet = _excelLoader.worksheet("新表");
+			mRawData = {};
+			mSheet = mExcelLoader.worksheet("新表");
 			var argToColDic:Dictionary = new Dictionary;
-			var cols:String = "EFGHIJKLMNOPQRSTUVWXYZ";
-			for(var k:int=0; k<cols.length; k++)
+			
+			// colume search range
+			var target_cols:Array = [];
+			var a_z:String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+			var i:uint = 0, j:uint = 0;
+			for( i=0; i<26; i++ ) target_cols.push( a_z.charAt(i) );
+			for( i=0; i<2; i++ )
+				for( j=0; j<26; j++ )
+				{
+					target_cols.push(a_z.charAt(i)+a_z.charAt(j));
+				}
+			// mapping table
+			this.mTitle2col = {};
+			for(var k:int=0; k<target_cols.length; k++)
 			{
-				var colStr:String = cols.substr(k, 1);
-				var arg:String = workSheet.getCellValue(colStr+"2");
-				if(arg != "")
-					argToColDic[arg] = colStr;
+				var key:String = this.mSheet.getCellValue(target_cols[k]+String(mStartLine));
+				if(key != "")
+					this.mTitle2col[key] = target_cols[k];
 			}	
 			
-			for (var i:int = 3; ; i++) {
-//				trace("A"+i+" value: " + workSheet.getCellValue("A"+i));
-				if (workSheet.getCellValue("A"+i) == "") {
-					break;
-				}
-				var enemy:Object = new Object();
-				_enemyData[workSheet.getCellValue("A"+i)] = enemy;
-				enemy["face"] = workSheet.getCellValue("B"+i);
-				enemy["type"] = workSheet.getCellValue("D"+i);
-				
-				var argsData:Object = Data.getInstance().dynamic_args;
-				if(argsData.hasOwnProperty(enemy["type"]))
-					for(var arg in argsData[enemy["type"]])
-					{
-						if(enemy["type"] == "bullet" || enemy["type"] == "actor")
-							enemy["nameCN"] = workSheet.getCellValue("C"+i);
-						
-						if(argToColDic.hasOwnProperty(arg))
-						{
-							var argType:String = argsData[enemy["type"]][arg];
-							var value:String = workSheet.getCellValue(argToColDic[arg]+i);
-							if(argType == "ccp")
-								enemy[arg] = Utils.arrayStr2ccpStr(value);
-							else if(argType == "ccsize")
-								enemy[arg] = Utils.arrayStr2ccsStr(value);
-							else if(argType == "int")
-								enemy[arg] = int(value);
-							else if(argType == "float")
-								enemy[arg] = Number(value);
-							else
-								enemy[arg] = value;
-						}
-					}
-				
-				
-				
-				/*if(enemy["type"] == "bullet")
-				{
-					
-					enemy["nameCN"] = workSheet.getCellValue("C"+i);
-					enemy["offset"] = Utils.arrayStr2ccpStr(workSheet.getCellValue("E"+i));
-					enemy["area"] = Utils.arrayStr2ccsStr(workSheet.getCellValue("F"+i));
-					enemy["range"] = workSheet.getCellValue("G"+i);
-					enemy["speed"] = workSheet.getCellValue("H"+i);
-					enemy["damage"] = workSheet.getCellValue("I"+i);
-				}
-				else if(enemy["type"] == "actor")
-				{
-					enemy["nameCN"] = workSheet.getCellValue("C"+i);
-					enemy["area"] = Utils.arrayStr2ccsStr(workSheet.getCellValue("F"+i));
-					enemy["attack"] = int(workSheet.getCellValue("J"+i));
-					enemy["health"] = int(workSheet.getCellValue("K"+i));
-					enemy["defense"] = int(workSheet.getCellValue("L"+i));	
-					
-				}
-				else if(enemy["type"] == "RollingStone")
-				{
-					enemy["speed"] = int(workSheet.getCellValue("H"+i));
-					enemy["dps"] = int(workSheet.getCellValue("M"+i));
-				}
-				else if(enemy["type"] == "Meteorite")
-				{
-					enemy["damage"] = int(workSheet.getCellValue("I"+i));
-					enemy["dps"] = int(workSheet.getCellValue("M"+i));
-				}
-				else if(enemy["type"] == "Bangalore")
-				{
-					enemy["area"] = Utils.arrayStr2ccsStr(workSheet.getCellValue("F"+i));
-					enemy["dps"] = int(workSheet.getCellValue("M"+i));
-				}
-				
-				/*enemy["level"] = int(workSheet.getCellValue("L"+i));
-				enemy["health"] = int(workSheet.getCellValue("M"+i));
-				//enemy["attack_args"]["damage"] = int(workSheet.getCellValue("N"+i));
-				enemy["defense"] = int(workSheet.getCellValue("O"+i));
-				enemy["bonus"] = int(workSheet.getCellValue("P"+i));
-				enemy["rbonus"] = int(workSheet.getCellValue("Q"+i));	*/
-			}
-			_excelLoader.close();
-
-			if (_onComplete != null) {
-				_onComplete.apply();
-				_onComplete = null;
+			if( this.parse() )
+			{
+				EventManager.getInstance().dispatchEvent(
+					new GameEvent(EventType.EXCEL_DATA_CHANGE)
+				);
 			}
 			
-			EventManager.getInstance().dispatchEvent(new GameEvent(EventType.EXCEL_DATA_CHANGE));
+			//Utils.dumpObject(this.mRawData);
+			
+			mExcelLoader.close();
 		}
 		
-		public function get enemyData():Object {
-			return _enemyData;
+		private function parse():Boolean
+		{
+			// get data stucture
+			var struct:Object = Data.getInstance().dynamic_args;
+			if( !struct.hasOwnProperty("Chapter") ||
+				!struct.hasOwnProperty("Level") )
+			{
+				Alert.show("dynamic_args缺少Chapter以及Level的定义");
+				return false;
+			}
+
+			this.mChapterLength = Utils.getObjectLength(struct.Chapter);
+			this.mLevelLength = Utils.getObjectLength(struct.Level);
+			
+			var enum_type:Array = ["Chapter", "Level", "Monster", "Bullet"];
+			var enum_must:Array = [
+				{"chapter_id":"string"},
+				{"level_id":"string","level_name":"string"},
+				{"monster_id":"string", "monster_type":"string",
+				 "monster_name":"string", "face":"string"}
+			];
+			var enum_key:Array  = ["chapter_id", "level_id", "monster_id"];
+			var enum_configs:Array = [
+				Utils.merge2Object(struct[enum_type[0]], enum_must[0]),
+				Utils.merge2Object(struct[enum_type[1]], enum_must[1])
+			];
+			
+			var iterLine:int = this.mStartLine+1;
+			var nowChapter:String = "";
+			var nowLevel:String = "";
+			while(true)
+			{
+				var flag:Boolean = false; var configs:Object = null;
+				if( this.is_cell_valuable(enum_key[0], iterLine) ) // Chapter 
+				{
+					configs = this.loadItems(enum_type[0], enum_configs[0], iterLine);
+					if( !configs ) return false;
+					nowChapter = configs[enum_key[0]];
+					if( !(nowChapter in this.mRawData) ) 
+						this.mRawData[nowChapter] = {};
+					else 
+						Alert.show("存在重复的章节编号"+nowChapter);
+					this.mRawData[nowChapter].r = configs;
+					this.mRawData[nowChapter].c = {}; 
+					flag = true;
+				}
+				if( nowChapter != "" &&
+					this.is_cell_valuable(enum_key[1], iterLine) ) // Level	
+				{
+					configs = this.loadItems(enum_type[1], enum_configs[1], iterLine);
+					if( !configs ) return false;
+					nowLevel = configs[enum_key[1]];
+					if( !(nowLevel in this.mRawData[nowChapter].c) )
+						this.mRawData[nowChapter].c[nowLevel] = {};
+					else 
+						Alert.show("存在重复的关卡编号"+nowLevel);
+					this.mRawData[nowChapter].c[nowLevel].r = configs;
+					this.mRawData[nowChapter].c[nowLevel].c = {};
+					flag = true;
+				}
+				if( nowChapter != "" && nowLevel != "" &&
+					this.is_cell_valuable(enum_key[2], iterLine) ) // Monster  
+				{
+					// get type
+					var type:String = this.mSheet.getCellValue(
+						this.mTitle2col["monster_type"]+String(iterLine)
+					);
+					if( type == "" ) return false;
+					var items:Object = Utils.merge2Object(struct[type], enum_must[2]);
+					//trace("---------------------- items");
+					//Utils.dumpObject(items);
+					configs = this.loadItems(enum_type[2], items, iterLine);
+					//trace("---------------------- configs");
+					//Utils.dumpObject(configs);
+					if( !configs ) return false;
+					var nowMonster:String = configs[enum_key[2]];
+					this.mRawData[nowChapter].c[nowLevel].c[nowMonster] = configs;
+					flag = true;
+					
+					this.mMonsterData[nowMonster] = configs;
+				}
+				if(!flag) break;
+				iterLine ++;
+			}
+			
+			return true;
 		}
 		
-		private var _excelLoader:XLSXLoader;
-		private var _onComplete:Function;
-		private var _enemyData:Object;
-		private var _timer:Timer;
-		private var _lastModifiedDate:Date;
-		private var _path:String;
-		private var _isPathNative:Boolean;
+		private function process_val(prefix:String, key:String, value:String):*
+		{
+			var struct:Object = Data.getInstance().dynamic_args;
+			var argType:String = struct[prefix][key];
+			if(argType == "ccp")
+				return Utils.arrayStr2ccpStr(value);
+			else if(argType == "ccsize")
+				return Utils.arrayStr2ccsStr(value);
+			else if(argType == "int")
+				return int(value);
+			else if(argType == "float")
+				return Number(value);
+			else
+				return value;
+		}
 		
-		private static var _instance:ExcelReader;
+		private function loadItems(type:String, configs:Object, line:int):Object
+		{
+			var ret:Object = {};
+			for( var key:String in configs )
+			{
+				if( !this.mTitle2col.hasOwnProperty(key) )
+				{
+					Alert.show(type+" 未定义需要的列 : "+key);
+					return null;
+				}
+				var val:String = this.mSheet.getCellValue(this.mTitle2col[key]+String(line));
+				ret[key] = this.process_val(type, key, val);
+				if( ret[key] == "" )
+				{
+					Alert.show(type+" 未定义需要的字段 : "+key);
+					return null;
+				}
+			}
+			return ret;
+		}
+		
+		private function is_cell_valuable(key:String, line:int):Boolean
+		{
+			return mSheet.getCellValue((mTitle2col[key]+String(line))) != "";
+		}
+		
+		public function genLevel2MonsterTable():Object
+		{
+			var ret:Object = {};
+			for each( var item:* in this.mRawData )
+			{
+				var kids:Object = item.c;
+				for each( var l:* in kids )
+				{ 
+					ret[l.r.level_id] = l.c;
+				}
+			}
+			return ret;
+		}
+		
+		public function genLevelIdList():Array
+		{
+			var ret:Array = [];
+			for each( var item:* in this.mRawData )
+			{
+				var kids:Object = item.c;
+				for each( var l:* in kids )
+				{ 
+					var level:Object = l.r;
+					ret.push(level.level_id);
+				}
+			}
+			return ret;
+		}
+		
+		public function genLevelXML():XML 
+		{
+			var ret:XML = <Root></Root>;
+			for each( var item:* in this.mRawData )
+			{
+				var chapter:Object = item.r;
+				var kids:Object = item.c;
+				for each( var l:* in kids )
+				{ 
+					var level:Object = l.r;
+					ret.appendChild(
+						new XML("<level label='["+chapter.chapter_name+"]"+level.level_name+"'></level>")
+					);
+				}
+			}
+			return ret;
+		}
+
+		public function get data():Object {
+			return this.mMonsterData;
+		}
+		
+		public function get raw():Object {
+			return this.mRawData;
+		}
 	}
 }

@@ -26,7 +26,7 @@ package
 	
 	import manager.EventManager;
 	import manager.EventType;
-	import manager.GameEvent;
+	import manager.GameEvent;  
 	
 	public class Data extends EventDispatcher
 	{
@@ -38,8 +38,9 @@ package
 		public var enemy_trigger:Object = null;
 		
 		// instances of enemy and map configs for every level
-		public var levels:Array = null;
+		public var levels:Object = null;
 		public var level_xml:XML = null;
+		public var level_list:Array = null;
 		
 		// static image of enemies
 		public var skins:Dictionary; 
@@ -50,10 +51,12 @@ package
 		public var bh_xml:XML = null;
 		
 		// misc
+		private var level2monster:Object = null;
 		public var dynamic_args:Object = null;
+		public var excel_reader:ExcelReader = null;
 		
 		// anchors
-		public var currSelectedLevel:int = -1;
+		public var currSelectedLevel:String = "";
 		private var autoSaveTimer:Timer;
 		
 		// -------------------------------------------------
@@ -149,20 +152,7 @@ package
 		private function load():void
 		{
 			// saved informations
-			this.levels = this.loadJson("editor/saved/levels.json") as Array;
-
-			if( !this.levels ) 
-			{
-				this.levels = new Array;
-				this.levels.push({
-					levelName 	: "level-1",
-					endTime 	: 0,
-					data 		: new Array
-				});
-			}  
-			this.currSelectedLevel = this.levels.length-1;
-			this.level_xml = this.parseLevelXML(this.levels);
-			
+			this.levels = this.loadJson("editor/saved/levels.json", false) as Object || {};
 			this.bh_lib = this.loadJson("editor/saved/bh_lib.json", false);
 			if( !this.bh_lib )  this.bh_lib = new Object;
 			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
@@ -184,7 +174,14 @@ package
 			var onexceldone:Function = function(e:Event):void
 			{	
 				// enemy_profile
-				self.enemy_profile = ExcelReader.getInstance().enemyData;
+				self.enemy_profile = self.excel_reader.data;
+				//Utils.dumpObject(self.enemy_profile);
+				
+				self.level2monster = self.excel_reader.genLevel2MonsterTable();
+				self.level_xml = self.excel_reader.genLevelXML();
+				self.level_list = self.excel_reader.genLevelIdList();
+				self.currSelectedLevel = self.level_list[0];
+				
 				var length:Number = 0, countor:Number = 0;
 				var alldone:Function = function(key:String):Function
 				{
@@ -202,13 +199,14 @@ package
 					var face:String = self.enemy_profile[key].face;
 					if( self.skins.hasOwnProperty(face) ) continue;
 					
-					length ++;
 					self.skins[face] = "icu";
 					
 					var bytes:ByteArray = new ByteArray;
 					var filepath:String = "editor/skins/"+self.enemy_profile[key].face+".png";
 					var file:File = File.desktopDirectory.resolvePath(filepath);
+					if( !file.exists ) continue;
 					
+					length ++;
 					var stream:FileStream = new FileStream();
 					stream.open(file, FileMode.READ);
 					stream.readBytes(bytes);
@@ -218,13 +216,13 @@ package
 					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(key));
 					loader.loadBytes(bytes);
 				}
-				
 			}
 			var file:File = File.desktopDirectory.resolvePath("editor/data/profiles.xlsx");
 			if(file.exists)
 			{
 				EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onexceldone);
-				ExcelReader.getInstance().initWithNativePath(file.nativePath);
+				this.excel_reader = new ExcelReader();
+				this.excel_reader.initWithNativePath(file.nativePath);
 			}
 			else Alert.show("profiles.xlsx 丢失！");
 			// ---------------------------------------------------------------
@@ -246,9 +244,24 @@ package
 						if(!this.bh_lib.hasOwnProperty(behaviorsOfEnemy[j]))
 							behaviorsOfEnemy.splice(j--, 1);
 				}
-				for(var bName in this.enemy_profile)
+				
+				for(var bName:String in this.enemy_profile)
 					if(!enemy_bh.hasOwnProperty(bName))
 						enemy_bh[bName] = new Array;
+				
+				for( var lid:* in this.levels )
+				{
+					var level:Object = this.levels[lid];
+					var table:Object = this.level2monster[lid];
+					if( !level || !table ) continue;
+					
+					for( var x:int = level.data.length-1; x >= 0; x --)
+					{
+						var monster:Object = level.data[x];
+						if( !(monster.type in table) )
+							level.data.removeItemAt( x );
+					}
+				}
 			}
 			
 			// let's rock 'n' roll
@@ -274,7 +287,7 @@ package
 		
 		public function exportJS():Boolean
 		{
-			if( this.currSelectedLevel < 0 ) {
+			if( this.currSelectedLevel == "" ) {
 				Alert.show("无被选中的关卡");
 				return false;
 			}
@@ -304,11 +317,11 @@ package
 				}
 
 				var data:Object = this.enemy_profile[item.type];
-				if( data.type == "bullet" ) {
+				if( data.monster_type == "Bullet" ) {
 					Alert.show("子弹类型不可被放置在地图中"); 
 					return false;
 				}
-				if( data.type == "actor" ) actors[item.type] = data;
+				if( data.monster_type == "Actor" ) actors[item.type] = data;
 				else traps[item.type] = data;
 				
 				var t:Number = item.triggerTime || item.y;
@@ -382,53 +395,6 @@ package
 			var result:String = "";
 			result = js.replace(reg1, "");
 			return result;
-		}
-		
-		public function makeNewLevel(name:String):void
-		{
-			this.level_xml.appendChild(new XML("<level label='"+name+"'></level>"));
-			this.levels.push({
-				levelName : name,
-				endTime : 0,
-				data : new Array
-			});
-		}
-		
-		public function deleteLevel(index:int):void
-		{
-			var name:String = this.level_xml.level[index].@label;
-			delete this.level_xml.level[index];
-			for(var l:String in this.levels)
-				if(this.levels[l].levelName == name)
-				{
-					this.levels.splice(l, 1);
-					this.saveLocal();
-					break;
-				}
-			
-			if(this.levels.length == 0)
-			{
-				this.levels.push({
-					levelName : "Level-1",
-					endTime : 0,
-					data : new Array
-				});
-				this.level_xml = parseLevelXML(this.levels);
-			}
-		}
-		
-		public function renameLevel(index:int, name:String):void
-		{
-			this.level_xml.level[index].@label = name;
-			this.levels[index].levelName = name
-			this.saveLocal();
-		}
-		public function parseLevelXML(data:Object):XML
-		{
-			var levels:XML = <Root></Root>;
-			for each(var item:* in data)
-				levels.appendChild(new XML("<level label='"+item.levelName+"'></level>"));
-			return levels;
 		}
 		
 		public function parseBehaviorXML(data:Object):XML
@@ -542,24 +508,33 @@ package
 				trace("set enemy data: enemytype not exist!");
 		}
 		
-		public function updateLevelData(name:String, data:Array, endTime:int):void
+		public function getCurrentLevelEnemyProfile():Object
 		{
-			var obj:Object = getLevelData(name);
-			
-			// merge
-			if(obj)
-			{
-				obj.endTime = endTime;
-				obj.data = data;
-			}
+			// Utils.dumpObject( this.level2monster );
+			if( this.currSelectedLevel in this.level2monster )
+				return this.level2monster[this.currSelectedLevel];
+			return {};
 		}
 		
-		public function getLevelData(levelName:String):Object
+		public function updateLevelById(lid:String, data:Array, endTime:int):Object
 		{
-			for each(var item:* in this.levels)
-				if(item.levelName == levelName)
-					return item;
-			return null;
+			var ret:Object = this.getLevelDataById(lid);
+			ret.data = data;
+			ret.endTime = endTime;
+			this.levels[lid] = ret;
+			this.saveLocal();
+			return ret;
+		}
+		
+		public function getLevelDataById(lid:String):Object
+		{
+			var ret:Object = {
+				data : [],
+				endTime : 0
+			};
+			if( lid in this.levels ) return this.levels[lid];
+			this.levels[lid] = ret;
+			return ret;
 		}
 		
 		public function setEnemyTrigger(id:String, triggers:Object):void

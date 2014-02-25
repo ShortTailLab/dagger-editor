@@ -37,18 +37,6 @@
 			{
 				_instance = this;
 				
-				var menu:ContextMenu = new ContextMenu;
-				var item:ContextMenuItem = new ContextMenuItem("新建");
-				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCreateNew);
-				var item2:ContextMenuItem = new ContextMenuItem("重命名");
-				item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onRename);
-				var item3:ContextMenuItem = new ContextMenuItem("删除");
-				item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDelete);
-				menu.addItem(item);
-				menu.addItem(item2);
-				menu.addItem(item3);
-				accordion.contextMenu = menu;
-				
 				Data.getInstance().addEventListener(Event.COMPLETE, onDataReady);
 				Data.getInstance().init();
 				
@@ -83,7 +71,7 @@
 				enemyEdit.addElement(_tree);
 				
 				_enemyEditView = new EditView(this, middleArea);
-				_enemyEditView.init(Data.getInstance().level_xml.level[0].@label);
+				_enemyEditView.init(Data.getInstance().level_list[0]);
 				
 				var modelView:Panel = new Panel();
 				modelView.percentHeight = 40;
@@ -186,18 +174,16 @@
 			}
 			
 			private function onLevelClick(e:Event):void{
-				/*var selectedNode:XML = (e.currentTarget as Tree).selectedItem as XML;
-				var label:String=selectedNode.@label;
-				Data.getInstance().currSelectedLevel = (e.currentTarget as Tree).selectedIndex;
-				_enemyEditView.init(label);*/
 				setCurrLevel(_tree.selectedIndex);
 			}	
 			
 			private function setCurrLevel(index:int):void
 			{
 				_tree.selectedIndex = index;
-				Data.getInstance().currSelectedLevel = index;
-				_enemyEditView.init(Data.getInstance().levels[index].levelName);
+				var list:Array = Data.getInstance().level_list;
+				Data.getInstance().currSelectedLevel = list[index];
+				_enemyEditView.init(list[index]);
+				matsView.init();
 			}
 			private function onTMXClick(e:MouseEvent):void
 			{
@@ -205,65 +191,7 @@
 				EditMapControl.getInstance().setMapTMX(file);
 				_enemyEditView.switchMap();
 			}
-			
-			private function onCreateNew(e:ContextMenuEvent):void
-			{
-				var levelLength:int = Data.getInstance().level_xml.level.length()+1;
-				Data.getInstance().makeNewLevel("level"+levelLength);
-				_enemyEditView.init("level"+levelLength);
-			}
-			
-			private function onRename(e:ContextMenuEvent):void 
-			{
-				var window:RenamePanel = new RenamePanel;
-				window.addEventListener(MsgEvent.RENAME_LEVEL, onRenameClick);
-				
-				PopUpManager.addPopUp(window, this, true);
-				PopUpManager.centerPopUp(window);
-			}
-			
-			private function onRenameClick(e:MsgEvent):void
-			{
-				var index:int = _tree.selectedIndex;
-				if(index != -1)
-				{
-					Data.getInstance().renameLevel(index, e.hintMsg);
-				}
-			}
-			
-			private function onDelete(e:ContextMenuEvent):void
-			{
-				if (accordion.selectedIndex == 0) {
-					Alert.okLabel = "确定";
-					Alert.cancelLabel = "取消";
-					var selectedNode:XML = _tree.selectedItem as XML;
-					if(selectedNode)
-						Alert.show("确定删除？", "tips", Alert.OK|Alert.CANCEL, this, alertClose);
-					else 
-						Alert.show("选择关卡");
-				}
-				else {
-					if (_bgList.selectedIndex >= 0) {
-						BgModel.getInstance().removePair(_bgList.selectedIndex);
-						_bgEditView.tmxMapView.load(BgModel.getInstance().bgDict[BgModel.getInstance().bgNameArray[0]]);
-					}
-				}
-			}
-			
-			private function alertClose(e:CloseEvent):void
-			{
-				if(e.detail == Alert.OK)
-				{
-					var index:int = _tree.selectedIndex
-					if(index != -1)
-					{
-						Data.getInstance().deleteLevel(index);
-						_tree.dataProvider = Data.getInstance().level_xml;
-						_enemyEditView.clear();
-						setCurrLevel(Math.max(index-1, 0));
-					}
-				}
-			}
+					
 			private function saveFile(event:Event):void
 			{
 				_enemyEditView.save();
@@ -299,17 +227,17 @@
 				});
 			}
 			
-			private function openExcelFile(event:Event):void {
-				var file:File = File.desktopDirectory;
-				var tip:String = "请选择怪物Excel配置文件";
-				var filter:FileFilter = new FileFilter("XLSX","*.xlsx");
-				file.browseForOpen(tip, [filter]);
-				file.addEventListener(Event.SELECT, function (e:Event):void {
-					var file:File = e.target as File;
-					ExcelReader.getInstance().initWithNativePath(file.nativePath);
-				});
-			}
-			
+//			private function openExcelFile(event:Event):void {
+//				var file:File = File.desktopDirectory;
+//				var tip:String = "请选择怪物Excel配置文件";
+//				var filter:FileFilter = new FileFilter("XLSX","*.xlsx");
+//				file.browseForOpen(tip, [filter]);
+//				file.addEventListener(Event.SELECT, function (e:Event):void {
+//					var file:File = e.target as File;
+//					ExcelReader.getInstance().initWithNativePath(file.nativePath);
+//				});
+//			}
+//			
 			var process:NativeProcess;
 			private function sendToServer(e:Event):void
 			{
@@ -353,7 +281,6 @@
 				<s:Button id="openBtn" label="打开关卡配置" click="openLevelFile(event)"/>
 				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
 				<s:Button id="openBgBtn" label="添加背景地图" click="openBgFile(event)"/>
-				<s:Button id="openExcelBtn" label="打开怪物Excel" click="openExcelFile(event)"/>
 				<s:Button id="sendBtn" label="上传" click="sendToServer(event)"/>
 				<s:Label text="服务器Tag" color="0x777777"/>
 				<s:TextInput id="tagInput" width="100" text="zwf"/>

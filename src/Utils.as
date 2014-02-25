@@ -249,5 +249,32 @@ package
 				xml.appendChild(new XML("<parm label='"+b+"'></parm>"));
 			return xml;
 		}
+		
+		static public function getObjectLength(obj:Object):uint
+		{
+			var length:uint = 0;
+			for( var s:* in obj )
+				length ++;
+			return length;
+		}
+		
+		static public function merge2Object(left:Object, right:Object):Object
+		{
+			var ret:Object = {};
+			for( var key:String in left )
+				ret[key] = left[key];
+			for( var key:String in right )
+				ret[key] = right[key];
+			return ret;
+		}
+		
+		static public function dumpObject( obj : *, level : int = 0 ) : void{
+			var tabs : String = "";
+			for ( var i : int = 0 ; i < level ; i++, tabs += "\t" );
+			for ( var prop : String in obj ){
+				trace( tabs + "[" + prop + "] -> " + obj[ prop ] );
+				dumpObject( obj[ prop ], level + 1 );
+			}
+		}
 	}
 }
