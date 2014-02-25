@@ -259,7 +259,10 @@ package
 					{
 						var monster:Object = level.data[x];
 						if( !(monster.type in table) )
-							level.data.removeItemAt( x );
+						{
+							trace(monster.type+" is missing");
+							level.data.splice( x, 1 );
+						}
 					}
 				}
 			}
@@ -512,7 +515,10 @@ package
 		{
 			// Utils.dumpObject( this.level2monster );
 			if( this.currSelectedLevel in this.level2monster )
+			{
 				return this.level2monster[this.currSelectedLevel];
+			}
+			trace(this.currSelectedLevel+" can't found");
 			return {};
 		}
 		
