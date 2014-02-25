@@ -26,7 +26,7 @@ package
 	
 	import manager.EventManager;
 	import manager.EventType;
-	import manager.GameEvent;
+	import manager.GameEvent;  
 	
 	public class Data extends EventDispatcher
 	{
@@ -51,6 +51,7 @@ package
 		public var bh_xml:Object = null;
 		
 		// misc
+		private var level2monster:Object = null;
 		public var dynamic_args:Object = null;
 		public var excel_reader:ExcelReader = null;
 		
@@ -174,7 +175,9 @@ package
 			{	
 				// enemy_profile
 				self.enemy_profile = self.excel_reader.data;
+				//Utils.dumpObject(self.enemy_profile);
 				
+				self.level2monster = self.excel_reader.genLevel2MonsterTable();
 				self.level_xml = self.excel_reader.genLevelXML();
 				self.level_list = self.excel_reader.genLevelIdList();
 				self.currSelectedLevel = self.level_list[0];
@@ -241,9 +244,24 @@ package
 						if(!this.bh_lib.hasOwnProperty(behaviorsOfEnemy[j]))
 							behaviorsOfEnemy.splice(j--, 1);
 				}
-				for(var bName in this.enemy_profile)
+				
+				for(var bName:String in this.enemy_profile)
 					if(!enemy_bh.hasOwnProperty(bName))
 						enemy_bh[bName] = new Array;
+				
+				for( var lid:* in this.levels )
+				{
+					var level:Object = this.levels[lid];
+					var table:Object = this.level2monster[lid];
+					if( !level || !table ) continue;
+					
+					for( var x:int = level.data.length-1; x >= 0; x --)
+					{
+						var monster:Object = level.data[x];
+						if( !(monster.type in table) )
+							level.data.removeItemAt( x );
+					}
+				}
 			}
 			
 			// let's rock 'n' roll
@@ -299,11 +317,11 @@ package
 				}
 
 				var data:Object = this.enemy_profile[item.type];
-				if( data.type == "bullet" ) {
+				if( data.monster_type == "Bullet" ) {
 					Alert.show("子弹类型不可被放置在地图中"); 
 					return false;
 				}
-				if( data.type == "actor" ) actors[item.type] = data;
+				if( data.monster_type == "Actor" ) actors[item.type] = data;
 				else traps[item.type] = data;
 				
 				var t:Number = item.triggerTime || item.y;
@@ -488,6 +506,14 @@ package
 			}
 			else
 				trace("set enemy data: enemytype not exist!");
+		}
+		
+		public function getCurrentLevelEnemyProfile():Object
+		{
+			// Utils.dumpObject( this.level2monster );
+			if( this.currSelectedLevel in this.level2monster )
+				return this.level2monster[this.currSelectedLevel];
+			return {};
 		}
 		
 		public function updateLevelById(lid:String, data:Array, endTime:int):Object

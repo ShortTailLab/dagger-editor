@@ -47,7 +47,6 @@ package
 			mats = new Array;
 			
 			init();
-			
 			EventManager.getInstance().addEventListener(EventType.ENEMY_DATA_UPDATE, init); 
 		}
 		
@@ -76,7 +75,8 @@ package
 			triggerMat.trim(70);
 			add(triggerMat);
 			
-			var data:Object = Data.getInstance().enemy_profile;
+			//var data:Object = Data.getInstance().enemy_profile;
+			var data:Object = Data.getInstance().getCurrentLevelEnemyProfile();
 			for(var item in data)
 			{
 				var view:EditBase = new MatSprite(null, item, 100, 70);

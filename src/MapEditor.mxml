@@ -183,6 +183,7 @@
 				var list:Array = Data.getInstance().level_list;
 				Data.getInstance().currSelectedLevel = list[index];
 				_enemyEditView.init(list[index]);
+				matsView.init();
 			}
 			private function onTMXClick(e:MouseEvent):void
 			{

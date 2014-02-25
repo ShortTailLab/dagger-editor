@@ -83,7 +83,7 @@ package excel
 				);
 			}
 			
-			Utils.dumpObject(this.mRawData);
+			//Utils.dumpObject(this.mRawData);
 			
 			mExcelLoader.close();
 		}
@@ -216,6 +216,20 @@ package excel
 		private function is_cell_valuable(key:String, line:int):Boolean
 		{
 			return mSheet.getCellValue((mTitle2col[key]+String(line))) != "";
+		}
+		
+		public function genLevel2MonsterTable():Object
+		{
+			var ret:Object = {};
+			for each( var item:* in this.mRawData )
+			{
+				var kids:Object = item.c;
+				for each( var l:* in kids )
+				{ 
+					ret[l.r.level_id] = l.c;
+				}
+			}
+			return ret;
 		}
 		
 		public function genLevelIdList():Array
