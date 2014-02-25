@@ -288,6 +288,8 @@ package
 			return true;
 		}
 		
+		
+		
 		public function exportJS():Boolean
 		{
 			if( this.currSelectedLevel == "" ) {
@@ -295,8 +297,23 @@ package
 				return false;
 			}
 			
+			for each( var lid:String in this.level_list )
+			{
+				this.exportLevelJS(lid, lid);
+			}
+			
+			this.exportLevelJS(this.currSelectedLevel, "demo");
+				
+			return true;
+		}
+		
+		private function exportLevelJS(lid:String, suffix:String):Boolean
+		{	
+			if( !(lid in this.levels) ) 
+				return false;
+				
 			var export:Object = new Object;
-			var source:Array = this.levels[this.currSelectedLevel].data;
+			var source:Array = this.levels[lid].data;
 			
 			// confs
 			export.map = { speed : this.conf.speed };
@@ -388,7 +405,7 @@ package
 			var content:String = JSON.stringify(export, null, "\t");
 			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
 				adjustJS(content) + "; return level; }"; 
-			Utils.write(wrap, "editor/export/level/demo.js");
+			Utils.write(wrap, "editor/export/level/"+suffix+".js");
 			return true;
 		}
 		
