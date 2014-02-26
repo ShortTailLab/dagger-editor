@@ -157,8 +157,6 @@ package excel
 					);
 					if( type == "" ) return false;
 					var items:Object = Utils.merge2Object(struct[type], enum_must[2]);
-					//trace("---------------------- items");
-					//Utils.dumpObject(items);
 					configs = this.loadItems(enum_type[2], items, iterLine);
 					//trace("---------------------- configs");
 					//Utils.dumpObject(configs);
@@ -185,10 +183,14 @@ package excel
 			else if(argType == "ccsize")
 				return Utils.arrayStr2ccsStr(value);
 			else if(argType == "int")
+			{
+				if( value == "" ) return 0;
 				return int(value);
-			else if(argType == "float")
+			}else if(argType == "float")
+			{
+				if( value == "" ) return 0;
 				return Number(value);
-			else
+			}else
 				return value;
 		}
 		
@@ -204,11 +206,6 @@ package excel
 				}
 				var val:String = this.mSheet.getCellValue(this.mTitle2col[key]+String(line));
 				ret[key] = this.process_val(type, key, val);
-				if( ret[key] == "" )
-				{
-					Alert.show(type+" 未定义需要的字段 : "+key);
-					return null;
-				}
 			}
 			return ret;
 		}
