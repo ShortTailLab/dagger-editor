@@ -158,9 +158,8 @@ package excel
 					);
 					if( type == "" ) return false;
 					var items:Object = Utils.merge2Object(struct[type], enum_must[2]);
-					configs = this.loadItems(enum_type[2], items, iterLine);
-					//trace("---------------------- configs");
-					//Utils.dumpObject(configs);
+					configs = this.loadItems(type, items, iterLine);
+					
 					if( !configs ) return false;
 					var nowMonster:String = configs[enum_key[2]];
 					this.mRawData[nowChapter].c[nowLevel].c[nowMonster] = configs;
@@ -178,6 +177,7 @@ package excel
 		private function process_val(prefix:String, key:String, value:String):*
 		{
 			var struct:Object = Data.getInstance().dynamic_args;
+			if( !(prefix in struct) ) return value;
 			var argType:String = struct[prefix][key];
 			if(argType == "ccp")
 				return Utils.arrayStr2ccpStr(value);

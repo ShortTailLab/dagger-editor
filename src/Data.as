@@ -296,10 +296,10 @@ package
 				return false;
 			}
 			
-			for each( var lid:String in this.level_list )
-			{
-				this.exportLevelJS(lid, lid);
-			}
+//			for each( var lid:String in this.level_list )
+//			{
+//				this.exportLevelJS(lid, lid);
+//			}
 			
 			this.exportLevelJS(this.currSelectedLevel, "demo");
 				
