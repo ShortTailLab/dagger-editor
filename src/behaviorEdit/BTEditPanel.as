@@ -34,14 +34,14 @@ package behaviorEdit
 		{
 			BNodeFactory.numCount = 0;
 			this.title = "行为编辑";
-			this.width = 1150;
+			this.width = 1170;
 			this.height = 800;
 			this.setStyle("backgroundColor", 0xEEE8AA);
 			
 			controller = new BTEditController(this, target.type);
 			
 			behaviorsPanel = new BehaviorTreePanel(controller);
-			behaviorsPanel.width = 150;
+			behaviorsPanel.width = 170;
 			behaviorsPanel.percentHeight = 100;
 			behaviorsPanel.x = 1000;
 			this.addElement(behaviorsPanel);
