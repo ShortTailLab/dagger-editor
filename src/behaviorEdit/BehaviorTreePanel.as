@@ -3,7 +3,6 @@ package behaviorEdit
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
-	import flash.net.dns.AAAARecord;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
@@ -21,6 +20,7 @@ package behaviorEdit
 		private var controller:BTEditController;
 		private var btTree:Tree;
 		private var searchFrame:TextInput;
+		static private var searchCashe:String = "";
 		
 		public function BehaviorTreePanel(ctrl:BTEditController)
 		{
@@ -31,7 +31,8 @@ package behaviorEdit
 			
 			searchFrame = new TextInput;
 			searchFrame.prompt = "搜索";
-			searchFrame.width = 150;
+			searchFrame.text = searchCashe;
+			searchFrame.width = 168;
 			searchFrame.height = 20;
 			searchFrame.addEventListener(Event.CHANGE, onSearching);
 			this.addElement(searchFrame);
@@ -53,28 +54,29 @@ package behaviorEdit
 			treeMenu.addItem(item0);
 			btTree.contextMenu = treeMenu;
 			
-			/*var tree:Folder = new Folder;
-			tree.dataProvider = Data.getInstance().bh_lib;
-			tree.setLabelField("");
-			tree.width = 150;
-			tree.x = 0;
-			tree.y = 20;
-			this.addElement(tree);
-			tree.display();*/
-			
 			EventManager.getInstance().addEventListener(BehaviorEvent.BT_XML_APPEND, updateTree);
 			EventManager.getInstance().addEventListener(BehaviorEvent.BT_ADDED, updateTree);
+			this.addEventListener(Event.REMOVED_FROM_STAGE, onRemoved);
 		}
 		
 		public function updateTree(e:BehaviorEvent = null):void
 		{
 			var content:String = searchFrame.text;
+			var searchContent:RegExp = new RegExp(content, "i");
 			var electData:Array = new Array;
 			for(var b:String in Data.getInstance().bh_lib)
-				if(b.search(content) == 0)
+				if(b.search(searchContent) >= 0)
 					electData.push(b);
 			electData.sort();
 			btTree.dataProvider = parse(electData);
+		}
+		
+		private function onRemoved(e:Event):void
+		{
+			searchCashe = searchFrame.text;
+			EventManager.getInstance().removeEventListener(BehaviorEvent.BT_XML_APPEND, updateTree);
+			EventManager.getInstance().removeEventListener(BehaviorEvent.BT_ADDED, updateTree);
+			
 		}
 		
 		private function parse(data:Array):XML

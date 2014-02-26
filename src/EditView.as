@@ -263,9 +263,12 @@ package
 		private function onWheel(e:MouseEvent):void{
 			if(e.ctrlKey)
 			{
+				var minY:Number = matsControl.mats[0].y;
+				matsControl.mats.forEach(function(m){minY = Math.max(m.y, minY);}, this);
+				
 				for each(var m in matsControl.mats)
 				{
-					m.y *= (1+e.delta*0.05);
+					m.y = minY+(m.y-minY)*(1+e.delta*0.05);
 				}
 			}
 			else

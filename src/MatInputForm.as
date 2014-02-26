@@ -5,7 +5,6 @@ package
 	import flash.events.KeyboardEvent;
 	import flash.geom.Point;
 	import flash.text.TextField;
-	import flash.ui.Keyboard;
 	
 	import mx.core.UIComponent;
 	import mx.events.FlexEvent;
