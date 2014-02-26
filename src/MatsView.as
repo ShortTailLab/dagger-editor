@@ -10,7 +10,6 @@ package
 	import flash.ui.ContextMenuItem;
 	import flash.utils.Timer;
 	
-	import mx.controls.Alert;
 	import mx.core.FlexGlobals;
 	import mx.core.UIComponent;
 	import mx.managers.PopUpManager;
@@ -22,13 +21,14 @@ package
 	import behaviorEdit.BTEditPanel;
 	import behaviorEdit.EditPanel;
 	
-	import editEntity.EditBase;
-	import editEntity.MatSprite;
-	import editEntity.TriggerSprite;
+	import mapEdit.EditBase;
+	import mapEdit.MatSprite;
+	import mapEdit.TriggerSprite;
 	
 	import manager.EventManager;
 	import manager.EventType;
 	import manager.GameEvent;
+	import tools.Utils;
 	
 	public class MatsView extends UIComponent
 	{

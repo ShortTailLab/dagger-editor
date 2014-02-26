@@ -24,8 +24,8 @@ package behaviorEdit
 	import spark.components.TextInput;
 	import spark.components.TitleWindow;
 	
-	import editEntity.EditBase;
-	import editEntity.MatSprite;
+	import mapEdit.EditBase;
+	import mapEdit.MatSprite;
 	
 	public class EditPanel extends TitleWindow
 	{

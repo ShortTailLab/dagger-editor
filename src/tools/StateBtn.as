@@ -1,4 +1,4 @@
-package
+package tools
 {
 	import flash.display.Sprite;
 	import flash.events.MouseEvent;
@@ -7,7 +7,7 @@ package
 	
 	public class StateBtn extends Sprite
 	{
-		var isOn:Boolean = false;
+		public var isOn:Boolean = false;
 		
 		public function StateBtn(name:String)
 		{

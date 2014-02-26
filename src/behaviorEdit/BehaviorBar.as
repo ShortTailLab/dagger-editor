@@ -15,6 +15,7 @@ package behaviorEdit
 	import spark.components.TabBar;
 	
 	import manager.EventManager;
+	import tools.RenamePanel;
 	
 	public class BehaviorBar extends TabBar
 	{

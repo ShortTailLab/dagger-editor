@@ -1,12 +1,10 @@
-package
+package mapEdit
 {
 	import flash.display.Sprite;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	
-	import editEntity.EditBase;
-	import editEntity.MatFactory;
 
 	public class EditMatsControl
 	{
@@ -58,7 +56,7 @@ package
 		
 		public function getMatsByPoint(pos:Point):Array
 		{
-			var localPos:Point = view.map.globalToLocal(pos);
+			var localPos:Point = view.mapView.globalToLocal(pos);
 			var result:Array = new Array;
 			for each(var m:EditBase in mats)
 			{
@@ -83,7 +81,7 @@ package
 		{
 			if(mat.id == "")
 				mat.id = getUID();
-			view.map.addChild(mat);
+			view.mapView.addChild(mat);
 			mats.push(mat);
 			mat.doubleClickEnabled = true;
 			mat.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
@@ -103,7 +101,7 @@ package
 					mats[i].removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
 					mats[i].removeEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
 					mats[i].removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
-					view.map.removeChild(mats[i]);
+					view.mapView.removeChild(mats[i]);
 					mats.splice(i, 1);
 					break;
 				}
@@ -112,7 +110,7 @@ package
 		public function clear():void
 		{
 			for each(var m:EditBase in mats)
-				view.map.removeChild(m);
+				view.mapView.removeChild(m);
 			mats.splice(0, mats.length);
 		}
 		

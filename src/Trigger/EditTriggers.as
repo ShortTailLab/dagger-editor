@@ -12,7 +12,7 @@ package Trigger
 	
 	import spark.components.TitleWindow;
 	
-	import editEntity.MatSprite;
+	import mapEdit.MatSprite;
 	
 	import manager.EventManager;
 

@@ -1,4 +1,4 @@
-package
+package mapEdit
 {
 	import flash.events.Event;
 	

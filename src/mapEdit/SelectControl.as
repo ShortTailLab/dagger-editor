@@ -1,4 +1,4 @@
-package
+package mapEdit
 {
 	import flash.display.Shape;
 	import flash.events.ContextMenuEvent;
@@ -13,7 +13,8 @@ package
 	import mx.controls.Alert;
 	import mx.managers.PopUpManager;
 	
-	import editEntity.EditBase;
+	import tools.RenamePanel;
+	import formationEdit.Formation;
 	
 	
 	public class SelectControl extends EventDispatcher

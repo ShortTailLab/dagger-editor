@@ -1,9 +1,7 @@
 /*
-
-all operation about add or remove mat on editView should be through matsControl
-
+this view contains the map,the time scroller, the inputform.
 */
-package
+package 
 {
 	import flash.display.DisplayObject;
 	import flash.display.Sprite;
@@ -26,19 +24,36 @@ package
 	import spark.components.Button;
 	import spark.components.TextInput;
 	
-	import editEntity.EditBase;
-	import editEntity.MatFactory;
+	import tools.StateBtn;
+	import tools.Utils;
+	import mapEdit.EditBase;
+	import mapEdit.EditMapControl;
+	import mapEdit.EditMatsControl;
+	import mapEdit.MatFactory;
+	import mapEdit.SelectControl;
+	import mapEdit.TimeLine;
+	import mapEdit.TimeLineEvent;
+	import formationEdit.Formation;
+	import mapEdit.MatInputForm;
 	
 	
 	public class EditView extends UIComponent
 	{
 		public var speed:Number = -1;//pixel per second
-		
-		private var bg:UIComponent = null;
+		//mapView contains the map,the grid above and all mats.
+		public var mapView:UIComponent = null;
 		public var map:UIComponent = null;
+		
+		//matsControl handle all the add and remove actions of mat.
+		public var matsControl:EditMatsControl;
+		public var selectControl:SelectControl;
+		
+		private var main:MapEditor = null;
+		private var editViewMask:Sprite = null;
+		private var editViewBg:UIComponent = null;
+		
 		public var snapBtn:StateBtn = null;
-		private var mapMask:Sprite = null;
-		public var mapBg:UIComponent = null;
+		
 		private var timeLine:TimeLine = null;
 		private var slider:VSlider = null;
 		
@@ -47,7 +62,7 @@ package
 		private var timeLabel:TextField = null;
 		private var inputField:TextInput = null;
 		private var submitBtn:Button = null;
-		private var canvas:Canvas;
+		private var parContainer:Canvas;
 		private var scale:Number = 0.0;
 		
 		private var endTime:Number = -1;
@@ -57,12 +72,7 @@ package
 		private var mapPieces:Dictionary;
 		private var mapFreePieces:Array;
 		
-		public var matsControl:EditMatsControl;
-		public var selectControl:SelectControl;
 		private var selectBoard:MatInputForm;
-		
-		private var main:MapEditor = null;
-		
 		private var tipsContainer:Sprite = null;
 		
 		[Embed(source="map_snow1.png")]
@@ -71,21 +81,21 @@ package
 		public function EditView(_main:MapEditor, _container:Canvas)
 		{
 			this.main = _main;
-			this.canvas = _container;
-			this.canvas.addEventListener(ResizeEvent.RESIZE, onResize);
+			this.parContainer = _container;
+			this.parContainer.addEventListener(ResizeEvent.RESIZE, onResize);
 			speed = Data.getInstance().conf.speed;
 			
-			bg = new UIComponent;
-			this.addChild(bg);
+			editViewBg = new UIComponent;
+			this.addChild(editViewBg);
+			
+			mapView = new UIComponent;
+			this.addChild(mapView);
+			editViewMask = new Sprite;
+			this.addChild(editViewMask);
+			this.mask = editViewMask;
 			
 			map = new UIComponent;
-			this.addChild(map);
-			mapMask = new Sprite;
-			this.addChild(mapMask);
-			this.mask = mapMask;
-			
-			mapBg = new UIComponent;
-			map.addChild(mapBg);
+			mapView.addChild(map);
 			mapPieces = new Dictionary;
 			mapFreePieces = new Array;
 			
@@ -105,7 +115,7 @@ package
 			timeLine = new TimeLine(speed, 5, 9);
 			timeLine.x = 0;
 			timeLine.addEventListener("gridClick", onGridClick);
-			map.addChild(timeLine);
+			mapView.addChild(timeLine);
 			
 			timeLabel = Utils.getLabel("当前时间：", 0, 0, 14);
 			this.addChild(timeLabel);
@@ -134,7 +144,7 @@ package
 			selectBoard = new MatInputForm(selectControl);
 			this.addChild(selectBoard);
 			
-			setEndTime(canvas.height/speed);
+			setEndTime(parContainer.height/speed);
 			setCurrTime(0);
 			
 			onResize();
@@ -144,7 +154,7 @@ package
 			this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-			bg.addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
+			editViewBg.addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
 		}
 		
 		public function init(lid:String):void
@@ -157,7 +167,7 @@ package
 			matsControl.clear();
 			var level = Data.getInstance().getLevelDataById(lid);
 			matsControl.init(level.data);
-			var end:int = level.endTime != 0? level.endTime : canvas.height/speed;
+			var end:int = level.endTime != 0? level.endTime : parContainer.height/speed;
 			setEndTime(end);
 			setCurrTime(0);	
 		}
@@ -204,7 +214,7 @@ package
 		{
 			for(var m in mapPieces)
 			{
-				mapBg.removeChild(mapPieces[m]);
+				map.removeChild(mapPieces[m]);
 			}
 			mapPieces = new Dictionary;
 			while(mapFreePieces.length > 0)
@@ -255,8 +265,8 @@ package
 		}
 		
 		private function onEnterFrame(e:Event):void{
-			map.y = currTime*speed;
-			timeLine.y = -map.y;
+			mapView.y = currTime*speed;
+			timeLine.y = -mapView.y;
 			updateMapSize();
 		}
 		
@@ -294,23 +304,23 @@ package
 					for each(var p in posData)
 					{
 						var type:String = main.matsView.selected.type;
-						matsControl.add(type, e.data.x+p.x, -map.y-e.data.y+p.y);
+						matsControl.add(type, e.data.x+p.x, -mapView.y-e.data.y+p.y);
 					}
 				}
 			}
 			else if(main.matsView.selected)
 			{
 				var type:String = main.matsView.selected.type;
-				matsControl.add(type, e.data.x, -map.y-e.data.y);
+				matsControl.add(type, e.data.x, -mapView.y-e.data.y);
 			}
 		}
 		
 		private function onMouseDown(e:MouseEvent):void{
-			var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
+			var localPoint:Point = mapView.globalToLocal(new Point(e.stageX, e.stageY));
 			
 		}
 		private function onMouseMove(e:MouseEvent):void{
-			var localPoint:Point = map.globalToLocal(new Point(e.stageX, e.stageY));
+			var localPoint:Point = mapView.globalToLocal(new Point(e.stageX, e.stageY));
 			
 			updateMouseTips();
 		}
@@ -335,10 +345,10 @@ package
 			for each(var m:EditBase in mats)
 			{
 				var pos:Point = new Point(m.x, m.y);
-				var pointOnGrid:Point = timeLine.globalToLocal(map.localToGlobal(pos));
+				var pointOnGrid:Point = timeLine.globalToLocal(mapView.localToGlobal(pos));
 				var p:Point = timeLine.getGridPos(pointOnGrid.x, pointOnGrid.y);
 				m.x = p.x;
-				m.y = -map.y-p.y;
+				m.y = -mapView.y-p.y;
 			}
 		}
 		
@@ -381,32 +391,32 @@ package
 		//adjust views pos when the canvas size change
 		private function onResize(e:ResizeEvent = null):void
 		{
-			this.x = canvas.width*0.5;
-			this.y = canvas.height;
-			bg.graphics.clear();
-			bg.graphics.beginFill(0xAFEEEE);
-			bg.graphics.drawRect(-canvas.width*0.5, -canvas.height, canvas.width, canvas.height);
-			bg.graphics.endFill();
-			mapMask.graphics.clear();
-			mapMask.graphics.beginFill(0xffffff);
-			mapMask.graphics.drawRect(-canvas.width*0.5, -canvas.height, canvas.width, canvas.height);
-			mapMask.graphics.endFill();
-			slider.x = -canvas.width*0.5+50;
-			slider.y = -canvas.height+80;
+			this.x = parContainer.width*0.5;
+			this.y = parContainer.height;
+			editViewBg.graphics.clear();
+			editViewBg.graphics.beginFill(0xAFEEEE);
+			editViewBg.graphics.drawRect(-parContainer.width*0.5, -parContainer.height, parContainer.width, parContainer.height);
+			editViewBg.graphics.endFill();
+			editViewMask.graphics.clear();
+			editViewMask.graphics.beginFill(0xffffff);
+			editViewMask.graphics.drawRect(-parContainer.width*0.5, -parContainer.height, parContainer.width, parContainer.height);
+			editViewMask.graphics.endFill();
+			slider.x = -parContainer.width*0.5+50;
+			slider.y = -parContainer.height+80;
 			unitLabel.x = -170;
 			unitLabel.y = -30;
 			unitInput.x = -130;
 			unitInput.y = -30;
-			inputField.x = -canvas.width*0.5+20;
-			inputField.y = -canvas.height+30;
-			timeLabel.x = -canvas.width*0.5+20;
-			timeLabel.y = -canvas.height+10;
-			timeLine.resize(canvas.height);
+			inputField.x = -parContainer.width*0.5+20;
+			inputField.y = -parContainer.height+30;
+			timeLabel.x = -parContainer.width*0.5+20;
+			timeLabel.y = -parContainer.height+10;
+			timeLine.resize(parContainer.height);
 			timeLine.setCurrTime(currTime);
-			selectBoard.x = -canvas.width*0.5+30;
-			selectBoard.y = -canvas.height+600;
-			snapBtn.x = -canvas.width*0.5+130;
-			snapBtn.y = -canvas.height+80;
+			selectBoard.x = -parContainer.width*0.5+30;
+			selectBoard.y = -parContainer.height+600;
+			snapBtn.x = -parContainer.width*0.5+130;
+			snapBtn.y = -parContainer.height+80;
 		}
 		
 		
@@ -423,15 +433,15 @@ package
 		var oneMapHigh:Number = 480;
 		private function updateMapSize():void
 		{
-			var clipLow:Number = map.y;
-			var clipHigh:Number = map.y+canvas.height;
+			var clipLow:Number = mapView.y;
+			var clipHigh:Number = mapView.y+parContainer.height;
 			var lowIndex:int = int(clipLow/oneMapHigh);
 			var highIndex:int = int(clipHigh/oneMapHigh);
 			
 			for(var i in mapPieces)
 				if(int(i) < lowIndex || int(i)>highIndex)
 				{
-					mapBg.removeChild(mapPieces[i]);
+					map.removeChild(mapPieces[i]);
 					mapFreePieces.push(mapPieces[i]);
 					delete mapPieces[i];
 				}
@@ -444,7 +454,7 @@ package
 					img.x = 0;
 					img.y = -j*oneMapHigh-oneMapHigh;
 					
-					mapBg.addChild(img);
+					map.addChild(img);
 					mapPieces[j] = img;
 				}
 		}

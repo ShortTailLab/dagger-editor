@@ -1,4 +1,4 @@
-package
+package mapEdit
 {
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -11,9 +11,7 @@ package
 	
 	import spark.components.TextInput;
 	
-	import editEntity.EditBase;
-	import editEntity.MatFactory;
-	import editEntity.MatSprite;
+	import tools.Utils;
 	
 	public class MatInputForm extends UIComponent
 	{

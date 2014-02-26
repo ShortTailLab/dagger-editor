@@ -15,9 +15,10 @@ package behaviorEdit
 	import spark.components.VGroup;
 	import spark.components.VScrollBar;
 	
-	import editEntity.MatSprite;
+	import mapEdit.MatSprite;
 	
 	import manager.EventManager;
+	import tools.Utils;
 	
 	public class BTEditPanel extends TitleWindow
 	{

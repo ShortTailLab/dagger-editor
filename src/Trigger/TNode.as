@@ -17,6 +17,7 @@ package Trigger
 	import Trigger.TriggerEvent;
 	
 	import manager.EventManager;
+	import tools.Utils;
 	
 	// ActionScript file
 	

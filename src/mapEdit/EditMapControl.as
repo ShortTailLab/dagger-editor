@@ -1,4 +1,4 @@
-package
+package mapEdit
 {
 	import flash.display.Bitmap;
 	import flash.display.DisplayObject;
@@ -14,9 +14,7 @@ package
 		public var mapHeight:Number = 0.0;
 		private var tmxFile:File = null;
 		private var mapXML:XML = null;
-		
-		[Embed(source="map_snow1.png")]
-		static public var BgImage:Class;
+
 		static private var _instance:EditMapControl = null;
 		static public function getInstance():EditMapControl
 		{
@@ -65,7 +63,7 @@ package
 			}
 			else
 			{
-				map = new BgImage as Bitmap;
+				map = new EditView.BgImage as Bitmap;
 				map.scaleX = 360/map.width;
 				map.scaleY = 540/map.height;
 				mapHeight = 540;

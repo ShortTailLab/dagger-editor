@@ -1,4 +1,4 @@
-package editEntity
+package mapEdit
 {
 	public class MatFactory
 	{

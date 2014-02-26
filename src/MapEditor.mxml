@@ -9,20 +9,17 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import formationEdit.FormationsView;
+			import mapEdit.EditMapControl;
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
-			import mx.events.CloseEvent;
-			import mx.managers.PopUpManager;
-			
 			import spark.components.Group;
 			import spark.components.List;
 			import spark.components.VScrollBar;
 			
 			import bgedit.BgEditView;
 			import bgedit.BgModel;
-			
-			import excel.ExcelReader;
 			
 			import manager.EventManager;
 			import manager.EventType;

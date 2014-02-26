@@ -10,8 +10,8 @@ package behaviorEdit
 	import spark.components.Panel;
 	import spark.components.TextInput;
 	
-	import editEntity.EditBase;
-	import editEntity.MatSprite;
+	import mapEdit.EditBase;
+	import mapEdit.MatSprite;
 	
 	import manager.EventManager;
 	

@@ -1,4 +1,4 @@
-package editEntity
+package mapEdit
 {
 	import flash.display.DisplayObject;
 	import flash.display.Sprite;

@@ -1,4 +1,4 @@
-package editEntity
+package mapEdit
 {
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;

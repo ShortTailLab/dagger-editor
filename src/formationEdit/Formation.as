@@ -3,14 +3,14 @@
 
 */
 
-package
+package formationEdit
 {
 	import flash.events.EventDispatcher;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
 	
-	import editEntity.MatSprite;
+	import mapEdit.MatSprite;
 
 	public class Formation extends EventDispatcher
 	{
