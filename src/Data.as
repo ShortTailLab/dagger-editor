@@ -385,8 +385,9 @@ package
 			
 			// export bullet
 			export.bullet = new Object;
-			for( var key:* in this.enemy_profile ) {
-				if(this.enemy_profile[key].type == "bullet")
+			for( var key:* in this.enemy_profile ) 
+			{
+				if(this.enemy_profile[key].monster_type == "Bullet")
 				{
 					for( var bh:String in export.behavior )
 					{
