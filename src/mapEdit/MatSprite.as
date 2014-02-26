@@ -6,6 +6,7 @@ package mapEdit
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.events.MouseEvent;
 	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
@@ -54,7 +55,7 @@ package mapEdit
 			if( data.skins.hasOwnProperty( face ) )
 			{
 				var bmpd:BitmapData = data.skins[face];
-				var skinBmp:Bitmap = new Bitmap(bmpd);
+				skinBmp = new Bitmap(bmpd);
 				skinBmp.scaleX = skinBmp.scaleY = 0.5;
 				skinBmp.x = -skinBmp.width*0.5;
 				skinBmp.y = -skinBmp.height;
@@ -75,11 +76,13 @@ package mapEdit
 			{
 				trim(trimSize);
 			}
+			
+			//this.addEventListener(MouseEvent.CLICK, onClick);
 		}
-		
+		var skinBmp:Bitmap;
 		private function onLoadSkin(e:Event):void
 		{
-			var skinBmp:Bitmap = Bitmap((e.target as LoaderInfo).loader.content);
+			skinBmp = Bitmap((e.target as LoaderInfo).loader.content);
 			skinBmp.scaleX = skinBmp.scaleY = 0.5;
 			skinBmp.x = -skinBmp.width*0.5;
 			skinBmp.y = -skinBmp.height;
@@ -89,7 +92,14 @@ package mapEdit
 			if(trimSize > 0)
 				trim(trimSize);
 		}
-		
+		/*private function onClick(e:MouseEvent):void
+		{
+			trace("click");
+			if(skinBmp.hitTestPoint(skin.mouseX, skin.mouseY, true))
+				trace("hit");
+			else
+				trace("no");
+		}*/
 		
 		override public function select(value:Boolean):void
 		{

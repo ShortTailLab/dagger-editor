@@ -264,7 +264,8 @@ package
 			setCurrTime(e.value);
 		}
 		
-		private function onEnterFrame(e:Event):void{
+		private function onEnterFrame(e:Event):void
+		{
 			mapView.y = currTime*speed;
 			timeLine.y = -mapView.y;
 			updateMapSize();

@@ -35,6 +35,8 @@ package formationEdit
 				formations = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
 			}
+			else
+				formations = new Object;
 		}
 		public function hasFormation(name:String):Boolean
 		{
