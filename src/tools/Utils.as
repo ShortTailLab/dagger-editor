@@ -189,12 +189,16 @@ package tools
 		
 		static public function arrayStr2ccpStr(str:String):String
 		{
-			var arr:Array = JSON.parse(str) as Array;
+			var arr:Array = [0, 0];
+			if( str != "" ) 
+				arr = JSON.parse(str) as Array;
 			return "@@cc.p("+arr[0]+","+arr[1]+")@@";
 		}
 		static public function arrayStr2ccsStr(str:String):String
 		{
-			var arr:Array = JSON.parse(str) as Array;
+			var arr:Array = [0, 0];
+			if( str != "" ) 
+				arr = JSON.parse(str) as Array;
 			return "@@cc.size("+arr[0]+","+arr[1]+")@@";
 		}
 		

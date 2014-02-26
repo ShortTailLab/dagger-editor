@@ -289,8 +289,6 @@ package
 			return true;
 		}
 		
-		
-		
 		public function exportJS():Boolean
 		{
 			if( this.currSelectedLevel == "" ) {
@@ -342,7 +340,7 @@ package
 					Alert.show("子弹类型不可被放置在地图中"); 
 					return false;
 				}
-				if( data.monster_type == "Actor" ) actors[item.type] = data;
+				if( data.monster_type == "Monster" ) actors[item.type] = data;
 				else traps[item.type] = data;
 				
 				var t:Number = item.triggerTime || item.y;
