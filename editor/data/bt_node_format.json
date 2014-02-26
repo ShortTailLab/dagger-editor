@@ -1,0 +1,187 @@
+[
+	{
+		"func" : "BT.Node.Tags",
+		"desc" : "当执行first的时候，返回特定的tag，角色可以根据tag来决定自己播放的动画内容；",
+		"args" : [
+	  		{ "name":"tags", "type":"array_string" },
+			{ "name":"first", "type":"node" }
+		]
+	},
+	{
+		"func" : "BT.Node.Timer",
+		"desc" : "仅执行下属节点x秒",
+		"args" : [
+	  		{ "name":"interval", "type":"float" },
+			{ "name":"first", "type":"node" }
+		]
+	},
+	{
+		"func" : "BT.Node.WhenPlayerInRange",
+		"desc" : "当玩家与自己的距离小于radius的时候，执行first；",
+		"args" : [
+	  		{ "name":"radius", "type":"float" },
+			{ "name":"first", "type":"node" }
+		]
+	},
+	{
+		"func" : "BT.Node.WhenPlayerHealthRateLessThan",
+		"desc" : "当玩家的生命值比例低于rate的时候，执行first；",
+		"args" : [
+	  		{ "name":"rate", "type":"float" },
+			{ "name":"first", "type":"node" }
+		]
+	},
+	{
+		"func" : "BT.Node.WhenTargetHealthRateLessThan",
+		"desc" : "当目标生命值比例低于rate的时候，执行first；",
+		"args" : [
+	  		{ "name":"target", "type":"int" },
+			{ "name":"rate", "type":"float" },
+			{ "name":"first", "type":"node" }
+		]
+	},
+	{
+		"func" : "BT.Node.WhenSelfHealthRateLessThan",
+		"desc" : "当自身的生命比例低于rate的时候，执行first；",
+		"args" : [
+	  		{ "name":"rate", "type":"float" },
+			{ "name":"first", "type":"node" }
+		]
+	},
+	{
+		"func" : "BT.Node.WhenYLessThanPlayer",
+		"desc" : "当怪物的y轴位置低于玩家的时候",
+		"args" : [
+	  		{ "name":"first", "type":"node" }
+		]
+	},
+	{
+		"func" : "BT.Node.MeleeAttack",
+		"desc" : "每隔interval秒，对radius范围内的玩家造成damage点伤害；",
+		"args" : [
+	  		{ "name":"radius", "type":"float" },
+			{ "name":"interval", "type":"float" }
+		]
+	},
+	{
+		"func" : "BT.Node.EmitDirectBulletByProfile",
+		"desc" : "根据子弹类型id，每隔interval秒，创建一颗id为addr的子弹；",
+		"args" : [
+	  		{ "name":"dir", "type":"ccp" },
+			{ "name":"interval", "type":"float" },
+			{ "name":"addr", "type":"string" }
+		]
+	},
+	{
+		"func" : "BT.Node.EmitFanshapedBulletByProfile",
+		"desc" : "interval->发射间隔;angle->方向，0为正下方;constraint->角度大小;count->弹道数量;addr->子弹id",
+		"args" : [
+	  		{ "name":"interval", "type":"float" },
+			{ "name":"angle", "type":"float" },
+			{ "name":"constraint", "type":"float" },
+			{ "name":"count", "type":"int" },
+			{ "name":"addr", "type":"string" }
+		]
+	},
+	{
+		"func" : "BT.Node.EmitSpinningBulletByProfile",
+		"desc" : "根据初始角度angle以及角速度angularVel旋转发射器，每隔interval秒发射id为addr的子弹；",
+		"args" : [
+	  		{ "name":"angle", "type":"float" },
+			{ "name":"angularVel", "type":"float" },
+			{ "name":"constraint", "type":"float" },
+			{ "name":"interval", "type":"float" },
+			{ "name":"addr", "type":"string" }
+		]
+	},
+	{
+		"func" : "BT.Node.EmitFollowBulletByProfile",
+		"desc" : "每隔interval秒，发射一只跟踪玩家的子弹bullet",
+		"args" : [
+	  		{ "name":"interval", "type":"float" },
+			{ "name":"addr", "type":"string" }
+		]
+	},
+	{
+		"func" : "BT.Node.EmitChaseBulletByProfile",
+		"desc" : "每隔interval秒，向玩家的当前位置发射一颗子弹addr",
+		"args" : [
+	  		{ "name":"interval", "type":"float" },
+			{ "name":"addr", "type":"string" }
+		]
+	},
+	{
+		"func" : "BT.Node.EmitActorByProfile",
+		"desc" : "每隔interval秒，按照addr创建一个敌人；",
+		"args" : [
+	  		{ "name":"offset", "type":"ccp" },
+			{ "name":"interval", "type":"float" },
+			{ "name":"addr", "type":"string" }
+		]
+	},
+	{
+		"func" : "BT.Node.MoveDirection",
+		"desc" : "按照方向dir，速度speed进行移动；",
+		"args" : [
+	  		{ "name":"dir", "type":"ccp" },
+			{ "name":"speed", "type":"float" }
+		]
+	},
+	{
+		"func" : "BT.Node.StayOnMap",
+		"desc" : "随着地图的移动而移动；",
+		"args" : [
+	
+		]
+	},
+	{
+		"func" : "BT.Node.ChasePlayer",
+		"desc" : "节点执行的时候，确定玩家当前位置pos，并以速度speed朝pos移动",
+		"args" : [
+	  		{ "name":"speed", "type":"float" }
+		]
+	},
+	{
+		"func" : "BT.Node.FollowPlayer",
+		"desc" : "固定速度speed，追踪玩家。",
+		"args" : [
+	  		{ "name":"speed", "type":"float" }
+		]
+	},
+	{
+		"func" : "BT.Node.MoveAlongPath",
+		"desc" : "沿着path(cc.point的数组),以速度speed直线移动；",
+		"args" : [
+	  		{ "name":"path", "type":"array_ccp" },
+			{ "name":"speed", "type":"float" }
+		]
+	},
+	{
+		"func" : "BT.Node.MoveAlongPathRelative",
+		"desc" : "以path中的点为相对位移，以速度speed直线移动",
+		"args" : [
+	  		{ "name":"path", "type":"array_ccp" },
+			{ "name":"speed", "type":"float" }
+		]
+	},
+	{
+		"func" : "BT.Node.MoveAndAttackLoop",
+		"desc" : "根据path(cc.point的数组),以速度speed移动。在每个点停留interval秒，同时根据发射器节点emmiter进行发射；",
+		"args" : [
+	  		{ "name":"path", "type":"array_ccp" },
+			{ "name":"speed", "type":"float" },
+			{ "name":"interval", "type":"float" },
+			{ "name":"emmiter", "type":"node" }
+		]
+	},
+	{
+		"func" : "BT.Node.MoveAndAttackLoopRelative",
+		"desc" : "以path中的点为相对位移,以速度speed移动。在每个点停留interval秒，同时根据发射器节点emmiter进行发射；",
+		"args" : [
+	  		{ "name":"path", "type":"array_ccp" },
+			{ "name":"speed", "type":"float" },
+			{ "name":"interval", "type":"float" },
+			{ "name":"emmiter", "type":"node" }
+		]
+	}
+]
