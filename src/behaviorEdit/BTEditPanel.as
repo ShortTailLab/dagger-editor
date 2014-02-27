@@ -18,7 +18,6 @@ package behaviorEdit
 	import mapEdit.MatSprite;
 	
 	import manager.EventManager;
-	import tools.Utils;
 	
 	public class BTEditPanel extends TitleWindow
 	{

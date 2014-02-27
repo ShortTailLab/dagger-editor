@@ -3,7 +3,6 @@ package behaviorEdit.bnodePainter
 	import flash.geom.Point;
 	
 	import behaviorEdit.BNode;
-	import tools.Utils;
 	
 	public class SeqGraphPainter extends BasePainer
 	{

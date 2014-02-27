@@ -11,7 +11,6 @@ package mapEdit
 	
 	import spark.components.TextInput;
 	
-	import tools.Utils;
 	
 	public class MatInputForm extends UIComponent
 	{

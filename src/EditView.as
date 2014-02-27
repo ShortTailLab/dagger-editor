@@ -25,7 +25,6 @@ package
 	import spark.components.TextInput;
 	
 	import tools.StateBtn;
-	import tools.Utils;
 	import mapEdit.EditBase;
 	import mapEdit.EditMapControl;
 	import mapEdit.EditMatsControl;

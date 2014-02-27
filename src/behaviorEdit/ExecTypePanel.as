@@ -13,7 +13,6 @@ package behaviorEdit
 	import mx.managers.PopUpManager;
 	
 	import spark.components.TitleWindow;
-	import tools.Utils;
 	
 	public class ExecTypePanel extends TitleWindow
 	{

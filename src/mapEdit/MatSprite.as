@@ -6,7 +6,6 @@ package mapEdit
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.Event;
-	import flash.events.MouseEvent;
 	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
@@ -14,7 +13,6 @@ package mapEdit
 
 	public class MatSprite extends EditBase
 	{
-
 		public var trimSize:Number;
 		public var route:Array = null;
 		private var isShowType:Boolean = false;
@@ -76,8 +74,6 @@ package mapEdit
 			{
 				trim(trimSize);
 			}
-			
-			//this.addEventListener(MouseEvent.CLICK, onClick);
 		}
 		var skinBmp:Bitmap;
 		private function onLoadSkin(e:Event):void
@@ -92,14 +88,6 @@ package mapEdit
 			if(trimSize > 0)
 				trim(trimSize);
 		}
-		/*private function onClick(e:MouseEvent):void
-		{
-			trace("click");
-			if(skinBmp.hitTestPoint(skin.mouseX, skin.mouseY, true))
-				trace("hit");
-			else
-				trace("no");
-		}*/
 		
 		override public function select(value:Boolean):void
 		{

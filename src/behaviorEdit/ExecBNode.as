@@ -17,7 +17,6 @@ package behaviorEdit
 	import behaviorEdit.bnodePainter.ParGraphPainter;
 	
 	import manager.EventManager;
-	import tools.Utils;
 
 	public class ExecBNode extends BNode
 	{

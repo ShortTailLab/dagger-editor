@@ -12,7 +12,6 @@ package formationEdit
 	
 	import manager.EventManager;
 	import tools.RenamePanel;
-	import tools.Utils;
 	
 	public class FormationsView extends UIComponent
 	{

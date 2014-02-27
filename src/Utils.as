@@ -1,4 +1,4 @@
-package tools
+package 
 {
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
@@ -62,12 +62,6 @@ package tools
 			if(p1.x!=p2.x && p1.y!=p2.y)
 				target.graphics.lineTo(p1.x, p2.y);
 			target.graphics.lineTo(p2.x, p2.y);
-		}
-		
-		static public function assert(val:Boolean):void
-		{
-			while(val)
-			{}
 		}
 		
 		static public function genBTreeJS(sourceData:Object):String

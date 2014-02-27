@@ -27,7 +27,6 @@ package
 	import manager.EventManager;
 	import manager.EventType;
 	import manager.GameEvent;  
-	import tools.Utils;
 	
 	public class Data extends EventDispatcher
 	{
