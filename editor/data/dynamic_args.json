@@ -1,0 +1,63 @@
+{
+	"Bullet" : {
+		"offset" : "ccp",
+		"face" : "string",
+		"size" : "ccsize",
+		"range" : "float",
+		"speed" : "float",
+		"p_attack" : "float",
+		"m_attack" : "float"
+	},
+	"Monster" : {
+		"monster_id" : "string",
+		"monster_type" : "string",
+		"size" : "ccsize",
+		"health" : "float",
+		"face" : "string",
+		"p_attack" : "float",
+		"m_attack" : "float",
+		"p_defense" : "float",
+		"m_defense" : "float"
+	},
+	"RollingStone" : {
+		"face" : "string",
+		"speed" : "float",
+		"p_dps" : "float",
+		"m_dps" : "float"
+	},
+	"Meteorite" : {
+		"p_attack" : "float",
+		"m_attack" : "float",
+		"p_dps" : "float",
+		"m_dps" : "float"
+	},
+	"Bangalore" : {
+		"face" : "string",
+		"size" : "ccsize",
+		"p_attack" : "float",
+		"m_attack" : "float"
+	},
+	"Chapter" : {
+		"chapter_id" : "string",
+		"chapter_name" : "string"
+	},
+	"Level" : {
+		"level_id" : "string",
+		"level_name" : "string"
+	},
+	"SetMapSpeed" : {
+		"speed" : "float"
+	},
+	"SetBackgroundSpeed" : {
+		"speed" : "float"
+	},
+	"TriggerResult" : {
+		"SetMapSpeed" : "string",
+		"Victory" : "string",
+		"SetBackgroundSpeed" : "string"
+	},
+	"TriggerCond" : {
+		"OnAppear" : "string",
+		"OnDestroy" : "string"
+	}
+}

@@ -1,0 +1,1 @@
+{"1010205":[{"result":{"speed":"0","type":"SetMapSpeed"},"cond":{"type":"OnAppear"}}],"1010606":[{"result":{"speed":"0","type":"SetMapSpeed"},"cond":{"type":"OnAppear"}},{"result":{"type":"Victory"},"cond":{"type":"OnDestroy"}}]}

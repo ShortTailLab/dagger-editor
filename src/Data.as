@@ -295,10 +295,10 @@ package
 				return false;
 			}
 			
-			for each( var lid:String in this.level_list )
-			{
-				this.exportLevelJS(lid, lid);
-			}
+//			for each( var lid:String in this.level_list )
+//			{
+//				this.exportLevelJS(lid, lid);
+//			}
 			
 			this.exportLevelJS(this.currSelectedLevel, "demo");
 				
@@ -384,8 +384,9 @@ package
 			
 			// export bullet
 			export.bullet = new Object;
-			for( var key:* in this.enemy_profile ) {
-				if(this.enemy_profile[key].type == "bullet")
+			for( var key:* in this.enemy_profile ) 
+			{
+				if(this.enemy_profile[key].monster_type == "Bullet")
 				{
 					for( var bh:String in export.behavior )
 					{
