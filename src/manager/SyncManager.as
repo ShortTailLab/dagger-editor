@@ -72,7 +72,7 @@ package manager
 				request.contentType = "application/json";
 				request.data = json;
 
-				var loader:URLLoader = new URLLoader();
+				var loader:URLLoader = new URLLoader(); 
 				loader.addEventListener(Event.COMPLETE, function(e:Event):void
 				{
 					count ++;
@@ -138,6 +138,77 @@ package manager
 			}
 		}
 		
+		public function uploadFileToServerPath(localFile:File, serverPath:String, versionPrefix:String="dagger"):Boolean
+		{
+			if (_isUploading) {
+				return true;
+			}
+			_isUploading = true;
+			_versionPrefix = versionPrefix;
+			_localDirectoryPrefix = localFile.url;
+			_uploadMsg = "";
+			_numUploaded = 0;
+			if (localFile.exists && !localFile.isDirectory) {
+				var versionDicKey:String = serverPath+"/"+localFile.name;
+				this.makeFileVersionDic(localFile, versionDicKey, _versionPrefix);
+				
+				var oldVersionUrl:String = STATIC_SERVER_ADDRESS+versionPrefix+"/version.json";
+				var urlLoader:URLLoader = new URLLoader();
+				
+				var fildCopy:File = localFile;
+				urlLoader.addEventListener(Event.COMPLETE, function(e){
+					var oldDict:Object;
+					try {
+						oldDict = JSON.parse(e.currentTarget.data);
+					}
+					catch (e:Error) {
+						oldDict = new Object();
+					}
+					_needToUpload = new Vector.<String>();
+					for (var key:String in _versionDict) {
+						if (oldDict[key]) {
+							if (oldDict[key]["h"] != _versionDict[key]["h"]) {
+								oldDict[key] = _versionDict[key];
+								_needToUpload.push(key);
+							}
+						}
+						else {
+							oldDict[key] = _versionDict[key];
+							_needToUpload.push(key);
+						}
+					}
+					var tmpDirectory:String = _localDirectoryPrefix.substring(0, _localDirectoryPrefix.lastIndexOf("/",_localDirectoryPrefix.length-2));
+					var versionFile:File = new File(tmpDirectory+"/version.json");
+					var fileStream:FileStream = new FileStream();
+					fileStream.open(versionFile, FileMode.WRITE);
+					fileStream.writeUTFBytes(JSON.stringify(oldDict));
+					fileStream.close();
+					
+					uploadFile(versionFile, "version.json");
+					
+					for each (var fileKey:String in _needToUpload) {
+						uploadFile(fildCopy, fileKey);
+					}
+				});
+				
+				urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onOldVersionLoadError);
+				urlLoader.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, function(e:HTTPStatusEvent):void {
+					for (var i:int = 0; i < e.responseHeaders.length; i++) {
+						if (e.responseHeaders[i]["name"] == "Date") {
+							_serverDate = RFCTimeFormat.fromRFC802(e.responseHeaders[i]["value"]);
+							trace("server time: ", RFCTimeFormat.toRFC802(_serverDate));
+						}
+					}
+				});
+				urlLoader.load(new URLRequest(oldVersionUrl));
+				
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		
 		private function onOldVersionLoad(e:Event):void {
 			var oldDict:Object;
 			try {
@@ -176,6 +247,12 @@ package manager
 				}
 			}
 		}
+		
+		private function onOldVersionLoad2(e:Event):void
+		{
+			
+		}
+		
 		
 		private function uploadFile(file:File, fileKey:String):void {
 			file.addEventListener(Event.COMPLETE, function(e:Event):void {
@@ -283,18 +360,23 @@ package manager
 					if (file.name.charAt(0) == ".") {
 						continue;
 					}
-					var key:String = file.url.substring(_localDirectoryPrefix.length);
-					_versionDict[key] = new Object();
-					_versionDict[key]["d"] = _versionPrefix;
-					if (file.url.indexOf(".js") != -1) {
-						_versionDict[key]["p"] = 0;
-					}
-					else {
-						_versionDict[key]["p"] = 0;
-					}
-					_versionDict[key]["h"] = getMD5Sum(file);
+					var key:String = file.url.substring(this._localDirectoryPrefix.length);
+					makeFileVersionDic(file, key, _versionPrefix);
 				}
 			}
+		}
+		
+		private function makeFileVersionDic(file:File, key:String, versionPrefix:String):void
+		{
+			_versionDict[key] = new Object();
+			_versionDict[key]["d"] = versionPrefix;
+			if (file.url.indexOf(".js") != -1) {
+				_versionDict[key]["p"] = 0;
+			}
+			else {
+				_versionDict[key]["p"] = 0;
+			}
+			_versionDict[key]["h"] = getMD5Sum(file);
 		}
 		
 		private function getMD5Sum(file:File):String {
