@@ -215,11 +215,7 @@
 			
 			private function openFileToSend(e:Event):void
 			{
-				var browseForOpenFile:File;
-				if(Data.getInstance().conf.hasOwnProperty("sndFileCashe"))
-					browseForOpenFile = new File(Data.getInstance().conf.sndFileCashe);
-				else
-					browseForOpenFile = File.desktopDirectory;
+				var browseForOpenFile:File = new File(Data.getInstance().conf.sndFileCashe);
 				
 				var tip:String = "请选择上传的文件";
 				browseForOpenFile.browseForOpen(tip);
@@ -231,11 +227,6 @@
 				});
 			}
 			
-			private function sendFileToServer():void
-			{
-				
-			}
-				
 			var process:NativeProcess;
 			private function sendToStaticServer(e:Event):void
 			{

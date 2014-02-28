@@ -132,10 +132,10 @@ package behaviorEdit
 		//these two func should be overrided to restore node data. 
 		public function initData(data:Object):void{}
 		public function exportData():Object{return null;}
-		
+		//to tell if trigger the dragin func
 		public function getInteractiveRect():Rectangle
 		{
-			return new Rectangle(this.x+boundingBox.width, this.y-boundingBox.height, boundingBox.width, treeHeight+boundingBox.height);
+			return new Rectangle(this.x, this.y, boundingBox.width, boundingBox.height);
 		}
 		
 		public function getChildNodeIndex(node:BNode):int

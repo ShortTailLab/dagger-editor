@@ -2,6 +2,7 @@ package behaviorEdit
 {
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	
 	import mx.core.UIComponent;
 	
@@ -91,22 +92,35 @@ package behaviorEdit
 		{
 			var node:BNode = e.bindingNode;
 			
-			var result:BNode = check(rootNode, function(n:BNode):Boolean{
-				return n.getInteractiveRect().containsPoint(new Point(node.x, node.y));
+			var laidOnNode:BNode = find(rootNode, function(n:BNode):Boolean{
+				var childRect:Rectangle = new Rectangle(n.x+n.boundingBox.width, n.y, 100, n.boundingBox.height);
+				var targetPos:Point = new Point(node.x, node.y);
+				return n != node && n.getInteractiveRect().containsPoint(targetPos);
 			});
-			if(result)
-				result.onDragIn(node);
+			if(laidOnNode && laidOnNode.par)
+			{
+				laidOnNode.par.onDragIn(node);
+			}
+			else(!laidOnNode)
+			{
+				var nodeNeedChild:BNode = find(rootNode, function(n:BNode):Boolean{
+					var childRect:Rectangle = new Rectangle(n.x+n.boundingBox.width, n.y, 100, n.boundingBox.height);
+					return n != node && childRect.containsPoint(new Point(node.x, node.y));
+				});
+				if(nodeNeedChild)
+					nodeNeedChild.onDragIn(node);
+			}
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
 		
-		private function check(node:BNode, condFunc:Function):BNode
+		private function find(node:BNode, condFunc:Function):BNode
 		{
 			if(condFunc(node))
 				return node;
 			else
 				for each(var n:BNode in node.childNodes)
 				{
-					var result:BNode = check(n, condFunc);
+					var result:BNode = find(n, condFunc);
 					if(result)
 						return result;
 				}

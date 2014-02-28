@@ -158,11 +158,9 @@ package
 			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
 			
 			this.conf = this.loadJson("editor/saved/conf.json", false);
-			if( !this.conf )
-			{
-				var path:String = File.desktopDirectory.nativePath;
-				this.conf = { speed: 32, sndFileCashe: path};
-			}
+			if( !this.conf ) this.conf = { speed: 32};
+			if(!Data.getInstance().conf.hasOwnProperty("sndFileCashe"))
+				Data.getInstance().conf.sndFileCashe = File.desktopDirectory.nativePath;
 			//this record the behaviors' name of each enemy
 			this.enemy_bh = this.loadJson("editor/saved/enemy_bh.json", false) || {};
 			this.enemy_trigger = this.loadJson("editor/saved/enemy_trigger.json", false) || {};
