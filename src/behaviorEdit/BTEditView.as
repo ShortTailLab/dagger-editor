@@ -43,7 +43,7 @@ package behaviorEdit
 			var node:BNode = BNodeFactory.createBNode(nodeData.type);
 			this.addNode(node);
 			node.initData(nodeData.data);
-			par.add(node);
+			par.add(node); 
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 			var children:Array = nodeData.children as Array;
 			for(var i:int = 0; i < children.length; i++)
@@ -57,7 +57,7 @@ package behaviorEdit
 			this.addChild(childNode);
 		}
 		
-		public function remove():void
+		public function onRemoved():void
 		{
 			EventManager.getInstance().removeEventListener(BTEvent.TREE_CHANGE, onTreeChange);
 			EventManager.getInstance().removeEventListener(BTEvent.LAID, onNodeLaid);
@@ -112,7 +112,7 @@ package behaviorEdit
 			}
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
-		
+		//loop the bnode tree and return the first found node
 		private function find(node:BNode, condFunc:Function):BNode
 		{
 			if(condFunc(node))

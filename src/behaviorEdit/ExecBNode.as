@@ -66,7 +66,7 @@ package behaviorEdit
 		{
 			if(data && data.execType && data.execType != "")
 			{
-				this.initExecType(data.execType);
+				this.setExecType(data.execType);
 				var parmData:Array = data.parm as Array;
 				for each(var item in parmInput)
 				{
@@ -155,10 +155,11 @@ package behaviorEdit
 		
 		private function onSelectType(e:MsgEvent):void
 		{
-			initExecType(e.hintMsg);
+			setExecType(e.hintMsg);
 		}
 		
-		private function initExecType(type:String):void
+		
+		private function setExecType(type:String):void
 		{
 			var nodes:Array = Data.getInstance().bh_node as Array;
 			for each(var d in nodes)

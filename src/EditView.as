@@ -67,11 +67,12 @@ package
 		private var endTime:Number = -1;
 		private var currTime:Number = -1;
 		private var level_id:String = "";
-		
+		//used to the map recycle.
 		private var mapPieces:Dictionary;
 		private var mapFreePieces:Array;
 		
 		private var selectBoard:MatInputForm;
+		//跟随鼠标的一些提示
 		private var tipsContainer:Sprite = null;
 		
 		[Embed(source="map_snow1.png")]
@@ -79,6 +80,8 @@ package
 		
 		public function EditView(_main:MapEditor, _container:Canvas)
 		{
+			//all the ui position will be recalculated in onResize()
+			
 			this.main = _main;
 			this.parContainer = _container;
 			this.parContainer.addEventListener(ResizeEvent.RESIZE, onResize);
@@ -184,6 +187,7 @@ package
 			Data.getInstance().updateLevelById(this.level_id, data, endTime);
 		}
 		
+		//the map's current time.
 		public function setCurrTime(value:Number):void
 		{
 			if(value < 0)

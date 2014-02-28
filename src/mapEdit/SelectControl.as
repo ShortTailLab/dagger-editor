@@ -77,7 +77,7 @@ package mapEdit
 				}
 			this.dispatchEvent(new Event(Event.CHANGE));
 		}
-		
+		//copy and paste the selected mats to the editView.
 		public function copySelect():void
 		{
 			var newMats:Array = new Array;
@@ -87,6 +87,22 @@ package mapEdit
 			}
 			selectMul(newMats);
 		}
+		
+		
+		public function setSelectMatToFormation():void
+		{
+			var window:RenamePanel = new RenamePanel;
+			window.addEventListener(MsgEvent.RENAME_LEVEL, function(e:MsgEvent):void{
+				if(Formation.getInstance().hasFormation(e.hintMsg))
+					Alert.show("该阵型名已经存在！");
+				else
+					Formation.getInstance().add(e.hintMsg, targets);
+			});
+			
+			PopUpManager.addPopUp(window, this.view.parent, true);
+			PopUpManager.centerPopUp(window);
+		}
+		
 		
 		private function onMouseDown(e:MouseEvent):void
 		{
@@ -161,21 +177,6 @@ package mapEdit
 			target.addEventListener(Event.REMOVED_FROM_STAGE , onRemoved);
 			targets.push(target);
 		}
-		
-		public function setSelectMatToFormation():void
-		{
-			var window:RenamePanel = new RenamePanel;
-			window.addEventListener(MsgEvent.RENAME_LEVEL, function(e:MsgEvent):void{
-				if(Formation.getInstance().hasFormation(e.hintMsg))
-					Alert.show("该阵型名已经存在！");
-				else
-					Formation.getInstance().add(e.hintMsg, targets);
-			});
-			
-			PopUpManager.addPopUp(window, this.view.parent, true);
-			PopUpManager.centerPopUp(window);
-		}
-		
 		
 		private function onRemoved(e:Event):void
 		{

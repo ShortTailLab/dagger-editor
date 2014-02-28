@@ -45,7 +45,7 @@ package behaviorEdit
 		protected var canMove:Boolean = true;
 		protected var bg:Sprite;
 		protected var label:TextField;
-		
+		//these two value used to record the drawWithAnim() des point.
 		private var desX:Number = 0.0;
 		private var desY:Number = 0.0;
 		
@@ -117,7 +117,7 @@ package behaviorEdit
 			menu.addItem(btn);
 			this.contextMenu = menu;
 		}
-		
+		//view refer to the bteditview it added to.
 		public function setView(view:BTEditView):void
 		{
 			this.view = view;
@@ -131,7 +131,10 @@ package behaviorEdit
 		
 		//these two func should be overrided to restore node data. 
 		public function initData(data:Object):void{}
+		//the export data restore in the "data" field of each bnode's finally export data.
+		//you can refer to the bteditview.getExportData().
 		public function exportData():Object{return null;}
+		
 		//to tell if trigger the dragin func
 		public function getInteractiveRect():Rectangle
 		{
@@ -211,7 +214,7 @@ package behaviorEdit
 			_nodeWidth = value;
 			boundingBox.width = this.nodeWidth+this.horizontalPadding;
 		}
-		
+		//the func will call when you drag an exist node into its interactive rect.
 		public function onDragIn(node:BNode):void
 		{
 			if(enableDragNodeIn && this.getChildNodesNum()<this.childNodeLimit)
@@ -228,7 +231,7 @@ package behaviorEdit
 				node.par = this;
 			}
 		}
-		
+		//this called when you drag to create a new node 
 		public function onAdd(nodeType:String):void
 		{
 			if(childNodeLimit<0 || this.childNodes.length < this.childNodeLimit)
@@ -287,6 +290,22 @@ package behaviorEdit
 						node.removeFromView();
 					return;
 				}
+		}
+		
+		public function draw():void
+		{
+			view.setChildIndex(this, view.numChildren-1);
+			treeHeight = 0;
+			for(var i:int = 0; i < childNodes.length; i++)
+			{
+				childNodes[i].x = this.x + boundingBox.width;
+				childNodes[i].y = this.y + treeHeight;
+				childNodes[i].draw();
+				treeWidth = Math.max(treeWidth, childNodes[i].treeWidth);
+				treeHeight += childNodes[i].treeHeight;
+			}
+			treeWidth = Math.max(treeWidth, boundingBox.width);
+			treeHeight = Math.max(treeHeight, boundingBox.height);
 		}
 		
 		public function drawWithAnim():void
@@ -348,7 +367,6 @@ package behaviorEdit
 			bg.graphics.endFill();
 		}
 		
-		
 		protected var hasMouseDown:Boolean = false;
 		protected var isPressing:Boolean = false;
 		protected function onMouseDown(e:MouseEvent):void
@@ -369,7 +387,6 @@ package behaviorEdit
 		
 		private function onStageMouseUp(e:MouseEvent):void
 		{
-			
 			if(isPressing)
 			{
 				//dispatch event that accepted by editview. 
@@ -402,27 +419,9 @@ package behaviorEdit
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
 		
-		
-		
 		private function onMoveEnd(e:EffectEvent):void
 		{
 			drawGraph();
-		}
-		
-		public function draw():void
-		{
-			view.setChildIndex(this, view.numChildren-1);
-			treeHeight = 0;
-			for(var i:int = 0; i < childNodes.length; i++)
-			{
-				childNodes[i].x = this.x + boundingBox.width;
-				childNodes[i].y = this.y + treeHeight;
-				childNodes[i].draw();
-				treeWidth = Math.max(treeWidth, childNodes[i].treeWidth);
-				treeHeight += childNodes[i].treeHeight;
-			}
-			treeWidth = Math.max(treeWidth, boundingBox.width);
-			treeHeight = Math.max(treeHeight, boundingBox.height);
 		}
 		
 		public function drawGraph():void

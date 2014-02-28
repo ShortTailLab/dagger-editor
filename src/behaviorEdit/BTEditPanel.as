@@ -141,7 +141,7 @@ package behaviorEdit
 		private function onClose(e:CloseEvent):void
 		{
 			controller.saveSelectItem();
-			editView.remove();
+			editView.onRemoved();
 			PopUpManager.removePopUp(this);
 			
 			var msg:String = "";

@@ -141,8 +141,6 @@ package mapEdit
 				triggerShadow.y = -this.triggerTime/2-this.y;
 			}
 		}
-		
-		
 		override public function trim(size:Number):void
 		{
 			var scale:Number = Math.min(size/skin.width, size/skin.height);

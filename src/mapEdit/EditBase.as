@@ -46,13 +46,9 @@ package mapEdit
 			posRecord.y = y;
 		}
 		
-		public function initFromData(data:Object):void
-		{
-		}
+		//these 
+		public function initFromData(data:Object):void{}
 		
-		public function toExportData():Object
-		{
-			return null;
-		}
+		public function toExportData():Object{return null;}
 	}
 }
