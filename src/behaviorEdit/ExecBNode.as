@@ -37,7 +37,7 @@ package behaviorEdit
 			this.graphPainter = new ParGraphPainter(this);
 			this.graphPainter.setDefaultColor(0);
 		}
-		
+		//this should called when it added to bteditview
 		override public function active():void
 		{
 			super.active();

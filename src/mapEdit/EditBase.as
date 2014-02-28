@@ -46,9 +46,7 @@ package mapEdit
 			posRecord.y = y;
 		}
 		
-		//these 
 		public function initFromData(data:Object):void{}
-		
 		public function toExportData():Object{return null;}
 	}
 }
