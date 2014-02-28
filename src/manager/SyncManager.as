@@ -119,7 +119,15 @@ package manager
 				scanDirectory(localDiretory);
 				var oldVersionUrl:String = STATIC_SERVER_ADDRESS+versionPrefix+"/version.json";
 				var urlLoader:URLLoader = new URLLoader();
-				urlLoader.addEventListener(Event.COMPLETE, onOldVersionLoad);
+				urlLoader.addEventListener(Event.COMPLETE, function(e){
+					onOldVersionLoad(e);
+					for each (var fileKey:String in _needToUpload) {
+						var file:File = new File(_localDirectoryPrefix+fileKey);
+						if (file.exists) {
+							uploadFile(file, fileKey);
+						}
+					}
+				});
 				urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onOldVersionLoadError);
 				urlLoader.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, function(e:HTTPStatusEvent):void {
 					for (var i:int = 0; i < e.responseHeaders.length; i++) {
@@ -150,44 +158,16 @@ package manager
 			_numUploaded = 0;
 			if (localFile.exists && !localFile.isDirectory) {
 				var versionDicKey:String = serverPath+"/"+localFile.name;
-				this.makeFileVersionDic(localFile, versionDicKey, _versionPrefix);
+				this.makeFileVersionDic(_versionDict, localFile, versionDicKey, _versionPrefix);
 				
 				var oldVersionUrl:String = STATIC_SERVER_ADDRESS+versionPrefix+"/version.json";
 				var urlLoader:URLLoader = new URLLoader();
 				
-				var fildCopy:File = localFile;
 				urlLoader.addEventListener(Event.COMPLETE, function(e){
-					var oldDict:Object;
-					try {
-						oldDict = JSON.parse(e.currentTarget.data);
-					}
-					catch (e:Error) {
-						oldDict = new Object();
-					}
-					_needToUpload = new Vector.<String>();
-					for (var key:String in _versionDict) {
-						if (oldDict[key]) {
-							if (oldDict[key]["h"] != _versionDict[key]["h"]) {
-								oldDict[key] = _versionDict[key];
-								_needToUpload.push(key);
-							}
-						}
-						else {
-							oldDict[key] = _versionDict[key];
-							_needToUpload.push(key);
-						}
-					}
-					var tmpDirectory:String = _localDirectoryPrefix.substring(0, _localDirectoryPrefix.lastIndexOf("/",_localDirectoryPrefix.length-2));
-					var versionFile:File = new File(tmpDirectory+"/version.json");
-					var fileStream:FileStream = new FileStream();
-					fileStream.open(versionFile, FileMode.WRITE);
-					fileStream.writeUTFBytes(JSON.stringify(oldDict));
-					fileStream.close();
-					
-					uploadFile(versionFile, "version.json");
+					onOldVersionLoad(e);
 					
 					for each (var fileKey:String in _needToUpload) {
-						uploadFile(fildCopy, fileKey);
+						uploadFile(localFile, fileKey);
 					}
 				});
 				
@@ -239,20 +219,7 @@ package manager
 			fileStream.close();
 			
 			uploadFile(versionFile, "version.json");
-			
-			for each (var fileKey:String in _needToUpload) {
-				var file:File = new File(_localDirectoryPrefix+fileKey);
-				if (file.exists) {
-					uploadFile(file, fileKey);
-				}
-			}
 		}
-		
-		private function onOldVersionLoad2(e:Event):void
-		{
-			
-		}
-		
 		
 		private function uploadFile(file:File, fileKey:String):void {
 			file.addEventListener(Event.COMPLETE, function(e:Event):void {
@@ -361,22 +328,22 @@ package manager
 						continue;
 					}
 					var key:String = file.url.substring(this._localDirectoryPrefix.length);
-					makeFileVersionDic(file, key, _versionPrefix);
+					makeFileVersionDic(_versionDict, file, key, _versionPrefix);
 				}
 			}
 		}
 		
-		private function makeFileVersionDic(file:File, key:String, versionPrefix:String):void
+		private function makeFileVersionDic(dic:Object, file:File, key:String, versionPrefix:String):void
 		{
-			_versionDict[key] = new Object();
-			_versionDict[key]["d"] = versionPrefix;
+			dic[key] = new Object();
+			dic[key]["d"] = versionPrefix;
 			if (file.url.indexOf(".js") != -1) {
-				_versionDict[key]["p"] = 0;
+				dic[key]["p"] = 0;
 			}
 			else {
-				_versionDict[key]["p"] = 0;
+				dic[key]["p"] = 0;
 			}
-			_versionDict[key]["h"] = getMD5Sum(file);
+			dic[key]["h"] = getMD5Sum(file);
 		}
 		
 		private function getMD5Sum(file:File):String {

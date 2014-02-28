@@ -31,7 +31,6 @@ package
 	
 	public class MatsView extends UIComponent
 	{
-		
 		public var selected:EditBase = null;
 		private var matsLayer:UIComponent = null;
 		private var labelContainer:UIComponent = null;

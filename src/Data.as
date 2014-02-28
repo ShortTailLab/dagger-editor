@@ -158,7 +158,11 @@ package
 			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
 			
 			this.conf = this.loadJson("editor/saved/conf.json", false);
-			if( !this.conf ) this.conf = { speed: 32};
+			if( !this.conf )
+			{
+				var path:String = File.desktopDirectory.nativePath;
+				this.conf = { speed: 32, sndFileCashe: path};
+			}
 			//this record the behaviors' name of each enemy
 			this.enemy_bh = this.loadJson("editor/saved/enemy_bh.json", false) || {};
 			this.enemy_trigger = this.loadJson("editor/saved/enemy_trigger.json", false) || {};
@@ -279,13 +283,18 @@ package
 			Utils.copyDirectoryTo("editor/saved/","editor/backup/");
 			
 			Utils.writeObjectToJsonFile(this.levels, "editor/saved/levels.json");
-			Utils.writeObjectToJsonFile(this.conf, "editor/saved/conf.json");
 			Utils.writeObjectToJsonFile(this.enemy_trigger, "editor/saved/enemy_trigger.json");
 			Utils.writeObjectToJsonFile(this.enemy_bh, "editor/saved/enemy_bh.json");
 			Utils.writeObjectToJsonFile(this.bh_lib, "editor/saved/bh_lib.json");
+			saveConf();
 			
 			autoSaveTimer.reset(); autoSaveTimer.start();
 			return true;
+		}
+		
+		public function saveConf():void
+		{
+			Utils.writeObjectToJsonFile(this.conf, "editor/saved/conf.json");
 		}
 		
 		public function exportJS():Boolean

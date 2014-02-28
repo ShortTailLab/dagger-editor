@@ -9,11 +9,10 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import formationEdit.FormationsView;
-			import mapEdit.EditMapControl;
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
+			
 			import spark.components.Group;
 			import spark.components.List;
 			import spark.components.VScrollBar;
@@ -21,10 +20,14 @@
 			import bgedit.BgEditView;
 			import bgedit.BgModel;
 			
+			import formationEdit.FormationsView;
+			
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.GameEvent;
 			import manager.SyncManager;
+			
+			import mapEdit.EditMapControl;
 			
 			
 			public var fView:FormationsView = null;
@@ -212,11 +215,18 @@
 			
 			private function openFileToSend(e:Event):void
 			{
-				var browseForOpenFile:File = File.desktopDirectory;
+				var browseForOpenFile:File;
+				if(Data.getInstance().conf.hasOwnProperty("sndFileCashe"))
+					browseForOpenFile = new File(Data.getInstance().conf.sndFileCashe);
+				else
+					browseForOpenFile = File.desktopDirectory;
+				
 				var tip:String = "请选择上传的文件";
 				browseForOpenFile.browseForOpen(tip);
 				browseForOpenFile.addEventListener(Event.SELECT, function (e:Event):void {
 					var file:File = e.target as File;
+					Data.getInstance().conf.sndFileCashe = file.nativePath;
+					Data.getInstance().saveConf();
 					SyncManager.getInstance().uploadFileToServerPath(file, sendPath.text, tagInput.text);
 				});
 			}
