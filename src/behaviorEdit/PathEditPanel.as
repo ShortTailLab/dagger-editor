@@ -4,6 +4,7 @@ package behaviorEdit
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.text.TextField;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
@@ -25,6 +26,8 @@ package behaviorEdit
 		private var parmName:String = "";
 		private var dots:Array; 
 		private var isCurve:Boolean;
+		private var _tip:TextField;
+		private var _dragging:Dot;
 		
 		public function PathEditPanel(parmName:String, path:Array = null, _isCurve:Boolean = true)
 		{
@@ -118,6 +121,8 @@ package behaviorEdit
 			dot.addEventListener(MouseEvent.MOUSE_DOWN, onDotMouseDown);
 			dot.addEventListener(MouseEvent.MOUSE_MOVE, onDotMove);
 			dot.addEventListener(MouseEvent.MOUSE_UP, onDotMouseUp);
+			dot.addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
+			dot.addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
 			
 			var menu:ContextMenu = new ContextMenu;
 			var item:ContextMenuItem = new ContextMenuItem("删除");
@@ -133,11 +138,31 @@ package behaviorEdit
 			return dot;
 		}
 		
+		private function onMouseOver(event:MouseEvent):void {
+			if (!_tip) {
+				_tip = new TextField();
+				screenFrame.addChild(_tip);
+			}
+			_tip.visible = true;
+			_tip.x = screenFrame.mouseX + 5;
+			_tip.y = screenFrame.mouseY + 5;
+			var dot:Dot = event.currentTarget as Dot;
+			var xx:Number = int(dot.x/360*720);
+			var yy:Number = int(-dot.y/640*1280);
+			_tip.text = "("+xx+","+yy+")";
+		}
+		
+		private function onMouseOut(event:MouseEvent):void {
+			_tip.visible = false;
+		}
+		
 		private function removeDot(dot:Dot):void
 		{
 			dot.removeEventListener(MouseEvent.MOUSE_DOWN, onDotMouseDown);
 			dot.removeEventListener(MouseEvent.MOUSE_MOVE, onDotMove);
 			dot.removeEventListener(MouseEvent.MOUSE_UP, onDotMouseUp);
+			dot.removeEventListener(MouseEvent.MOUSE_OVER, onDotMouseUp);
+			dot.removeEventListener(MouseEvent.MOUSE_OUT, onDotMouseUp);
 			screenFrame.removeChild(dot);
 		}
 		
@@ -174,16 +199,21 @@ package behaviorEdit
 		private function onDotMouseDown(event:MouseEvent):void
 		{
 			event.stopPropagation();
+			_dragging = event.currentTarget as Dot;
 			(event.currentTarget as Sprite).startDrag();
 		}
 		private function onDotMove(event:MouseEvent):void
 		{
 			render();
+			if (event.currentTarget == _dragging) {
+				onMouseOver(event);
+			}
 		}
 		private function onDotMouseUp(event:MouseEvent):void
 		{
 			event.stopPropagation();
 			(event.currentTarget as Sprite).stopDrag();
+			_dragging = null;
 		}
 		
 		private function render():void
