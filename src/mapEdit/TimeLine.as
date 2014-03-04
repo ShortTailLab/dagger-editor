@@ -139,7 +139,7 @@ package mapEdit
 			
 			for each(var m:TextField in marks)
 			{
-				m.text = String(t);
+				m.text = String(t*heightPerUnit*2);
 				t+=timeInterval;
 			}
 		}
