@@ -218,12 +218,17 @@ package
 		{
 			var file:File = File.desktopDirectory.resolvePath(path);
 			var result:Object = null;
+			MapEditor.getInstance().addLog("正在解析"+path+"..");
 			if(file.exists)
 			{
+				MapEditor.getInstance().addLog(path+"存在，读取");
 				var stream:FileStream = new FileStream;
 				stream.open(file, FileMode.READ);
 				result = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
+			}
+			else {
+				MapEditor.getInstance().addLog(path+"不存在");
 			}
 			return result;
 		}

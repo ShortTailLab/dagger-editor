@@ -86,7 +86,9 @@ package com.childoftv.xlsxreader
 		{
 			
 			zipProcessor.addEventListener("complete",completed);
-			zipProcessor.addEventListener("ioError",function(e:IOErrorEvent):void{trace("ZIP Processor IO error:");trace(e)});
+			zipProcessor.addEventListener("ioError",function(e:IOErrorEvent):void{
+				MapEditor.getInstance().addLog("加载excel失败");
+				trace("ZIP Processor IO error:");trace(e)});
 			
 		}
 		/**
