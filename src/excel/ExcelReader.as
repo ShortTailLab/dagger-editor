@@ -104,7 +104,7 @@ package excel
 			
 			var enum_type:Array = ["Chapter", "Level", "Monster", "Bullet"];
 			var enum_must:Array = [
-				{"chapter_id":"string"},
+				{"chapter_id":"string", "chapter_name":"string"},
 				{"level_id":"string","level_name":"string"},
 				{"monster_id":"string", "monster_type":"string",
 				 "monster_name":"string", "face":"string"}
@@ -227,6 +227,26 @@ package excel
 				}
 			}
 			return ret;
+		}
+		
+		public function getChapterDataByLevelId(id:*):*
+		{
+			for each( var item:* in this.mRawData )
+			{
+				var kids:Object = item.c;
+				for each( var l:* in kids )
+				{
+					if( l.r.level_id == id )
+					{
+						return {
+							chapter_id : item.r.chapter_id,
+							chapter_name : item.r.chapter_name,
+							level_name : l.r.level_name
+						};
+					}
+				}
+			}
+			return null;
 		}
 		
 		public function genLevelIdList():Array

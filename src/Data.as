@@ -554,10 +554,20 @@ package
 			{
 				var lid:String = this.level_list[ind];
 				var l_path:String = "level/"+lid+".js";
-				var enemies:Object = {}; 
+				var enemies:Object = {};
+				var c:Object =  this.excel_reader.getChapterDataByLevelId(lid);
+				if( !c )
+				{
+					Alert.show("数据出错！");
+				}
 				if ( !(lid in this.levels) )
 				{
-					ret.push( { id : lid, path: l_path, enemies : [] });
+					ret.push( { 
+						id : lid,
+						stageId: c.chapter_id,
+						stage: c.chapter_name,
+						name: c.level_name,
+						path: l_path, enemies : [] });
 					continue;
 				}
 				for( var iter:* in this.levels[lid].data )
@@ -583,9 +593,13 @@ package
 				ret.push( {
 					id : lid,
 					path : l_path,
+					stageId: c.chapter_id,
+					stage: c.chapter_name,
+					name: c.level_name,
 					enemies : l_enemies
 				});
 			}
+					
 			return ret;
 		}
 		
