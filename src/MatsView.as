@@ -30,31 +30,14 @@ package
 	{
 		public var selected:EditBase = null;
 		private var matsLayer:UIComponent = null;
-		private var labelContainer:UIComponent = null;
-		private var mats:Array = null;
-		private var matsOnShow:Array = null;
+		
+		private var mats:Array = new Array;
 		
 		private var grid_width:int = 110;
 		private var grid_height:int = 150;
 		
 		public function MatsView()
-		{
-			mats = new Array;
-			
-			init();
-			EventManager.getInstance().addEventListener(EventType.ENEMY_DATA_UPDATE, init); 
-		}
-		
-		public function init(e:GameEvent = null):void
-		{
-			MapEditor.getInstance().addLog("刷新资源列表..");
-			while(mats.length > 0)
-			{
-				MapEditor.getInstance().addLog("pop mats, length "+mats.length);
-				var m:EditBase = mats.pop();
-			}
-			this.removeChildren();
-			
+		{	
 			var searchFrame:TextInput = new TextInput;
 			searchFrame.prompt = "搜索";
 			searchFrame.width = 100;
@@ -66,42 +49,27 @@ package
 			
 			matsLayer = new UIComponent;
 			this.addChild(matsLayer);
-			labelContainer = new UIComponent;
-			this.addChild(labelContainer);
 			
-			var triggerMat:EditBase = new TriggerSprite();
-			triggerMat.trim(70);
-			addMat(triggerMat);
-			
-			//var data:Object = Data.getInstance().enemy_profile;
+			EventManager.getInstance().addEventListener(EventType.ENEMY_DATA_UPDATE, init); 
+		}
+		
+		public function init(e:GameEvent = null):void
+		{			
 			var data:Object = Data.getInstance().getCurrentLevelEnemyProfile();
-			for(var item in data)
-			{
-				var view:EditBase = new MatSprite(null, item, 100, 70);
-				addMat(view);
-			}
-			mats.sort(function(a, b):int{
-				if(int(a.type) < int(b.type))
-					return -1;
-				else
-					return 1;
-			});
-			resize(mats, 2);
+			refreshDataAndView(data);
 		}
 		
 		//---------------------
 		// actions
 		//---------------------
-		public function addMat(view:EditBase):void
+		public function hookEventsToItem(view:EditBase):void
 		{
 			view.doubleClickEnabled = true;
 			view.mouseChildren = false;
 			
 			view.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
 			view.addEventListener(MouseEvent.CLICK, onMatClick);
-			
-			mats.push(view);
-			
+						
 			var menu:ContextMenu = new ContextMenu;
 			var bhButton:ContextMenuItem = new ContextMenuItem("行为");
 			bhButton.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
@@ -142,7 +110,7 @@ package
 			if(target)
 			{
 				var btPanel:BTEditPanel = new BTEditPanel(target);
-				PopUpManager.addPopUp(btPanel, this);
+				PopUpManager.addPopUp(btPanel, MapEditor.getInstance());
 				PopUpManager.centerPopUp(btPanel);
 				btPanel.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-btPanel.width/2;
 				btPanel.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-btPanel.height/2;
@@ -151,11 +119,14 @@ package
 		
 		public function selectItem(target:EditBase):void
 		{
-			var prev:EditBase = selected;
 			if(target != selected)
 			{
 				selected = target;
 				selected.select(true);
+			}
+			else if(selected)
+			{
+				clearSelection();
 			}
 		}
 		
@@ -168,18 +139,46 @@ package
 			}
 		}
 		
+		public function refreshDataAndView(matData:Object, cols:int = 2):void
+		{
+			// explicitly remove mats array
+			mats = null;
+			mats = new Array;
+			
+			var triggerMat:EditBase = new TriggerSprite();
+			triggerMat.trim(70);
+			hookEventsToItem(triggerMat);
+			mats.push(triggerMat);
+			
+			for(var item in matData)
+			{
+				var view:EditBase = new MatSprite(null, item, 100, 70);
+				hookEventsToItem(view);
+				mats.push(view);
+			}
+			
+			mats.sort(function(a, b):int{
+				if(int(a.type) < int(b.type))
+					return -1;
+				else
+					return 1;
+			}); 
+			
+			refreshView(mats);
+		}
+		
 		//------------------------
 		// event handlers
 		//------------------------
-		public function onMatClick(e:MouseEvent):void
+		private function onMatClick(e:MouseEvent):void
 		{
 			var target:EditBase = e.currentTarget as EditBase;
 			selectItem(target);
 		}
 		
-		public function onMatDoubleClick(e:MouseEvent):void
+		private function onMatDoubleClick(e:MouseEvent):void
 		{
-			var target = e.currentTarget as MatSprite
+			var target:MatSprite = e.currentTarget as MatSprite;
 			if(target)
 				openBehaviorEditor(target);
 		}
@@ -187,63 +186,65 @@ package
 		private function onTextChange(e:Event):void
 		{
 			var text:String = TextInput(e.target).text;
-			matsOnShow = mats.filter(function(a, index:int, arr:Array):Boolean{
+			var matsToShow:Array = mats.filter(function(a, index:int, arr:Array):Boolean
+			{
 				var type:String = a.type as String;
 				return (type.search(text) == 0);
 			});
-			resize(matsOnShow);
+			
+			// refresh view only, do not change data
+			refreshView(matsToShow);
 		}
 		
-		private function resize(matArray:Array, cols:int = 2):void
+		private function refreshView(matViewArray:Array, cols:int = 4):void
 		{
-			while(matsLayer.numChildren>0)
-			{
-				var m = matsLayer.removeChildAt(matsLayer.numChildren-1);
-				m.removeEventListener(MouseEvent.CLICK, onMatClick);
-				m.removeEventListender(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
-			}
-			labelContainer.removeChildren();
+			// always clear mats layer
+			matsLayer.removeChildren();
+
+			if(matViewArray.length == 0)
+				return;
 			
-			if(matArray.length > 0)
+			var prev:String = "";
+			var px:int = 0;
+			var py:int = 0;
+			var xCount:int = 0;
+			
+			for(var i:int = 0; i < matViewArray.length; i++)
 			{
-				var prev:String = "";
-				var px:int = 0;
-				var py:int = 0;
-				var xCount:int = 0;
-				for(var i:int = 0; i < matArray.length; i++)
+				var matView:EditBase = matViewArray[i];
+				var type:String = String(matView.type);
+				if(type.length == 7)
 				{
-					var type:String = String(matArray[i].type);
-					if(type.length == 7)
+					var curr:String = type.substr(1, 4);
+					if(curr != prev)
 					{
-						var curr:String = type.substr(1, 4);
-						if(curr != prev)
-						{
-							var label:TextField = Utils.getLabel("章节 "+curr.substr(0, 2)+" 关卡 "+curr.substr(2, 2), 10, py+40, 18);
-							label.width = 200;
-							label.height = label.textHeight + 10;
-							label.selectable = false;
-							label.setTextFormat(new TextFormat(null, 18, 0xff0000)); 
-							labelContainer.addChild(label);
-							
-							xCount = 0;
-							py += 30;
-							prev = curr;
-						}
+						// create chapter label
+						var label:TextField = Utils.getLabel("章节 "+curr.substr(0, 2)+" 关卡 "+curr.substr(2, 2), 10, py+40, 18);
+						label.width = 200;
+						label.height = label.textHeight + 10;
+						label.selectable = false;
+						label.setTextFormat(new TextFormat(null, 18, 0xff0000)); 
+						matsLayer.addChild(label);
+						
+						xCount = 0;
+						py += 30;
+						prev = curr;
 					}
-					
-					px = 60+xCount*grid_width;
-					if(xCount == 0)
-						py += grid_height;
-					
-					matArray[i].x = px;
-					matArray[i].y = py;
-					matsLayer.addChild(matArray[i]);
-					
-					xCount++;
-					xCount = xCount%cols;
 				}
-				this.height = matArray[matArray.length-1].y+130;
+				
+				px = 60+xCount*grid_width;
+				if(xCount == 0)
+					py += grid_height;
+				
+				matView.x = px;
+				matView.y = py;
+				matsLayer.addChild(matView);
+				
+				xCount++;
+				xCount = xCount%cols;
 			}
+			
+			this.height = matViewArray[matViewArray.length-1].y + 130;
 		}
 	}
 }

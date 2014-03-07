@@ -631,7 +631,7 @@ package
 				return this.level2monster[this.currSelectedLevel];
 			}
 			trace(this.currSelectedLevel+" can't found");
-			return {};
+			return new Array;
 		}
 		
 		public function updateLevelById(lid:String, data:Array, endTime:int):Object
