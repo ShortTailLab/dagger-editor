@@ -113,6 +113,7 @@ package
 				var handleTEXT:Function = function(e:Event):void
 				{
 					trace("sync "+item.suffix+" done");
+					MapEditor.getInstance().addLog("下载"+item.suffix+"成功");
 					Utils.write(e.target.data, "editor/data/"+item.suffix);
 						
 					if( ++counter >= syncTargets.length && !error )
@@ -124,6 +125,7 @@ package
 			{
 				error = true;
 				Alert.show("[WARN]同步服务器出错，将会使用本地数据…");
+				MapEditor.getInstance().addLog("下载失败");
 				this.load();
 			}
 
@@ -135,6 +137,7 @@ package
 				loader.addEventListener(IOErrorEvent.IO_ERROR, anyerror);
 				loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, anyerror);
 				loader.load( new URLRequest(item.src) );
+				MapEditor.getInstance().addLog("正在下载"+item.suffix+"..");
 			}, null);
 		}
 		// ---------------------------------------------------
@@ -179,9 +182,15 @@ package
 				self.enemy_profile = self.excel_reader.data;
 				//Utils.dumpObject(self.enemy_profile);
 				
+				MapEditor.getInstance().addLog("生成MonsterTable..");
 				self.level2monster = self.excel_reader.genLevel2MonsterTable();
+				MapEditor.getInstance().addLog("生成MonsterTable成功");
+				MapEditor.getInstance().addLog("生成LevelXML..");
 				self.level_xml = self.excel_reader.genLevelXML();
+				MapEditor.getInstance().addLog("生成LevelXML成功");
+				MapEditor.getInstance().addLog("生成LevelIdList..");
 				self.level_list = self.excel_reader.genLevelIdList();
+				MapEditor.getInstance().addLog("生成LevelIdList成功");
 				self.currSelectedLevel = self.level_list[0];
 				
 				var length:Number = 0, countor:Number = 0;
@@ -192,7 +201,11 @@ package
 						var face:String = self.enemy_profile[key].face;
 						var loader:Loader = (e.target as LoaderInfo).loader; 
 						self.skins[face] = Bitmap(loader.content).bitmapData;
-						if( ++countor >= length ) self.start();
+						MapEditor.getInstance().addLog("加载"+key+"成功");
+						if( ++countor >= length ) {
+							MapEditor.getInstance().addLog("全部skin加载完成");
+							self.start();
+						}
 					}
 				}
 					
@@ -216,7 +229,11 @@ package
 					
 					var loader:Loader = new Loader;
 					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(key));
+					loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function(){
+						MapEditor.getInstance().addLog("加载"+key+"失败");
+					});
 					loader.loadBytes(bytes);
+					MapEditor.getInstance().addLog("加载"+key+"从"+filepath+"..");
 				}
 			}
 			var file:File = File.desktopDirectory.resolvePath("editor/data/profiles.xlsx");
@@ -232,6 +249,7 @@ package
 
 		private function start():void
 		{
+			MapEditor.getInstance().addLog("加载bt..");
 			// clean up
 			{
 				for(var orgItem:* in this.enemy_bh)
@@ -270,8 +288,10 @@ package
 			}
 			
 			// let's rock 'n' roll
+			MapEditor.getInstance().addLog("加载bt成功");
 			this.dispatchEvent( new Event(Event.COMPLETE) );
-			EventManager.getInstance().dispatchEvent(new GameEvent(EventType.ENEMY_DATA_UPDATE));
+//			EventManager.getInstance().dispatchEvent(new GameEvent(EventType.ENEMY_DATA_UPDATE));
+			MapEditor.getInstance().matsView.init();
 		}
 		
 		// -------------------------------------------------------------

@@ -21,13 +21,13 @@ package
 	import behaviorEdit.BTEditPanel;
 	import behaviorEdit.EditPanel;
 	
-	import mapEdit.EditBase;
-	import mapEdit.MatSprite;
-	import mapEdit.TriggerSprite;
-	
 	import manager.EventManager;
 	import manager.EventType;
 	import manager.GameEvent;
+	
+	import mapEdit.EditBase;
+	import mapEdit.MatSprite;
+	import mapEdit.TriggerSprite;
 	
 	public class MatsView extends UIComponent
 	{
@@ -50,8 +50,10 @@ package
 		
 		public function init(e:GameEvent = null):void
 		{
+			MapEditor.getInstance().addLog("刷新资源列表..");
 			while(mats.length > 0)
 			{
+				MapEditor.getInstance().addLog("pop mats, length "+mats.length);
 				var m:EditBase = mats.pop();
 			}
 			this.removeChildren();

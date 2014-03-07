@@ -40,6 +40,7 @@ package excel
 			mExcelPath = nativePath;
 			var file:File = new File(nativePath);
 
+			MapEditor.getInstance().addLog("正在加载"+nativePath+"..");
 			var fileStream:FileStream = new FileStream();
 			fileStream.open(file, FileMode.READ);
 			var byteArray:ByteArray = new ByteArray();
@@ -51,6 +52,7 @@ package excel
 		}
 		
 		private function onExcelLoad(e:Event):void {
+			MapEditor.getInstance().addLog("excel加载成功");
 			mExcelLoader.removeEventListener(Event.COMPLETE, onExcelLoad);
 
 			mRawData = {};
@@ -78,6 +80,7 @@ package excel
 			
 			if( this.parse() )
 			{
+				MapEditor.getInstance().addLog("excel数据读取成功");
 				EventManager.getInstance().dispatchEvent(
 					new GameEvent(EventType.EXCEL_DATA_CHANGE)
 				);
