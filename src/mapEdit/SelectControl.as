@@ -162,7 +162,7 @@ package mapEdit
 				var copy:Array = targets.slice(0, targets.length);
 				for each(var m:EditBase in copy)
 				{
-					view.matsControl.remove(m.id);
+					view.matsControl.remove(m.sid);
 				}
 			});
 		

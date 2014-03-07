@@ -78,7 +78,7 @@ package mapEdit
 		
 		public function addATrigger(mat:EditBase):void
 		{
-			if(dotsDic.hasOwnProperty(id))
+			if(dotsDic.hasOwnProperty(sid))
 				return;
 			if(mat.triggerId.length > 0)
 			{
@@ -89,9 +89,9 @@ package mapEdit
 			var dot:Sprite = createDot();
 			dot.addEventListener(MouseEvent.MOUSE_DOWN, onTirggerDotMouseDown);
 			triggerLayer.addChild(dot);
-			dotsDic[mat.id] = dot;
-			triggerMatIds.push(mat.id);
-			mat.triggerId = this.id;
+			dotsDic[mat.sid] = dot;
+			triggerMatIds.push(mat.sid);
+			mat.triggerId = this.sid;
 		}
 		
 		private function onTirggerDotMouseDown(e:MouseEvent):void
@@ -168,8 +168,8 @@ package mapEdit
 		{
 			var mats:Array = editView.matsControl.getMatsByPoint(globalPos);
 			for each(var m:EditBase in mats)
-				if(m.id != this.id)
-					return m.id;
+				if(m.sid != this.sid)
+					return m.sid;
 			return "";
 		}
 		
@@ -237,7 +237,7 @@ package mapEdit
 		
 		override public function initFromData(data:Object):void
 		{
-			this.id = data.id;
+			this.sid = data.id;
 			this.x = data.x/2;
 			this.y = -data.y/2;
 			this.rect = new Rectangle(0, -data.height, data.width, data.height);
@@ -252,7 +252,7 @@ package mapEdit
 		override public function toExportData():Object
 		{
 			var obj:Object = new Object;
-			obj.id = this.id;
+			obj.id = this.sid;
 			obj.type = type;
 			obj.x = (rect.x+this.x)*2;
 			obj.y = Number(-(rect.bottom+this.y)*2);

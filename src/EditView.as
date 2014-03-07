@@ -246,7 +246,7 @@ package
 				var copy:Array = selectControl.targets.slice(0, selectControl.targets.length);
 				for each(var m:EditBase in copy)
 				{
-					matsControl.remove(m.id);
+					matsControl.remove(m.sid);
 				}
 			}
 		}

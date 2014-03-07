@@ -13,6 +13,7 @@ package
 	import mx.managers.PopUpManager;
 	
 	import spark.components.TextInput;
+	import spark.components.Group;
 	import spark.components.VGroup;
 	
 	import Trigger.EditTriggers;

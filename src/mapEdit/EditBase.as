@@ -3,10 +3,12 @@ package mapEdit
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.geom.Point;
+	import mx.core.UIComponent;
+	import mx.core.FlexSprite;
 	
-	public class EditBase extends Sprite
+	public class EditBase extends FlexSprite
 	{
-		public var id:String = "";
+		public var sid:String = "";
 		public var type:String;
 		public var triggerTime:int = -1;
 		public var isSelected:Boolean = false;
@@ -15,6 +17,7 @@ package mapEdit
 		
 		public function EditBase(_editView:EditView = null, type:String = "")
 		{
+			super();
 			this.editView = _editView;
 			this.type = type;
 		}

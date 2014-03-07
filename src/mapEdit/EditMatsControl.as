@@ -46,10 +46,10 @@ package mapEdit
 			return data;
 		}
 		
-		public function getMat(id:String):EditBase
+		public function getMat(sid:String):EditBase
 		{
 			for each(var m:EditBase in mats)
-				if(m.id == id)
+				if(m.sid == sid)
 					return m;
 			return null;
 		}
@@ -79,8 +79,8 @@ package mapEdit
 		
 		private function addMat(mat:EditBase):void
 		{
-			if(mat.id == "")
-				mat.id = getUID();
+			if(mat.sid == "")
+				mat.sid = getUID();
 			view.mapView.addChild(mat);
 			mats.push(mat);
 			mat.doubleClickEnabled = true;
@@ -95,7 +95,7 @@ package mapEdit
 		public function remove(id:String):void
 		{
 			for(var i:int = 0; i < mats.length; i++)
-				if(EditBase(mats[i]).id == id)
+				if(EditBase(mats[i]).sid == id)
 				{
 					EditBase(mats[i]).onDelete();
 					mats[i].removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
