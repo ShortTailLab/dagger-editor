@@ -114,22 +114,22 @@
 					hgroup.percentHeight = 100;
 					hgroup.horizontalAlign = "left";
 					matsPanel.addElement(hgroup);
-					
-					matsView = new MatsView;
-					matsView.percentWidth = 100;
-					matsView.percentHeight = 100;
-					hgroup.addElement(matsView);
-					/*
+
 					group = new Group();
 					group.clipAndEnableScrolling = true;
 					group.percentWidth = 100;
 					group.percentHeight = 100;
 					hgroup.addElement(group);
-					*/
+					
 					vscrollbar = new VScrollBar();
 					vscrollbar.percentHeight = 100;
-					vscrollbar.viewport = matsView;
+					vscrollbar.viewport = group;
 					hgroup.addElement(vscrollbar);
+					
+					matsView = new MatsView;
+					matsView.percentWidth = 100;
+					matsView.percentHeight = 100;
+					group.addElement(matsView);
 				}
 
 				_enemyEditVGroup = new VGroup();
