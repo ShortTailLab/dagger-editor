@@ -13,56 +13,47 @@ package
 	import mx.managers.PopUpManager;
 	
 	import spark.components.TextInput;
+	import spark.components.VGroup;
 	
 	import Trigger.EditTriggers;
 	
 	import behaviorEdit.BTEditPanel;
-	
-	import manager.EventManager;
-	import manager.EventType;
-	import manager.GameEvent;
-	
+
 	import mapEdit.EditBase;
 	import mapEdit.MatSprite;
 	import mapEdit.TriggerSprite;
 	
-	public class MatsView extends UIComponent
+	public class MatsView extends VGroup
 	{
-		public var selected:EditBase = null;
-		private var matsLayer:UIComponent = null;
-		
+		private var matsLayer:UIComponent = null;	
 		private var mats:Array = new Array;
 		
-		private var grid_width:int = 110;
-		private var grid_height:int = 150;
+		private var GRID_WIDTH:int = 100;
+		private var GRID_HEIGHT:int = 90;
+		
+		public var selected:EditBase = null;
 		
 		public function MatsView()
 		{	
+			// style this
+			this.paddingLeft = 5;
+			this.paddingTop = 5;
+			this.gap = 0;
+			this.autoLayout = true;
+			
+			// search box
 			var searchFrame:TextInput = new TextInput;
 			searchFrame.prompt = "搜索";
-			searchFrame.width = 100;
-			searchFrame.height = 20;
-			searchFrame.x = 10;
-			searchFrame.y = 10;
+			searchFrame.percentWidth = 100;
+			searchFrame.height = 30;
 			searchFrame.addEventListener(Event.CHANGE, onTextChange);
-			this.addChild(searchFrame);
+			this.addElement(searchFrame);
 			
 			matsLayer = new UIComponent;
-			this.addChild(matsLayer);
-			
-			EventManager.getInstance().addEventListener(EventType.ENEMY_DATA_UPDATE, init); 
+			this.addElement(matsLayer);
 		}
 		
-		public function init(e:GameEvent = null):void
-		{			
-			var data:Object = Data.getInstance().getCurrentLevelEnemyProfile();
-			refreshDataAndView(data);
-		}
-		
-		//---------------------
-		// actions
-		//---------------------
-		public function hookEventsToItem(view:EditBase):void
+		private function hookEventsToItem(view:EditBase):void
 		{
 			view.doubleClickEnabled = true;
 			view.mouseChildren = false;
@@ -93,6 +84,9 @@ package
 			view.contextMenu = menu;
 		}
 		
+		//---------------------
+		// actions
+		//---------------------
 		private function openTriggerEditor(target:MatSprite):void
 		{
 			if(target)
@@ -121,6 +115,9 @@ package
 		{
 			if(target != selected)
 			{
+				clearSelection();
+				
+				// select curr
 				selected = target;
 				selected.select(true);
 			}
@@ -152,7 +149,7 @@ package
 			
 			for(var item in matData)
 			{
-				var view:EditBase = new MatSprite(null, item, 100, 70);
+				var view:EditBase = new MatSprite(null, item, 70, 70);
 				hookEventsToItem(view);
 				mats.push(view);
 			}
@@ -196,7 +193,7 @@ package
 			refreshView(matsToShow);
 		}
 		
-		private function refreshView(matViewArray:Array, cols:int = 4):void
+		private function refreshView(matViewArray:Array, cols:int = 2):void
 		{
 			// always clear mats layer
 			matsLayer.removeChildren();
@@ -218,7 +215,7 @@ package
 					var curr:String = type.substr(1, 4);
 					if(curr != prev)
 					{
-						// create chapter label
+						// insert a chapter label
 						var label:TextField = Utils.getLabel("章节 "+curr.substr(0, 2)+" 关卡 "+curr.substr(2, 2), 10, py+40, 18);
 						label.width = 200;
 						label.height = label.textHeight + 10;
@@ -232,9 +229,9 @@ package
 					}
 				}
 				
-				px = 60+xCount*grid_width;
+				px = 60+ xCount*GRID_WIDTH;
 				if(xCount == 0)
-					py += grid_height;
+					py += GRID_HEIGHT;
 				
 				matView.x = px;
 				matView.y = py;

@@ -193,7 +193,9 @@
 				var list:Array = Data.getInstance().level_list;
 				Data.getInstance().currSelectedLevel = list[index];
 				_enemyEditView.init(list[index]);
-				matsView.init();
+				
+				var data:Object = Data.getInstance().getCurrentLevelEnemyProfile();
+				matsView.refreshDataAndView(data);
 			}
 			private function onTMXClick(e:MouseEvent):void
 			{

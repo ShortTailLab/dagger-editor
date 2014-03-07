@@ -290,8 +290,9 @@ package
 			// let's rock 'n' roll
 			MapEditor.getInstance().addLog("加载bt成功");
 			this.dispatchEvent( new Event(Event.COMPLETE) );
-//			EventManager.getInstance().dispatchEvent(new GameEvent(EventType.ENEMY_DATA_UPDATE));
-			MapEditor.getInstance().matsView.init();
+
+			var data:Object = this.getCurrentLevelEnemyProfile();
+			MapEditor.getInstance().matsView.refreshDataAndView(data);
 		}
 		
 		// -------------------------------------------------------------
