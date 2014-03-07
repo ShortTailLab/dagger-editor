@@ -54,6 +54,7 @@ package
 				var m:EditBase = mats.pop();
 			}
 			this.removeChildren();
+			
 			var searchFrame:TextInput = new TextInput;
 			searchFrame.prompt = "搜索";
 			searchFrame.width = 100;
@@ -70,14 +71,14 @@ package
 			
 			var triggerMat:EditBase = new TriggerSprite();
 			triggerMat.trim(70);
-			add(triggerMat);
+			addMat(triggerMat);
 			
 			//var data:Object = Data.getInstance().enemy_profile;
 			var data:Object = Data.getInstance().getCurrentLevelEnemyProfile();
 			for(var item in data)
 			{
 				var view:EditBase = new MatSprite(null, item, 100, 70);
-				add(view);
+				addMat(view);
 			}
 			mats.sort(function(a, b):int{
 				if(int(a.type) < int(b.type))
@@ -91,7 +92,7 @@ package
 		//---------------------
 		// actions
 		//---------------------
-		public function add(view:EditBase):void
+		public function addMat(view:EditBase):void
 		{
 			view.doubleClickEnabled = true;
 			view.mouseChildren = false;
@@ -193,7 +194,7 @@ package
 			resize(matsOnShow);
 		}
 		
-		public function resize(matArray:Array, cols:int = 2):void
+		private function resize(matArray:Array, cols:int = 2):void
 		{
 			while(matsLayer.numChildren>0)
 			{
