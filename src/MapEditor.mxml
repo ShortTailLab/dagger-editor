@@ -10,6 +10,9 @@
 	<fx:Script>
 		<![CDATA[
 			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
 			
@@ -29,7 +32,6 @@
 			
 			import mapEdit.EditMapControl;
 			
-			
 			public var fView:FormationsView = null;
 			public var matsView:MatsView = null;
 			
@@ -44,6 +46,12 @@
 				BgModel.getInstance().init();
 				
 				this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
+				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);				
+			}
+			
+			private function onRightClick(e:MouseEvent)
+			{
+				matsView.clearSelection();
 			}
 			
 			private function onAddToStage(e:Event):void
@@ -113,10 +121,12 @@
 				hgroup.addElement(group);
 				hgroup.addElement(vscrollbar);
 				matsPanel.addElement(hgroup);
+				
 				matsView = new MatsView;
 				matsView.percentWidth = 100;
+				matsView.percentHeight = 100;
 				group.addElement(matsView);
-				
+
 				_enemyEditVGroup = new VGroup();
 				_enemyEditVGroup.percentHeight = 100;
 				_enemyEditVGroup.percentWidth = 100;

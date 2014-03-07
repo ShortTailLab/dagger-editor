@@ -3,12 +3,10 @@ package
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
-	import flash.events.TimerEvent;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
-	import flash.utils.Timer;
 	
 	import mx.core.FlexGlobals;
 	import mx.core.UIComponent;
@@ -19,7 +17,6 @@ package
 	import Trigger.EditTriggers;
 	
 	import behaviorEdit.BTEditPanel;
-	import behaviorEdit.EditPanel;
 	
 	import manager.EventManager;
 	import manager.EventType;
@@ -91,18 +88,28 @@ package
 			resize(mats, 2);
 		}
 		
-		private function add(view:EditBase):void
+		//---------------------
+		// actions
+		//---------------------
+		public function add(view:EditBase):void
 		{
 			view.doubleClickEnabled = true;
+			view.mouseChildren = false;
+			
+			view.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
+			view.addEventListener(MouseEvent.CLICK, onMatClick);
+			
 			mats.push(view);
 			
 			var menu:ContextMenu = new ContextMenu;
-			var btn2:ContextMenuItem = new ContextMenuItem("行为");
-			btn2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+			var bhButton:ContextMenuItem = new ContextMenuItem("行为");
+			bhButton.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
 				var target:MatSprite = e.contextMenuOwner as MatSprite;
 				if(target)
-					editBT(target);
+					openBehaviorEditor(target);
 			});
+			menu.addItem(bhButton);
+			
 			var trigger:ContextMenuItem = new ContextMenuItem("触发器");
 			var self = this;
 			trigger.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,
@@ -110,32 +117,26 @@ package
 				{
 					var target:MatSprite = e.contextMenuOwner as MatSprite;
 					if(target)
-					{
-						var win:EditTriggers = new EditTriggers(target);
-						PopUpManager.addPopUp(win, self);
-						PopUpManager.centerPopUp(win);
-						win.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-win.width/2;
-						win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
-					}
+						openTriggerEditor(target);
 				});
 			menu.addItem(trigger);
-			menu.addItem(btn2);
 			
 			view.contextMenu = menu;
 		}
 		
-		private function edit(target:MatSprite):void
+		private function openTriggerEditor(target:MatSprite):void
 		{
 			if(target)
 			{ 
-				var win:EditPanel = new EditPanel(target);
-				PopUpManager.addPopUp(win, this);
+				var win:EditTriggers = new EditTriggers(target);
+				PopUpManager.addPopUp(win, MapEditor.getInstance());
 				PopUpManager.centerPopUp(win);
 				win.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-win.width/2;
 				win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
 			}
 		}
-		private function editBT(target:MatSprite):void
+		
+		private function openBehaviorEditor(target:MatSprite):void
 		{
 			if(target)
 			{
@@ -147,41 +148,39 @@ package
 			}
 		}
 		
-		private var isDoubleClick:Boolean = false;
+		public function selectItem(target:EditBase):void
+		{
+			var prev:EditBase = selected;
+			if(target != selected)
+			{
+				selected = target;
+				selected.select(true);
+			}
+		}
+		
+		public function clearSelection():void
+		{
+			if(selected)
+			{
+				selected.select(false);
+				selected = null;
+			}
+		}
+		
+		//------------------------
+		// event handlers
+		//------------------------
 		public function onMatClick(e:MouseEvent):void
 		{
-			if(isDoubleClick)
-			{
-				onMatDoubleClick(e);
-			}
-			else
-			{
-				isDoubleClick = true;
-				var timer:Timer = new Timer(200, 1);
-				timer.addEventListener(TimerEvent.TIMER_COMPLETE, function(e):void{isDoubleClick=false;});
-				timer.start();
-				
-				var target:EditBase = e.currentTarget as EditBase;
-				var prev:EditBase = selected;
-				if(selected)
-				{
-					selected.select(false);
-					selected = null;
-				}
-				if(target != prev)
-				{
-					selected = target;
-					selected.select(true);
-				}
-			}
-			
+			var target:EditBase = e.currentTarget as EditBase;
+			selectItem(target);
 		}
 		
 		public function onMatDoubleClick(e:MouseEvent):void
 		{
 			var target = e.currentTarget as MatSprite
 			if(target)
-				editBT(target);
+				openBehaviorEditor(target);
 		}
 		
 		private function onTextChange(e:Event):void
@@ -200,8 +199,10 @@ package
 			{
 				var m = matsLayer.removeChildAt(matsLayer.numChildren-1);
 				m.removeEventListener(MouseEvent.CLICK, onMatClick);
+				m.removeEventListender(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
 			}
 			labelContainer.removeChildren();
+			
 			if(matArray.length > 0)
 			{
 				var prev:String = "";
@@ -235,7 +236,6 @@ package
 					
 					matArray[i].x = px;
 					matArray[i].y = py;
-					matArray[i].addEventListener(MouseEvent.CLICK, onMatClick);
 					matsLayer.addChild(matArray[i]);
 					
 					xCount++;
