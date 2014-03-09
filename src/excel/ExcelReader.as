@@ -10,9 +10,9 @@ package excel
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
-
-	import mx.utils.StringUtil;	
+	
 	import mx.controls.Alert;
+	import mx.utils.StringUtil;
 	
 	import manager.EventManager;
 	import manager.EventType;
@@ -64,7 +64,8 @@ package excel
 			var target_cols:Array = [];
 			var a_z:String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 			var i:uint = 0, j:uint = 0;
-			for( i=0; i<26; i++ ) target_cols.push( a_z.charAt(i) );
+			for( i=0; i<26; i++ ) 
+				target_cols.push( a_z.charAt(i) );
 			for( i=0; i<2; i++ )
 				for( j=0; j<26; j++ )
 				{
@@ -293,16 +294,28 @@ package excel
 				var lastNode:XML = new XML("<node label='" + chapter.chapter_name + "'></node>")
 				ret.appendChild(lastNode);
 				
-				for each( var l:* in kids )
+				var levelList:Array = new Array;
+				
+				for each(var l:Object in kids)
 				{
-					var level:Object = l.r;
+					levelList.push(l.r);
+				}
+
+				// sort by level id
+				levelList.sortOn("level_id");
+				
+				for(var i=0; i<levelList.length; i++)
+				{
+					var level:Object = levelList[i];
 					
-					var dd:String = "chapter name: {0}, id: {1}, level name: {2}";
-					trace(StringUtil.substitute(dd, chapter.chapter_name, level.level_id, level.level_name));
+					//var dd:String = "chapter name: {0}, id: {1}, level name: {2}";
+					//trace(StringUtil.substitute(dd, chapter.chapter_name, level.level_id, level.level_name));
 					
-					lastNode.appendChild(
-						new XML("<node label='"+level.level_name+"'></node>")
-					);
+					var node:XML = new XML("<level></level>");
+					node.@label = level.level_name;
+					node.@level_id = level.level_id;
+					
+					lastNode.appendChild(node);
 				}
 			}
 			return ret;

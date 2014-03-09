@@ -9,7 +9,6 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
 			
@@ -66,10 +65,8 @@
 				// update level tree view;
 				{
 					levelTree.visible = true;
-					levelTree.selectedIndex = 0;
 					levelTree.dataProvider = Data.getInstance().level_xml;
-					levelTree.labelField = "@label";
-					levelTree.addEventListener(MouseEvent.CLICK, onLevelClick);
+					levelTree.selectedIndex = 0;
 				}
 				
 				_enemyEditView = new EditView(this, middleArea);
@@ -148,20 +145,6 @@
 				rightArea.addElement(_enemyEditVGroup);
 			}
 			
-			/*
-			public function changeEditType( type:int ):void {
-				//accordion.selectedIndex = type;
-				middleArea.removeAllElements();
-				rightArea.removeAllElements();
-				if (type == 0) {
-					middleArea.addElement(_enemyEditView);
-					rightArea.addElement(_enemyEditVGroup);
-				}
-				else {
-					middleArea.addElement(_bgEditView);
-				}
-			}*/
-			
 			private function onBgDataInit(event:GameEvent):void 
 			{
 				/*
@@ -181,29 +164,31 @@
 				bgList.addEventListener(MouseEvent.CLICK, onTMXClick);
 				*/
 			}
-			
-			private function onLevelClick(e:Event):void{
-				setCurrLevel(levelTree.selectedIndex);
-			}	
-			
-			private function setCurrLevel(index:int):void
+
+			public function onItemClick(event:Event):void
 			{
-				levelTree.selectedIndex = index;
+				var tree:Tree = event.currentTarget as Tree;
+				var item:XML = tree.selectedItem as XML;
+				if(item.name() == "level")
+				{
+					// leaf node, set current level
+					setCurrLevel(item.@level_id);
+				}
+				else
+				{
+					// expand/collapse node
+					tree.expandItem(tree.selectedItem, !tree.isItemOpen(tree.selectedItem));
+				}
+			}
+			
+			private function setCurrLevel(level_id:String):void
+			{
 				var list:Array = Data.getInstance().level_list;
-				Data.getInstance().currSelectedLevel = list[index];
-				_enemyEditView.init(list[index]);
+				Data.getInstance().currSelectedLevel = level_id;
+				_enemyEditView.init(level_id);
 				
 				var data:Object = Data.getInstance().getCurrentLevelEnemyProfile();
 				matsView.refreshDataAndView(data);
-			}
-			
-			private function onTMXClick(e:MouseEvent):void
-			{
-				/*
-				var file:File = File.desktopDirectory.resolvePath("editor/"+List(e.currentTarget).selectedItem);
-				EditMapControl.getInstance().setMapTMX(file);
-				_enemyEditView.switchMap();
-				 */
 			}
 					
 			private function saveFile(event:Event):void
@@ -266,11 +251,6 @@
 				SyncManager.getInstance().uploadLevelsToServer(dataList);
 			}
 			
-			private function onAccordionClick(e:Event):void 
-			{
-				//changeEditType((e.currentTarget as Accordion).selectedIndex);
-			}
-			
 			public function addLog(content:String):void {
 				_log = _log+(_log==""?"":"\n")+content;
 				var logFile:File = File.desktopDirectory.resolvePath("editor/log.txt");
@@ -310,7 +290,7 @@
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
 			<s:Panel title="关卡列表" dropShadowVisible="false" width="200" height="100%">
-				<mx:Tree id="levelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false">
+				<mx:Tree id="levelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);" labelField="@label">
 				</mx:Tree>
 			</s:Panel>
 			
