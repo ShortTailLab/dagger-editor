@@ -10,14 +10,10 @@
 	<fx:Script>
 		<![CDATA[
 			import mx.collections.ArrayCollection;
-			import mx.containers.Grid;
-			import mx.containers.GridItem;
-			import mx.containers.GridRow;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
 			
 			import spark.components.Group;
-			import spark.components.List;
 			import spark.components.VScrollBar;
 			
 			import bgedit.BgEditView;
@@ -68,42 +64,52 @@
 			private function onDataReady(e:Event):void
 			{
 				// update level tree view;
-				levelTree.visible = true;
-				levelTree.selectedIndex = 0;
-				levelTree.dataProvider = Data.getInstance().level_xml;
-				levelTree.labelField = "@label";
-				levelTree.addEventListener(MouseEvent.CLICK, onLevelClick);
+				{
+					levelTree.visible = true;
+					levelTree.selectedIndex = 0;
+					levelTree.dataProvider = Data.getInstance().level_xml;
+					levelTree.labelField = "@label";
+					levelTree.addEventListener(MouseEvent.CLICK, onLevelClick);
+				}
 				
 				_enemyEditView = new EditView(this, middleArea);
 				_enemyEditView.init(Data.getInstance().level_list[0]);
 				
-				var modelView:Panel = new Panel();
-				modelView.percentHeight = 40;
-				modelView.percentWidth = 100;
-				modelView.title = "模型";
-				var hgroup:HGroup = new HGroup();
-				hgroup.percentWidth = 100;
-				hgroup.percentHeight = 100;
-				hgroup.horizontalAlign = "left";
-				var group:Group = new Group();
-				group.clipAndEnableScrolling = true;
-				group.percentWidth = 100;
-				group.percentHeight = 100;
-				fView = new FormationsView;
-				fView.percentWidth = 100;
-				group.addElement(fView);
-				var vscrollbar:VScrollBar = new VScrollBar();
-				vscrollbar.percentHeight = 100;
-				vscrollbar.viewport = group;
-				hgroup.addElement(group);
-				hgroup.addElement(vscrollbar);
-				modelView.addElement(hgroup);
+				{
+					var modelView:Panel = new Panel();
+					modelView.percentHeight = 40;
+					modelView.percentWidth = 100;
+					modelView.title = "阵型";
+					modelView.setStyle("dropShadowVisible", false);
+					
+					var hgroup:HGroup = new HGroup();
+					hgroup.percentWidth = 100;
+					hgroup.percentHeight = 100;
+					hgroup.horizontalAlign = "left";
+					modelView.addElement(hgroup);
+					
+					var group:Group = new Group();
+					group.clipAndEnableScrolling = true;
+					group.percentWidth = 100;
+					group.percentHeight = 100;
+					hgroup.addElement(group);
+	
+					var vscrollbar:VScrollBar = new VScrollBar();
+					vscrollbar.percentHeight = 100;
+					vscrollbar.viewport = group;
+					hgroup.addElement(vscrollbar);
+					
+					fView = new FormationsView;
+					fView.percentWidth = 100;
+					group.addElement(fView);
+				}
 				
 				{
 					var matsPanel:Panel = new Panel();
 					matsPanel.title = "资源";
 					matsPanel.percentHeight = 60;
 					matsPanel.percentWidth = 100;
+					matsPanel.setStyle("dropShadowVisible", false);
 					
 					hgroup = new HGroup();
 					hgroup.percentWidth = 100;
@@ -136,11 +142,15 @@
 				_enemyEditVGroup.addElement(modelView);
 				_enemyEditVGroup.addElement(matsPanel);
 				
-				changeEditType(0);
+				//changeEditType(0);
+				
+				middleArea.addElement(_enemyEditView);
+				rightArea.addElement(_enemyEditVGroup);
 			}
 			
+			/*
 			public function changeEditType( type:int ):void {
-				accordion.selectedIndex = type;
+				//accordion.selectedIndex = type;
 				middleArea.removeAllElements();
 				rightArea.removeAllElements();
 				if (type == 0) {
@@ -150,13 +160,13 @@
 				else {
 					middleArea.addElement(_bgEditView);
 				}
-			}
+			}*/
 			
-			private function onBgDataInit(event:GameEvent):void {
+			private function onBgDataInit(event:GameEvent):void 
+			{
+				/*
 				EventManager.getInstance().removeEventListener(EventType.INIT_BG_DATA_COMPLETE, onBgDataInit);
-				var list:List = new List();
-				list.percentWidth = 100;
-				list.percentHeight = 100;
+				
 				var pathList:Array = File.desktopDirectory.resolvePath("editor").getDirectoryListing();
 				var resultList:ArrayCollection = new ArrayCollection;
 				for (var i:uint = 0; i < pathList.length; i++) 
@@ -166,22 +176,10 @@
 					if(path.split(".").pop() == "tmx")
 						resultList.addItem(path);
 				}
-				list.dataProvider = resultList;
-				bgEdit.addElement(list);
-				list.addEventListener(MouseEvent.CLICK, onTMXClick);
-				
-				/*_bgList = new List();
-				_bgList.percentWidth = 100;
-				_bgList.percentHeight = 100;
-				_bgList.dataProvider = BgModel.getInstance().bgNameArray;
-				_bgList.addEventListener(MouseEvent.CLICK, function (e:Event):void {
-					if ((e.currentTarget as List).selectedIndex >= 0) {
-						_bgEditView.tmxMapView.load(BgModel.getInstance().bgDict[BgModel.getInstance().bgNameArray[(e.currentTarget as List).selectedIndex]]);
-					}
-				});
-				bgEdit.addElement(_bgList);
-				
-				_bgEditView = new BgEditView();*/
+				bgList.dataProvider = resultList;
+				bgList.setVisible(true);
+				bgList.addEventListener(MouseEvent.CLICK, onTMXClick);
+				*/
 			}
 			
 			private function onLevelClick(e:Event):void{
@@ -198,11 +196,14 @@
 				var data:Object = Data.getInstance().getCurrentLevelEnemyProfile();
 				matsView.refreshDataAndView(data);
 			}
+			
 			private function onTMXClick(e:MouseEvent):void
 			{
+				/*
 				var file:File = File.desktopDirectory.resolvePath("editor/"+List(e.currentTarget).selectedItem);
 				EditMapControl.getInstance().setMapTMX(file);
 				_enemyEditView.switchMap();
+				 */
 			}
 					
 			private function saveFile(event:Event):void
@@ -265,7 +266,8 @@
 				SyncManager.getInstance().uploadLevelsToServer(dataList);
 			}
 			
-			private function onAccordionClick(e:Event):void {
+			private function onAccordionClick(e:Event):void 
+			{
 				//changeEditType((e.currentTarget as Accordion).selectedIndex);
 			}
 			
@@ -287,7 +289,6 @@
 			private var _enemyEditVGroup:VGroup;
 			
 			private var _bgEditView:BgEditView;
-			private var _bgList:List;
 		]]>
 	</fx:Script>
 	
@@ -308,17 +309,9 @@
 		</s:HGroup>
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
-			<s:Panel id="accordionPanel" height="100%" width="200" title="选择编辑类别">
-				<s:VGroup height="100%" width="100%">
-					<mx:Accordion id="accordion" height="100%" width="100%" click="onAccordionClick(event)">
-						<s:NavigatorContent width="100%" height="100%" label="怪物编辑" id="enemyEdit">
-							<mx:Tree id="levelTree" visible="false" showRoot="false" width="100%" height="100%">
-							</mx:Tree>
-						</s:NavigatorContent> 
-						<s:NavigatorContent width="100%" height="100%" label="背景编辑" id="bgEdit">
-						</s:NavigatorContent> 
-					</mx:Accordion>
-				</s:VGroup>
+			<s:Panel title="关卡列表" dropShadowVisible="false" width="200" height="100%">
+				<mx:Tree id="levelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false">
+				</mx:Tree>
 			</s:Panel>
 			
 			<s:BorderContainer height="100%" width="100%">
@@ -329,7 +322,7 @@
 	</s:VGroup>
 	
 	<s:VGroup height="100%" width="280" verticalAlign="top" horizontalAlign="right" paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="5">
-		<s:BorderContainer id="rightArea" height="100%" width="100%">
+		<s:BorderContainer id="rightArea" height="100%" width="100%" dropShadowVisible="false" borderVisible="false">
 		</s:BorderContainer>
 	</s:VGroup>
 		

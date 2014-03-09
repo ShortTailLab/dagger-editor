@@ -10,6 +10,7 @@ package excel
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
+	import flash.xml.XMLNode;
 	
 	import mx.controls.Alert;
 	
@@ -123,11 +124,14 @@ package excel
 			var nowLevel:String = "";
 			while(true)
 			{
-				var flag:Boolean = false; var configs:Object = null;
+				var flag:Boolean = false; 
+				var configs:Object = null;
+				
 				if( this.is_cell_valuable(enum_key[0], iterLine) ) // Chapter 
 				{
 					configs = this.loadItems(enum_type[0], enum_configs[0], iterLine);
-					if( !configs ) return false;
+					if( !configs ) 
+						return false;
 					nowChapter = configs[enum_key[0]];
 					if( !(nowChapter in this.mRawData) ) 
 						this.mRawData[nowChapter] = {};
@@ -137,11 +141,13 @@ package excel
 					this.mRawData[nowChapter].c = {}; 
 					flag = true;
 				}
+				
 				if( nowChapter != "" &&
 					this.is_cell_valuable(enum_key[1], iterLine) ) // Level	
 				{
 					configs = this.loadItems(enum_type[1], enum_configs[1], iterLine);
-					if( !configs ) return false;
+					if( !configs ) 
+						return false;
 					nowLevel = configs[enum_key[1]];
 					if( !(nowLevel in this.mRawData[nowChapter].c) )
 						this.mRawData[nowChapter].c[nowLevel] = {};
@@ -151,6 +157,7 @@ package excel
 					this.mRawData[nowChapter].c[nowLevel].c = {};
 					flag = true;
 				}
+				
 				if( nowChapter != "" && nowLevel != "" &&
 					this.is_cell_valuable(enum_key[2], iterLine) ) // Monster  
 				{
@@ -158,18 +165,22 @@ package excel
 					var type:String = this.mSheet.getCellValue(
 						this.mTitle2col["monster_type"]+String(iterLine)
 					);
-					if( type == "" ) return false;
+					if( type == "" ) 
+						return false;
 					var items:Object = Utils.merge2Object(struct[type], enum_must[2]);
 					configs = this.loadItems(type, items, iterLine);
 					
-					if( !configs ) return false;
+					if( !configs ) 
+						return false;
 					var nowMonster:String = configs[enum_key[2]];
 					this.mRawData[nowChapter].c[nowLevel].c[nowMonster] = configs;
 					flag = true;
 					
 					this.mMonsterData[nowMonster] = configs;
 				}
-				if(!flag) break;
+				
+				if(!flag) 
+					break;
 				iterLine ++;
 			}
 			
@@ -179,7 +190,9 @@ package excel
 		private function process_val(prefix:String, key:String, value:String):*
 		{
 			var struct:Object = Data.getInstance().dynamic_args;
-			if( !(prefix in struct) ) return value;
+			if( !(prefix in struct) ) 
+				return value;
+			
 			var argType:String = struct[prefix][key];
 			if(argType == "ccp")
 				return Utils.arrayStr2ccpStr(value);
@@ -189,11 +202,13 @@ package excel
 			{
 				if( value == "" ) return 0;
 				return int(value);
-			}else if(argType == "float")
+			}
+			else if(argType == "float")
 			{
 				if( value == "" ) return 0;
 				return Number(value);
-			}else
+			}
+			else
 				return value;
 		}
 		
@@ -277,8 +292,9 @@ package excel
 				for each( var l:* in kids )
 				{ 
 					var level:Object = l.r;
+//					var xx : XMLNode = new XMLNode;
 					ret.appendChild(
-						new XML("<level label='["+chapter.chapter_name+"]"+level.level_name+"'></level>")
+						new XML("<node label='"+chapter.chapter_name+"   "+level.level_name+"'></node>")
 					);
 				}
 			}

@@ -5,7 +5,6 @@ package mapEdit
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	
-
 	public class EditMatsControl
 	{
 		public var mats:Array;
