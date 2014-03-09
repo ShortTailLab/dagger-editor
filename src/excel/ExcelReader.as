@@ -10,8 +10,8 @@ package excel
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
-	import flash.xml.XMLNode;
-	
+
+	import mx.utils.StringUtil;	
 	import mx.controls.Alert;
 	
 	import manager.EventManager;
@@ -284,17 +284,24 @@ package excel
 		
 		public function genLevelXML():XML 
 		{
-			var ret:XML = <Root></Root>;
+			var ret:XML = <root></root>;
 			for each( var item:* in this.mRawData )
 			{
 				var chapter:Object = item.r;
 				var kids:Object = item.c;
+				
+				var lastNode:XML = new XML("<node label='" + chapter.chapter_name + "'></node>")
+				ret.appendChild(lastNode);
+				
 				for each( var l:* in kids )
-				{ 
+				{
 					var level:Object = l.r;
-//					var xx : XMLNode = new XMLNode;
-					ret.appendChild(
-						new XML("<node label='"+chapter.chapter_name+"   "+level.level_name+"'></node>")
+					
+					var dd:String = "chapter name: {0}, id: {1}, level name: {2}";
+					trace(StringUtil.substitute(dd, chapter.chapter_name, level.level_id, level.level_name));
+					
+					lastNode.appendChild(
+						new XML("<node label='"+level.level_name+"'></node>")
 					);
 				}
 			}
