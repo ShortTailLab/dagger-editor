@@ -30,7 +30,7 @@ package
 		private var mats:Array = new Array;
 		
 		private var GRID_WIDTH:int = 100;
-		private var GRID_HEIGHT:int = 90;
+		private var GRID_HEIGHT:int = 100;
 		
 		public var selected:EditBase = null;
 		
@@ -150,7 +150,7 @@ package
 			
 			for(var item in matData)
 			{
-				var view:EditBase = new MatSprite(null, item, 70, 70);
+				var view:EditBase = new MatSprite(null, item, 80, 90);
 				hookEventsToItem(view);
 				mats.push(view);
 			}

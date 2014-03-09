@@ -67,16 +67,12 @@
 			
 			private function onDataReady(e:Event):void
 			{
-				_tree = new Tree();
-				_tree.selectedIndex = 0;
-				_tree.dataProvider = Data.getInstance().level_xml;
-				_tree.enabled = true;
-				_tree.labelField = "@label";
-				_tree.percentWidth = 100;
-				_tree.percentHeight = 100;
-				_tree.showRoot = false;
-				_tree.addEventListener(MouseEvent.CLICK, onLevelClick);
-				enemyEdit.addElement(_tree);
+				// update level tree view;
+				levelTree.visible = true;
+				levelTree.selectedIndex = 0;
+				levelTree.dataProvider = Data.getInstance().level_xml;
+				levelTree.labelField = "@label";
+				levelTree.addEventListener(MouseEvent.CLICK, onLevelClick);
 				
 				_enemyEditView = new EditView(this, middleArea);
 				_enemyEditView.init(Data.getInstance().level_list[0]);
@@ -189,12 +185,12 @@
 			}
 			
 			private function onLevelClick(e:Event):void{
-				setCurrLevel(_tree.selectedIndex);
+				setCurrLevel(levelTree.selectedIndex);
 			}	
 			
 			private function setCurrLevel(index:int):void
 			{
-				_tree.selectedIndex = index;
+				levelTree.selectedIndex = index;
 				var list:Array = Data.getInstance().level_list;
 				Data.getInstance().currSelectedLevel = list[index];
 				_enemyEditView.init(list[index]);
@@ -247,7 +243,7 @@
 			var process:NativeProcess;
 			private function sendToStaticServer(e:Event):void
 			{
-				if(_tree.selectedIndex == -1)
+				if(levelTree.selectedIndex == -1)
 				{
 					Alert.show("上传前请先选择关卡！");
 					return;
@@ -289,7 +285,6 @@
 			
 			private var _enemyEditView:EditView;
 			private var _enemyEditVGroup:VGroup;
-			private var _tree:Tree;
 			
 			private var _bgEditView:BgEditView;
 			private var _bgList:List;
@@ -313,10 +308,12 @@
 		</s:HGroup>
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
-			<s:Panel id="accordionPanel" height="100%" title="选择编辑类别">
+			<s:Panel id="accordionPanel" height="100%" width="200" title="选择编辑类别">
 				<s:VGroup height="100%" width="100%">
 					<mx:Accordion id="accordion" height="100%" width="100%" click="onAccordionClick(event)">
 						<s:NavigatorContent width="100%" height="100%" label="怪物编辑" id="enemyEdit">
+							<mx:Tree id="levelTree" visible="false" showRoot="false" width="100%" height="100%">
+							</mx:Tree>
 						</s:NavigatorContent> 
 						<s:NavigatorContent width="100%" height="100%" label="背景编辑" id="bgEdit">
 						</s:NavigatorContent> 
