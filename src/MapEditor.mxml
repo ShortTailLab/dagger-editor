@@ -62,15 +62,20 @@
 			
 			private function onDataReady(e:Event):void
 			{
-				// update level tree view;
 				{
+					// update level tree view;
 					levelTree.visible = true;
 					levelTree.dataProvider = Data.getInstance().level_xml;
 					levelTree.selectedIndex = 0;
 				}
-				
-				_enemyEditView = new EditView(this, middleArea);
-				_enemyEditView.init(Data.getInstance().level_list[0]);
+								
+				{
+					// edit view
+					_enemyEditView = new EditView(this, middleArea);
+					_enemyEditView.init(Data.getInstance().level_list[0]);
+					
+					middleArea.addElement(_enemyEditView);
+				}
 				
 				{
 					var modelView:Panel = new Panel();
@@ -139,9 +144,6 @@
 				_enemyEditVGroup.addElement(modelView);
 				_enemyEditVGroup.addElement(matsPanel);
 				
-				//changeEditType(0);
-				
-				middleArea.addElement(_enemyEditView);
 				rightArea.addElement(_enemyEditVGroup);
 			}
 			
