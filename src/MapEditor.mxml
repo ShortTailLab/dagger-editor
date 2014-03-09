@@ -202,18 +202,6 @@
 				}
 			}
 			
-			private function openBgFile(event:Event):void {
-				var browseForOpenFile:File = File.desktopDirectory;
-				var tip:String = "请选择背景地图文件(.tmx)";
-				var filter:FileFilter = new FileFilter("Tiled Map File","*.tmx");
-				browseForOpenFile.browseForOpen(tip, [filter]);
-				browseForOpenFile.addEventListener(Event.SELECT, function (e:Event):void {
-					var file:File = e.target as File;
-					EditMapControl.getInstance().setMapTMX(file);
-					_enemyEditView.switchMap();
-				});
-			}
-			
 			private function openFileToSend(e:Event):void
 			{
 				var browseForOpenFile:File = new File(Data.getInstance().conf.sndFileCashe);
@@ -281,7 +269,6 @@
 		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
 				<s:Button id="sendBtn" label="关卡同步" click="syncServer(event)"/>
 				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
-				<s:Button id="openBgBtn" label="添加背景地图" click="openBgFile(event)"/>
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
 				<s:Label text="服务器Tag" color="0x777777"/>
 				<s:TextInput id="tagInput" width="100" text="zwf"/>

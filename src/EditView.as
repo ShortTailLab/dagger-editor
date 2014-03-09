@@ -219,19 +219,6 @@ package
 			}
 		}
 		
-		public function switchMap():void
-		{
-			for(var m in mapPieces)
-			{
-				map.removeChild(mapPieces[m]);
-			}
-			mapPieces = new Dictionary;
-			while(mapFreePieces.length > 0)
-				mapFreePieces.pop();
-			
-			oneMapHigh = EditMapControl.getInstance().mapHeight;
-		}
-		
 		private function onAddToStage(e:Event):void
 		{
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
@@ -454,13 +441,14 @@ package
 		
 		//this called when endTime changed
 		var timeLineInterval:int = speed*5;
-		var oneMapHigh:Number = 480;
 		private function updateMapSize():void
 		{
+			var mapTileHeight = EditMapControl.getInstance().mMapHeight;
+			
 			var clipLow:Number = mapView.y;
 			var clipHigh:Number = mapView.y+parContainer.height;
-			var lowIndex:int = int(clipLow/oneMapHigh);
-			var highIndex:int = int(clipHigh/oneMapHigh);
+			var lowIndex:int = int(clipLow/mapTileHeight);
+			var highIndex:int = int(clipHigh/mapTileHeight);
 			
 			for(var i in mapPieces)
 				if(int(i) < lowIndex || int(i)>highIndex)
@@ -476,7 +464,7 @@ package
 					var img:DisplayObject = mapFreePieces.length == 0 ? 
 											EditMapControl.getInstance().getAMap() : mapFreePieces.pop();
 					img.x = 0;
-					img.y = -j*oneMapHigh-oneMapHigh;
+					img.y = -j*mapTileHeight-mapTileHeight;
 					
 					map.addChild(img);
 					mapPieces[j] = img;
