@@ -24,16 +24,18 @@ package
 	import spark.components.Button;
 	import spark.components.TextInput;
 	
-	import tools.StateBtn;
+	import formationEdit.Formation;
+	
 	import mapEdit.EditBase;
 	import mapEdit.EditMapControl;
 	import mapEdit.EditMatsControl;
 	import mapEdit.MatFactory;
+	import mapEdit.MatInputForm;
 	import mapEdit.SelectControl;
 	import mapEdit.TimeLine;
 	import mapEdit.TimeLineEvent;
-	import formationEdit.Formation;
-	import mapEdit.MatInputForm;
+	
+	import tools.StateBtn;
 	
 	
 	public class EditView extends UIComponent
@@ -153,10 +155,14 @@ package
 			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
 			this.addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
 			this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
+			
 			this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-			editViewBg.addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
+			this.addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
+			this.addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
+			
+			editViewBg.addEventListener(MouseEvent.MOUSE_OUT, onBGMouseOut);
 		}
 		
 		public function init(lid:String):void
@@ -211,19 +217,6 @@ package
 			{
 				endTime = value;
 			}
-		}
-		
-		public function switchMap():void
-		{
-			for(var m in mapPieces)
-			{
-				map.removeChild(mapPieces[m]);
-			}
-			mapPieces = new Dictionary;
-			while(mapFreePieces.length > 0)
-				mapFreePieces.pop();
-			
-			oneMapHigh = EditMapControl.getInstance().mapHeight;
 		}
 		
 		private function onAddToStage(e:Event):void
@@ -319,24 +312,37 @@ package
 			}
 		}
 		
-		private function onMouseDown(e:MouseEvent):void{
+		private function onMouseDown(e:MouseEvent):void
+		{
 			var localPoint:Point = mapView.globalToLocal(new Point(e.stageX, e.stageY));
 			
 		}
-		private function onMouseMove(e:MouseEvent):void{
-			var localPoint:Point = mapView.globalToLocal(new Point(e.stageX, e.stageY));
-			
+		
+		private function onMouseMove(e:MouseEvent):void
+		{
+			var localPoint:Point = mapView.globalToLocal(new Point(e.stageX, e.stageY));	
 			updateMouseTips();
 		}
+		
 		private function onMouseOut(e:MouseEvent):void
+		{
+		}
+		
+		private function onMouseOver(e:MouseEvent):void
+		{
+		}
+		
+		private function onMouseUp(e:MouseEvent):void
+		{
+		}
+		
+		private function onBGMouseOut(e:MouseEvent):void
 		{
 			if(tipsContainer)
 			{
 				this.removeChild(tipsContainer);
 				tipsContainer = null;
 			}
-		}
-		private function onMouseUp(e:MouseEvent):void{
 		}
 		
 		private function onSliderMouseDown(e:MouseEvent):void
@@ -386,6 +392,7 @@ package
 				this.removeChild(tipsContainer);
 				tipsContainer = null;
 			}
+			
 			if(tipsContainer)
 			{
 				tipsContainer.x = this.mouseX-1;
@@ -434,13 +441,14 @@ package
 		
 		//this called when endTime changed
 		var timeLineInterval:int = speed*5;
-		var oneMapHigh:Number = 480;
 		private function updateMapSize():void
 		{
+			var mapTileHeight = EditMapControl.getInstance().mMapHeight;
+			
 			var clipLow:Number = mapView.y;
 			var clipHigh:Number = mapView.y+parContainer.height;
-			var lowIndex:int = int(clipLow/oneMapHigh);
-			var highIndex:int = int(clipHigh/oneMapHigh);
+			var lowIndex:int = int(clipLow/mapTileHeight);
+			var highIndex:int = int(clipHigh/mapTileHeight);
 			
 			for(var i in mapPieces)
 				if(int(i) < lowIndex || int(i)>highIndex)
@@ -456,7 +464,7 @@ package
 					var img:DisplayObject = mapFreePieces.length == 0 ? 
 											EditMapControl.getInstance().getAMap() : mapFreePieces.pop();
 					img.x = 0;
-					img.y = -j*oneMapHigh-oneMapHigh;
+					img.y = -j*mapTileHeight-mapTileHeight;
 					
 					map.addChild(img);
 					mapPieces[j] = img;

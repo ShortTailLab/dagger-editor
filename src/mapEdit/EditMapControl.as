@@ -1,21 +1,16 @@
 package mapEdit
 {
 	import flash.display.Bitmap;
-	import flash.display.DisplayObject;
 	import flash.filesystem.File;
-	import flash.filesystem.FileMode;
-	import flash.filesystem.FileStream;
-	import flash.utils.ByteArray;
-	
-	import bgedit.TmxMapView;
 
 	public class EditMapControl
 	{
-		public var mapHeight:Number = 0.0;
+		public var mMapHeight:Number = 0.0;
 		private var tmxFile:File = null;
 		private var mapXML:XML = null;
 
 		static private var _instance:EditMapControl = null;
+		
 		static public function getInstance():EditMapControl
 		{
 			if(!_instance)
@@ -23,55 +18,24 @@ package mapEdit
 			return _instance;
 		}
 		
-		public function EditMapControl()
+		public function EditMapControl() 
 		{
-		}
-		
-		public function setMapTMX(_tmxFile:File):void
-		{
-			tmxFile = _tmxFile
-			var fileStream:FileStream = new FileStream();
-			fileStream.open(tmxFile, FileMode.READ);
-			mapXML = new XML(fileStream.readUTFBytes(fileStream.bytesAvailable));
-			fileStream.close();
+			// force calculation of height
 			getAMap();
 		}
-		public function setDefaultMap():void
+
+		public function getAMap():Bitmap
 		{
-			tmxFile = null;
-		}
-		public function getAMap():DisplayObject
-		{
-			var map:DisplayObject;
 			var scale:Number = 0.0;
-			if(tmxFile)
-			{
-				var imagePath:String = tmxFile.url.substring(0,tmxFile.url.lastIndexOf("/")+1) + mapXML..image.@source;
-				var file:File = new File(imagePath);
-				var fileStream:FileStream = new FileStream;
-				fileStream.open(file, FileMode.READ);
-				var imgBytes:ByteArray = new ByteArray;
-				fileStream.readBytes(imgBytes, 0, fileStream.bytesAvailable);
-				fileStream.close();
-				
-				map = new TmxMapView();
-				(map as TmxMapView).loadFromXmlAndImgBytes(mapXML, imgBytes);
-				var tmxMap = (map as TmxMapView).tmxMap;
-				scale = 320/tmxMap.totalWidth;
-				mapHeight =  (tmxMap.totalHeight-tmxMap.tileHeight)*scale; 
-				map.scaleX = map.scaleY = scale;
-			}
-			else
-			{
-				map = new EditView.BgImage as Bitmap;
-				map.scaleX = 360/map.width;
-				map.scaleY = 540/map.height;
-				mapHeight = 540;
-			}
+
+			var map:Bitmap = new EditView.BgImage as Bitmap;
+			var scale:Number =  360 / map.width;
+			
+			map.scaleX = scale;
+			map.scaleY = scale;
+			mMapHeight = map.height;
 			
 			return map;
 		}
-		
-		
 	}
 }

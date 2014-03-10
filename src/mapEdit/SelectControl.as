@@ -106,11 +106,16 @@ package mapEdit
 		
 		private function onMouseDown(e:MouseEvent):void
 		{
-			var pos:Point = view.globalToLocal(new Point(e.stageX, e.stageY));
-			selectFrame = new Shape;
-			selectFrame.x = pos.x;
-			selectFrame.y = pos.y;
-			view.addChild(selectFrame);
+			// only start a new selection when there is no pending selection.
+			// selection may get into pending state if dragged outside current view
+			if(!selectFrame)
+			{
+				var pos:Point = view.globalToLocal(new Point(e.stageX, e.stageY));
+				selectFrame = new Shape;
+				selectFrame.x = pos.x;
+				selectFrame.y = pos.y;
+				view.addChild(selectFrame);
+			}
 		}
 		
 		private function onMouseMove(e:MouseEvent):void

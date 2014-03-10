@@ -12,6 +12,7 @@ package excel
 	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
+	import mx.utils.StringUtil;
 	
 	import manager.EventManager;
 	import manager.EventType;
@@ -63,7 +64,8 @@ package excel
 			var target_cols:Array = [];
 			var a_z:String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 			var i:uint = 0, j:uint = 0;
-			for( i=0; i<26; i++ ) target_cols.push( a_z.charAt(i) );
+			for( i=0; i<26; i++ ) 
+				target_cols.push( a_z.charAt(i) );
 			for( i=0; i<2; i++ )
 				for( j=0; j<26; j++ )
 				{
@@ -123,11 +125,14 @@ package excel
 			var nowLevel:String = "";
 			while(true)
 			{
-				var flag:Boolean = false; var configs:Object = null;
+				var flag:Boolean = false; 
+				var configs:Object = null;
+				
 				if( this.is_cell_valuable(enum_key[0], iterLine) ) // Chapter 
 				{
 					configs = this.loadItems(enum_type[0], enum_configs[0], iterLine);
-					if( !configs ) return false;
+					if( !configs ) 
+						return false;
 					nowChapter = configs[enum_key[0]];
 					if( !(nowChapter in this.mRawData) ) 
 						this.mRawData[nowChapter] = {};
@@ -137,11 +142,13 @@ package excel
 					this.mRawData[nowChapter].c = {}; 
 					flag = true;
 				}
+				
 				if( nowChapter != "" &&
 					this.is_cell_valuable(enum_key[1], iterLine) ) // Level	
 				{
 					configs = this.loadItems(enum_type[1], enum_configs[1], iterLine);
-					if( !configs ) return false;
+					if( !configs ) 
+						return false;
 					nowLevel = configs[enum_key[1]];
 					if( !(nowLevel in this.mRawData[nowChapter].c) )
 						this.mRawData[nowChapter].c[nowLevel] = {};
@@ -151,6 +158,7 @@ package excel
 					this.mRawData[nowChapter].c[nowLevel].c = {};
 					flag = true;
 				}
+				
 				if( nowChapter != "" && nowLevel != "" &&
 					this.is_cell_valuable(enum_key[2], iterLine) ) // Monster  
 				{
@@ -158,18 +166,22 @@ package excel
 					var type:String = this.mSheet.getCellValue(
 						this.mTitle2col["monster_type"]+String(iterLine)
 					);
-					if( type == "" ) return false;
+					if( type == "" ) 
+						return false;
 					var items:Object = Utils.merge2Object(struct[type], enum_must[2]);
 					configs = this.loadItems(type, items, iterLine);
 					
-					if( !configs ) return false;
+					if( !configs ) 
+						return false;
 					var nowMonster:String = configs[enum_key[2]];
 					this.mRawData[nowChapter].c[nowLevel].c[nowMonster] = configs;
 					flag = true;
 					
 					this.mMonsterData[nowMonster] = configs;
 				}
-				if(!flag) break;
+				
+				if(!flag) 
+					break;
 				iterLine ++;
 			}
 			
@@ -179,7 +191,9 @@ package excel
 		private function process_val(prefix:String, key:String, value:String):*
 		{
 			var struct:Object = Data.getInstance().dynamic_args;
-			if( !(prefix in struct) ) return value;
+			if( !(prefix in struct) ) 
+				return value;
+			
 			var argType:String = struct[prefix][key];
 			if(argType == "ccp")
 				return Utils.arrayStr2ccpStr(value);
@@ -189,11 +203,13 @@ package excel
 			{
 				if( value == "" ) return 0;
 				return int(value);
-			}else if(argType == "float")
+			}
+			else if(argType == "float")
 			{
 				if( value == "" ) return 0;
 				return Number(value);
-			}else
+			}
+			else
 				return value;
 		}
 		
@@ -269,17 +285,37 @@ package excel
 		
 		public function genLevelXML():XML 
 		{
-			var ret:XML = <Root></Root>;
+			var ret:XML = <root></root>;
 			for each( var item:* in this.mRawData )
 			{
 				var chapter:Object = item.r;
 				var kids:Object = item.c;
-				for each( var l:* in kids )
-				{ 
-					var level:Object = l.r;
-					ret.appendChild(
-						new XML("<level label='["+chapter.chapter_name+"]"+level.level_name+"'></level>")
-					);
+				
+				var lastNode:XML = new XML("<node label='" + chapter.chapter_name + "'></node>")
+				ret.appendChild(lastNode);
+				
+				var levelList:Array = new Array;
+				
+				for each(var l:Object in kids)
+				{
+					levelList.push(l.r);
+				}
+
+				// sort by level id
+				levelList.sortOn("level_id");
+				
+				for(var i=0; i<levelList.length; i++)
+				{
+					var level:Object = levelList[i];
+					
+					//var dd:String = "chapter name: {0}, id: {1}, level name: {2}";
+					//trace(StringUtil.substitute(dd, chapter.chapter_name, level.level_id, level.level_name));
+					
+					var node:XML = new XML("<level></level>");
+					node.@label = level.level_name;
+					node.@level_id = level.level_id;
+					
+					lastNode.appendChild(node);
 				}
 			}
 			return ret;
