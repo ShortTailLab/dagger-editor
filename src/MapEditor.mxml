@@ -26,6 +26,7 @@
 			import manager.SyncManager;
 			
 			import mapEdit.EditMapControl;
+			import flash.system.Capabilities;
 			
 			public var fView:FormationsView = null;
 			public var matsView:MatsView = null;
@@ -201,22 +202,7 @@
 					Alert.show("成功导出数据");
 				}
 			}
-			
-			private function openFileToSend(e:Event):void
-			{
-				var browseForOpenFile:File = new File(Data.getInstance().conf.sndFileCashe);
-				
-				var tip:String = "请选择上传的文件";
-				browseForOpenFile.browseForOpen(tip);
-				browseForOpenFile.addEventListener(Event.SELECT, function (e:Event):void {
-					var file:File = e.target as File;
-					Data.getInstance().conf.sndFileCashe = file.nativePath;
-					Data.getInstance().saveConf();
-					SyncManager.getInstance().uploadFileToServerPath(file, sendPath.text, tagInput.text);
-				});
-			}
-			
-			var process:NativeProcess;
+ 
 			private function sendToStaticServer(e:Event):void
 			{
 				if(levelTree.selectedIndex == -1)
@@ -226,19 +212,21 @@
 				}
 				
 				saveFile(null);
-				if (SyncManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/export"), tagInput.text)) {
-//					Alert.show("上传成功！");
-				}
-				else {
-					Alert.show("上传失败！"); 
-				}
+				trace(Capabilities.os);
+				SyncManager.getInstance().uploadLevelsToStaticServer(tagInput.text);
+//				if (SyncManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/export"), tagInput.text)) {
+////					Alert.show("上传成功！");
+//				}
+//				else {
+//					Alert.show("上传失败！"); 
+//				}
 			}
 			
 			private function syncServer(e:Event):void
 			{
 				var dataList:Array = Data.getInstance().getLevelDataForServer();
 				//Utils.dumpObject(dataList);
-				SyncManager.getInstance().uploadLevelsToServer(dataList);
+				SyncManager.getInstance().uploadLevelProfilesToServer(dataList);
 			}
 			
 			public function addLog(content:String):void {
@@ -272,9 +260,6 @@
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
 				<s:Label text="服务器Tag" color="0x777777"/>
 				<s:TextInput id="tagInput" width="100" text="zwf"/>
-				<s:Button id="sendBtn3" label="文件上传" click="openFileToSend(event)"/>
-				<s:Label text="上传目录" color="0x777777"/>
-				<s:TextInput id="sendPath" width="100" text="config"/>
 		</s:HGroup>
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
