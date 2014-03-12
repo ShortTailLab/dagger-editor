@@ -9,8 +9,10 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import mx.containers.TitleWindow;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
+			import mx.managers.PopUpManager;
 			
 			import spark.components.Group;
 			import spark.components.VScrollBar;
@@ -20,12 +22,7 @@
 			
 			import formationEdit.FormationsView;
 			
-			import manager.EventManager;
-			import manager.EventType;
-			import manager.GameEvent;
 			import manager.SyncManager;
-			
-			import mapEdit.EditMapControl;
 			
 			public var fView:FormationsView = null;
 			public var matsView:MatsView = null;
@@ -33,15 +30,20 @@
 			private function init():void
 			{
 				_instance = this;
-				
-				Data.getInstance().addEventListener(Event.COMPLETE, onDataReady);
+					
+				var mask:* = this.MakeMask("正在初始化数据（需要联网）…");
 				Data.getInstance().init();
 				
-				EventManager.getInstance().addEventListener(EventType.INIT_BG_DATA_COMPLETE, onBgDataInit);
+				Data.getInstance().addEventListener(Event.COMPLETE, function(e:Event):void
+				{
+					_instance.ReleaseMask( mask );
+					_instance.onDataReady(e);
+				});
+				
 				BgModel.getInstance().init();
 				
 				this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
-				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);				
+				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 			}
 			
 			private function onRightClick(e:MouseEvent)
@@ -146,26 +148,6 @@
 				
 				rightArea.addElement(_enemyEditVGroup);
 			}
-			
-			private function onBgDataInit(event:GameEvent):void 
-			{
-				/*
-				EventManager.getInstance().removeEventListener(EventType.INIT_BG_DATA_COMPLETE, onBgDataInit);
-				
-				var pathList:Array = File.desktopDirectory.resolvePath("editor").getDirectoryListing();
-				var resultList:ArrayCollection = new ArrayCollection;
-				for (var i:uint = 0; i < pathList.length; i++) 
-				{
-					var splitStr:String = Capabilities.os.substring(0, 3) == "Mac" ? "/" : "\\";
-					var path:String = String(pathList[i].nativePath).split(splitStr).pop();
-					if(path.split(".").pop() == "tmx")
-						resultList.addItem(path);
-				}
-				bgList.dataProvider = resultList;
-				bgList.setVisible(true);
-				bgList.addEventListener(MouseEvent.CLICK, onTMXClick);
-				*/
-			}
 
 			public function onItemClick(event:Event):void
 			{
@@ -183,6 +165,24 @@
 				}
 			}
 			
+			private function MakeMask(msg:String):TitleWindow 
+			{
+				var mask:TitleWindow = new TitleWindow();
+				with( mask ) {
+					width = 300; height = 30;
+					showCloseButton = false; title = msg;
+				}
+				
+				PopUpManager.addPopUp( mask, this, true );
+				PopUpManager.centerPopUp( mask );
+				return mask;
+			}
+			
+			private function ReleaseMask(mask:TitleWindow):void
+			{
+				PopUpManager.removePopUp( mask );
+			}
+			
 			private function setCurrLevel(level_id:String):void
 			{
 				var list:Array = Data.getInstance().level_list;
@@ -193,30 +193,13 @@
 				matsView.refreshDataAndView(data);
 			}
 					
-			private function saveFile(event:Event):void
+			private function saveFile(event:Event, showAlert:Boolean = true):void
 			{
 				_enemyEditView.save();
 				if( Data.getInstance().saveLocal() && Data.getInstance().exportJS() )
-				{
-					Alert.show("成功导出数据");
-				}
+					if(showAlert) Alert.show("成功导出数据");
 			}
 			
-			private function openFileToSend(e:Event):void
-			{
-				var browseForOpenFile:File = new File(Data.getInstance().conf.sndFileCashe);
-				
-				var tip:String = "请选择上传的文件";
-				browseForOpenFile.browseForOpen(tip);
-				browseForOpenFile.addEventListener(Event.SELECT, function (e:Event):void {
-					var file:File = e.target as File;
-					Data.getInstance().conf.sndFileCashe = file.nativePath;
-					Data.getInstance().saveConf();
-					SyncManager.getInstance().uploadFileToServerPath(file, sendPath.text, tagInput.text);
-				});
-			}
-			
-			var process:NativeProcess;
 			private function sendToStaticServer(e:Event):void
 			{
 				if(levelTree.selectedIndex == -1)
@@ -224,21 +207,52 @@
 					Alert.show("上传前请先选择关卡！");
 					return;
 				}
+		
+				saveFile(null, false);
 				
-				saveFile(null);
-				if (SyncManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/export"), tagInput.text)) {
-//					Alert.show("上传成功！");
-				}
-				else {
-					Alert.show("上传失败！"); 
-				}
+				var self:* = this;
+				var mask:* = this.MakeMask("上传关卡中，请稍后…");
+				var export:File = File.desktopDirectory.resolvePath("editor/export/");
+				SyncManager.getInstance().uploadLevelsToOSS( export, tagInput.text,  
+					function(msg:String):void
+					{
+						self.ReleaseMask( mask );
+						Alert.show(msg);
+					});
 			}
 			
 			private function syncServer(e:Event):void
 			{
 				var dataList:Array = Data.getInstance().getLevelDataForServer();
 				//Utils.dumpObject(dataList);
-				SyncManager.getInstance().uploadLevelsToServer(dataList);
+				SyncManager.getInstance().uploadLevelsToGameServer(dataList);
+			}
+			
+			private function uploadConfigFile(e:Event):void
+			{
+				var self:* = this;
+				var browser:File = new File(Data.getInstance().conf.sendFileCache);
+				browser.browseForOpen("请选择上传的配置文件");
+				browser.addEventListener(Event.SELECT, function (e:Event):void {
+					
+					var file:File = e.target as File;
+					Data.getInstance().conf.sendFileCache = file.nativePath;
+					Data.getInstance().saveConf();
+					
+					file.addEventListener(Event.COMPLETE, function(e:Event):void {
+						
+						var mask:* = self.MakeMask("正在上传配置文件…");
+						SyncManager.getInstance().uploadConfigFileToOSS( file,
+							function(t:String):void 
+							{
+								self.ReleaseMask( mask );
+								Alert.show( t );
+							}
+						);
+						
+					});
+					file.load();
+				});
 			}
 			
 			public function addLog(content:String):void {
@@ -267,14 +281,20 @@
 	</s:layout>
 	<s:VGroup height="100%" width="100%" paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="5">
 		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
-				<s:Button id="sendBtn" label="关卡同步" click="syncServer(event)"/>
-				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
+			
+			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="left">
+				<s:Button id="saveBtn" label="保存配置" click="saveFile(event)"/>
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
 				<s:Label text="服务器Tag" color="0x777777"/>
 				<s:TextInput id="tagInput" width="100" text="zwf"/>
-				<s:Button id="sendBtn3" label="文件上传" click="openFileToSend(event)"/>
-				<s:Label text="上传目录" color="0x777777"/>
-				<s:TextInput id="sendPath" width="100" text="config"/>
+			</s:HGroup>
+			
+			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
+				<s:Label text="编辑器" color="0x777777"/>	
+				<s:Button id="levels_to_game_server" label="关卡同步" click="syncServer(event)"/>
+				<s:Button id="config" label="配置文件" click="uploadConfigFile(event)"/>
+			</s:HGroup>
+			
 		</s:HGroup>
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
