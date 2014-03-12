@@ -59,6 +59,8 @@ package
 		public var currSelectedLevel:String = "";
 		private var autoSaveTimer:Timer;
 		
+		// chapter datas 
+		
 		// -------------------------------------------------
 		private static var instance:Data = null;
 		public static function getInstance():Data
@@ -100,23 +102,11 @@ package
 				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/dynamic_args.json",
 				suffix: "dynamic_args.json"
 				//type: URLLoaderDataFormat.TEXT
-			},
-			{
-				src: "http://oss.aliyuncs.com/dagger-static/editor-script/makeDist.py",
-				suffix: "makeDist.py"				
-			},
-			{
-				src: "http://oss.aliyuncs.com/dagger-static/editor-script/oss_api.py",
-				suffix: "oss_api.py"				
-			},
-			{
-				src: "http://oss.aliyuncs.com/dagger-static/editor-script/oss_util.py",
-				suffix: "oss_util.py"				
-			},
-			{
-				src: "http://oss.aliyuncs.com/dagger-static/editor-script/oss_xml_handler.py",
-				suffix: "oss_xml_handler.py"				
-			},
+			}
+//			{
+//				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/chapter.json",
+//				suffix: "chapter.json"
+//			}
 		];
 		// where is the synchronous loader? WTF...
 		private function sync():void
@@ -142,7 +132,7 @@ package
 				error = true;
 				Alert.show("[WARN]同步服务器出错，将会使用本地数据…");
 				MapEditor.getInstance().addLog("下载失败");
-				this.load();
+				self.load();
 			}
 
 			syncTargets.forEach(function(item:Object, ...args):void
@@ -168,6 +158,7 @@ package
 			}
 			return ret;
 		}
+		
 		private function load():void
 		{
 			// saved informations

@@ -1,13 +1,9 @@
 package 
 {
-	import flash.desktop.NativeProcess;
-	import flash.desktop.NativeProcessStartupInfo;
-	import flash.events.ProgressEvent;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
 	import flash.geom.Point;
-	import flash.system.Capabilities;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.utils.ByteArray;
@@ -15,6 +11,8 @@ package
 	import mx.core.UIComponent;
 	
 	import behaviorEdit.BType;
+	
+	import by.blooddy.crypto.MD5;
 
 	public class Utils
 	{
@@ -284,7 +282,13 @@ package
 			}
 		}
 		
-		// helper function
-		
+		static public function getMD5Sum(file:File):String {
+			var fileStream:FileStream = new FileStream();
+			fileStream.open(file, FileMode.READ);
+			var bytesArray:ByteArray = new ByteArray();
+			fileStream.readBytes(bytesArray, 0, fileStream.bytesAvailable);
+			fileStream.close();
+			return MD5.hashBytes(bytesArray);
+		}
 	}
 }
