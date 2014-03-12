@@ -47,7 +47,10 @@ package mapEdit
 				return;
 			unselect();
 			while(targetArr.length > 0)
-				add(targetArr.pop());
+			{
+				var i:* = targetArr.pop();
+				add(i);
+			}
 			this.dispatchEvent(new Event(Event.CHANGE));
 		}
 		
@@ -146,7 +149,9 @@ package mapEdit
 			{
 				var bound:Rectangle = m.getBounds(view);
 				if(frame.intersects(bound))
+				{
 					result.push(m);
+				}
 			}
 			return result;
 		}
@@ -164,7 +169,9 @@ package mapEdit
 			});
 			var item3:ContextMenuItem = new ContextMenuItem("删除");
 			item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){
+				
 				var copy:Array = targets.slice(0, targets.length);
+				//Utils.dumpObject(targets);
 				for each(var m:EditBase in copy)
 				{
 					view.matsControl.remove(m.sid);
@@ -180,6 +187,7 @@ package mapEdit
 			target.select(true);
 			target.enablePosChangeDispatch(true);
 			target.addEventListener(Event.REMOVED_FROM_STAGE , onRemoved);
+			
 			targets.push(target);
 		}
 		

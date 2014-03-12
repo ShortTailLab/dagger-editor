@@ -97,7 +97,6 @@ package manager
 		
 		public function uploadLevelsToOSS(dir:File, tag:String, onComplete:Function):void 
 		{
-			if( !dir.isDirectory ) return;
 			this.oss_upload( dir, tag, "LEVEL-VERSION.json", onComplete );
 		}
 		
@@ -108,8 +107,8 @@ package manager
 		private const kOSS_KEY_ID:String 		= "z7caZBtJU2kb8g3h";
 		private const kOSS_KEY_SECREET:String 	= "fuihVj7qMCOjExkhKm2vAyEYhBBv8R"; 
 		private function oss_upload( path:File, tag:String, vf_path:String, onComplete:Function):void 
-		{
-			if( !path.exists ) {
+		{;
+			if( !path.exists || !path.isDirectory ) {
 				trace( path+" is not a valid directory");
 				return;
 			}
@@ -125,6 +124,7 @@ package manager
 				// local & remote version
 				try {
 					remoteVersion = JSON.parse(e.currentTarget.data);
+					Utils.dumpObject(remoteVersion);
 				} catch(e:Error) {};
 				self.oss_gen_local_version( path, valid_url, tag, version );
 				
@@ -138,7 +138,9 @@ package manager
 						diffs.push( key );
 				}
 				for( key in remoteVersion )
+				{
 					if( !(key in version) ) version[key] = remoteVersion[key];
+				}
 				
 				var countor:int = 0, msg:String = ""; 
 				function check(t:String):void {
@@ -147,7 +149,7 @@ package manager
 					if( countor == diffs.length ){
 						// finally, upload version file
 						var url:String = File.desktopDirectory.resolvePath("editor/").url;
-						var vf:File = new File(url+vf_path);
+						var vf:File = new File(url+"/"+vf_path);
 						var fstream:FileStream = new FileStream();
 						fstream.open(vf, FileMode.WRITE);
 						fstream.writeUTFBytes(JSON.stringify(version));
@@ -161,8 +163,6 @@ package manager
 				}
 				for each( var item:* in diffs ) 
 				{
-					trace( valid_url+"/"+ item );
-					trace(tag+"/"+item)
 					self.oss_upload_file_aux( 
 						new File( valid_url+ item ), tag+"/"+item,
 						function (t:String):void { check(t); },

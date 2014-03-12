@@ -78,8 +78,9 @@ package mapEdit
 		
 		private function addMat(mat:EditBase):void
 		{
-			if(mat.sid == "")
+			if(mat.sid == "" || !mat.sid)
 				mat.sid = getUID();
+
 			view.mapView.addChild(mat);
 			mats.push(mat);
 			mat.doubleClickEnabled = true;
@@ -88,8 +89,6 @@ package mapEdit
 			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
 			mat.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
 		}
-		
-
 		
 		public function remove(id:String):void
 		{
