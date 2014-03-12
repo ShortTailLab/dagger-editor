@@ -1,7 +1,6 @@
 package manager
 {
 	import com.hurlant.crypto.Crypto;
-	import com.hurlant.crypto.hash.HMAC;
 	import com.probertson.utils.GZIPBytesEncoder;
 	
 	import flash.events.Event;
@@ -15,11 +14,9 @@ package manager
 	import flash.net.URLRequest;
 	import flash.net.URLRequestHeader;
 	import flash.net.URLRequestMethod;
-	import flash.net.URLVariables;
 	import flash.utils.ByteArray;
 	
 	import mx.controls.Alert;
-	import mx.rpc.events.HeaderEvent;
 	
 	import by.blooddy.crypto.Base64;
 	import by.blooddy.crypto.MD5;
@@ -27,32 +24,17 @@ package manager
 	public class SyncManager
 	{
 		
-		private var _versionPrefix:String;
-		private var _localDirectoryPrefix:String;
-		private var _versionDict:Object = new Object();
-		private var _needToUpload:Vector.<String>;
-		private var _serverDate:Date;
-		private static var _intance:SyncManager;
-		
-		private var _uploadMsg:String;
-		private var _numUploaded:int;
-		private var _isUploading:Boolean = false;
-		
-		private const OSS_ACCESS_KEY_ID:String	 	= "z7caZBtJU2kb8g3h";
-		private const OSS_ACCESS_KEY_SECRET:String 	= "fuihVj7qMCOjExkhKm2vAyEYhBBv8R";
-		// dagger static server (oss)
-		private const STATIC_SERVER_ADDRESS:String 	= "http://ds.shorttaillab.com/"; 
-		private const BUCKET:String 				= "dagger-static";
-		private const GAMELEVEL_API_ADDRESS:String 	= "https://sh-test.shorttaillab.com/api/gameLevel"
-		
 		public function SyncManager() {}
 		
+		private static var _intance:SyncManager;
 		public static function getInstance():SyncManager 
 		{
 			if (!_intance) _intance = new SyncManager();
 			return _intance;
 		}
 		
+		
+		private const kGAMELEVEL_API_ADDRESS:String = "https://sh-test.shorttaillab.com/api/gameLevel";
 		public function uploadLevelsToGameServer(dataList:Array):void
 		{	
 			var total:int = dataList.length;
@@ -64,7 +46,7 @@ package manager
 				var json:String = JSON.stringify(data);
 				//Utils.dumpObject(data);
 				
-				var request:URLRequest = new URLRequest(this.GAMELEVEL_API_ADDRESS);
+				var request:URLRequest = new URLRequest(this.kGAMELEVEL_API_ADDRESS);
 				request.method = URLRequestMethod.POST;
 				request.contentType = "application/json";
 				request.data = json;
@@ -99,9 +81,11 @@ package manager
 		
 		// -----------------------------------------------------
 		// oss upload utils
-		private const kOSS_ADDRESS:String 	= "http://oss.aliyuncs.com/";
-		private const kOSS_BUCKET:String 	= "dagger-static";
-		private function oss_upload_directory( path:File, tag:String, version:String, onComplete:Function):void 
+		private const kOSS_ADDRESS:String 		= "http://oss.aliyuncs.com/";
+		private const kOSS_BUCKET:String 		= "dagger-static";
+		private const kOSS_KEY_ID:String 		= "z7caZBtJU2kb8g3h";
+		private const kOSS_KEY_SECREET:String 	= "fuihVj7qMCOjExkhKm2vAyEYhBBv8R"; 
+		private function oss_upload_directory( path:File, tag:String, vf_path:String, onComplete:Function):void 
 		{
 			if( !path.exists || !path.isDirectory ) {
 				trace( path+" is not a valid directory");
@@ -136,18 +120,18 @@ package manager
 				
 				var countor:int = 0, msg:String = ""; 
 				function check(t:String):void {
-					msg += t;
+					msg += t +"\n";
 					countor ++;
 					if( countor == diffs.length ){
 						// finally, upload version file
 						var url:String = File.desktopDirectory.resolvePath("editor/").url;
-						var vf:File = new File(url+version);
+						var vf:File = new File(url+vf_path);
 						var fstream:FileStream = new FileStream();
 						fstream.open(vf, FileMode.WRITE);
 						fstream.writeUTFBytes(JSON.stringify(version));
 						fstream.close();
 						self.oss_upload_file_aux(
-							vf, tag+"/"+version, 
+							vf, tag+"/"+vf_path, 
 							function(t:String):void { onComplete(msg); },
 							function(t:String):void { onComplete("[ERROR] version.json failed to upload"); }
 						);
@@ -171,7 +155,7 @@ package manager
 			loader.addEventListener(
 				HTTPStatusEvent.HTTP_RESPONSE_STATUS, function(e:HTTPStatusEvent):void {}
 			);
-			loader.load( new URLRequest( kOSS_ADDRESS + kOSS_BUCKET + "/"+tag+"/"+version ) );
+			loader.load( new URLRequest( kOSS_ADDRESS + kOSS_BUCKET + "/"+tag+"/"+vf_path ) );
 		}
 		
 		private function oss_gen_local_version( path:File, prefix:String, tag:String, version:Object ):void
@@ -195,7 +179,9 @@ package manager
 			file.addEventListener(Event.COMPLETE, function(e:Event):void {
 				var urlRequest:URLRequest = new URLRequest();
 				urlRequest.method = URLRequestMethod.PUT;
-				urlRequest.url = STATIC_SERVER_ADDRESS+remote_path;
+				urlRequest.url = kOSS_ADDRESS+kOSS_BUCKET+"/"+remote_path;
+				
+				trace(remote_path);
 				
 				var headers:Array = [];
 				var md5:String = "";
@@ -215,14 +201,14 @@ package manager
 				var date:Date = new Date();
 				var token:String = getToken(
 					URLRequestMethod.PUT, md5, "application/octet-stream", 
-					date, "/"+BUCKET+"/"+remote_path
+					date, "/"+kOSS_BUCKET+"/"+remote_path
 				);
 
 				headers.push( new URLRequestHeader("Date",RFCTimeFormat.toRFC802(date)) );
 				headers.push( new URLRequestHeader("Content-Md5", md5) );
 				headers.push( new URLRequestHeader("Content-Type", "application/octet-stream") );
 			 	headers.push( new URLRequestHeader(
-					"Authorization", "OSS "+OSS_ACCESS_KEY_ID+":"+token
+					"Authorization", "OSS "+kOSS_KEY_ID+":"+token
 				) );
 				
 				urlRequest.requestHeaders = headers;
@@ -242,7 +228,7 @@ package manager
 				urlLoader.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, 
 					function(e:HTTPStatusEvent):void {
 						if( e.status == 200 )
-							onComplete( e.responseURL );
+							onComplete( "[上传成功]: \n"+e.responseURL );
 						else 
 							onError( "[ERROR]"+e.status );
 					}
@@ -256,7 +242,7 @@ package manager
 			var content:String = verb+"\n"+md5+"\n"+type+"\n"+RFCTimeFormat.toRFC802(date)+"\n"+filepath;
 			
 			var keyBytesArray:ByteArray = new ByteArray();
-			keyBytesArray.writeMultiByte(OSS_ACCESS_KEY_SECRET, "utf-8");
+			keyBytesArray.writeMultiByte(kOSS_KEY_SECREET, "utf-8");
 			
 			var contentByteArray:ByteArray = new ByteArray();
 			contentByteArray.writeMultiByte(content, "utf-8");

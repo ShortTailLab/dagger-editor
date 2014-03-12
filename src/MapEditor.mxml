@@ -9,8 +9,11 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import mx.containers.TitleWindow;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
+			import mx.managers.PopUpManager;
+			import mx.skins.halo.TitleBackground;
 			
 			import spark.components.Group;
 			import spark.components.VScrollBar;
@@ -20,12 +23,7 @@
 			
 			import formationEdit.FormationsView;
 			
-			import manager.EventManager;
-			import manager.EventType;
-			import manager.GameEvent;
 			import manager.SyncManager;
-			
-			import mapEdit.EditMapControl;
 			
 			public var fView:FormationsView = null;
 			public var matsView:MatsView = null;
@@ -37,7 +35,6 @@
 				Data.getInstance().addEventListener(Event.COMPLETE, onDataReady);
 				Data.getInstance().init();
 				
-				EventManager.getInstance().addEventListener(EventType.INIT_BG_DATA_COMPLETE, onBgDataInit);
 				BgModel.getInstance().init();
 				
 				this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
@@ -146,26 +143,6 @@
 				
 				rightArea.addElement(_enemyEditVGroup);
 			}
-			
-			private function onBgDataInit(event:GameEvent):void 
-			{
-				/*
-				EventManager.getInstance().removeEventListener(EventType.INIT_BG_DATA_COMPLETE, onBgDataInit);
-				
-				var pathList:Array = File.desktopDirectory.resolvePath("editor").getDirectoryListing();
-				var resultList:ArrayCollection = new ArrayCollection;
-				for (var i:uint = 0; i < pathList.length; i++) 
-				{
-					var splitStr:String = Capabilities.os.substring(0, 3) == "Mac" ? "/" : "\\";
-					var path:String = String(pathList[i].nativePath).split(splitStr).pop();
-					if(path.split(".").pop() == "tmx")
-						resultList.addItem(path);
-				}
-				bgList.dataProvider = resultList;
-				bgList.setVisible(true);
-				bgList.addEventListener(MouseEvent.CLICK, onTMXClick);
-				*/
-			}
 
 			public function onItemClick(event:Event):void
 			{
@@ -181,6 +158,24 @@
 					// expand/collapse node
 					tree.expandItem(tree.selectedItem, !tree.isItemOpen(tree.selectedItem));
 				}
+			}
+			
+			private function MakeMask(msg:String):TitleWindow 
+			{
+				var mask:TitleWindow = new TitleWindow();
+				with( mask ) {
+					width = 150; height = 30;
+					showCloseButton = false; title = msg;
+				}
+				
+				PopUpManager.addPopUp( mask, this, true );
+				PopUpManager.centerPopUp( mask );
+				return mask;
+			}
+			
+			private function ReleaseMask(mask:TitleWindow):void
+			{
+				PopUpManager.removePopUp( mask );
 			}
 			
 			private function setCurrLevel(level_id:String):void
@@ -210,10 +205,13 @@
 		
 				saveFile(null, false);
 				
+				var self:* = this;
+				var mask:* = this.MakeMask("上传关卡中，请稍后…");
 				var export:File = File.desktopDirectory.resolvePath("editor/export/");
 				SyncManager.getInstance().uploadLevelsToOSS( export, tagInput.text,  
 					function(msg:String):void
 					{
+						self.ReleaseMask( mask );
 						Alert.show(msg);
 					});
 			}
@@ -251,14 +249,19 @@
 	</s:layout>
 	<s:VGroup height="100%" width="100%" paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="5">
 		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
-				<s:Label text="编辑器" color="0x777777"/>	
-				<s:Button id="sendBtn" label="关卡同步" click="syncServer(event)"/>
+			
+			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="left">
 				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
-				
-				<s:Label text="关卡" color="0x777777"/>
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
 				<s:Label text="服务器Tag" color="0x777777"/>
 				<s:TextInput id="tagInput" width="100" text="zwf"/>
+			</s:HGroup>
+			
+			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
+				<s:Label text="编辑器" color="0x777777"/>	
+				<s:Button id="sendBtn" label="关卡同步" click="syncServer(event)"/>
+			</s:HGroup>
+			
 		</s:HGroup>
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
