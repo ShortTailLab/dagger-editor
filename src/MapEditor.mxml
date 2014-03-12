@@ -193,16 +193,13 @@
 				matsView.refreshDataAndView(data);
 			}
 					
-			private function saveFile(event:Event):void
+			private function saveFile(event:Event, showAlert:Boolean = true):void
 			{
 				_enemyEditView.save();
 				if( Data.getInstance().saveLocal() && Data.getInstance().exportJS() )
-				{
-					Alert.show("成功导出数据");
-				}
+					if(showAlert) Alert.show("成功导出数据");
 			}
 			
-			var process:NativeProcess;
 			private function sendToStaticServer(e:Event):void
 			{
 				if(levelTree.selectedIndex == -1)
@@ -210,21 +207,22 @@
 					Alert.show("上传前请先选择关卡！");
 					return;
 				}
+		
+				saveFile(null, false);
 				
-				saveFile(null);
-				if (SyncManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/export/"), tagInput.text)) {
-//					Alert.show("上传成功！");
-				}
-				else {
-					Alert.show("上传失败！"); 
-				}
+				var export:File = File.desktopDirectory.resolvePath("editor/export/");
+				SyncManager.getInstance().uploadLevelsToOSS( export, tagInput.text,  
+					function(msg:String):void
+					{
+						Alert.show(msg);
+					});
 			}
 			
 			private function syncServer(e:Event):void
 			{
 				var dataList:Array = Data.getInstance().getLevelDataForServer();
 				//Utils.dumpObject(dataList);
-				SyncManager.getInstance().uploadLevelsToServer(dataList);
+				SyncManager.getInstance().uploadLevelsToGameServer(dataList);
 			}
 			
 			public function addLog(content:String):void {

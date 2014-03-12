@@ -53,7 +53,7 @@ package manager
 			return _intance;
 		}
 		
-		public function uploadLevelsToServer(dataList:Array):void
+		public function uploadLevelsToGameServer(dataList:Array):void
 		{	
 			var total:int = dataList.length;
 			var count:int = 0;
@@ -93,26 +93,27 @@ package manager
 			}
 		}
 
-		public function uploadFilesToServer(localDirectory:File, versionPrefix:String="dagger"):Boolean {
-			this.oss_upload_directory( localDirectory, versionPrefix, "LEVEL-VERSION.json", function(){} );
-			return true;
+		public function uploadLevelsToOSS(dir:File, tag:String, onComplete:Function):void {
+			this.oss_upload_directory( dir, tag, "LEVEL-VERSION.json", onComplete );
 		}
 		
+		// -----------------------------------------------------
+		// oss upload utils
 		private const kOSS_ADDRESS:String 	= "http://oss.aliyuncs.com/";
 		private const kOSS_BUCKET:String 	= "dagger-static";
-		public function oss_upload_directory( path:File, tag:String, version:String, onComplete:Function):void 
+		private function oss_upload_directory( path:File, tag:String, version:String, onComplete:Function):void 
 		{
 			if( !path.exists || !path.isDirectory ) {
 				trace( path+" is not a valid directory");
 				return;
 			}
-			var self = this;
+			var self:* = this;
 			
 			// load remote version file
 			var loader:URLLoader = new URLLoader();
 			loader.addEventListener( Event.COMPLETE, function(e:Event):void 
 			{
-				var remoteVersion:Object = {}, version = {};
+				var remoteVersion:Object = {}, version:Object = {};
 				var valid_url:String = path.url+"/";
 
 				// local & remote version
@@ -121,7 +122,7 @@ package manager
 				} catch(e:Error) {};
 				self.oss_gen_local_version( path, valid_url, tag, version );
 				
-				// merge version
+				// find diffs & merge version
 				var diffs:Array = [];
 				for( var key:* in version ) 
 				{
@@ -130,26 +131,34 @@ package manager
 					else if( remoteVersion[key].h != version[key].h )
 						diffs.push( key );
 				}
+				for( key in remoteVersion )
+					if( !(key in version) ) version[key] = remoteVersion[key];
 				
-				var countor = 0;
-				function check() {
+				var countor:int = 0, msg:String = ""; 
+				function check(t:String):void {
+					msg += t;
 					countor ++;
-					if( countor == diffs.length ) onComplete("true");
+					if( countor == diffs.length ){
+						// finally, upload version file
+						var url:String = File.desktopDirectory.resolvePath("editor/").url;
+						var vf:File = new File(url+version);
+						var fstream:FileStream = new FileStream();
+						fstream.open(vf, FileMode.WRITE);
+						fstream.writeUTFBytes(JSON.stringify(version));
+						fstream.close();
+						self.oss_upload_file_aux(
+							vf, tag+"/"+version, 
+							function(t:String):void { onComplete(msg); },
+							function(t:String):void { onComplete("[ERROR] version.json failed to upload"); }
+						);
+					}
 				}
 				for each( var item:* in diffs ) 
 				{
 					self.oss_upload_file_aux( 
 						new File( valid_url+ item ), tag+"/"+item,
-						function (text:String):void // onComplete
-						{
-							check();
-							trace("[成功]"+text);
-						},
-						function (text:String):void // onError
-						{	
-							check();
-							trace("[失败]"+text);
-						}
+						function (t:String):void { check(t); },
+						function (t:String):void { check(t); }
 					);
 				}
 			});
@@ -253,8 +262,12 @@ package manager
 			contentByteArray.writeMultiByte(content, "utf-8");
 			
 			var result:ByteArray = Crypto.getHMAC("hmac-sha1").compute(keyBytesArray, contentByteArray);
-			trace("\nsignature content: "+content+"\n");
+			//trace("\nsignature content: "+content+"\n");
 			return Base64.encode(result);
 		}
+		
+		// -----------------------------------------------------
+		// upload to game server
+		
 	}
 }
