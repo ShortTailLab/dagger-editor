@@ -1,9 +1,13 @@
 package 
 {
+	import flash.desktop.NativeProcess;
+	import flash.desktop.NativeProcessStartupInfo;
+	import flash.events.ProgressEvent;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
 	import flash.geom.Point;
+	import flash.system.Capabilities;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.utils.ByteArray;
@@ -279,5 +283,8 @@ package
 				dumpObject( obj[ prop ], level + 1 );
 			}
 		}
+		
+		// helper function
+		
 	}
 }

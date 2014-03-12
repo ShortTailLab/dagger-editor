@@ -115,7 +115,7 @@ def genLocalVersion2( root, tag, table ):
 
 # task dispatch in mult-threads
 def header(str):
-    return "[\033[94m" + str + "\033[0m]"
+    return "[" + str + "]"
 
 def wrapper(oss, filepath, handler):
     handler(uploadAux(oss, filepath), filepath)
@@ -135,7 +135,7 @@ def after( has_upload, filepath ):
     count += 1
     if has_upload: prefix = header("上传")
     else: prefix = header("跳过")
-    sync_print(prefix+"\t"+str(count)+"/"+str(total)+"("+str(int(count*100/total))+"%)\t"+filepath)
+    sync_print(prefix+"\t\t"+filepath)
 
 def dispatcher(oss, version, tag, limit):
     global connection, total, count
@@ -180,5 +180,4 @@ if __name__ == "__main__":
         uploadAux( oss, args.tag+"/"+VERSION_FILE )
 
     finally:
-        print "removing directory " + args.tag
         shutil.rmtree(args.tag)

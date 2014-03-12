@@ -9,8 +9,13 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import flash.system.Capabilities;
+			
+			import mx.containers.TitleWindow;
 			import mx.controls.Alert;
+			import mx.controls.Label;
 			import mx.controls.Tree;
+			import mx.managers.PopUpManager;
 			
 			import spark.components.Group;
 			import spark.components.VScrollBar;
@@ -24,9 +29,6 @@
 			import manager.EventType;
 			import manager.GameEvent;
 			import manager.SyncManager;
-			
-			import mapEdit.EditMapControl;
-			import flash.system.Capabilities;
 			
 			public var fView:FormationsView = null;
 			public var matsView:MatsView = null;
@@ -150,22 +152,6 @@
 			
 			private function onBgDataInit(event:GameEvent):void 
 			{
-				/*
-				EventManager.getInstance().removeEventListener(EventType.INIT_BG_DATA_COMPLETE, onBgDataInit);
-				
-				var pathList:Array = File.desktopDirectory.resolvePath("editor").getDirectoryListing();
-				var resultList:ArrayCollection = new ArrayCollection;
-				for (var i:uint = 0; i < pathList.length; i++) 
-				{
-					var splitStr:String = Capabilities.os.substring(0, 3) == "Mac" ? "/" : "\\";
-					var path:String = String(pathList[i].nativePath).split(splitStr).pop();
-					if(path.split(".").pop() == "tmx")
-						resultList.addItem(path);
-				}
-				bgList.dataProvider = resultList;
-				bgList.setVisible(true);
-				bgList.addEventListener(MouseEvent.CLICK, onTMXClick);
-				*/
 			}
 
 			public function onItemClick(event:Event):void
@@ -194,16 +180,17 @@
 				matsView.refreshDataAndView(data);
 			}
 					
-			private function saveFile(event:Event):void
+			private function saveFile(event:Event, alert:Boolean=true):void
 			{
 				_enemyEditView.save();
 				if( Data.getInstance().saveLocal() && Data.getInstance().exportJS() )
 				{
-					Alert.show("成功导出数据");
+					if( alert )
+						Alert.show("成功导出数据");
 				}
 			}
  
-			private function sendToStaticServer(e:Event):void
+			private function uploadLevels(e:Event):void
 			{
 				if(levelTree.selectedIndex == -1)
 				{
@@ -211,22 +198,33 @@
 					return;
 				}
 				
-				saveFile(null);
-				trace(Capabilities.os);
-				SyncManager.getInstance().uploadLevelsToStaticServer(tagInput.text);
-//				if (SyncManager.getInstance().uploadFilesToServer(File.desktopDirectory.resolvePath("editor/export"), tagInput.text)) {
-////					Alert.show("上传成功！");
-//				}
-//				else {
-//					Alert.show("上传失败！"); 
-//				}
+				var dialog:TitleWindow = new TitleWindow();
+				with( dialog ) {
+					title = "上传关卡中，请稍后…"; 
+					showCloseButton = false;
+					width = 150; height = 30;
+				}
+				
+				PopUpManager.addPopUp( dialog, this, true);
+				PopUpManager.centerPopUp( dialog );
+				
+				saveFile(null, false);
+				SyncManager.getInstance().uploadLevelsToStaticServer(
+					tagInput.text, function(output)
+					{
+						PopUpManager.removePopUp( dialog );
+						Alert.show(output);
+					});
+
 			}
 			
 			private function syncServer(e:Event):void
 			{
 				var dataList:Array = Data.getInstance().getLevelDataForServer();
-				//Utils.dumpObject(dataList);
-				SyncManager.getInstance().uploadLevelProfilesToServer(dataList);
+				SyncManager.getInstance().uploadLevelProfilesToServer(dataList, function(str)
+				{
+					Alert.show(str);
+				});	
 			}
 			
 			public function addLog(content:String):void {
@@ -255,9 +253,12 @@
 	</s:layout>
 	<s:VGroup height="100%" width="100%" paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="5">
 		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
+				<s:Label text="编辑器配置：" color="0x777777"/>
 				<s:Button id="sendBtn" label="关卡同步" click="syncServer(event)"/>
 				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
-				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
+			
+				<s:Label text="关卡配置：" color="0x777777"/>
+				<s:Button id="sendBtn2" label="关卡上传" click="uploadLevels(event)"/>
 				<s:Label text="服务器Tag" color="0x777777"/>
 				<s:TextInput id="tagInput" width="100" text="zwf"/>
 		</s:HGroup>
