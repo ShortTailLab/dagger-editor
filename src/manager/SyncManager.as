@@ -25,59 +25,29 @@ package manager
 		
 		public function SyncManager() {}
 		
-		// game server 
-		private const kGAMELEVEL_API_ADDRESS:String = "https://sh-test.shorttaillab.com/api/gameLevel";
-		private const kGAMESERVER_KEY = "nimei123.J$p1ter";
-		public function uploadLevelProfilesToServer(dataList:Array, onDone:Function):void
-		{
-			this.uploadJson(kGAMELEVEL_API_ADDRESS, kGAMESERVER_KEY, dataList, onDone);
-		}
-	
-		// static server 
-		private const kOSS_ACCESS_KEY:String = "z7caZBtJU2kb8g3h";
-		private const kOSS_ACCESS_PRIVATE_KEY:String = "fuihVj7qMCOjExkhKm2vAyEYhBBv8R";
-		private const kLEVEL_VERSION:String = "LEVEL-VERSION.json";
-		public function uploadLevelsToStaticServer(tag:String, onDone:Function):void
-		{
-			// launch upload script 
-			var commands:Vector.<String> = new Vector.<String>();
-//			commands.push("data/makeDist.py")
-//			commands.push("export/");
-//			commands.push(tag);
-//			commands.push("level");
-//			commands.push(kLEVEL_VERSION);
-//			commands.push(kOSS_ACCESS_KEY);
-//			commands.push(kOSS_ACCESS_PRIVATE_KEY);
-			
-			this.cmd("/bin/ls", commands, function( output ){
-				onDone(output);
-			}, function(output){ onDone(output); });
-		}
-		
-		
-		// helper 
-		private function uploadJson(url:String, key:String, dataList:Array, onDone:Function):void
+		public function uploadLevelProfilesToServer(dataList:Array):void
 		{	
 			var total:int = dataList.length;
 			var count:int = 0;
 			var details:String = "";
 			for each( var data:Object in dataList )
 			{
-				data.key = key
+				data.key = "nimei123.J$p1ter";
 				var json:String = JSON.stringify(data);
+				//Utils.dumpObject(data);
 				
-				var request:URLRequest = new URLRequest(url);
+				var request:URLRequest = new URLRequest(this.GAMELEVEL_API_ADDRESS);
 				request.method = URLRequestMethod.POST;
 				request.contentType = "application/json";
 				request.data = json;
-				
+
 				var loader:URLLoader = new URLLoader(); 
 				loader.addEventListener(Event.COMPLETE, function(e:Event):void
 				{
 					count ++;
 					if( count == total )
 					{
-						onDone(details);
+						Alert.show(details);
 					}
 				});
 				
@@ -95,44 +65,58 @@ package manager
 			}
 		}
 		
-		private function cmd(path:String, commands:Vector.<String>, onStandardOutput:Function, onErrorOutput:Function):void
+		private function cmd(commands:Vector.<String>):void
 		{
 			var info:* = new NativeProcessStartupInfo();
 			info.arguments = commands;
-			info.workingDirectory = File.desktopDirectory.resolvePath("editor");
-			info.executable = new File(path);
+	
+			if((Capabilities.os.indexOf("Windows") >= 0))
+				info.executable = new File("c:\\windows\\system32\\cmd.exe");
+			else if((Capabilities.os.indexOf("Mac") >= 0))
+				info.executable = new File("/bin/bash");
 			
 			var native:NativeProcess = new NativeProcess();
 			native.addEventListener(ProgressEvent.STANDARD_OUTPUT_DATA, 
 				function(event:ProgressEvent):void 
 				{
-					try {
-						var process:NativeProcess = event.target as NativeProcess;
-						var data:String = process.standardOutput.readUTFBytes(
-							process.standardOutput.bytesAvailable
-						);
-					} catch(err:Error) {
-						onErrorOutput(err.message);
-						return;
-					}
-					onStandardOutput( data );
+					var process:NativeProcess = event.target as NativeProcess;
+					var data:String = process.standardOutput.readUTFBytes(
+						process.standardOutput.bytesAvailable
+					);
+					trace( data );
 				});
 			native.addEventListener(ProgressEvent.STANDARD_ERROR_DATA, 
 				function(event:ProgressEvent):void 
 				{
-					try {
-						var process:NativeProcess = event.target as NativeProcess;
-						var data:String = process.standardOutput.readUTFBytes(
-							process.standardOutput.bytesAvailable
-						);
-					} catch(err:Error) {
-						onErrorOutput(err.message);
-						return;
-					}
-					onErrorOutput( data );
+					var process:NativeProcess = event.target as NativeProcess;
+					var data:String = process.standardOutput.readUTFBytes(
+						process.standardOutput.bytesAvailable
+					);
+					trace( "[ERROR]"+data );
 				});
 			native.start( info );
 		}
 		
+		// 
+		private const kOSS_ACCESS_KEY:String = "z7caZBtJU2kb8g3h";
+		private const kOSS_ACCESS_PRIVATE_KEY:String = "fuihVj7qMCOjExkhKm2vAyEYhBBv8R";
+		private const kLEVEL_VERSION:String = "LEVEL-VERSION.json";
+		public function uploadLevelsToStaticServer(tag:String):void
+		{
+			var root:String = File.desktopDirectory.resolvePath("editor").url;
+			var script:String = File.desktopDirectory.resolvePath("editor/data/makeDist.py").url;
+			
+			var commands:Vector.<String> = new Vector.<String>();
+			commands.push("python");
+			commands.push(script);
+			commands.push("../export/");
+			commands.push(tag);
+			commands.push("level");
+			commands.push(kLEVEL_VERSION);
+			commands.push(kOSS_ACCESS_KEY);
+			commands.push(kOSS_ACCESS_PRIVATE_KEY);
+			
+			this.cmd(commands);
+		}
 	}
 }
