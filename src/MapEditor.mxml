@@ -169,7 +169,7 @@
 			{
 				var mask:TitleWindow = new TitleWindow();
 				with( mask ) {
-					width = 300; height = 30;
+					width = 300; height = 50;
 					showCloseButton = false; title = msg;
 				}
 				
@@ -291,8 +291,9 @@
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
 				<s:Label text="编辑器" color="0x777777"/>	
-				<s:Button id="levels_to_game_server" label="关卡同步" click="syncServer(event)"/>
+				<s:Button id="parse_excel" label="表单解析" click="parseExcel(event)"/>
 				<s:Button id="config" label="配置文件" click="uploadConfigFile(event)"/>
+				<s:Button id="levels_to_game_server" label="关卡同步" click="syncServer(event)"/>
 			</s:HGroup>
 			
 		</s:HGroup>

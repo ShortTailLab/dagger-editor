@@ -19,93 +19,67 @@ package excel
 	import manager.GameEvent;
 
 	public class ExcelReader
-	{
-		private var _onComplete:Function;
-		private var _timer:Timer;
-		private var _lastModifiedDate:Date;
-		
-		private var mExcelLoader:XLSXLoader;
-		private var mSheet:Worksheet;
-		private var mExcelPath:String;
-		private var mRawData:Object;
-		private var mMonsterData:Object = {};
-		
-		private var mStartLine:int = 3;
-		private var mTitle2col:Object;
-		
-		private var mChapterLength:int;
-		private var mLevelLength:int;
+	{			
+		private var mExcelLoader:XLSXLoader = null;
 		
 		public function ExcelReader() {}
-		public function initWithNativePath( nativePath:String ):void {
-			mExcelPath = nativePath;
-			var file:File = new File(nativePath);
-
-			MapEditor.getInstance().addLog("正在加载"+nativePath+"..");
-			var fileStream:FileStream = new FileStream();
-			fileStream.open(file, FileMode.READ);
-			var byteArray:ByteArray = new ByteArray();
-			fileStream.readBytes(byteArray,0,fileStream.bytesAvailable);
+		public function parse( profile:File, onComplete:Function ):void {
+			MapEditor.getInstance().addLog("正在加载"+profile.url+"..");
 			
-			mExcelLoader = new XLSXLoader();
-			mExcelLoader.addEventListener(Event.COMPLETE, onExcelLoad);
-			mExcelLoader.loadFromByteArray(byteArray);
+			var bytes:ByteArray = new ByteArray();
+			var fstream:FileStream = new FileStream();
+			fstream.open( profile, FileMode.READ );
+			fstream.readBytes( bytes, 0, fstream.bytesAvailable );
+			fstream.close();
+			
+			var self = this;
+			this.mExcelLoader = new XLSXLoader();
+			this.mExcelLoader.addEventListener(Event.COMPLETE, function(e:Event):void
+			{
+				MapEditor.getInstance().addLog("excel加载成功");
+				
+				var titles:Vector.<String> = self.mExcelLoader.getSheetNames();
+				if( titles.length <= 0 ) 
+				{
+					onComplete(null);
+					return;
+				}
+				
+				var sheet = self.mExcelLoader.worksheet(titles[0]);
+				this.parseSheet(sheet, onComplete);
+				self.mExcelLoader.close();
+			});
+			this.mExcelLoader.loadFromByteArray( bytes );
 		}
 		
-		private function onExcelLoad(e:Event):void {
-			MapEditor.getInstance().addLog("excel加载成功");
-			mExcelLoader.removeEventListener(Event.COMPLETE, onExcelLoad);
-
-			mRawData = {};
-			mSheet = mExcelLoader.worksheet("新表");
-			var argToColDic:Dictionary = new Dictionary;
-			
-			// colume search range
-			var target_cols:Array = [];
+		private const kSTART_LINE = 3;
+		private function parseSheet( sheet:Worksheet, onComplete:Function ):void
+		{	
+			var indices:Array = [];
 			var a_z:String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 			var i:uint = 0, j:uint = 0;
 			for( i=0; i<26; i++ ) 
-				target_cols.push( a_z.charAt(i) );
-			for( i=0; i<2; i++ )
+				indices.push( a_z.charAt(i) );
+			for( i=0; i<1; i++ )
 				for( j=0; j<26; j++ )
-				{
-					target_cols.push(a_z.charAt(i)+a_z.charAt(j));
-				}
-			// mapping table
-			this.mTitle2col = {};
-			for(var k:int=0; k<target_cols.length; k++)
-			{
-				var key:String = this.mSheet.getCellValue(target_cols[k]+String(mStartLine));
-				if(key != "")
-					this.mTitle2col[key] = target_cols[k];
-			}	
+					indices.push(a_z.charAt(i)+a_z.charAt(j));
 			
-			if( this.parse() )
+			var key2indices = {};
+			for( i=0; i<indices.length; i++ )
 			{
-				MapEditor.getInstance().addLog("excel数据读取成功");
-				EventManager.getInstance().dispatchEvent(
-					new GameEvent(EventType.EXCEL_DATA_CHANGE)
-				);
+				var key:String = sheet.getCellValue( indices[i]+String(kSTART_LINE) );
+				if( key != "" )
+					key2indices[key] = indices[i];
 			}
 			
-			//Utils.dumpObject(this.mRawData);
-			
-			mExcelLoader.close();
-		}
-		
-		private function parse():Boolean
-		{
-			// get data stucture
+			//
 			var struct:Object = Data.getInstance().dynamic_args;
-			if( !struct.hasOwnProperty("Chapter") ||
+			if( !struct.hasOwnProperty("Chapter") || 
 				!struct.hasOwnProperty("Level") )
 			{
-				Alert.show("dynamic_args缺少Chapter以及Level的定义");
-				return false;
+				onComplete(null);
+				return;
 			}
-
-			this.mChapterLength = Utils.getObjectLength(struct.Chapter);
-			this.mLevelLength = Utils.getObjectLength(struct.Level);
 			
 			var enum_type:Array = ["Chapter", "Level", "Monster", "Bullet"];
 			var enum_must:Array = [
@@ -120,7 +94,8 @@ package excel
 				Utils.merge2Object(struct[enum_type[1]], enum_must[1])
 			];
 			
-			var iterLine:int = this.mStartLine+1;
+			var raw:Object = {}; // ret
+			var iterLine:int = kSTART_LINE+1;
 			var nowChapter:String = "";
 			var nowLevel:String = "";
 			while(true)
@@ -128,60 +103,59 @@ package excel
 				var flag:Boolean = false; 
 				var configs:Object = null;
 				
-				if( this.is_cell_valuable(enum_key[0], iterLine) ) // Chapter 
+				if( this.is_cell_valuable(sheet, key2indices, enum_key[0], iterLine) ) // Chapter 
 				{
-					configs = this.loadItems(enum_type[0], enum_configs[0], iterLine);
+					configs = this.loadItems(sheet, key2indices, enum_type[0], enum_configs[0], iterLine);
 					if( !configs ) 
 						return false;
 					nowChapter = configs[enum_key[0]];
-					if( !(nowChapter in this.mRawData) ) 
-						this.mRawData[nowChapter] = {};
+					if( !(nowChapter in raw) ) 
+						raw[nowChapter] = {};
 					else 
 						Alert.show("存在重复的章节编号"+nowChapter);
-					this.mRawData[nowChapter].r = configs;
-					this.mRawData[nowChapter].c = {}; 
+					raw[nowChapter] = configs;
+					raw[nowChapter].levels = {}; 
 					flag = true;
 				}
 				
 				if( nowChapter != "" &&
-					this.is_cell_valuable(enum_key[1], iterLine) ) // Level	
+					this.is_cell_valuable(sheet, key2indices, enum_key[1], iterLine) ) // Level	
 				{
-					configs = this.loadItems(enum_type[1], enum_configs[1], iterLine);
+					configs = this.loadItems(sheet, key2indices, enum_type[1], enum_configs[1], iterLine);
 					if( !configs ) 
 						return false;
 					nowLevel = configs[enum_key[1]];
-					if( !(nowLevel in this.mRawData[nowChapter].c) )
-						this.mRawData[nowChapter].c[nowLevel] = {};
+					if( !(nowLevel in raw[nowChapter].levels) )
+						raw[nowChapter].levels[nowLevel] = {};
 					else 
 						Alert.show("存在重复的关卡编号"+nowLevel);
-					this.mRawData[nowChapter].c[nowLevel].r = configs;
-					this.mRawData[nowChapter].c[nowLevel].c = {};
+					raw[nowChapter].levels[nowLevel] = configs;
+					raw[nowChapter].levels[nowLevel].monsters = {};
 					flag = true;
 				}
 				
 				if( nowChapter != "" && nowLevel != "" &&
-					this.is_cell_valuable(enum_key[2], iterLine) ) // Monster  
+					this.is_cell_valuable(sheet, key2indices, enum_key[2], iterLine) ) // Monster  
 				{
 					// get type
-					var type:String = this.mSheet.getCellValue(
-						this.mTitle2col["monster_type"]+String(iterLine)
+					var type:String = sheet.getCellValue(
+						key2indices["monster_type"]+String(iterLine)
 					);
 					if( type == "" ) 
 						return false;
 					var items:Object = Utils.merge2Object(struct[type], enum_must[2]);
-					configs = this.loadItems(type, items, iterLine);
+					configs = this.loadItems(sheet, key2indices, type, items, iterLine);
 					
 					if( !configs ) 
 						return false;
 					var nowMonster:String = configs[enum_key[2]];
-					this.mRawData[nowChapter].c[nowLevel].c[nowMonster] = configs;
+					raw[nowChapter].levels[nowLevel].monsters[nowMonster] = configs;
 					flag = true;
 					
-					this.mMonsterData[nowMonster] = configs;
+					raw[nowMonster] = configs;
 				}
 				
-				if(!flag) 
-					break;
+				if(!flag) break;
 				iterLine ++;
 			}
 			
@@ -213,120 +187,120 @@ package excel
 				return value;
 		}
 		
-		private function loadItems(type:String, configs:Object, line:int):Object
+		private function loadItems(sheet:Worksheet, t2i:Object, type:String, configs:Object, line:int):Object
 		{
 			var ret:Object = {};
 			for( var key:String in configs )
 			{
-				if( !this.mTitle2col.hasOwnProperty(key) )
+				if( !t2i.hasOwnProperty(key) )
 				{
 					Alert.show(type+" 未定义需要的列 : "+key);
 					return null;
 				}
-				var val:String = this.mSheet.getCellValue(this.mTitle2col[key]+String(line));
+				var val:String = sheet.getCellValue(t2i[key]+String(line));
 				ret[key] = this.process_val(type, key, val);
 			}
 			return ret;
 		}
 		
-		private function is_cell_valuable(key:String, line:int):Boolean
+		private function is_cell_valuable(sheet:Worksheet, t2i:Object, key:String, line:int):Boolean
 		{
-			return mSheet.getCellValue((mTitle2col[key]+String(line))) != "";
+			return sheet.getCellValue((t2i[key]+String(line))) != "";
 		}
 		
-		public function genLevel2MonsterTable():Object
-		{
-			var ret:Object = {};
-			for each( var item:* in this.mRawData )
-			{
-				var kids:Object = item.c;
-				for each( var l:* in kids )
-				{ 
-					ret[l.r.level_id] = l.c;
-				}
-			}
-			return ret;
-		}
-		
-		public function getChapterDataByLevelId(id:*):*
-		{
-			for each( var item:* in this.mRawData )
-			{
-				var kids:Object = item.c;
-				for each( var l:* in kids )
-				{
-					if( l.r.level_id == id )
-					{
-						return {
-							chapter_id : item.r.chapter_id,
-							chapter_name : item.r.chapter_name,
-							level_name : l.r.level_name
-						};
-					}
-				}
-			}
-			return null;
-		}
-		
-		public function genLevelIdList():Array
-		{
-			var ret:Array = [];
-			for each( var item:* in this.mRawData )
-			{
-				var kids:Object = item.c;
-				for each( var l:* in kids )
-				{ 
-					var level:Object = l.r;
-					ret.push(level.level_id);
-				}
-			}
-			return ret;
-		}
-		
-		public function genLevelXML():XML 
-		{
-			var ret:XML = <root></root>;
-			for each( var item:* in this.mRawData )
-			{
-				var chapter:Object = item.r;
-				var kids:Object = item.c;
-				
-				var lastNode:XML = new XML("<node label='" + chapter.chapter_name + "'></node>")
-				ret.appendChild(lastNode);
-				
-				var levelList:Array = new Array;
-				
-				for each(var l:Object in kids)
-				{
-					levelList.push(l.r);
-				}
-
-				// sort by level id
-				levelList.sortOn("level_id");
-				
-				for(var i=0; i<levelList.length; i++)
-				{
-					var level:Object = levelList[i];
-					
-					//var dd:String = "chapter name: {0}, id: {1}, level name: {2}";
-					//trace(StringUtil.substitute(dd, chapter.chapter_name, level.level_id, level.level_name));
-					
-					var node:XML = new XML("<level></level>");
-					node.@label = level.level_name;
-					node.@level_id = level.level_id;
-					
-					lastNode.appendChild(node);
-				}
-			}
-			return ret;
-		}
-
-		public function get data():Object {
-			return this.mMonsterData;
-		}
-		
-		public function get raw():Object {
-			return this.mRawData;
-		}
+//		public function genLevel2MonsterTable():Object
+//		{
+//			var ret:Object = {};
+//			for each( var item:* in this.mRawData )
+//			{
+//				var kids:Object = item.c;
+//				for each( var l:* in kids )
+//				{ 
+//					ret[l.r.level_id] = l.c;
+//				}
+//			}
+//			return ret;
+//		}
+//		
+//		public function getChapterDataByLevelId(id:*):*
+//		{
+//			for each( var item:* in this.mRawData )
+//			{
+//				var kids:Object = item.c;
+//				for each( var l:* in kids )
+//				{
+//					if( l.r.level_id == id )
+//					{
+//						return {
+//							chapter_id : item.r.chapter_id,
+//							chapter_name : item.r.chapter_name,
+//							level_name : l.r.level_name
+//						};
+//					}
+//				}
+//			}
+//			return null;
+//		}
+//		
+//		public function genLevelIdList():Array
+//		{
+//			var ret:Array = [];
+//			for each( var item:* in this.mRawData )
+//			{
+//				var kids:Object = item.c;
+//				for each( var l:* in kids )
+//				{ 
+//					var level:Object = l.r;
+//					ret.push(level.level_id);
+//				}
+//			}
+//			return ret;
+//		}
+//		
+//		public function genLevelXML():XML 
+//		{
+//			var ret:XML = <root></root>;
+//			for each( var item:* in this.mRawData )
+//			{
+//				var chapter:Object = item.r;
+//				var kids:Object = item.c;
+//				
+//				var lastNode:XML = new XML("<node label='" + chapter.chapter_name + "'></node>")
+//				ret.appendChild(lastNode);
+//				
+//				var levelList:Array = new Array;
+//				
+//				for each(var l:Object in kids)
+//				{
+//					levelList.push(l.r);
+//				}
+//
+//				// sort by level id
+//				levelList.sortOn("level_id");
+//				
+//				for(var i=0; i<levelList.length; i++)
+//				{
+//					var level:Object = levelList[i];
+//					
+//					//var dd:String = "chapter name: {0}, id: {1}, level name: {2}";
+//					//trace(StringUtil.substitute(dd, chapter.chapter_name, level.level_id, level.level_name));
+//					
+//					var node:XML = new XML("<level></level>");
+//					node.@label = level.level_name;
+//					node.@level_id = level.level_id;
+//					
+//					lastNode.appendChild(node);
+//				}
+//			}
+//			return ret;
+//		}
+//
+//		public function get data():Object {
+//			return this.mMonsterData;
+//		}
+//		
+//		public function get raw():Object {
+//			return this.mRawData;
+//		}
 	}
 }

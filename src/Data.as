@@ -53,13 +53,14 @@ package
 		// misc
 		private var level2monster:Object = null;
 		public var dynamic_args:Object = null;
-		public var excel_reader:ExcelReader = null;
+		//public var excel_reader:ExcelReader = null;
 		
 		// anchors
 		public var currSelectedLevel:String = "";
 		private var autoSaveTimer:Timer;
 		
 		// chapter datas 
+		private var mChapter:Object = null;
 		
 		// -------------------------------------------------
 		private static var instance:Data = null;
@@ -178,6 +179,7 @@ package
 			// load configs 
 			this.dynamic_args = this.loadJson("editor/data/dynamic_args.json");
 			this.bh_node = this.loadJson("editor/data/bt_node_format.json");
+			this.mChapter = this.loadJson("editor/data/chapter.json", false) || {};
 			
 			// async loading
 			// ---------------------------------------------------------------
@@ -666,6 +668,21 @@ package
 		public function setEnemyTrigger(id:String, triggers:Object):void
 		{
 			this.enemy_trigger[id] = triggers;
+		}
+		
+		// ----------------------------------------------------------------
+		// parse excel 
+		public function parseChapterProfile(profile:File, onComplete:Function):void
+		{
+			//this.excel_reader = new ExcelReader();
+			//this.excel_reader.initWithNativePath(profile.nativePath);
+			
+			var excel_reader:ExcelReader = new ExcelReader();
+			excel_reader.parse( profile, function(raw:Object):void
+			{
+				
+			});
+				
 		}
 	}
 }
