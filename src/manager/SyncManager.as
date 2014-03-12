@@ -75,8 +75,15 @@ package manager
 			}
 		}
 
-		public function uploadLevelsToOSS(dir:File, tag:String, onComplete:Function):void {
-			this.oss_upload_directory( dir, tag, "LEVEL-VERSION.json", onComplete );
+		public function uploadConfigFileToOSS(file:File, onComplete:Function):void 
+		{
+			this.oss_upload( file, "dagger-configs", "CONFIG-VERSION.json", onComplete );
+		}
+		
+		public function uploadLevelsToOSS(dir:File, tag:String, onComplete:Function):void 
+		{
+			if( !dir.isDirectory ) return;
+			this.oss_upload( dir, tag, "LEVEL-VERSION.json", onComplete );
 		}
 		
 		// -----------------------------------------------------
@@ -85,9 +92,9 @@ package manager
 		private const kOSS_BUCKET:String 		= "dagger-static";
 		private const kOSS_KEY_ID:String 		= "z7caZBtJU2kb8g3h";
 		private const kOSS_KEY_SECREET:String 	= "fuihVj7qMCOjExkhKm2vAyEYhBBv8R"; 
-		private function oss_upload_directory( path:File, tag:String, vf_path:String, onComplete:Function):void 
+		private function oss_upload( path:File, tag:String, vf_path:String, onComplete:Function):void 
 		{
-			if( !path.exists || !path.isDirectory ) {
+			if( !path.exists ) {
 				trace( path+" is not a valid directory");
 				return;
 			}
@@ -139,6 +146,8 @@ package manager
 				}
 				for each( var item:* in diffs ) 
 				{
+					trace( valid_url+"/"+ item );
+					trace(tag+"/"+item)
 					self.oss_upload_file_aux( 
 						new File( valid_url+ item ), tag+"/"+item,
 						function (t:String):void { check(t); },
@@ -160,18 +169,21 @@ package manager
 		
 		private function oss_gen_local_version( path:File, prefix:String, tag:String, version:Object ):void
 		{
+			if( !path.isDirectory  ) 
+			{
+				var key:String = path.url.substring(prefix.length);
+				version[key] = {
+					d : tag,
+					p : 0,
+					h : Utils.getMD5Sum(path)
+				}
+				return;
+			}
+			
 			for each( var item:File in path.getDirectoryListing() )
 			{
 				if( item.name.charAt(0) == "." ) continue;
-				if( item.isDirectory ) this.oss_gen_local_version(item, prefix, tag, version);
-				else{
-					var key:String = item.url.substring(prefix.length);
-					version[key] = {
-						d : tag,
-						p : 0,
-						h : Utils.getMD5Sum(item)
-					}
-				}
+				this.oss_gen_local_version(item, prefix, tag, version);
 			}
 		}
 		
@@ -180,9 +192,7 @@ package manager
 				var urlRequest:URLRequest = new URLRequest();
 				urlRequest.method = URLRequestMethod.PUT;
 				urlRequest.url = kOSS_ADDRESS+kOSS_BUCKET+"/"+remote_path;
-				
-				trace(remote_path);
-				
+
 				var headers:Array = [];
 				var md5:String = "";
 				var extension:String = remote_path.substring(remote_path.lastIndexOf(".")+1);

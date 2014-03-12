@@ -13,7 +13,6 @@
 			import mx.controls.Alert;
 			import mx.controls.Tree;
 			import mx.managers.PopUpManager;
-			import mx.skins.halo.TitleBackground;
 			
 			import spark.components.Group;
 			import spark.components.VScrollBar;
@@ -31,14 +30,20 @@
 			private function init():void
 			{
 				_instance = this;
-				
-				Data.getInstance().addEventListener(Event.COMPLETE, onDataReady);
+					
+				var mask:* = this.MakeMask("正在初始化数据（需要联网）…");
 				Data.getInstance().init();
+				
+				Data.getInstance().addEventListener(Event.COMPLETE, function(e:Event):void
+				{
+					_instance.ReleaseMask( mask );
+					_instance.onDataReady(e);
+				});
 				
 				BgModel.getInstance().init();
 				
 				this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
-				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);				
+				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 			}
 			
 			private function onRightClick(e:MouseEvent)
@@ -164,7 +169,7 @@
 			{
 				var mask:TitleWindow = new TitleWindow();
 				with( mask ) {
-					width = 150; height = 30;
+					width = 300; height = 30;
 					showCloseButton = false; title = msg;
 				}
 				
@@ -223,6 +228,42 @@
 				SyncManager.getInstance().uploadLevelsToGameServer(dataList);
 			}
 			
+			private function uploadConfigFile(e:Event):void
+			{
+				var self = this;
+				var browser:File = new File(Data.getInstance().conf.sendFileCache);
+				browser.browseForOpen("请选择上传的配置文件");
+				browser.addEventListener(Event.SELECT, function (e:Event):void {
+					
+					var file:File = e.target as File;
+					Data.getInstance().conf.sendFileCache = file.nativePath;
+					Data.getInstance().saveConf();
+					
+					file.addEventListener(Event.COMPLETE, function(e:Event):void {
+						
+						var url:String = File.desktopDirectory.resolvePath("editor/export/").url;
+						var vf:File = new File(url+"/config/"+file.name);
+						var fstream:FileStream = new FileStream();
+						fstream.open(vf, FileMode.WRITE);
+						fstream.writeBytes( file.data );
+						fstream.close();
+						
+						trace( vf.url );
+						
+						var mask:* = self.MakeMask("正在上传配置文件…");
+						SyncManager.getInstance().uploadConfigFileToOSS( vf,
+							function(t):void 
+							{
+								self.ReleaseMask( mask );
+								Alert.show( t );
+							}
+						);
+						
+					});
+					file.load();
+				});
+			}
+			
 			public function addLog(content:String):void {
 				_log = _log+(_log==""?"":"\n")+content;
 				var logFile:File = File.desktopDirectory.resolvePath("editor/log.txt");
@@ -251,7 +292,7 @@
 		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="left">
-				<s:Button id="saveBtn" label="保存关卡配置" click="saveFile(event)"/>
+				<s:Button id="saveBtn" label="保存配置" click="saveFile(event)"/>
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
 				<s:Label text="服务器Tag" color="0x777777"/>
 				<s:TextInput id="tagInput" width="100" text="zwf"/>
@@ -259,7 +300,8 @@
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
 				<s:Label text="编辑器" color="0x777777"/>	
-				<s:Button id="sendBtn" label="关卡同步" click="syncServer(event)"/>
+				<s:Button id="levels_to_game_server" label="关卡同步" click="syncServer(event)"/>
+				<s:Button id="config" label="配置文件" click="uploadConfigFile(event)"/>
 			</s:HGroup>
 			
 		</s:HGroup>
