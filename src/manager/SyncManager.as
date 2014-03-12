@@ -92,22 +92,15 @@ package manager
 				loader.load( request );
 			}
 		}
-		
-		/**
-		 * 
-		 * @param localDiretory  local directory, like file:///Users/yourname/Desktop/editor/Resources
-		 * @param versionPrefix  version prefix in server, like dev, or release, or test
-		 * @return 
-		 * 
-		 */
+
 		public function uploadFilesToServer(localDirectory:File, versionPrefix:String="dagger"):Boolean {
-			this.oss_upload_directory( localDirectory, versionPrefix, "LEVEL-VERSION.json", function(){}, function(){});
+			this.oss_upload_directory( localDirectory, versionPrefix, "LEVEL-VERSION.json", function(){} );
 			return true;
 		}
 		
 		private const kOSS_ADDRESS:String 	= "http://oss.aliyuncs.com/";
 		private const kOSS_BUCKET:String 	= "dagger-static";
-		public function oss_upload_directory( path:File, tag:String, version:String, onComplete:Function, onError:Function):void 
+		public function oss_upload_directory( path:File, tag:String, version:String, onComplete:Function):void 
 		{
 			if( !path.exists || !path.isDirectory ) {
 				trace( path+" is not a valid directory");
@@ -121,7 +114,7 @@ package manager
 			{
 				var remoteVersion:Object = {}, version = {};
 				var valid_url:String = path.url+"/";
-				
+
 				// local & remote version
 				try {
 					remoteVersion = JSON.parse(e.currentTarget.data);
@@ -130,22 +123,45 @@ package manager
 				
 				// merge version
 				var diffs:Array = [];
-				for( var key:* in remoteVersion ) 
+				for( var key:* in version ) 
 				{
-					if( !(key in version) ) {
-						version[key] = remoteVersion;
-					} else {
-						if( remoteVersion[key].h != version[key].h )
-							diffs.push( valid_url+key );
-					}
+					if( !(key in remoteVersion) ) 
+						diffs.push( key );
+					else if( remoteVersion[key].h != version[key].h )
+						diffs.push( key );
+				}
+				
+				var countor = 0;
+				function check() {
+					countor ++;
+					if( countor == diffs.length ) onComplete("true");
 				}
 				for each( var item:* in diffs ) 
-					trace(item);
+				{
+					self.oss_upload_file_aux( 
+						new File( valid_url+ item ), tag+"/"+item,
+						function (text:String):void // onComplete
+						{
+							check();
+							trace("[成功]"+text);
+						},
+						function (text:String):void // onError
+						{	
+							check();
+							trace("[失败]"+text);
+						}
+					);
+				}
 			});
-			loader.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void
-			{
-				onError("[IO-ERROR]"+e.text);
-			});
+			loader.addEventListener(IOErrorEvent.IO_ERROR, 
+				function(e:IOErrorEvent):void
+				{
+					onComplete("[IO-ERROR]"+e.text);
+				}
+			);
+			loader.addEventListener(
+				HTTPStatusEvent.HTTP_RESPONSE_STATUS, function(e:HTTPStatusEvent):void {}
+			);
 			loader.load( new URLRequest( kOSS_ADDRESS + kOSS_BUCKET + "/"+tag+"/"+version ) );
 		}
 		
@@ -166,15 +182,15 @@ package manager
 			}
 		}
 		
-		private function oss_upload_file_aux(file:File, fileKey:String, onComplete:Function, onError:Function):void {
+		private function oss_upload_file_aux(file:File, remote_path:String, onComplete:Function, onError:Function):void {
 			file.addEventListener(Event.COMPLETE, function(e:Event):void {
 				var urlRequest:URLRequest = new URLRequest();
 				urlRequest.method = URLRequestMethod.PUT;
-				urlRequest.url = STATIC_SERVER_ADDRESS+_versionPrefix+"/"+fileKey;
+				urlRequest.url = STATIC_SERVER_ADDRESS+remote_path;
 				
 				var headers:Array = [];
 				var md5:String = "";
-				var extension:String = fileKey.substring(fileKey.lastIndexOf(".")+1);
+				var extension:String = remote_path.substring(remote_path.lastIndexOf(".")+1);
 				if (extension == "js" || extension == "json") {
 					headers.push( new URLRequestHeader("Content-Encoding","gzip") );
 					var gzipEncoder:GZIPBytesEncoder = new GZIPBytesEncoder();
@@ -187,10 +203,10 @@ package manager
 					urlRequest.data = file.data;
 				}
 				
-				var date = new Date();
-				var token = getToken(
+				var date:Date = new Date();
+				var token:String = getToken(
 					URLRequestMethod.PUT, md5, "application/octet-stream", 
-					date, "/"+BUCKET+"/"+_versionPrefix+"/"+fileKey
+					date, "/"+BUCKET+"/"+remote_path
 				);
 
 				headers.push( new URLRequestHeader("Date",RFCTimeFormat.toRFC802(date)) );
@@ -204,18 +220,18 @@ package manager
 				
 				var urlLoader:URLLoader = new URLLoader();
 				urlLoader.addEventListener(IOErrorEvent.IO_ERROR, 
-					function(e:IOErrorEvent) {
+					function(e:IOErrorEvent):void {
 						onError( "[IO-ERROR]"+e.text );
 					}
 				);
 				urlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, 
-					function(e:SecurityErrorEvent) {
+					function(e:SecurityErrorEvent):void {
 						onError( "[SECURITY-ERROR]"+e.text );
 					}
 				);
 				
 				urlLoader.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, 
-					function(e:HTTPStatusEvent) {
+					function(e:HTTPStatusEvent):void {
 						if( e.status == 200 )
 							onComplete( e.responseURL );
 						else 
@@ -225,51 +241,6 @@ package manager
 				urlLoader.load(urlRequest);
 			});
 			file.load();
-		}
-		
-		private function onOldVersionLoad(e:Event):void {
-			var oldDict:Object;
-			try {
-				oldDict = JSON.parse(e.currentTarget.data);
-			}
-			catch (e:Error) {
-				oldDict = new Object();
-			}
-			_needToUpload = new Vector.<String>();
-			for (var key:String in _versionDict) {
-				if (oldDict[key]) {
-					if (oldDict[key]["h"] != _versionDict[key]["h"]) {
-						oldDict[key] = _versionDict[key];
-						_needToUpload.push(key);
-					}
-				}
-				else {
-					oldDict[key] = _versionDict[key];
-					_needToUpload.push(key);
-				}
-			}
-			
-			var tmpDirectory:String = _localDirectoryPrefix.substring(0, _localDirectoryPrefix.lastIndexOf("/",_localDirectoryPrefix.length-2));
-			var versionFile:File = new File(tmpDirectory+"/version.json");
-			var fileStream:FileStream = new FileStream();
-			fileStream.open(versionFile, FileMode.WRITE);
-			fileStream.writeUTFBytes(JSON.stringify(oldDict));
-			fileStream.close();
-			
-			//uploadFile(versionFile, "version.json");
-		}
-		
-		private function onOldVersionLoadError(e:IOErrorEvent):void {
-			trace("old version file load error");
-			_uploadMsg += e.text+"\n信息: IO error\n";
-			onOldVersionLoad(null);
-		}
-		
-		private function checkFinish():void {
-			if (_numUploaded == _needToUpload.length+1) {
-				Alert.show(_uploadMsg, "上传日志");
-				_isUploading = false;
-			}
 		}
 		
 		private function getToken(verb:String, md5:String, type:String, date:Date, filepath:String):String {
