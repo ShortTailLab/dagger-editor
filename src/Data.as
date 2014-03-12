@@ -184,76 +184,69 @@ package
 			// async loading
 			// ---------------------------------------------------------------
 			// exceptional case, bad design, refactor this.
-			var self:* = this; this.skins = new Dictionary;
-			var onexceldone:Function = function(e:Event):void
-			{	
-				// enemy_profile
-				self.enemy_profile = self.excel_reader.data;
-				//Utils.dumpObject(self.enemy_profile);
-				
-				MapEditor.getInstance().addLog("生成MonsterTable..");
-				self.level2monster = self.excel_reader.genLevel2MonsterTable();
-				MapEditor.getInstance().addLog("生成MonsterTable成功");
-				MapEditor.getInstance().addLog("生成LevelXML..");
-				self.level_xml = self.excel_reader.genLevelXML();
-				MapEditor.getInstance().addLog("生成LevelXML成功");
-				MapEditor.getInstance().addLog("生成LevelIdList..");
-				self.level_list = self.excel_reader.genLevelIdList();
-				MapEditor.getInstance().addLog("生成LevelIdList成功");
-				self.currSelectedLevel = self.level_list[0];
-				
-				var length:Number = 0, countor:Number = 0;
-				var alldone:Function = function(key:String):Function
-				{
-					return function(e:Event):void
-					{
-						var face:String = self.enemy_profile[key].face;
-						var loader:Loader = (e.target as LoaderInfo).loader; 
-						self.skins[face] = Bitmap(loader.content).bitmapData;
-						MapEditor.getInstance().addLog("加载"+key+"成功");
-						if( ++countor >= length ) {
-							MapEditor.getInstance().addLog("全部skin加载完成");
-							self.start();
-						}
-					}
-				}
-					
-				for(var key:String in self.enemy_profile)
+			this.skins = new Dictionary;
+			var self:Object = this;
+			this.updateData(function() { self.start(); } );
+		}
+		
+		private function updateData(onComplete:Function):void
+		{
+			// update data
+			this.enemy_profile = this.genMonstersTable();		
+			MapEditor.getInstance().addLog("生成MonsterTable..");
+			this.level2monster = this.genLevel2MonsterTable();
+			MapEditor.getInstance().addLog("生成MonsterTable成功");
+			MapEditor.getInstance().addLog("生成LevelXML..");
+			this.level_xml = this.genLevelXML();
+			MapEditor.getInstance().addLog("生成LevelXML成功");
+			MapEditor.getInstance().addLog("生成LevelIdList..");
+			this.level_list = this.genLevelIdList();
+			MapEditor.getInstance().addLog("生成LevelIdList成功");
+			this.currSelectedLevel = this.level_list[0];
+			
+			var self:Object = this;
+			var length:Number = 0, countor:Number = 0; 
+			var alldone:Function = function(key:String):Function
+			{
+				return function(e:Event):void
 				{
 					var face:String = self.enemy_profile[key].face;
-					if( self.skins.hasOwnProperty(face) ) continue;
-					
-					self.skins[face] = "icu";
-					
-					var bytes:ByteArray = new ByteArray;
-					var filepath:String = "editor/skins/"+self.enemy_profile[key].face+".png";
-					var file:File = File.desktopDirectory.resolvePath(filepath);
-					if( !file.exists ) continue;
-					
-					length ++;
-					var stream:FileStream = new FileStream();
-					stream.open(file, FileMode.READ);
-					stream.readBytes(bytes);
-					stream.close();
-					
-					var loader:Loader = new Loader;
-					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(key));
-					loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function(){
-						MapEditor.getInstance().addLog("加载"+key+"失败");
-					});
-					loader.loadBytes(bytes);
-					MapEditor.getInstance().addLog("加载"+key+"从"+filepath+"..");
+					var loader:Loader = (e.target as LoaderInfo).loader; 
+					self.skins[face] = Bitmap(loader.content).bitmapData;
+					MapEditor.getInstance().addLog("加载"+key+"成功");
+					if( ++countor >= length ) {
+						MapEditor.getInstance().addLog("全部skin加载完成");
+						onComplete();
+					}
 				}
 			}
-			var file:File = File.desktopDirectory.resolvePath("editor/data/profiles.xlsx");
-			if(file.exists)
+			
+			for(var key:String in this.enemy_profile)
 			{
-				EventManager.getInstance().addEventListener(EventType.EXCEL_DATA_CHANGE, onexceldone);
-				this.excel_reader = new ExcelReader();
-				this.excel_reader.initWithNativePath(file.nativePath);
-			}
-			else Alert.show("profiles.xlsx 丢失！");
-			// ---------------------------------------------------------------
+				var face:String = this.enemy_profile[key].face;
+				if( this.skins.hasOwnProperty(face) ) continue;
+				
+				this.skins[face] = "icu";
+				
+				var bytes:ByteArray = new ByteArray;
+				var filepath:String = "editor/skins/"+this.enemy_profile[key].face+".png";
+				var file:File = File.desktopDirectory.resolvePath(filepath);
+				if( !file.exists ) continue;
+				
+				length ++;
+				var stream:FileStream = new FileStream();
+				stream.open(file, FileMode.READ);
+				stream.readBytes(bytes);
+				stream.close();
+				
+				var loader:Loader = new Loader;
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(key));
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function(){
+					MapEditor.getInstance().addLog("加载"+key+"失败");
+				});
+				loader.loadBytes(bytes);
+				MapEditor.getInstance().addLog("加载"+key+"从"+filepath+"..");
+			}	
 		}
 
 		private function start():void
@@ -585,7 +578,7 @@ package
 				var lid:String = this.level_list[ind];
 				var l_path:String = "level/"+lid+".js";
 				var enemies:Object = {};
-				var c:Object =  this.excel_reader.getChapterDataByLevelId(lid);
+				var c:Object =  this.getChapterDataByLevelId(lid);
 				if( !c )
 				{
 					Alert.show("数据出错！");
@@ -674,15 +667,114 @@ package
 		// parse excel 
 		public function parseChapterProfile(profile:File, onComplete:Function):void
 		{
-			//this.excel_reader = new ExcelReader();
-			//this.excel_reader.initWithNativePath(profile.nativePath);
-			
+			var self:Object = this;
 			var excel_reader:ExcelReader = new ExcelReader();
-			excel_reader.parse( profile, function(raw:Object):void
+			excel_reader.parse( profile, function(raw:Object, msg:String):void
 			{
-				
+				if( !raw ) Alert.show( msg );
+				else self.mergeChapters( raw );
 			});
 				
+		}
+		
+		private function mergeChapters( raw:Object ):void
+		{
+			for( var key:* in raw )
+				this.mChapter[key] = raw[key];
+			
+			var self:Object = this;
+			this.updateData(function():void { self.start(); });
+		}
+		
+		// ------------------------------------------------------------------
+		// updates
+		private function genMonstersTable():Object
+		{
+			var ret:Object = {};
+			for each( var chapter:* in this.mChapter )
+				for each( var level:* in chapter.levels )
+					for( var key:* in level.monsters )
+						ret[key] = level.monsters[key];
+			return ret;
+		}
+		
+		private function genLevel2MonsterTable():Object
+		{
+			var ret:Object = {};
+			for each( var item:* in this.mChapter )
+			{
+				var kids:Object = item.levels;
+				for each( var l:* in kids )
+				{ 
+					ret[l.level_id] = l.monsters;
+				}
+			}
+			
+			return ret;
+		}
+				
+		private function getChapterDataByLevelId(id:*):*
+		{
+			for each( var item:* in this.mChapter )
+			{
+				var kids:Object = item.levels;
+				for each( var l:* in kids )
+				{
+					if( l.level_id == id )
+					{
+						return {
+							chapter_id : item.chapter_id,
+							chapter_name : item.chapter_name,
+							level_name : l.level_name
+						};
+					}
+				}
+			}
+			return null;
+		}
+				
+		private function genLevelIdList():Array
+		{
+			var ret:Array = [];
+			for each( var item:* in this.mChapter )
+			{
+				var kids:Object = item.levels;
+				for each( var l:* in kids )
+					ret.push(l.level_id);	
+			}
+			return ret;
+		}
+				
+		private function genLevelXML():XML 
+		{
+			var ret:XML = <root></root>;
+			for each( var item:* in this.mChapter )
+			{
+				var kids:Object = item.levels;
+						
+				var lastNode:XML = new XML("<node label='" + item.chapter_name + "'></node>")
+				ret.appendChild(lastNode);
+						
+				var levelList:Array = new Array;
+						
+				for each(var l:Object in kids)
+					levelList.push(l);
+		
+				// sort by level id
+				levelList.sortOn("level_id");
+						
+				for(var i=0; i<levelList.length; i++)
+				{
+					var level:Object = levelList[i];
+							
+					var node:XML = new XML("<level></level>");
+					node.@label = level.level_name;
+					node.@level_id = level.level_id;
+							
+					lastNode.appendChild(node);
+				}
+			}
+			return ret;
 		}
 	}
 }

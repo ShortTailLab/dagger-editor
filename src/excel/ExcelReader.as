@@ -8,15 +8,8 @@ package excel
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
 	import flash.utils.ByteArray;
-	import flash.utils.Dictionary;
-	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
-	import mx.utils.StringUtil;
-	
-	import manager.EventManager;
-	import manager.EventType;
-	import manager.GameEvent;
 
 	public class ExcelReader
 	{			
@@ -41,7 +34,7 @@ package excel
 				var titles:Vector.<String> = self.mExcelLoader.getSheetNames();
 				if( titles.length <= 0 ) 
 				{
-					onComplete(null);
+					onComplete(null, "无sheet存在");
 					return;
 				}
 				
@@ -77,7 +70,7 @@ package excel
 			if( !struct.hasOwnProperty("Chapter") || 
 				!struct.hasOwnProperty("Level") )
 			{
-				onComplete(null);
+				onComplete(null, "无Chapter及Level数据结构定义");
 				return;
 			}
 			
@@ -107,7 +100,10 @@ package excel
 				{
 					configs = this.loadItems(sheet, key2indices, enum_type[0], enum_configs[0], iterLine);
 					if( !configs ) 
-						return false;
+					{
+						onComplete(null, String(iterLine)+"章节未定义需要的列");
+						return;
+					}
 					nowChapter = configs[enum_key[0]];
 					if( !(nowChapter in raw) ) 
 						raw[nowChapter] = {};
@@ -123,7 +119,10 @@ package excel
 				{
 					configs = this.loadItems(sheet, key2indices, enum_type[1], enum_configs[1], iterLine);
 					if( !configs ) 
-						return false;
+					{
+						onComplete(null, String(iterLine)+"关卡未定义需要的列");
+						return;
+					}
 					nowLevel = configs[enum_key[1]];
 					if( !(nowLevel in raw[nowChapter].levels) )
 						raw[nowChapter].levels[nowLevel] = {};
@@ -142,12 +141,18 @@ package excel
 						key2indices["monster_type"]+String(iterLine)
 					);
 					if( type == "" ) 
-						return false;
+					{
+						onComplete(null, String(iterLine)+"怪物未定义id");
+						return;
+					}
 					var items:Object = Utils.merge2Object(struct[type], enum_must[2]);
 					configs = this.loadItems(sheet, key2indices, type, items, iterLine);
 					
 					if( !configs ) 
-						return false;
+					{
+						onComplete(null, String(iterLine)+"怪物未定义需要的列");
+						return;
+					}
 					var nowMonster:String = configs[enum_key[2]];
 					raw[nowChapter].levels[nowLevel].monsters[nowMonster] = configs;
 					flag = true;
@@ -159,6 +164,7 @@ package excel
 				iterLine ++;
 			}
 			
+			onComplete(raw);
 			return true;
 		}
 		
@@ -194,7 +200,6 @@ package excel
 			{
 				if( !t2i.hasOwnProperty(key) )
 				{
-					Alert.show(type+" 未定义需要的列 : "+key);
 					return null;
 				}
 				var val:String = sheet.getCellValue(t2i[key]+String(line));
