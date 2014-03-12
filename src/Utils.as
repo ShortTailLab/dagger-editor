@@ -11,6 +11,8 @@ package
 	import mx.core.UIComponent;
 	
 	import behaviorEdit.BType;
+	
+	import by.blooddy.crypto.MD5;
 
 	public class Utils
 	{
@@ -278,6 +280,15 @@ package
 				trace( tabs + "[" + prop + "] -> " + obj[ prop ] );
 				dumpObject( obj[ prop ], level + 1 );
 			}
+		}
+		
+		static public function getMD5Sum(file:File):String {
+			var fileStream:FileStream = new FileStream();
+			fileStream.open(file, FileMode.READ);
+			var bytesArray:ByteArray = new ByteArray();
+			fileStream.readBytes(bytesArray, 0, fileStream.bytesAvailable);
+			fileStream.close();
+			return MD5.hashBytes(bytesArray);
 		}
 	}
 }

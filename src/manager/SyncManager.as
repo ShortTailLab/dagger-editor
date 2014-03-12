@@ -45,14 +45,11 @@ package manager
 		private const BUCKET:String 				= "dagger-static";
 		private const GAMELEVEL_API_ADDRESS:String 	= "https://sh-test.shorttaillab.com/api/gameLevel"
 		
-		public function SyncManager()
-		{
-		}
+		public function SyncManager() {}
 		
-		public static function getInstance():SyncManager {
-			if (!_intance) {
-				_intance = new SyncManager();
-			}
+		public static function getInstance():SyncManager 
+		{
+			if (!_intance) _intance = new SyncManager();
 			return _intance;
 		}
 		
@@ -103,90 +100,131 @@ package manager
 		 * @return 
 		 * 
 		 */
-		public function uploadFilesToServer(localDiretory:File, versionPrefix:String="dagger"):Boolean {
-			if (_isUploading) {
-				return true;
+		public function uploadFilesToServer(localDirectory:File, versionPrefix:String="dagger"):Boolean {
+			this.oss_upload_directory( localDirectory, versionPrefix, "LEVEL-VERSION.json", function(){}, function(){});
+			return true;
+		}
+		
+		private const kOSS_ADDRESS:String 	= "http://oss.aliyuncs.com/";
+		private const kOSS_BUCKET:String 	= "dagger-static";
+		public function oss_upload_directory( path:File, tag:String, version:String, onComplete:Function, onError:Function):void 
+		{
+			if( !path.exists || !path.isDirectory ) {
+				trace( path+" is not a valid directory");
+				return;
 			}
-			_isUploading = true;
-			_versionPrefix = versionPrefix;
-			_localDirectoryPrefix = localDiretory.url;
-			_uploadMsg = "";
-			_numUploaded = 0;
-			if (_localDirectoryPrefix.charAt(_localDirectoryPrefix.length-1) != "/") {
-				_localDirectoryPrefix += "/";
-			}
-			if (localDiretory.exists && localDiretory.isDirectory) {
-				scanDirectory(localDiretory);
-				var oldVersionUrl:String = STATIC_SERVER_ADDRESS+versionPrefix+"/version.json";
-				var urlLoader:URLLoader = new URLLoader();
-				urlLoader.addEventListener(Event.COMPLETE, function(e){
-					onOldVersionLoad(e);
-					for each (var fileKey:String in _needToUpload) {
-						var file:File = new File(_localDirectoryPrefix+fileKey);
-						if (file.exists) {
-							uploadFile(file, fileKey);
-						}
-					}
-				});
-				urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onOldVersionLoadError);
-				urlLoader.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, function(e:HTTPStatusEvent):void {
-					for (var i:int = 0; i < e.responseHeaders.length; i++) {
-						if (e.responseHeaders[i]["name"] == "Date") {
-							_serverDate = RFCTimeFormat.fromRFC802(e.responseHeaders[i]["value"]);
-							trace("server time: ", RFCTimeFormat.toRFC802(_serverDate));
-						}
-					}
-				});
-				urlLoader.load(new URLRequest(oldVersionUrl));
+			var self = this;
+			
+			// load remote version file
+			var loader:URLLoader = new URLLoader();
+			loader.addEventListener( Event.COMPLETE, function(e:Event):void 
+			{
+				var remoteVersion:Object = {}, version = {};
+				var valid_url:String = path.url+"/";
 				
-				return true;
-			}
-			else {
-				return false;
+				// local & remote version
+				try {
+					remoteVersion = JSON.parse(e.currentTarget.data);
+				} catch(e:Error) {};
+				self.oss_gen_local_version( path, valid_url, tag, version );
+				
+				// merge version
+				var diffs:Array = [];
+				for( var key:* in remoteVersion ) 
+				{
+					if( !(key in version) ) {
+						version[key] = remoteVersion;
+					} else {
+						if( remoteVersion[key].h != version[key].h )
+							diffs.push( valid_url+key );
+					}
+				}
+				for each( var item:* in diffs ) 
+					trace(item);
+			});
+			loader.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void
+			{
+				onError("[IO-ERROR]"+e.text);
+			});
+			loader.load( new URLRequest( kOSS_ADDRESS + kOSS_BUCKET + "/"+tag+"/"+version ) );
+		}
+		
+		private function oss_gen_local_version( path:File, prefix:String, tag:String, version:Object ):void
+		{
+			for each( var item:File in path.getDirectoryListing() )
+			{
+				if( item.name.charAt(0) == "." ) continue;
+				if( item.isDirectory ) this.oss_gen_local_version(item, prefix, tag, version);
+				else{
+					var key:String = item.url.substring(prefix.length);
+					version[key] = {
+						d : tag,
+						p : 0,
+						h : Utils.getMD5Sum(item)
+					}
+				}
 			}
 		}
 		
-		public function uploadFileToServerPath(localFile:File, serverPath:String, versionPrefix:String="dagger"):Boolean
-		{
-			if (_isUploading) {
-				return true;
-			}
-			_isUploading = true;
-			_versionPrefix = versionPrefix;
-			_localDirectoryPrefix = localFile.url;
-			_uploadMsg = "";
-			_numUploaded = 0;
-			if (localFile.exists && !localFile.isDirectory) {
-				var versionDicKey:String = serverPath+"/"+localFile.name;
-				this.makeFileVersionDic(_versionDict, localFile, versionDicKey, _versionPrefix);
+		private function oss_upload_file_aux(file:File, fileKey:String, onComplete:Function, onError:Function):void {
+			file.addEventListener(Event.COMPLETE, function(e:Event):void {
+				var urlRequest:URLRequest = new URLRequest();
+				urlRequest.method = URLRequestMethod.PUT;
+				urlRequest.url = STATIC_SERVER_ADDRESS+_versionPrefix+"/"+fileKey;
 				
-				var oldVersionUrl:String = STATIC_SERVER_ADDRESS+versionPrefix+"/version.json";
+				var headers:Array = [];
+				var md5:String = "";
+				var extension:String = fileKey.substring(fileKey.lastIndexOf(".")+1);
+				if (extension == "js" || extension == "json") {
+					headers.push( new URLRequestHeader("Content-Encoding","gzip") );
+					var gzipEncoder:GZIPBytesEncoder = new GZIPBytesEncoder();
+					var data:ByteArray = gzipEncoder.compressToByteArray(file.data);
+					urlRequest.data = data;
+					md5 = MD5.hashBytes(data);
+				}
+				else {
+					md5 = Utils.getMD5Sum(file);
+					urlRequest.data = file.data;
+				}
+				
+				var date = new Date();
+				var token = getToken(
+					URLRequestMethod.PUT, md5, "application/octet-stream", 
+					date, "/"+BUCKET+"/"+_versionPrefix+"/"+fileKey
+				);
+
+				headers.push( new URLRequestHeader("Date",RFCTimeFormat.toRFC802(date)) );
+				headers.push( new URLRequestHeader("Content-Md5", md5) );
+				headers.push( new URLRequestHeader("Content-Type", "application/octet-stream") );
+			 	headers.push( new URLRequestHeader(
+					"Authorization", "OSS "+OSS_ACCESS_KEY_ID+":"+token
+				) );
+				
+				urlRequest.requestHeaders = headers;
+				
 				var urlLoader:URLLoader = new URLLoader();
-				
-				urlLoader.addEventListener(Event.COMPLETE, function(e){
-					onOldVersionLoad(e);
-					
-					for each (var fileKey:String in _needToUpload) {
-						uploadFile(localFile, fileKey);
+				urlLoader.addEventListener(IOErrorEvent.IO_ERROR, 
+					function(e:IOErrorEvent) {
+						onError( "[IO-ERROR]"+e.text );
 					}
-				});
-				
-				urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onOldVersionLoadError);
-				urlLoader.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, function(e:HTTPStatusEvent):void {
-					for (var i:int = 0; i < e.responseHeaders.length; i++) {
-						if (e.responseHeaders[i]["name"] == "Date") {
-							_serverDate = RFCTimeFormat.fromRFC802(e.responseHeaders[i]["value"]);
-							trace("server time: ", RFCTimeFormat.toRFC802(_serverDate));
-						}
+				);
+				urlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, 
+					function(e:SecurityErrorEvent) {
+						onError( "[SECURITY-ERROR]"+e.text );
 					}
-				});
-				urlLoader.load(new URLRequest(oldVersionUrl));
+				);
 				
-				return true;
-			}
-			else {
-				return false;
-			}
+				urlLoader.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, 
+					function(e:HTTPStatusEvent) {
+						if( e.status == 200 )
+							onComplete( e.responseURL );
+						else 
+							onError( "[ERROR]"+e.status );
+					}
+				);
+				urlLoader.load(urlRequest);
+			});
+			file.load();
 		}
 		
 		private function onOldVersionLoad(e:Event):void {
@@ -218,90 +256,7 @@ package manager
 			fileStream.writeUTFBytes(JSON.stringify(oldDict));
 			fileStream.close();
 			
-			uploadFile(versionFile, "version.json");
-		}
-		
-		private function uploadFile(file:File, fileKey:String):void {
-			file.addEventListener(Event.COMPLETE, function(e:Event):void {
-				var urlRequest:URLRequest = new URLRequest();
-				urlRequest.method = URLRequestMethod.PUT;
-				urlRequest.url = STATIC_SERVER_ADDRESS+_versionPrefix+"/"+fileKey;
-				
-				var extension:String = fileKey.substring(fileKey.lastIndexOf(".")+1);
-				var mimeType:String = MimeTypeMap.getMimeType(extension);
-				if (mimeType == null) {
-					mimeType = "application/octet-stream";
-				}
-				
-				if (_serverDate == null) {
-					_uploadMsg += "error: empty server date\n";
-					_serverDate = new Date();
-				}
-				
-				var headers:Array = new Array();
-				var urlHeader:URLRequestHeader = new URLRequestHeader("Date",RFCTimeFormat.toRFC802(_serverDate));
-				headers.push(urlHeader);
-				urlHeader = new URLRequestHeader("Content-Type", mimeType);
-				headers.push(urlHeader);
-				
-				var signature:String;
-				var md5:String;
-				if (extension == "js" || extension == "json") {
-					urlHeader = new URLRequestHeader("Content-Encoding","gzip");
-					headers.push(urlHeader);
-					var gzipEncoder:GZIPBytesEncoder = new GZIPBytesEncoder();
-					var data:ByteArray = gzipEncoder.compressToByteArray(file.data);
-					urlRequest.data = data;
-					md5 = MD5.hashBytes(data);
-				}
-				else {
-					md5 = getMD5Sum(file);
-					urlRequest.data = file.data;
-				}
-				signature = getSignature(URLRequestMethod.PUT, md5, mimeType, _serverDate, fileKey);
-				urlHeader = new URLRequestHeader("Content-Md5", md5);
-				headers.push(urlHeader);
-				urlHeader = new URLRequestHeader("Authorization", "OSS "+OSS_ACCESS_KEY_ID+":"+signature);
-				headers.push(urlHeader);
-				
-				urlRequest.requestHeaders = headers;
-				
-				var urlLoader:URLLoader = new URLLoader();
-				urlLoader.addEventListener(Event.COMPLETE, onUploadComplete);
-				urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onIOError);
-				urlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onSecurityError);
-				urlLoader.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, onResponse);
-				urlLoader.load(urlRequest);
-			});
-			file.load();
-		}
-		
-		private function onResponse(e:HTTPStatusEvent):void {
-			trace("response code ", e.status, JSON.stringify(e.responseHeaders));
-			_uploadMsg += "上传: "+(e as HTTPStatusEvent).responseURL+"\n状态: "+((e as HTTPStatusEvent).status==200?"成功":("失败 "+(e as HTTPStatusEvent).status))+"\n";
-		}
-		
-		private function onUploadComplete(e:Event):void {
-			trace("success");
-			if ((e.currentTarget as URLLoader).data) {
-				_uploadMsg += "信息: "+JSON.stringify((e.currentTarget as URLLoader).data) +"\n";
-			}
-			_numUploaded++;
-			checkFinish();
-		}
-		
-		private function onIOError(e:IOErrorEvent):void {
-			trace("io error");
-			_uploadMsg += e.text+"\n信息: IO error\n";
-			_numUploaded++;
-			checkFinish();
-		}
-		
-		private function onSecurityError(e:SecurityErrorEvent):void {
-			trace("security error");
-			_uploadMsg += e.text+"\n信息: security error\n";
-			_numUploaded++;
-			checkFinish();
+			//uploadFile(versionFile, "version.json");
 		}
 		
 		private function onOldVersionLoadError(e:IOErrorEvent):void {
@@ -317,63 +272,17 @@ package manager
 			}
 		}
 		
-		private function scanDirectory(directory:File):void {
-			var list:Array = directory.getDirectoryListing();
-			for each (var file:File in list) {
-				if (file.isDirectory) {
-					scanDirectory(file);
-				}
-				else {
-					if (file.name.charAt(0) == ".") {
-						continue;
-					}
-					var key:String = file.url.substring(this._localDirectoryPrefix.length);
-					makeFileVersionDic(_versionDict, file, key, _versionPrefix);
-				}
-			}
-		}
-		
-		private function makeFileVersionDic(dic:Object, file:File, key:String, versionPrefix:String):void
-		{
-			dic[key] = new Object();
-			dic[key]["d"] = versionPrefix;
-			if (file.url.indexOf(".js") != -1) {
-				dic[key]["p"] = 0;
-			}
-			else {
-				dic[key]["p"] = 0;
-			}
-			dic[key]["h"] = getMD5Sum(file);
-		}
-		
-		private function getMD5Sum(file:File):String {
-			var fileStream:FileStream = new FileStream();
-			fileStream.open(file, FileMode.READ);
-			var bytesArray:ByteArray = new ByteArray();
-			fileStream.readBytes(bytesArray, 0, fileStream.bytesAvailable);
-			fileStream.close();
-			return MD5.hashBytes(bytesArray);
-		}
-		
-		/**
-		 * 
-		 * @param verb
-		 * @param md5
-		 * @param type
-		 * @param date
-		 * @param fileKey  file key in versionDict, e.g. level/demo.js
-		 * @return 
-		 * 
-		 */
-		private function getSignature(verb:String, md5:String, type:String, date:Date, fileKey:String):String {
-			var content:String = verb+"\n"+md5+"\n"+type+"\n"+RFCTimeFormat.toRFC802(date)+"\n"+"/"+BUCKET+"/"+_versionPrefix+"/"+fileKey;
+		private function getToken(verb:String, md5:String, type:String, date:Date, filepath:String):String {
+			var content:String = verb+"\n"+md5+"\n"+type+"\n"+RFCTimeFormat.toRFC802(date)+"\n"+filepath;
+			
 			var keyBytesArray:ByteArray = new ByteArray();
 			keyBytesArray.writeMultiByte(OSS_ACCESS_KEY_SECRET, "utf-8");
+			
 			var contentByteArray:ByteArray = new ByteArray();
 			contentByteArray.writeMultiByte(content, "utf-8");
-			var hmac:HMAC = Crypto.getHMAC("hmac-sha1");
-			var result:ByteArray = hmac.compute(keyBytesArray, contentByteArray);
-			trace("signature content: "+content);
+			
+			var result:ByteArray = Crypto.getHMAC("hmac-sha1").compute(keyBytesArray, contentByteArray);
+			trace("\nsignature content: "+content+"\n");
 			return Base64.encode(result);
 		}
 	}
