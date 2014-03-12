@@ -230,7 +230,7 @@
 			
 			private function uploadConfigFile(e:Event):void
 			{
-				var self = this;
+				var self:* = this;
 				var browser:File = new File(Data.getInstance().conf.sendFileCache);
 				browser.browseForOpen("请选择上传的配置文件");
 				browser.addEventListener(Event.SELECT, function (e:Event):void {
@@ -241,18 +241,9 @@
 					
 					file.addEventListener(Event.COMPLETE, function(e:Event):void {
 						
-						var url:String = File.desktopDirectory.resolvePath("editor/export/").url;
-						var vf:File = new File(url+"/config/"+file.name);
-						var fstream:FileStream = new FileStream();
-						fstream.open(vf, FileMode.WRITE);
-						fstream.writeBytes( file.data );
-						fstream.close();
-						
-						trace( vf.url );
-						
 						var mask:* = self.MakeMask("正在上传配置文件…");
-						SyncManager.getInstance().uploadConfigFileToOSS( vf,
-							function(t):void 
+						SyncManager.getInstance().uploadConfigFileToOSS( file,
+							function(t:String):void 
 							{
 								self.ReleaseMask( mask );
 								Alert.show( t );

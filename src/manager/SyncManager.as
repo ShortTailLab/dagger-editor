@@ -77,7 +77,22 @@ package manager
 
 		public function uploadConfigFileToOSS(file:File, onComplete:Function):void 
 		{
-			this.oss_upload( file, "dagger-configs", "CONFIG-VERSION.json", onComplete );
+			var path:File = File.desktopDirectory.resolvePath("editor/tmp/");
+			if( path.isDirectory ) path.deleteDirectory(true);
+			
+			var tmp:File = new File(path.url+"/config/"+file.name);
+			var fstream:FileStream = new FileStream();
+			fstream.open( tmp, FileMode.WRITE );
+			fstream.writeBytes( file.data );
+			fstream.close();
+				
+			this.oss_upload( path, "dagger-configs", "CONFIG-VERSION.json", 
+				function(msg:String):void
+				{
+					if( path.isDirectory ) path.deleteDirectory(true);
+					onComplete(msg);
+				}
+			);
 		}
 		
 		public function uploadLevelsToOSS(dir:File, tag:String, onComplete:Function):void 
