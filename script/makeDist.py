@@ -13,6 +13,8 @@ import gzip
 import thread
 from cStringIO import StringIO
 
+OSS_ACCESS_KEY = "z7caZBtJU2kb8g3h"
+OSS_ACCESS_PRIVATE_KEY = "fuihVj7qMCOjExkhKm2vAyEYhBBv8R"
 BUCKET = "dagger-static"
 
 CLIENT_DIRECTORIES = ["ccbi", "res", "src"]
@@ -154,19 +156,17 @@ def dispatcher(oss, version, tag, limit):
         if count == total: return
 
 if __name__ == "__main__":
+    oss = OssAPI("oss.aliyuncs.com", OSS_ACCESS_KEY, OSS_ACCESS_PRIVATE_KEY)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("directory")
     parser.add_argument("tag")
     parser.add_argument("target")
     parser.add_argument("version")
-    parser.add_argument("key")
-    parser.add_argument("token")
     parser.add_argument("-m", "--merge", default=True)
 
     args = parser.parse_args()
-    oss = OssAPI("oss.aliyuncs.com", args.key, args.token);
-    
+
     VERSION_FILE = args.version
     CLIENT_DIRECTORIES = [args.target]
     IS_MERGE = args.merge

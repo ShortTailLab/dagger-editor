@@ -100,23 +100,7 @@ package
 				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/dynamic_args.json",
 				suffix: "dynamic_args.json"
 				//type: URLLoaderDataFormat.TEXT
-			},
-			{
-				src: "http://oss.aliyuncs.com/dagger-static/editor-script/makeDist.py",
-				suffix: "makeDist.py"				
-			},
-			{
-				src: "http://oss.aliyuncs.com/dagger-static/editor-script/oss_api.py",
-				suffix: "oss_api.py"				
-			},
-			{
-				src: "http://oss.aliyuncs.com/dagger-static/editor-script/oss_util.py",
-				suffix: "oss_util.py"				
-			},
-			{
-				src: "http://oss.aliyuncs.com/dagger-static/editor-script/oss_xml_handler.py",
-				suffix: "oss_xml_handler.py"				
-			},
+			}
 		];
 		// where is the synchronous loader? WTF...
 		private function sync():void
