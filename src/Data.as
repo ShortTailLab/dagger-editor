@@ -258,9 +258,6 @@ package
 			{
 				for(var orgItem:* in this.enemy_bh)
 				{
-					//clear the items which enemy id is invalid
-					if(!this.enemy_profile.hasOwnProperty(orgItem))
-						delete this.enemy_bh[orgItem];
 					//clear the unexist behaviors of each item.
 					var behaviorsOfEnemy:Array = this.enemy_bh[orgItem] as Array;
 					if( !behaviorsOfEnemy ) continue;
