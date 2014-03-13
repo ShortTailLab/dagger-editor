@@ -255,6 +255,32 @@
 				});
 			}
 			
+			private function parseExcel(e:Event):void
+			{
+				var self:* = this;
+				var browser:File = new File(Data.getInstance().conf.excelPathCache);
+				browser.browseForOpen("请选择上传的场景文件");
+				browser.addEventListener(Event.SELECT, function (e:Event):void {
+					
+					var file:File = e.target as File;
+					Data.getInstance().conf.excelPathCache = file.nativePath;
+					Data.getInstance().saveConf();
+					
+					file.addEventListener(Event.COMPLETE, function(e:Event):void {
+						
+						var mask:* = self.MakeMask("正在上传配置文件…");
+						Data.getInstance().parseChapterProfile( file, 
+							function(t:String):void
+							{
+								self.ReleaseMask( mask );
+								Alert.show( t );
+							}
+						);
+					});
+					file.load();
+				});
+			}
+			
 			public function addLog(content:String):void {
 				_log = _log+(_log==""?"":"\n")+content;
 				var logFile:File = File.desktopDirectory.resolvePath("editor/log.txt");
@@ -291,7 +317,7 @@
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
 				<s:Label text="编辑器" color="0x777777"/>	
-				<s:Button id="parse_excel" label="表单解析" click="parseExcel(event)"/>
+				<s:Button id="parse_excel" label="场景文件" click="parseExcel(event)"/>
 				<s:Button id="config" label="配置文件" click="uploadConfigFile(event)"/>
 				<s:Button id="levels_to_game_server" label="关卡同步" click="syncServer(event)"/>
 			</s:HGroup>

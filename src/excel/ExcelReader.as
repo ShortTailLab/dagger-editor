@@ -39,7 +39,7 @@ package excel
 				}
 				
 				var sheet = self.mExcelLoader.worksheet(titles[0]);
-				this.parseSheet(sheet, onComplete);
+				self.parseSheet(sheet, onComplete);
 				self.mExcelLoader.close();
 			});
 			this.mExcelLoader.loadFromByteArray( bytes );
@@ -156,8 +156,6 @@ package excel
 					var nowMonster:String = configs[enum_key[2]];
 					raw[nowChapter].levels[nowLevel].monsters[nowMonster] = configs;
 					flag = true;
-					
-					raw[nowMonster] = configs;
 				}
 				
 				if(!flag) break;
@@ -165,7 +163,6 @@ package excel
 			}
 			
 			onComplete(raw);
-			return true;
 		}
 		
 		private function process_val(prefix:String, key:String, value:String):*
@@ -212,100 +209,5 @@ package excel
 		{
 			return sheet.getCellValue((t2i[key]+String(line))) != "";
 		}
-		
-//		public function genLevel2MonsterTable():Object
-//		{
-//			var ret:Object = {};
-//			for each( var item:* in this.mRawData )
-//			{
-//				var kids:Object = item.c;
-//				for each( var l:* in kids )
-//				{ 
-//					ret[l.r.level_id] = l.c;
-//				}
-//			}
-//			return ret;
-//		}
-//		
-//		public function getChapterDataByLevelId(id:*):*
-//		{
-//			for each( var item:* in this.mRawData )
-//			{
-//				var kids:Object = item.c;
-//				for each( var l:* in kids )
-//				{
-//					if( l.r.level_id == id )
-//					{
-//						return {
-//							chapter_id : item.r.chapter_id,
-//							chapter_name : item.r.chapter_name,
-//							level_name : l.r.level_name
-//						};
-//					}
-//				}
-//			}
-//			return null;
-//		}
-//		
-//		public function genLevelIdList():Array
-//		{
-//			var ret:Array = [];
-//			for each( var item:* in this.mRawData )
-//			{
-//				var kids:Object = item.c;
-//				for each( var l:* in kids )
-//				{ 
-//					var level:Object = l.r;
-//					ret.push(level.level_id);
-//				}
-//			}
-//			return ret;
-//		}
-//		
-//		public function genLevelXML():XML 
-//		{
-//			var ret:XML = <root></root>;
-//			for each( var item:* in this.mRawData )
-//			{
-//				var chapter:Object = item.r;
-//				var kids:Object = item.c;
-//				
-//				var lastNode:XML = new XML("<node label='" + chapter.chapter_name + "'></node>")
-//				ret.appendChild(lastNode);
-//				
-//				var levelList:Array = new Array;
-//				
-//				for each(var l:Object in kids)
-//				{
-//					levelList.push(l.r);
-//				}
-//
-//				// sort by level id
-//				levelList.sortOn("level_id");
-//				
-//				for(var i=0; i<levelList.length; i++)
-//				{
-//					var level:Object = levelList[i];
-//					
-//					//var dd:String = "chapter name: {0}, id: {1}, level name: {2}";
-//					//trace(StringUtil.substitute(dd, chapter.chapter_name, level.level_id, level.level_name));
-//					
-//					var node:XML = new XML("<level></level>");
-//					node.@label = level.level_name;
-//					node.@level_id = level.level_id;
-//					
-//					lastNode.appendChild(node);
-//				}
-//			}
-//			return ret;
-//		}
-//
-//		public function get data():Object {
-//			return this.mMonsterData;
-//		}
-//		
-//		public function get raw():Object {
-//			return this.mRawData;
-//		}
 	}
 }

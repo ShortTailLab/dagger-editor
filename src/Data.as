@@ -175,11 +175,11 @@ package
 			//this record the behaviors' name of each enemy
 			this.enemy_bh = this.loadJson("editor/saved/enemy_bh.json", false) || {};
 			this.enemy_trigger = this.loadJson("editor/saved/enemy_trigger.json", false) || {};
-
+			this.mChapter = this.loadJson("editor/saved/chapter.json", false) || {};
+			
 			// load configs 
 			this.dynamic_args = this.loadJson("editor/data/dynamic_args.json");
 			this.bh_node = this.loadJson("editor/data/bt_node_format.json");
-			this.mChapter = this.loadJson("editor/data/chapter.json", false) || {};
 			
 			// async loading
 			// ---------------------------------------------------------------
@@ -247,6 +247,8 @@ package
 				loader.loadBytes(bytes);
 				MapEditor.getInstance().addLog("加载"+key+"从"+filepath+"..");
 			}	
+			
+			if( length == 0 ) onComplete();
 		}
 
 		private function start():void
@@ -307,6 +309,7 @@ package
 			Utils.writeObjectToJsonFile(this.enemy_trigger, "editor/saved/enemy_trigger.json");
 			Utils.writeObjectToJsonFile(this.enemy_bh, "editor/saved/enemy_bh.json");
 			Utils.writeObjectToJsonFile(this.bh_lib, "editor/saved/bh_lib.json");
+			Utils.writeObjectToJsonFile(this.mChapter, "editor/saved/chapter.json");
 			saveConf();
 			
 			autoSaveTimer.reset(); autoSaveTimer.start();
@@ -669,19 +672,21 @@ package
 		{
 			var self:Object = this;
 			var excel_reader:ExcelReader = new ExcelReader();
-			excel_reader.parse( profile, function(raw:Object, msg:String):void
+			excel_reader.parse( profile, function(raw:Object, msg:String=""):void
 			{
-				if( !raw ) Alert.show( msg );
-				else self.mergeChapters( raw );
+				if( !raw ) onComplete( msg );
+				else {
+					self.mergeChapters( raw );
+					onComplete("成功");
+				}
 			});
-				
 		}
 		
 		private function mergeChapters( raw:Object ):void
 		{
 			for( var key:* in raw )
 				this.mChapter[key] = raw[key];
-			
+					
 			var self:Object = this;
 			this.updateData(function():void { self.start(); });
 		}
@@ -763,7 +768,7 @@ package
 				// sort by level id
 				levelList.sortOn("level_id");
 						
-				for(var i=0; i<levelList.length; i++)
+				for(var i:int=0; i<levelList.length; i++)
 				{
 					var level:Object = levelList[i];
 							
