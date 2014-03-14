@@ -36,7 +36,9 @@
 				
 				Data.getInstance().addEventListener(Event.COMPLETE, function(e:Event):void
 				{
+					trace(" On Complete ");
 					_instance.ReleaseMask( mask );
+					trace(" release ");
 					_instance.onDataReady(e);
 				});
 				
@@ -70,7 +72,7 @@
 					levelTree.dataProvider = Data.getInstance().level_xml;
 					levelTree.selectedIndex = 0;
 				}
-								
+			
 				{
 					// edit view
 					_enemyEditView = new EditView(this, middleArea);
@@ -78,7 +80,7 @@
 					
 					middleArea.addElement(_enemyEditView);
 				}
-				
+
 				{
 					var modelView:Panel = new Panel();
 					modelView.percentHeight = 40;
@@ -107,7 +109,7 @@
 					fView.percentWidth = 100;
 					group.addElement(fView);
 				}
-				
+				trace(4);
 				{
 					var matsPanel:Panel = new Panel();
 					matsPanel.title = "资源";
@@ -266,9 +268,9 @@
 					Data.getInstance().conf.excelPathCache = file.nativePath;
 					Data.getInstance().saveConf();
 					
+					var mask:* = self.MakeMask("正在上传配置文件…");
+			
 					file.addEventListener(Event.COMPLETE, function(e:Event):void {
-						
-						var mask:* = self.MakeMask("正在上传配置文件…");
 						Data.getInstance().parseChapterProfile( file, 
 							function(t:String):void
 							{

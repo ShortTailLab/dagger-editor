@@ -291,7 +291,7 @@ package
 			// let's rock 'n' roll
 			MapEditor.getInstance().addLog("加载bt成功");
 			this.dispatchEvent( new Event(Event.COMPLETE) );
-
+		
 			var data:Object = this.getCurrentLevelEnemyProfile();
 			MapEditor.getInstance().matsView.refreshDataAndView(data);
 		}
