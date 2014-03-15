@@ -36,9 +36,7 @@
 				
 				Data.getInstance().addEventListener(Event.COMPLETE, function(e:Event):void
 				{
-					trace(" On Complete ");
 					_instance.ReleaseMask( mask );
-					trace(" release ");
 					_instance.onDataReady(e);
 				});
 				
@@ -109,7 +107,7 @@
 					fView.percentWidth = 100;
 					group.addElement(fView);
 				}
-				trace(4);
+
 				{
 					var matsPanel:Panel = new Panel();
 					matsPanel.title = "资源";

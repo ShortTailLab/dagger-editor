@@ -109,7 +109,7 @@ package manager
 		private function oss_upload( path:File, tag:String, vf_path:String, onComplete:Function):void 
 		{;
 			if( !path.exists || !path.isDirectory ) {
-				trace( path+" is not a valid directory");
+				onComplete( path+" 不是一个有效的文件夹地址" );
 				return;
 			}
 			var self:* = this;
@@ -124,7 +124,6 @@ package manager
 				// local & remote version
 				try {
 					remoteVersion = JSON.parse(e.currentTarget.data);
-					Utils.dumpObject(remoteVersion);
 				} catch(e:Error) {};
 				self.oss_gen_local_version( path, valid_url, tag, version );
 				
@@ -142,12 +141,11 @@ package manager
 					if( !(key in version) ) version[key] = remoteVersion[key];
 				}
 				
-				var countor:int = 0, msg:String = ""; 
-				function check(t:String):void {
-					msg += t +"\n";
-					countor ++;
-					if( countor == diffs.length ){
-						// finally, upload version file
+				if( diffs.length == 0 ) onComplete("无任何需要上传的改动");
+				else {
+					
+					function uploadVersion( msg:String ):void
+					{
 						var url:String = File.desktopDirectory.resolvePath("editor/").url;
 						var vf:File = new File(url+"/"+vf_path);
 						var fstream:FileStream = new FileStream();
@@ -156,18 +154,26 @@ package manager
 						fstream.close();
 						self.oss_upload_file_aux(
 							vf, tag+"/"+vf_path, 
-							function(t:String):void { onComplete(msg); },
+							function(t:String):void { onComplete(msg); }, 
 							function(t:String):void { onComplete("[ERROR] version.json failed to upload"); }
 						);
 					}
-				}
-				for each( var item:* in diffs ) 
-				{
-					self.oss_upload_file_aux( 
-						new File( valid_url+ item ), tag+"/"+item,
-						function (t:String):void { check(t); },
-						function (t:String):void { check(t); }
-					);
+					
+					var countor:int = 0, accumMsg:String = ""; 
+					function check(t:String):void {
+						accumMsg += t +"\n";
+						countor ++;
+						if( countor == diffs.length )
+							uploadVersion(accumMsg);
+					}
+					for each( var item:* in diffs ) 
+					{
+						self.oss_upload_file_aux( 
+							new File( valid_url+ item ), tag+"/"+item,
+							function (t:String):void { check(t); },
+							function (t:String):void { check(t); }
+						);
+					}
 				}
 			});
 			loader.addEventListener(IOErrorEvent.IO_ERROR, 
