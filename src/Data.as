@@ -75,7 +75,7 @@ package
 		{
 			super(target); var self:* = this;
 		
-			this.autoSaveTimer = new Timer(600000, 1);
+			this.autoSaveTimer = new Timer(60000, 1); // auto save per minute
 			this.autoSaveTimer.addEventListener(
 				TimerEvent.TIMER, function():void { self.saveLocal(); }
 			);
