@@ -318,27 +318,22 @@ package
 			Utils.writeObjectToJsonFile(this.conf, "editor/saved/conf.json");
 		}
 		
-		public function exportJS():Boolean
+		public function exportJS():String
 		{
-			if( this.currSelectedLevel == "" ) {
-				Alert.show("无被选中的关卡");
-				return false;
-			}
+			var msg = "";
 			
 			for each( var lid:String in this.level_list )
-			{
-				this.exportLevelJS(lid, lid);
-			}
+				msg += this.exportLevelJS(lid, lid)+"\n" ;
 			
-			this.exportLevelJS(this.currSelectedLevel, "demo");
+			if( this.currSelectedLevel != "" )
+				msg += this.exportLevelJS(this.currSelectedLevel, "demo")+"\n";
 				
-			return true;
+			return msg;
 		}
 		
-		private function exportLevelJS(lid:String, suffix:String):Boolean
+		private function exportLevelJS(lid:String, suffix:String):String
 		{	
-			if( !(lid in this.levels) ) 
-				return false;
+			if( !(lid in this.levels) ) return "【失败】无相关地图数据存在";
 				
 			var export:Object = new Object;
 			var source:Array = this.levels[lid].data;
@@ -366,8 +361,7 @@ package
 
 				var data:Object = this.enemy_profile[item.type];
 				if( data.monster_type == "Bullet" ) {
-					Alert.show("子弹类型不可被放置在地图中"); 
-					return false;
+					return "【失败】子弹类型不可被放置在地图中"; 
 				}
 				if( data.monster_type == "Monster" ) actors[item.type] = data;
 				else traps[item.type] = data;
@@ -384,8 +378,7 @@ package
 			for( var key:String in actors )
 			{
 				if( !this.enemy_bh.hasOwnProperty(key) || this.enemy_bh[key].length == 0 ) {
-					Alert.show("敌人"+key+"未被设置行为");
-					return false;
+					return "【失败】敌人"+key+"未被设置行为";
 				}
 				
 				export.actor[key] = Utils.deepCopy(actors[key]);	
@@ -400,8 +393,7 @@ package
 			for( var key:String in bhs )
 			{
 				if( !this.bh_lib.hasOwnProperty(key) ) {
-					Alert.show("试图导出不存在的行为"+key);
-					return false;
+					return "【失败】试图导出不存在的行为"+key;
 				}
 				var raw:String = Utils.genBTreeJS(this.bh_lib[key]);
 				export.behavior[key] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
@@ -435,7 +427,8 @@ package
 			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
 				adjustJS(content) + "; return level; }"; 
 			Utils.write(wrap, "editor/export/level/"+suffix+".js");
-			return true;
+			
+			return "【成功】";
 		}
 		
 		private function adjustJS(js:String):String
