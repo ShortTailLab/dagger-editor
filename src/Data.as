@@ -323,10 +323,10 @@ package
 			var msg = "";
 			
 			for each( var lid:String in this.level_list )
-				msg += this.exportLevelJS(lid, lid)+"\n" ;
+				msg += lid+" "+this.exportLevelJS(lid, lid)+"\n" ;
 			
 			if( this.currSelectedLevel != "" )
-				msg += this.exportLevelJS(this.currSelectedLevel, "demo")+"\n";
+				msg += "demo "+this.exportLevelJS(this.currSelectedLevel, "demo")+"\n";
 				
 			return msg;
 		}
