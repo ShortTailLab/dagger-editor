@@ -25,7 +25,7 @@ package Trigger
 			this.host = target;
 			
 			this.title = "触发器编辑";
-			this.width = 400; this.height = 500;
+			this.width = 500; this.height = 500;
 			this.setStyle("backgroundColor", 0xEEE8AA);
 			
 			var addNewTrigger:Button = new Button;
@@ -53,6 +53,13 @@ package Trigger
 		
 		private function save():void
 		{
+			var error = this.validChecking();
+			if( error )
+			{
+				Alert.show( error+"\n【编辑的内容将不会被保存】" );
+				return;
+			}
+			
 			var triggers:Array = [];
 			for( var i:int=0; i<this.numElements; i++ )
 			{
@@ -63,8 +70,9 @@ package Trigger
 			Data.getInstance().setEnemyTrigger(host.type, triggers);
 		} 
 		
-		private function validChecking():Boolean
+		private function validChecking():String
 		{
+			var error:String = null;
 			var pairs:Object = {};
 			for( var i:int = 0; i<this.numElements; i++ )
 			{
@@ -72,21 +80,15 @@ package Trigger
 				var e:TNode = this.getElementAt(i) as TNode;
 				
 				if( !e.isDone() )
-				{
-					Alert.show("有Trigger未完成填写，请检查");
-					return false;
-				}
+					error = "有Trigger未完成填写，请检查";
 				
 				if( pairs.hasOwnProperty(e.getCondType()+e.getResultType()) )
-				{
-					Alert.show("有重复类型的Trigger，请检查");
-					return false;
-				}
+					error = "有重复类型的Trigger，请检查";
 				
 				pairs[e.getCondType()+e.getResultType()] = true;
 			}
 			
-			return true;
+			return error;
 		}
 		
 		private function factory(trigger:Object = null):void
@@ -99,16 +101,15 @@ package Trigger
 		
 		private function onAddTrigger(evt:MouseEvent):void
 		{
-			if( !this.validChecking() ) return;
 			this.factory();
 		}
 		
 		private function onClose(e:CloseEvent):void
 		{
-			if( !this.validChecking() ) return;
 			EventManager.getInstance().removeEventListener(TriggerEvent.REMOVE_TRIGGER, onRemoveNode);
-			this.save();
 			PopUpManager.removePopUp(this);
+			
+			this.save();
 		}
 		
 		private function relayout():void
@@ -128,7 +129,6 @@ package Trigger
 		{
 			this.removeElement( e.from );
 			this.relayout();
-			this.save();
 		}
 	}
 }

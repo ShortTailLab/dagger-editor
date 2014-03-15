@@ -1,9 +1,13 @@
 package mapEdit
 {
+	import com.hurlant.crypto.symmetric.NullPad;
+	
 	import flash.display.Sprite;
 	import flash.events.MouseEvent;
+	import flash.events.TimerEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.utils.Timer;
 	
 	public class EditMatsControl
 	{
@@ -84,7 +88,7 @@ package mapEdit
 			view.mapView.addChild(mat);
 			mats.push(mat);
 			mat.doubleClickEnabled = true;
-			mat.addEventListener(MouseEvent.DOUBLE_CLICK, onMatDoubleClick);
+			mat.addEventListener(MouseEvent.CLICK, onMatClick);
 			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
 			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
 			mat.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
@@ -174,14 +178,33 @@ package mapEdit
 			e.stopPropagation();
 		}
 		
-		private function onMatDoubleClick(e:MouseEvent):void
+		private const kDOUBLE_CLICK_SPEED:int = 300;
+		private var doubleClickTimer:Timer = null;
+		private function onMatClick(e:MouseEvent):void
 		{
-			var target:EditBase = e.currentTarget as EditBase;
-			var targetOfSameType:Array = new Array;
-			for each(var m:EditBase in view.matsControl.mats)
+			if( this.doubleClickTimer )
+			{
+				// double click
+				var target:EditBase = e.currentTarget as EditBase;
+				var targetOfSameType:Array = new Array;
+				for each(var m:EditBase in view.matsControl.mats)
 				if(m.type == target.type)
 					targetOfSameType.push(m);
-			view.selectControl.selectMul(targetOfSameType);
+				view.selectControl.selectMul(targetOfSameType);	
+				
+				this.doubleClickTimer = null;
+			} else {
+				// single click
+				
+				this.doubleClickTimer = new Timer(this.kDOUBLE_CLICK_SPEED, 1);
+				var self:* = this;
+				this.doubleClickTimer.addEventListener( TimerEvent.TIMER,
+					function():void
+					{
+						self.doubleClickTimer = null;
+					});
+				this.doubleClickTimer.start();
+			}
 		}
 	}
 }

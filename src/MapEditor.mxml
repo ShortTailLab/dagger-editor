@@ -70,7 +70,7 @@
 					levelTree.dataProvider = Data.getInstance().level_xml;
 					levelTree.selectedIndex = 0;
 				}
-								
+			
 				{
 					// edit view
 					_enemyEditView = new EditView(this, middleArea);
@@ -78,7 +78,7 @@
 					
 					middleArea.addElement(_enemyEditView);
 				}
-				
+
 				{
 					var modelView:Panel = new Panel();
 					modelView.percentHeight = 40;
@@ -107,7 +107,7 @@
 					fView.percentWidth = 100;
 					group.addElement(fView);
 				}
-				
+
 				{
 					var matsPanel:Panel = new Panel();
 					matsPanel.title = "资源";
@@ -196,8 +196,11 @@
 			private function saveFile(event:Event, showAlert:Boolean = true):void
 			{
 				_enemyEditView.save();
-				if( Data.getInstance().saveLocal() && Data.getInstance().exportJS() )
-					if(showAlert) Alert.show("成功导出数据");
+				 
+				Data.getInstance().saveLocal();
+				var msg:String = Data.getInstance().exportJS();
+				
+				if( showAlert ) Alert.show( msg );
 			}
 			
 			private function sendToStaticServer(e:Event):void
@@ -224,7 +227,6 @@
 			private function syncServer(e:Event):void
 			{
 				var dataList:Array = Data.getInstance().getLevelDataForServer();
-				//Utils.dumpObject(dataList);
 				SyncManager.getInstance().uploadLevelsToGameServer(dataList);
 			}
 			
@@ -239,9 +241,9 @@
 					Data.getInstance().conf.sendFileCache = file.nativePath;
 					Data.getInstance().saveConf();
 					
+					var mask:* = self.MakeMask("正在上传配置文件…");
 					file.addEventListener(Event.COMPLETE, function(e:Event):void {
 						
-						var mask:* = self.MakeMask("正在上传配置文件…");
 						SyncManager.getInstance().uploadConfigFileToOSS( file,
 							function(t:String):void 
 							{
@@ -266,9 +268,9 @@
 					Data.getInstance().conf.excelPathCache = file.nativePath;
 					Data.getInstance().saveConf();
 					
+					var mask:* = self.MakeMask("正在上传配置文件…");
+			
 					file.addEventListener(Event.COMPLETE, function(e:Event):void {
-						
-						var mask:* = self.MakeMask("正在上传配置文件…");
 						Data.getInstance().parseChapterProfile( file, 
 							function(t:String):void
 							{

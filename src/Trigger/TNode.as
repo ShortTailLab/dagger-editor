@@ -9,7 +9,10 @@ package Trigger
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
+	import mx.charts.BubbleChart;
+	import flash.events.MouseEvent;
 	import mx.collections.ArrayCollection;
+	import mx.controls.Button;
 	import mx.controls.ComboBox;
 	import mx.controls.TextInput;
 	import mx.core.UIComponent;
@@ -22,7 +25,7 @@ package Trigger
 	
 	class TNode extends UIComponent
 	{
-		public static const WIDTH:Number = 380;
+		public static const WIDTH:Number = 480;
 		public static const HEIGHT:Number = 25;
 		public static const HOR_PADDING:Number = 30;
 		public static const VER_PADDING:Number = 30;
@@ -37,6 +40,8 @@ package Trigger
 		private var retArgs:UIComponent = null;
 		private var condItems:Object = {};
 		private var retItems:Object = {};
+		
+		private var eraseBtn:Button = null;
 		
 		public function getCondType():String { return this.enumCond.selectedItem as String; }
 		public function getResultType():String { return this.enumResult.selectedItem as String; }
@@ -83,6 +88,18 @@ package Trigger
 				prompt = "功能"; editable = false;
 			}
 			this.addChild(this.enumResult);
+			
+			this.eraseBtn = new Button();
+			with( this.eraseBtn ) {
+				label = "删除"; width = 50; height = 30;
+				x = 400; y = 12.5;
+			}
+			this.eraseBtn.addEventListener( MouseEvent.CLICK, function()
+			{
+				var e2 = new TriggerEvent(self, TriggerEvent.REMOVE_TRIGGER);	
+				EventManager.getInstance().dispatchEvent( e2 );
+			});
+			this.addChild( this.eraseBtn );
 			
 			var menu:ContextMenu = new ContextMenu;
 			this.contextMenu = menu;

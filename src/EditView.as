@@ -84,10 +84,14 @@ package
 		{
 			//all the ui position will be recalculated in onResize()
 			
+
 			this.main = _main;
 			this.parContainer = _container;
 			this.parContainer.addEventListener(ResizeEvent.RESIZE, onResize);
-			speed = Data.getInstance().conf.speed;
+			if( Data.getInstance().conf.speed == 0 )
+				speed = 32;
+			else
+				speed = Data.getInstance().conf.speed ;
 			
 			editViewBg = new UIComponent;
 			this.addChild(editViewBg);
@@ -102,7 +106,7 @@ package
 			mapView.addChild(map);
 			mapPieces = new Dictionary;
 			mapFreePieces = new Array;
-			
+
 			unitLabel = new TextField;
 			unitLabel.defaultTextFormat = new TextFormat(null, 14);
 			unitLabel.text = "速度：";
