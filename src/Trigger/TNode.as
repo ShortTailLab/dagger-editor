@@ -5,12 +5,12 @@ package Trigger
 	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
+	import flash.events.MouseEvent;
 	import flash.text.TextField;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
 	import mx.charts.BubbleChart;
-	import flash.events.MouseEvent;
 	import mx.collections.ArrayCollection;
 	import mx.controls.Button;
 	import mx.controls.ComboBox;
@@ -132,39 +132,69 @@ package Trigger
 			this.onRetTypeChange();
 		}
 		
+		private function appendLabel(key:String):TextInput 
+		{
+			var len = this.condArgs.numChildren;
+			var posy = len/2*(10+TNode.HEIGHT)+10;
+			
+			var label:TextField = Utils.getLabel(key, 0, posy, 14);
+			var text:TextInput = new TextInput();
+			var self = this;
+			with(text){
+				x = 80; y = posy; 
+				width = 80; height = TNode.HEIGHT;
+				editable = true; text = self.condItems[key] || ""; 
+				restrict = '0-9.';
+			}
+			
+			this.condArgs.addChild(label);
+			this.condArgs.addChild(text);
+			
+			return text;
+		}
+		
 		private function onCondTypeChange(e:Event=null):void
 		{
-			var type = this.enumCond.selectedItem;
-			var dynamics = Data.getInstance().dynamic_args;
+			var type:* = this.enumCond.selectedItem;
+			var dynamics:* = Data.getInstance().dynamic_args;
 			
 			this.condArgs.removeChildren();
+			
+			var self:* = this;
 			if( dynamics[type] )
 			{
 				for( var key:* in dynamics[type] )
 				{
 					if( dynamics[type][key] == "float" )
 					{
-						var len = this.condArgs.numChildren;
-						var posy = len/2*(10+TNode.HEIGHT)+10;
-						
-						var label:TextField = Utils.getLabel(key, 0, posy, 14);
-						var text:TextInput = new TextInput();
-						var self = this;
-						with(text){
-							x = 80; y = posy; 
-							width = 80; height = TNode.HEIGHT;
-							editable = true; text = self.condItems[key] || ""; 
-							restrict = '0-9';
-						}
-						text.addEventListener(Event.CHANGE, (function(nkey) {
+						var input:TextInput = this.appendLabel(key);
+						input.restrict = "0-9.";
+						input.addEventListener(Event.CHANGE, (function(nkey:String):Function {
 							return function(e:Event):void
 							{
-								self.condItems[nkey] = e.target.text;
+								self.condItems[nkey] = Number(e.target.text);
 							}
 						})(key));
-						
-						this.condArgs.addChild(label);
-						this.condArgs.addChild(text);
+					} else if ( dynamics[type][key] == "string" )
+					{
+						var input2:TextInput = this.appendLabel(key);
+						input2.restrict = "a-z A-Z 0-9";
+						input2.addEventListener(Event.CHANGE, (function(nkey:String):Function {
+							return function(e:Event):void
+							{
+								self.condItems[nkey] = String(e.target.text);
+							}
+						})(key));
+					} else if ( dynamics[type][key] == "int" )
+					{
+						var input3:TextInput = this.appendLabel(key);
+						input3.restrict = "0-9";
+						input3.addEventListener(Event.CHANGE, (function(nkey:String):Function {
+							return function(e:Event):void
+							{
+								self.condItems[nkey] = int(e.target.text);
+							}
+						})(key));
 					}
 				}
 			}
