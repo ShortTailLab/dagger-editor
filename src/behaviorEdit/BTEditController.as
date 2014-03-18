@@ -18,8 +18,6 @@ package behaviorEdit
 		{
 			parPanel = par;
 			editTargetType = type;
-			if(!Data.getInstance().enemy_profile.hasOwnProperty(type))
-				Data.getInstance().enemy_profile[type] = new Array;
 			
 			btArray = new ArrayCollection(Data.getInstance().getBehaviorById( editTargetType ) as Array);
 			
@@ -41,7 +39,6 @@ package behaviorEdit
 				Data.getInstance().updateBehaviorSetById(bName, data);
 			
 			btArray.addItem(bName);
-			Data.getInstance().saveLocal();
 			
 			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_ADDED, bName);
 			EventManager.getInstance().dispatchEvent(evt);
@@ -50,7 +47,6 @@ package behaviorEdit
 		public function removeBTByIndex(index:int):void
 		{
 			btArray.removeItemAt(index);
-			Data.getInstance().saveLocal();
 			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_REMOVED, index);
 			EventManager.getInstance().dispatchEvent(evt);
 			
@@ -67,7 +63,11 @@ package behaviorEdit
 		public function renameBTbyIndex(index:int, bName:String):void
 		{
 			var prevName:String = btArray[index];
-			Data.getInstance().renameBehavior(prevName, bName);
+			
+			var data = Data.getInstance().behaviorSet[prevName];
+			delete Data.getInstance().behaviorSet[prevName];
+			Data.getInstance().updateBehaviorSetById( bName, data );
+			
 			btArray.setItemAt(bName, index);
 		}
 		

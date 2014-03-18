@@ -34,17 +34,14 @@
 				// address project path
 				
 				var mask:* = this.MakeMask("正在初始化数据（需要联网）…");
-				Data.getInstance().init();
-				
-				Data.getInstance().addEventListener(Event.COMPLETE, function(e:Event):void
+				Data.getInstance().init(function()
 				{
 					_instance.ReleaseMask( mask );
-					_instance.onDataReady(e);
+					_instance.onDataReady();	
 				});
-				
+					
 				BgModel.getInstance().init();
 				
-				this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 			}
 			
@@ -52,31 +49,20 @@
 			{
 				matsView.clearSelection();
 			}
-			
-			private function onAddToStage(e:Event):void
-			{
-				stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-			} 
-			private function onKeyDown(e:KeyboardEvent):void
-			{
-				var code = e.keyCode;
-				if(code == Keyboard.S && e.ctrlKey)
-					saveFile(null);
-			}
-			
-			private function onDataReady(e:Event):void
+
+			private function onDataReady(e:Event=null):void
 			{
 				{
 					// update level tree view;
 					levelTree.visible = true;
-					levelTree.dataProvider = Data.getInstance().level_xml;
+					levelTree.dataProvider = Data.getInstance().levelXML;
 					levelTree.selectedIndex = 0;
 				}
 			
 				{
 					// edit view
 					_enemyEditView = new EditView(this, middleArea);
-					_enemyEditView.init(Data.getInstance().level_list[0]);
+					_enemyEditView.init( Data.getInstance().getFirstLevelId() );
 					
 					middleArea.addElement(_enemyEditView);
 				}
@@ -185,23 +171,12 @@
 				PopUpManager.removePopUp( mask );
 			}
 			
-			private function setCurrLevel(level_id:String):void
+			private function setCurrLevel(lid:String):void
 			{
-				Data.getInstance().currSelectedLevel = level_id;
-				_enemyEditView.init(level_id);
+				_enemyEditView.init(lid);
 				
-				var data:Object = Data.getInstance().getCurrentLevelEnemyProfile();
+				var data:Object = Data.getInstance().getEnemiesByLevelId(lid) || [];
 				matsView.refreshDataAndView(data);
-			}
-					
-			private function saveFile(event:Event, showAlert:Boolean = true):void
-			{
-				_enemyEditView.save();
-				 
-				Data.getInstance().saveLocal();
-				var msg:String = Data.getInstance().exportJS();
-				
-				if( showAlert ) Alert.show( msg );
 			}
 			
 			private function sendToStaticServer(e:Event):void
@@ -212,8 +187,6 @@
 					return;
 				}
 		
-				saveFile(null, false);
-				
 				var self:* = this;
 				var mask:* = this.MakeMask("上传关卡中，请稍后…");
 				var export:File = File.desktopDirectory.resolvePath("editor/export/");
@@ -270,7 +243,7 @@
 					var mask:* = self.MakeMask("正在上传配置文件…");
 			
 					file.addEventListener(Event.COMPLETE, function(e:Event):void {
-						Data.getInstance().parseChapterProfile( file, 
+						Data.getInstance().mergeLevelProfile( file, 
 							function(t:String):void
 							{
 								self.ReleaseMask( mask );
@@ -310,7 +283,6 @@
 		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="left">
-				<s:Button id="saveBtn" label="保存配置" click="saveFile(event)"/>
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
 				<s:Label text="服务器Tag" color="0x777777"/>
 			</s:HGroup>

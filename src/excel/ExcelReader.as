@@ -66,7 +66,7 @@ package excel
 			}
 			
 			//
-			var struct:Object = Data.getInstance().dynamic_args;
+			var struct:Object = Data.getInstance().dynamicArgs;
 			if( !struct.hasOwnProperty("Chapter") || 
 				!struct.hasOwnProperty("Level") )
 			{
@@ -167,7 +167,7 @@ package excel
 		
 		private function process_val(prefix:String, key:String, value:String):*
 		{
-			var struct:Object = Data.getInstance().dynamic_args;
+			var struct:Object = Data.getInstance().dynamicArgs;
 			if( !(prefix in struct) ) 
 				return value;
 			

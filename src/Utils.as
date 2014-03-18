@@ -217,7 +217,15 @@ package
 			return true;
 		}
 		
-		static public function LoadJSONToObject( file:File )
+		static public function WriteRawFile( file:File, str:String ):void
+		{
+			var stream:FileStream = new FileStream;
+			stream.open( file, FileMode.WRITE );
+			stream.writeUTFBytes( str );
+			stream.close();
+		}
+		
+		static public function LoadJSONToObject( file:File ):Object
 		{
 			var result:Object = null;
 			if( file.exists ) 
@@ -236,30 +244,6 @@ package
 			stream.open( file, FileMode.WRITE );
 			stream.writeUTFBytes( JSON.stringify(item, null, "\t") );
 			stream.close();
-		}
-		
-		static public function loadJsonFileToObject(file:File):Object
-		{
-			var result:Object = null;
-			MapEditor.getInstance().addLog("正在解析"+file.name+"..");
-			if(file.exists)
-			{
-				MapEditor.getInstance().addLog(file.name+"存在，读取");
-				var stream:FileStream = new FileStream;
-				stream.open(file, FileMode.READ);
-				result = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
-				stream.close();
-			}
-			else {
-				MapEditor.getInstance().addLog(file.nativePath+"不存在");
-			}
-			return result;
-		}
-		
-		static public function writeObjectToJsonFile(item:Object, filepath:String):Boolean
-		{
-			var content:String = JSON.stringify(item, null, "\t");
-			return Utils.write( content, filepath );
 		}
 		
 		static public function copyDirectoryTo(from:String, to:String):void

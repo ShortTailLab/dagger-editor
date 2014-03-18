@@ -47,12 +47,12 @@ package mapEdit
 				this.addChild(typeSpr);
 				setTextWidth(textWidth);
 			}
-			
-			var data = Data.getInstance();
-			var face = data.enemy_profile[this.type].face;
-			if( data.skins.hasOwnProperty( face ) )
+
+			var face:String = Data.getInstance().getEnemyProfileById(this.type).face;
+			var skin:* = Data.getInstance().getSkinById( face );
+			if( skin )
 			{
-				var bmpd:BitmapData = data.skins[face];
+				var bmpd:BitmapData = skin;
 				skinBmp = new Bitmap(bmpd);
 				skinBmp.scaleX = skinBmp.scaleY = 0.5;
 				skinBmp.x = -skinBmp.width*0.5;

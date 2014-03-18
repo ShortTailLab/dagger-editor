@@ -184,13 +184,7 @@ package
 			setEndTime(end);
 			setCurrTime(0);	
 		}
-//		
-//		public function clear():void
-//		{
-//			this.level_id = "";
-//			matsControl.clear();
-//		}
-//		
+		
 		public function save():void
 		{
 			Data.getInstance().conf.speed = int(unitInput.text);

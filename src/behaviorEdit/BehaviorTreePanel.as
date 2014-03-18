@@ -114,8 +114,14 @@ package behaviorEdit
 		{
 			if(e.detail == Alert.OK)
 			{
-				Data.getInstance().deleteBehaviors(btTree.selectedItem.@label);
-				btTree.dataProvider = Data.getInstance().bh_xml;
+				delete Data.getInstance().behaviorSet[btTree.selectedItem.@label];
+				
+				var electData:Array = new Array;
+				for(var b:String in Data.getInstance().behaviorSet)
+					electData.push(b);
+				electData.sort();
+				btTree.dataProvider = parse(electData);
+				
 				controller.getBTs().refresh();
 				EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.BT_REMOVED));
 			}

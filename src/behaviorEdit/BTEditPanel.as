@@ -146,7 +146,7 @@ package behaviorEdit
 			
 			var msg:String = "";
 			for each(var bname:String in controller.getBTs())
-				if(Utils.genBTreeJS(Data.getInstance().bh_lib[bname]) == "")
+				if(Utils.genBTreeJS(Data.getInstance().getBehaviorById(bname)) == "")
 				{
 					trace(bname);
 					msg += bname + " ";
