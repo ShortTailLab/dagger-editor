@@ -74,6 +74,18 @@ package manager
 				loader.load( request );
 			}
 		}
+
+		public function uploadConfigFileToOSSFromPath(path:String, onComplete:Function) :void
+		{
+			var file:File = new File(path);
+			var self = this;
+			
+			file.addEventListener(Event.COMPLETE, function(e:Event):void 
+			{
+				self.uploadConfigFileToOSS(file, onComplete);
+			});
+			file.load();
+		}
 		
 		public function uploadConfigFileToOSS(file:File, onComplete:Function):void 
 		{

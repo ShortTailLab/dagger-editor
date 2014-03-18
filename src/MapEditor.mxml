@@ -24,7 +24,7 @@
 			
 			import manager.SyncManager;
 			
-			import tools.SkillConfigReader;
+			import excel.SkillConfigReader;
 			
 			public var fView:FormationsView = null;
 			public var matsView:MatsView = null;
@@ -251,17 +251,11 @@
 						Utils.write(jsonOut, "editor/config/skill.json");
 						
 						var skillJsonPath =  Utils.projectRoot() + "skill.json";
-						var jsonFile:File = new File(skillJsonPath);
-						jsonFile.addEventListener(Event.COMPLETE, function(e:Event):void {
-							SyncManager.getInstance().uploadConfigFileToOSS(jsonFile,
-								function(t:String):void 
-								{
-									self.ReleaseMask( mask );
-									Alert.show( t );
-								}
-							);
+						SyncManager.getInstance().uploadConfigFileToOSSFromPath(skillJsonPath, function(t:String):void 
+						{
+							self.ReleaseMask( mask );
+							Alert.show( t );
 						});
-						jsonFile.load();
 					});
 				});
 			}
