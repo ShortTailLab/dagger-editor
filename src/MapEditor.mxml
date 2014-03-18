@@ -22,11 +22,10 @@
 			import bgedit.BgEditView;
 			import bgedit.BgModel;
 			
-			import formationEdit.FormationsView;
 			
 			import manager.SyncManager;
 			
-			public var fView:FormationsView = null;
+			public var fView:FormationSelector = null;
 			public var matsView:MonsterSelector = null;
 			
 			private function init():void
@@ -91,7 +90,7 @@
 					vscrollbar.viewport = group;
 					hgroup.addElement(vscrollbar);
 					
-					fView = new FormationsView;
+					fView = new FormationSelector;
 					fView.percentWidth = 100;
 					group.addElement(fView);
 				}

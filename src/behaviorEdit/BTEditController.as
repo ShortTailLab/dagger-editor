@@ -19,7 +19,7 @@ package behaviorEdit
 			parPanel = par;
 			editTargetType = type;
 			
-			btArray = new ArrayCollection(Data.getInstance().getBehaviorById( editTargetType ) as Array);
+			btArray = new ArrayCollection(Data.getInstance().getEnemyBehaviorsById( editTargetType ) as Array);
 			
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_NEW_BT, onNewBT);
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_DONE, onCreateDone);

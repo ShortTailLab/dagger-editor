@@ -139,7 +139,7 @@ package
 			{
 				error = true;
 				MapEditor.getInstance().addLog("下载失败");
-				onComplete("【错误】同步OSS出错，将会使用本地数据…");
+				onComplete("【错误】同步OSS客户端数据出错…");
 			}
 			
 			kSYNC_TARGETS.forEach(function(item:Object, ...args):void
@@ -193,6 +193,7 @@ package
 		private var mEnemyTriggersTable:Object 	= null;
 		
 		private var mBehaviorSet:Object 		= null;
+		private var mFormationSet:Object 		= null;
 		
 		// --------------------------------------------------------------------------
 		public function getFirstLevelId():String
@@ -215,6 +216,11 @@ package
 			);
 		}
 		
+		public function getEnemyBehaviorsById( eid:String ):Object
+		{
+			return this.mEnemyBehaviorsTable[eid];
+		}
+		
 		public function getEnemyTriggersById( eid:String ):Object
 		{
 			return this.mEnemyTriggersTable[eid];
@@ -229,11 +235,6 @@ package
 			);
 		}
 		
-		public function getEnemyBehaviorsById( eid:String ):Object
-		{
-			return this.mEnemyBehaviorsTable[eid];
-		}
-		
 		public function get behaviorSet():Object { return this.mBehaviorSet; } 
 		public function getBehaviorById( bid:String ):Object
 		{
@@ -244,30 +245,56 @@ package
 			this.mBehaviorSet[bid] = data;
 			Utils.WriteObjectToJSON( // persistence
 				this.getFileByRelativePath( "saved/bh_lib.json" ),
-				this.mEnemyTriggersTable
+				this.mBehaviorSet
+			);
+		}
+		
+		public function getFormationById( fid:String ):Object
+		{
+			return this.mFormationSet[fid];
+		}
+		
+		public function updateFormationSetById( fid:String, data:Object):void
+		{
+			this.mFormationSet[fid] = data;
+			Utils.WriteObjectToJSON( // persistence
+				this.getFileByRelativePath("saved/formations.json"),
+				this.mFormationSet
 			);
 		}
 		
 		private function parseLocalData(onComplete:Function):void
 		{
+			this.mDynamicArgs = this.loadJson(
+				this.getFileByRelativePath("data/dynamic_args.json"), false
+			) as Object || {};
+			
+			this.mBehaviorNode = this.loadJson(
+				this.getFileByRelativePath("data/bt_node_format.json"), false
+			) as Object || {};
+			
 			this.mLevelProfiles = this.loadJson(
-				this.mProjectRoot.resolvePath("saved/profiles.json"), false
+				this.getFileByRelativePath("saved/profiles.json"), false
 			) as Object || {};
 			
 			this.mLevelInstancesTable = this.loadJson( 
-				this.mProjectRoot.resolvePath("saved/levels.json"), false 
+				this.getFileByRelativePath("saved/levels.json"), false 
 			) as Object || {};
 			
 			this.mEnemyBehaviorsTable = this.loadJson(
-				this.mProjectRoot.resolvePath("saved/enemy_bh.json"), false
+				this.getFileByRelativePath("saved/enemy_bh.json"), false
 			) as Object || {};
 			
 			this.mEnemyTriggersTable = this.loadJson(
-				this.mProjectRoot.resolvePath("saved/enemy_trigger.json"), false
+				this.getFileByRelativePath("saved/enemy_trigger.json"), false
 			) as Object || {};
 			
 			this.mBehaviorSet = this.loadJson(
-				this.mProjectRoot.resolvePath("saved/bh_lib.json"), false
+				this.getFileByRelativePath("saved/bh_lib.json"), false
+			) as Object || {};
+			
+			this.mFormationSet = this.loadJson(
+				this.getFileByRelativePath("saved/formations.json"), false
 			) as Object || {};
 			
 			this.updateEditorData( onComplete );
