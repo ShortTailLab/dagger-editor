@@ -30,7 +30,9 @@
 			private function init():void
 			{
 				_instance = this;
-					
+				
+				// address project path
+				
 				var mask:* = this.MakeMask("正在初始化数据（需要联网）…");
 				Data.getInstance().init();
 				
@@ -232,13 +234,12 @@
 			private function uploadConfigFile(e:Event):void
 			{
 				var self:* = this;
-				var browser:File = new File(Data.getInstance().conf.sendFileCache);
+				var browser:File = new File(Data.getInstance().conf.sendPathCache);
 				browser.browseForOpen("请选择上传的配置文件");
 				browser.addEventListener(Event.SELECT, function (e:Event):void {
 					
 					var file:File = e.target as File;
-					Data.getInstance().conf.sendFileCache = file.nativePath;
-					Data.getInstance().saveConf();
+					Data.getInstance().setEditorConfig("sendPathCache", file.nativePath);
 					
 					var mask:* = self.MakeMask("正在上传配置文件…");
 					file.addEventListener(Event.COMPLETE, function(e:Event):void {
@@ -259,13 +260,12 @@
 			private function parseExcel(e:Event):void
 			{
 				var self:* = this;
-				var browser:File = new File(Data.getInstance().conf.excelPathCache);
+				var browser:File = new File(Data.getInstance().conf.profilePathCache);
 				browser.browseForOpen("请选择上传的场景文件");
 				browser.addEventListener(Event.SELECT, function (e:Event):void {
 					
 					var file:File = e.target as File;
-					Data.getInstance().conf.excelPathCache = file.nativePath;
-					Data.getInstance().saveConf();
+					Data.getInstance().setEditorConfig("profilePathCache", file.nativePath);
 					
 					var mask:* = self.MakeMask("正在上传配置文件…");
 			

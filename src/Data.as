@@ -25,13 +25,269 @@ package
 	import excel.ExcelReader;
 	
 	import manager.EventManager;
-	import manager.EventType;
-	import manager.GameEvent;  
 	
 	public class Data extends EventDispatcher
 	{
-		public var conf:Object = null;
+		////// entrance
+		private static var gDataInstance:Data = null;
+		public static function getInstance():Data
+		{
+			if(!gDataInstance) gDataInstance = new Data;
+			return gDataInstance;
+		}
+		public function Data(target:IEventDispatcher=null) { super(target); }
 		
+		////// editor configs 
+		// projectPath 	-> root directroy of data
+		// speed 		-> speed & scale factor of map view
+		private var mEditorConfigs:Object = null;
+		private var mProjectRoot:File = null;
+		// --------------------------------------------------------------------------
+		public function init():void {
+			var config:File = File.applicationStorageDirectory.resolvePath("conf.json");
+			this.mEditorConfigs = this.loadJson(config, false);
+			
+			if( !this.mEditorConfigs ) this.mEditorConfigs = { speed: 32 };
+			if( !this.mEditorConfigs.projectPath ) {
+				var self:* = this;
+				this.setProjectPath( function(file:File)
+				{
+					self.mProjectRoot = file;
+				} );
+			}else 
+				this.mProjectRoot = new File( this.mEditorConfigs.projectPath );
+		}
+		
+		public function get conf():Object { return mEditorConfigs; }
+		public function setEditorConfig(key:String, val:Object ):void
+		{
+			this.mEditorConfigs[key] = val;
+			Utils.WriteObjectToJSON( 
+				File.applicationStorageDirectory.resolvePath("conf.json"),
+				this.mEditorConfigs
+			);
+		}
+		private function setProjectPath(onComplete:Function):void
+		{
+			var browser:File = new File();
+			browser.browseForDirectory("请选择工程文件夹：");
+			browser.addEventListener(Event.SELECT, function (e:Event):void {
+				
+				var file:File = e.target as File;
+				Data.getInstance().setEditorConfig("projectPath", file.nativePath);
+				
+				onComplete( file );
+			});
+		}
+		private function getFileByRelativePath(sub:String):File
+		{
+			return this.mProjectRoot.resolvePath( sub );
+		}
+		
+		////// data definitions from client
+		private var mDynamicArgs:Object 		= null;
+		private var mBehaviorNode:Object 		= null;
+		private const kSYNC_TARGETS:Array = [
+			{
+				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/bt_node_format.json",
+				suffix: "bt_node_format.json"
+			},
+			{
+				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/dynamic_args.json",
+				suffix: "dynamic_args.json"
+			}
+		];
+		
+		// --------------------------------------------------------------------------
+		public function syncClient(onComplete:Function):void
+		{
+			// download all the configs of client from oss
+			var self:* = this, counter:Number = 0, error:Boolean = false;
+			var alldone:Function = function(item:Object):Function
+			{
+				var handleTEXT:Function = function(e:Event):void
+				{
+					MapEditor.getInstance().addLog("下载"+item.suffix+"成功");
+					Utils.write(e.target.data, self.fullpath("editor/data/"+item.suffix));
+					
+					if( ++counter >= kSYNC_TARGETS.length && !error )
+						onComplete("【同步成功】");
+				}
+				return handleTEXT;
+			}
+			var anyerror:Function = function():void
+			{
+				error = true;
+				MapEditor.getInstance().addLog("下载失败");
+				onComplete("[WARN]同步服务器出错，将会使用本地数据…");
+			}
+			
+			kSYNC_TARGETS.forEach(function(item:Object, ...args):void
+			{
+				var loader:URLLoader = new URLLoader;
+				loader.dataFormat = item.type;
+				loader.addEventListener(Event.COMPLETE, alldone(item));
+				loader.addEventListener(IOErrorEvent.IO_ERROR, anyerror);
+				loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, anyerror);
+				loader.load( new URLRequest(item.src) );
+				MapEditor.getInstance().addLog("正在下载"+item.suffix+"..");
+			}, null);
+		}
+		
+		////// level data
+		private var mLevelProfiles:Object 		= null;
+		private var mLevelInstancesTable:Object = null;
+		
+		private var mEnemyBehaviorsTable:Object = null;
+		private var mEnemyTriggersTable:Object 	= null;
+		
+		private var mBehaviorSet:Object 		= null;
+		
+		// --------------------------------------------------------------------------
+		private function parseLocalData()
+		{
+			this.mLevelProfiles = this.loadJson(
+				this.mProjectRoot.resolvePath("saved/profiles.json"), false
+			) as Object || {};
+			
+			this.mLevelInstancesTable = this.loadJson( 
+				this.mProjectRoot.resolvePath("saved/levels.json"), false 
+			) as Object || {};
+			
+			this.mEnemyBehaviorsTable = this.loadJson(
+				this.mProjectRoot.resolvePath("saved/enemy_bh.json"), false
+			) as Object || {};
+			
+			this.mEnemyTriggersTable = this.loadJson(
+				this.mProjectRoot.resolvePath("saved/enemy_trigger.json"), false
+			) as Object || {};
+			
+			this.mBehaviorSet = this.loadJson(
+				this.mProjectRoot.resolvePath("saved/bh_lib.json"), false
+			) as Object || {};
+			
+			
+			//			this.levels = this.loadJson("editor/saved/levels.json", false) as Object || {};
+			//			this.bh_lib = this.loadJson("editor/saved/bh_lib.json", false);
+			//			if( !this.bh_lib )  this.bh_lib = new Object;
+			//			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
+			//			
+			//			//this record the behaviors' name of each enemy
+			//			this.enemy_bh = this.loadJson("editor/saved/enemy_bh.json", false) || {};
+			//			this.enemy_trigger = this.loadJson("editor/saved/enemy_trigger.json", false) || {};
+			//			this.mChapter = this.loadJson("editor/saved/chapter.json", false) || {};
+			//			
+			//			// load configs 
+			//			this.dynamic_args = this.loadJson("editor/data/dynamic_args.json");
+			//			this.bh_node = this.loadJson("editor/data/bt_node_format.json");
+			
+			// async loading
+			// ---------------------------------------------------------------
+			// exceptional case, bad design, refactor this.
+			//this.skins = new Dictionary;
+		}
+		
+		////// second-hand data of editor
+		private var mEnemySkins:Dictionary 		= null;
+		private var mEnemyProfilesTalbe:Object 	= null;
+		
+		private var mLevelId2Enemies:Object 	= null;
+		
+		private var mLevelXML:XML 				= null; 
+		//private var mBehaviorXML:XML 			= null;
+		
+		private function updateEditorData(onComplete:Function):void
+		{
+			this.mEnemyProfilesTalbe = Data.genMonstersTable( this.mLevelProfiles );
+			this.mLevelId2Enemies    = Data.genLevel2MonsterTable( this.mLevelProfiles );
+			
+			this.mLevelXML 			 = Data.genLevelXML( this.mLevelProfiles );
+			//this.mBehaviorXML 		 = Data.par
+			
+			this.mEnemySkins 	     = new Dictionary();
+			
+			var length:Number = 0, countor:Number = 0; 
+			var alldone:Function = function(face:String):Function
+			{
+				var self:Object = this;
+				return function(e:Event):void
+				{
+					var loader:Loader = (e.target as LoaderInfo).loader; 
+					self.skins[face] = Bitmap(loader.content).bitmapData;
+					MapEditor.getInstance().addLog("加载"+face+"成功");
+					if( ++countor >= length ) {
+						MapEditor.getInstance().addLog("全部skin加载完成");
+						onComplete();
+					}
+				}
+			}
+			
+			for each(var item:Object in this.mEnemyProfilesTalbe)
+			{
+				var face:String = item.face;
+				if( this.skins.hasOwnProperty(face) ) continue;
+				
+				this.skins[face] = "icu";
+				
+				var bytes:ByteArray = new ByteArray;
+				var file:File = this.getFileByRelativePath("skins/"+face+".png");
+				if( !file.exists ) continue;
+				
+				length ++;
+				var stream:FileStream = new FileStream();
+				stream.open(file, FileMode.READ);
+				stream.readBytes(bytes);
+				stream.close();
+				
+				var loader:Loader = new Loader;
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(face));
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function(){
+					MapEditor.getInstance().addLog("加载"+face+"失败");
+				});
+				loader.loadBytes(bytes);
+				MapEditor.getInstance().addLog("加载"+face+"从"+file.nativePath+"..");
+			}	
+			
+			if( length == 0 ) onComplete();
+		}
+		
+		private function validityCheckAndCleanUp():void
+		{
+			//clear the unexist behaviors of each item.
+			for(var orgItem:* in this.mEnemyBehaviorsTable)
+			{
+				var behaviorsOfEnemy:Array = this.enemy_bh[orgItem] as Array;
+				if( !behaviorsOfEnemy ) continue;
+				for(var j:int = 0; j < behaviorsOfEnemy.length; j++)
+					if(!this.mBehaviorSet.hasOwnProperty(behaviorsOfEnemy[j]))
+						behaviorsOfEnemy.splice(j--, 1);
+			}
+			
+			
+			for(var bName:String in this.enemy_profile)
+				if(!enemy_bh.hasOwnProperty(bName))
+					enemy_bh[bName] = new Array;
+			
+			for( var lid:* in this.levels )
+			{
+				var level:Object = this.levels[lid];
+				var table:Object = this.level2monster[lid];
+				if( !level || !table ) continue;
+				
+				for( var x:int = level.data.length-1; x >= 0; x --)
+				{
+					var monster:Object = level.data[x];
+					if( !(monster.type in table) && monster.type != "AreaTrigger" )
+					{
+						trace(monster.type+" is missing");
+						level.data.splice( x, 1 );
+					}
+				}
+			}
+		}
+		
+//		public var conf:Object = null;
+//		
 		// definition of enemies
 		public var enemy_bh:Object = null;
 		public var enemy_profile:Object = null;
@@ -63,194 +319,8 @@ package
 		private var mChapter:Object = null;
 		
 		// -------------------------------------------------
-		private static var instance:Data = null;
-		public static function getInstance():Data
-		{
-			if(!instance) instance = new Data;
-			return instance;
-		}
 		// -------------------------------------------------
 		
-		public function Data(target:IEventDispatcher=null)
-		{
-			super(target); var self:* = this;
-		
-			this.autoSaveTimer = new Timer(600000, 1); //
-			this.autoSaveTimer.addEventListener(
-				TimerEvent.TIMER, function():void { self.saveLocal(); }
-			);
-			this.autoSaveTimer.start();
-		}
-		
-		// entrance of Data
-		public function init():void { this.sync(); }
-		// ---------------------------------------------------
-		// where is the built-in functional package?
-		// ---------------------------------------------------
-		private const syncTargets:Array = [
-			// LAN only, should port this file to oss 
-			// { 
-			//		src: "http://svn.stl.com/策划文档/屌丝RPG/profiles.xlsx",
-			//		type : URLLoaderDataFormat.BINARY
-			// },
-			//
-			{
-				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/bt_node_format.json",
-				suffix: "bt_node_format.json"
-				//type: URLLoaderDataFormat.TEXT
-			},
-			{
-				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/dynamic_args.json",
-				suffix: "dynamic_args.json"
-				//type: URLLoaderDataFormat.TEXT
-			}
-//			{
-//				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/chapter.json",
-//				suffix: "chapter.json"
-//			}
-		];
-		// where is the synchronous loader? WTF...
-		private function sync():void
-		{
-			//trace("sync");
-			var self:* = this, counter:Number = 0, error:Boolean = false;
-			var alldone:Function = function(item:Object):Function
-			{
-				// [TODO] dispatch handler by item.type
-				var handleTEXT:Function = function(e:Event):void
-				{
-					trace("sync "+item.suffix+" done");
-					MapEditor.getInstance().addLog("下载"+item.suffix+"成功");
-					Utils.write(e.target.data, "editor/data/"+item.suffix);
-						
-					if( ++counter >= syncTargets.length && !error )
-						self.load();
-				}
-				return handleTEXT;
-			}
-			var anyerror:Function = function():void
-			{
-				error = true;
-				Alert.show("[WARN]同步服务器出错，将会使用本地数据…");
-				MapEditor.getInstance().addLog("下载失败");
-				self.load();
-			}
-
-			syncTargets.forEach(function(item:Object, ...args):void
-			{
-				var loader:URLLoader = new URLLoader;
-				loader.dataFormat = item.type;
-				loader.addEventListener(Event.COMPLETE, alldone(item));
-				loader.addEventListener(IOErrorEvent.IO_ERROR, anyerror);
-				loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, anyerror);
-				loader.load( new URLRequest(item.src) );
-				MapEditor.getInstance().addLog("正在下载"+item.suffix+"..");
-			}, null);
-		}
-		// ---------------------------------------------------
-		// 
-		private function loadJson(filepath:String, warn:Boolean=true):Object
-		{
-			var ret:Object = Utils.loadJsonFileToObject(filepath);
-			if( !ret && warn)
-			{
-				Alert.show(filepath+"无法被载入内存或无法被解析！");
-				return null;
-			}
-			return ret;
-		}
-		
-		private function load():void
-		{
-			// saved informations
-			this.levels = this.loadJson("editor/saved/levels.json", false) as Object || {};
-			this.bh_lib = this.loadJson("editor/saved/bh_lib.json", false);
-			if( !this.bh_lib )  this.bh_lib = new Object;
-			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
-			
-			this.conf = this.loadJson("editor/saved/conf.json", false);
-			if( !this.conf ) this.conf = { speed: 32};
-			if(!Data.getInstance().conf.hasOwnProperty("sndFileCashe"))
-				Data.getInstance().conf.sndFileCashe = File.desktopDirectory.nativePath;
-			//this record the behaviors' name of each enemy
-			this.enemy_bh = this.loadJson("editor/saved/enemy_bh.json", false) || {};
-			this.enemy_trigger = this.loadJson("editor/saved/enemy_trigger.json", false) || {};
-			this.mChapter = this.loadJson("editor/saved/chapter.json", false) || {};
-			
-			// load configs 
-			this.dynamic_args = this.loadJson("editor/data/dynamic_args.json");
-			this.bh_node = this.loadJson("editor/data/bt_node_format.json");
-			
-			// async loading
-			// ---------------------------------------------------------------
-			// exceptional case, bad design, refactor this.
-			this.skins = new Dictionary;
-			var self:Object = this;
-			this.updateData(function() { self.start(); } );
-		}
-		
-		private function updateData(onComplete:Function):void
-		{
-			// update data
-			this.enemy_profile = this.genMonstersTable();		
-			MapEditor.getInstance().addLog("生成MonsterTable..");
-			this.level2monster = this.genLevel2MonsterTable();
-			MapEditor.getInstance().addLog("生成MonsterTable成功");
-			MapEditor.getInstance().addLog("生成LevelXML..");
-			this.level_xml = this.genLevelXML();
-			MapEditor.getInstance().addLog("生成LevelXML成功");
-			MapEditor.getInstance().addLog("生成LevelIdList..");
-			this.level_list = this.genLevelIdList();
-			MapEditor.getInstance().addLog("生成LevelIdList成功");
-			this.currSelectedLevel = this.level_list[0];
-			
-			var self:Object = this;
-			var length:Number = 0, countor:Number = 0; 
-			var alldone:Function = function(key:String):Function
-			{
-				return function(e:Event):void
-				{
-					var face:String = self.enemy_profile[key].face;
-					var loader:Loader = (e.target as LoaderInfo).loader; 
-					self.skins[face] = Bitmap(loader.content).bitmapData;
-					MapEditor.getInstance().addLog("加载"+key+"成功");
-					if( ++countor >= length ) {
-						MapEditor.getInstance().addLog("全部skin加载完成");
-						onComplete();
-					}
-				}
-			}
-			
-			for(var key:String in this.enemy_profile)
-			{
-				var face:String = this.enemy_profile[key].face;
-				if( this.skins.hasOwnProperty(face) ) continue;
-				
-				this.skins[face] = "icu";
-				
-				var bytes:ByteArray = new ByteArray;
-				var filepath:String = "editor/skins/"+this.enemy_profile[key].face+".png";
-				var file:File = File.desktopDirectory.resolvePath(filepath);
-				if( !file.exists ) continue;
-				
-				length ++;
-				var stream:FileStream = new FileStream();
-				stream.open(file, FileMode.READ);
-				stream.readBytes(bytes);
-				stream.close();
-				
-				var loader:Loader = new Loader;
-				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(key));
-				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function(){
-					MapEditor.getInstance().addLog("加载"+key+"失败");
-				});
-				loader.loadBytes(bytes);
-				MapEditor.getInstance().addLog("加载"+key+"从"+filepath+"..");
-			}	
-			
-			if( length == 0 ) onComplete();
-		}
-
 		private function start():void
 		{
 			MapEditor.getInstance().addLog("加载bt..");
@@ -301,22 +371,27 @@ package
 		public function saveLocal(e:TimerEvent=null):Boolean
 		{
 			Utils.copyDirectoryTo("editor/saved/","editor/backup/");
-			
-			Utils.writeObjectToJsonFile(this.levels, "editor/saved/levels.json");
-			Utils.writeObjectToJsonFile(this.enemy_trigger, "editor/saved/enemy_trigger.json");
-			Utils.writeObjectToJsonFile(this.enemy_bh, "editor/saved/enemy_bh.json");
-			Utils.writeObjectToJsonFile(this.bh_lib, "editor/saved/bh_lib.json");
-			Utils.writeObjectToJsonFile(this.mChapter, "editor/saved/chapter.json");
-			saveConf();
+//			
+//			Utils.writeObjectToJsonFile(
+//				this.levels, this.fullpath("editor/saved/levels.json")
+//			);
+//			Utils.writeObjectToJsonFile(
+//				this.enemy_trigger, this.fullpath("editor/saved/enemy_trigger.json")
+//			);
+//			Utils.writeObjectToJsonFile(
+//				this.enemy_bh, this.fullpath("editor/saved/enemy_bh.json")
+//			);
+//			Utils.writeObjectToJsonFile(
+//				this.bh_lib, this.fullpath("editor/saved/bh_lib.json")
+//			);
+//			Utils.writeObjectToJsonFile(
+//				this.mChapter, this.fullpath("editor/saved/chapter.json")
+//			);
 			
 			autoSaveTimer.reset(); autoSaveTimer.start();
 			return true;
 		}
 		
-		public function saveConf():void
-		{
-			Utils.writeObjectToJsonFile(this.conf, "editor/saved/conf.json");
-		}
 		
 		public function exportJS():String
 		{
@@ -353,7 +428,7 @@ package
 			var source:Array = this.levels[lid].data;
 			
 			// confs
-			export.map = { speed : this.conf.speed };
+			export.map = { speed : this.mEditorConfigs.speed };
 			
 			// parse instances 
 			export.objects = new Object, export.trigger = new Array;
@@ -440,8 +515,8 @@ package
 			var content:String = JSON.stringify(export, null, "\t");
 			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
 				adjustJS(content) + "; return level; }"; 
-			Utils.write(wrap, "editor/export/level/"+suffix+".js");
-			
+//			Utils.write(wrap, this.fullpath("editor/export/level/"+suffix+".js"));
+//			
 			return null;
 		}
 		
@@ -585,7 +660,7 @@ package
 				var lid:String = this.level_list[ind];
 				var l_path:String = "level/"+lid+".js";
 				var enemies:Object = {};
-				var c:Object =  this.getChapterDataByLevelId(lid);
+				var c:Object =  Data.getChapterDataByLevelId(lid, this.mLevelProfiles);
 				if( !c )
 				{
 					Alert.show("数据出错！");
@@ -692,25 +767,26 @@ package
 				this.mChapter[key] = raw[key];
 					
 			var self:Object = this;
-			this.updateData(function():void { self.start(); });
+			//this.updateData(function():void { self.start(); });
+			
 		}
 		
 		// ------------------------------------------------------------------
 		// updates
-		private function genMonstersTable():Object
+		static private function genMonstersTable( profiles ):Object
 		{
 			var ret:Object = {};
-			for each( var chapter:* in this.mChapter )
+			for each( var chapter:* in profiles )
 				for each( var level:* in chapter.levels )
 					for( var key:* in level.monsters )
 						ret[key] = level.monsters[key];
 			return ret;
 		}
 		
-		private function genLevel2MonsterTable():Object
+		static private function genLevel2MonsterTable( profiles ):Object
 		{
 			var ret:Object = {};
-			for each( var item:* in this.mChapter )
+			for each( var item:* in profiles )
 			{
 				var kids:Object = item.levels;
 				for each( var l:* in kids )
@@ -722,9 +798,9 @@ package
 			return ret;
 		}
 				
-		private function getChapterDataByLevelId(id:*):*
+		static private function getChapterDataByLevelId( id:*, profiles:Object ):Object
 		{
-			for each( var item:* in this.mChapter )
+			for each( var item:* in profiles )
 			{
 				var kids:Object = item.levels;
 				for each( var l:* in kids )
@@ -742,10 +818,10 @@ package
 			return null;
 		}
 				
-		private function genLevelIdList():Array
+		static private function genLevelIdList( profiles:Object ):Array
 		{
 			var ret:Array = [];
-			for each( var item:* in this.mChapter )
+			for each( var item:* in profiles )
 			{
 				var kids:Object = item.levels;
 				for each( var l:* in kids )
@@ -754,10 +830,10 @@ package
 			return ret;
 		}
 				
-		private function genLevelXML():XML 
+		static private function genLevelXML( profiles:Object ):XML 
 		{
 			var ret:XML = <root></root>;
-			for each( var item:* in this.mChapter )
+			for each( var item:* in profiles )
 			{
 				var kids:Object = item.levels;
 						
@@ -782,6 +858,18 @@ package
 							
 					lastNode.appendChild(node);
 				}
+			}
+			return ret;
+		}
+		
+		// ---------------------------------------------------------------------------------
+		private function loadJson(file:File, warn:Boolean=true):Object
+		{
+			var ret:Object = Utils.LoadJSONToObject( file );
+			if( !ret && warn)
+			{
+				Alert.show(file.name+"无法被载入内存或无法被解析！");
+				return null;
 			}
 			return ret;
 		}

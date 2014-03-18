@@ -208,7 +208,8 @@ package
 		
 		static public function write(src:String, path:String):Boolean
 		{
-			var file:File = File.desktopDirectory.resolvePath(path);
+			var file:File = new File(path);
+			
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
 			stream.writeUTFBytes( src );
@@ -216,28 +217,49 @@ package
 			return true;
 		}
 		
-		static public function loadJsonFileToObject(path:String):Object
+		static public function LoadJSONToObject( file:File )
 		{
-			var file:File = File.desktopDirectory.resolvePath(path);
 			var result:Object = null;
-			MapEditor.getInstance().addLog("正在解析"+path+"..");
+			if( file.exists ) 
+			{
+				var stream:FileStream = new FileStream;
+				stream.open(file, FileMode.READ);
+				result = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+			}
+			return result;
+		}
+		
+		static public function WriteObjectToJSON( file:File, item:Object)
+		{
+			var stream:FileStream = new FileStream;
+			stream.open( file, FileMode.WRITE );
+			stream.writeUTFBytes( JSON.stringify(item, null, "\t") );
+			stream.close();
+		}
+		
+		static public function loadJsonFileToObject(file:File):Object
+		{
+			var result:Object = null;
+			MapEditor.getInstance().addLog("正在解析"+file.name+"..");
 			if(file.exists)
 			{
-				MapEditor.getInstance().addLog(path+"存在，读取");
+				MapEditor.getInstance().addLog(file.name+"存在，读取");
 				var stream:FileStream = new FileStream;
 				stream.open(file, FileMode.READ);
 				result = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
 			}
 			else {
-				MapEditor.getInstance().addLog(path+"不存在");
+				MapEditor.getInstance().addLog(file.nativePath+"不存在");
 			}
 			return result;
 		}
 		
 		static public function writeObjectToJsonFile(item:Object, filepath:String):Boolean
 		{
-			return Utils.write( JSON.stringify(item), filepath );
+			var content:String = JSON.stringify(item, null, "\t");
+			return Utils.write( content, filepath );
 		}
 		
 		static public function copyDirectoryTo(from:String, to:String):void
@@ -290,5 +312,7 @@ package
 			fileStream.close();
 			return MD5.hashBytes(bytesArray);
 		}
+		
+		// ----------------------------------------------
 	}
 }
