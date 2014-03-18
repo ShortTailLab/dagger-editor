@@ -161,7 +161,7 @@ package behaviorEdit
 		
 		private function setExecType(type:String):void
 		{
-			var nodes:Array = Data.getInstance().bh_node as Array;
+			var nodes:Array = Data.getInstance().behaviorNodes as Array;
 			for each(var d in nodes)
 			if(d.func == type)
 			{

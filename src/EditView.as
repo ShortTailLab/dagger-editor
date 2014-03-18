@@ -178,6 +178,7 @@ package
 			this.level_id = lid;
 			matsControl.clear();
 			var level = Data.getInstance().getLevelDataById(lid);
+			if( !level ) level = { data : [], endTime : 0 };
 			matsControl.init(level.data);
 			var end:int = level.endTime != 0? level.endTime : parContainer.height/speed;
 			setEndTime(end);
@@ -194,7 +195,9 @@ package
 		{
 			Data.getInstance().conf.speed = int(unitInput.text);
 			var data:Array = matsControl.getMatsData();
-			Data.getInstance().updateLevelById(this.level_id, data, endTime);
+			Data.getInstance().updateLevelDataById(this.level_id, {
+				data:data, endTime:endTime
+			});
 		}
 		
 		//the map's current time.

@@ -64,7 +64,7 @@ package behaviorEdit
 			var content:String = searchFrame.text;
 			var searchContent:RegExp = new RegExp(content, "i");
 			var electData:Array = new Array;
-			for(var b:String in Data.getInstance().bh_lib)
+			for(var b:String in Data.getInstance().behaviorSet)
 				if(b.search(searchContent) >= 0)
 					electData.push(b);
 			electData.sort();

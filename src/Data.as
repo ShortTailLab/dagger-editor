@@ -16,15 +16,8 @@ package
 	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
-	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
-	
-	import behaviorEdit.BehaviorEvent;
-	
-	import excel.ExcelReader;
-	
-	import manager.EventManager;
 	
 	public class Data extends EventDispatcher
 	{
@@ -37,6 +30,7 @@ package
 		}
 		public function Data(target:IEventDispatcher=null) { super(target); }
 		
+		///////////////////////////////////////////////////////////////////////
 		////// editor configs 
 		// projectPath 	-> root directroy of data
 		// speed 		-> speed & scale factor of map view
@@ -62,7 +56,7 @@ package
 		public function setEditorConfig(key:String, val:Object ):void
 		{
 			this.mEditorConfigs[key] = val;
-			Utils.WriteObjectToJSON( 
+			Utils.WriteObjectToJSON( // persistence
 				File.applicationStorageDirectory.resolvePath("conf.json"),
 				this.mEditorConfigs
 			);
@@ -84,9 +78,10 @@ package
 			return this.mProjectRoot.resolvePath( sub );
 		}
 		
+		///////////////////////////////////////////////////////////////////////
 		////// data definitions from client
-		private var mDynamicArgs:Object 		= null;
-		private var mBehaviorNode:Object 		= null;
+		private var mDynamicArgs:Object 		= {};
+		private var mBehaviorNode:Object 		= {};
 		private const kSYNC_TARGETS:Array = [
 			{
 				src: "http://oss.aliyuncs.com/dagger-static/editor-configs/bt_node_format.json",
@@ -99,7 +94,10 @@ package
 		];
 		
 		// --------------------------------------------------------------------------
-		public function syncClient(onComplete:Function):void
+		public function get dynamicArgs():Object { return this.mDynamicArgs; }
+		public function get behaviorNodes():Object { return this.mBehaviorNode; }
+		
+		private function syncClient(onComplete:Function):void
 		{
 			// download all the configs of client from oss
 			var self:* = this, counter:Number = 0, error:Boolean = false;
@@ -134,59 +132,7 @@ package
 			}, null);
 		}
 		
-		////// level data
-		private var mLevelProfiles:Object 		= null;
-		private var mLevelInstancesTable:Object = null;
-		
-		private var mEnemyBehaviorsTable:Object = null;
-		private var mEnemyTriggersTable:Object 	= null;
-		
-		private var mBehaviorSet:Object 		= null;
-		
-		// --------------------------------------------------------------------------
-		private function parseLocalData()
-		{
-			this.mLevelProfiles = this.loadJson(
-				this.mProjectRoot.resolvePath("saved/profiles.json"), false
-			) as Object || {};
-			
-			this.mLevelInstancesTable = this.loadJson( 
-				this.mProjectRoot.resolvePath("saved/levels.json"), false 
-			) as Object || {};
-			
-			this.mEnemyBehaviorsTable = this.loadJson(
-				this.mProjectRoot.resolvePath("saved/enemy_bh.json"), false
-			) as Object || {};
-			
-			this.mEnemyTriggersTable = this.loadJson(
-				this.mProjectRoot.resolvePath("saved/enemy_trigger.json"), false
-			) as Object || {};
-			
-			this.mBehaviorSet = this.loadJson(
-				this.mProjectRoot.resolvePath("saved/bh_lib.json"), false
-			) as Object || {};
-			
-			
-			//			this.levels = this.loadJson("editor/saved/levels.json", false) as Object || {};
-			//			this.bh_lib = this.loadJson("editor/saved/bh_lib.json", false);
-			//			if( !this.bh_lib )  this.bh_lib = new Object;
-			//			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
-			//			
-			//			//this record the behaviors' name of each enemy
-			//			this.enemy_bh = this.loadJson("editor/saved/enemy_bh.json", false) || {};
-			//			this.enemy_trigger = this.loadJson("editor/saved/enemy_trigger.json", false) || {};
-			//			this.mChapter = this.loadJson("editor/saved/chapter.json", false) || {};
-			//			
-			//			// load configs 
-			//			this.dynamic_args = this.loadJson("editor/data/dynamic_args.json");
-			//			this.bh_node = this.loadJson("editor/data/bt_node_format.json");
-			
-			// async loading
-			// ---------------------------------------------------------------
-			// exceptional case, bad design, refactor this.
-			//this.skins = new Dictionary;
-		}
-		
+		///////////////////////////////////////////////////////////////////////
 		////// second-hand data of editor
 		private var mEnemySkins:Dictionary 		= null;
 		private var mEnemyProfilesTalbe:Object 	= null;
@@ -198,12 +144,13 @@ package
 		
 		private function updateEditorData(onComplete:Function):void
 		{
-			this.mEnemyProfilesTalbe = Data.genMonstersTable( this.mLevelProfiles );
-			this.mLevelId2Enemies    = Data.genLevel2MonsterTable( this.mLevelProfiles );
+			this.mEnemyProfilesTalbe = DataParser.genMonstersTable( this.mLevelProfiles );
+			this.mLevelId2Enemies    = DataParser.genLevel2MonsterTable( this.mLevelProfiles );
 			
-			this.mLevelXML 			 = Data.genLevelXML( this.mLevelProfiles );
+			this.mLevelXML 			 = DataParser.genLevelXML( this.mLevelProfiles );
 			//this.mBehaviorXML 		 = Data.par
 			
+			// load skins async
 			this.mEnemySkins 	     = new Dictionary();
 			
 			var length:Number = 0, countor:Number = 0; 
@@ -225,9 +172,8 @@ package
 			for each(var item:Object in this.mEnemyProfilesTalbe)
 			{
 				var face:String = item.face;
-				if( this.skins.hasOwnProperty(face) ) continue;
-				
-				this.skins[face] = "icu";
+				if( this.mEnemySkins.hasOwnProperty(face) ) continue;
+				this.mEnemySkins[face] = "icu";
 				
 				var bytes:ByteArray = new ByteArray;
 				var file:File = this.getFileByRelativePath("skins/"+face+".png");
@@ -241,7 +187,7 @@ package
 				
 				var loader:Loader = new Loader;
 				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(face));
-				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function(){
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function():void{
 					MapEditor.getInstance().addLog("加载"+face+"失败");
 				});
 				loader.loadBytes(bytes);
@@ -251,27 +197,29 @@ package
 			if( length == 0 ) onComplete();
 		}
 		
-		private function validityCheckAndCleanUp():void
+		private function validityCheckAndCleanUp():String
 		{
+			var result:String = "";
+			// [TODO] add args checking for behaviors
+			
 			//clear the unexist behaviors of each item.
 			for(var orgItem:* in this.mEnemyBehaviorsTable)
 			{
-				var behaviorsOfEnemy:Array = this.enemy_bh[orgItem] as Array;
+				var behaviorsOfEnemy:Array = this.mEnemyBehaviorsTable[orgItem] as Array;
 				if( !behaviorsOfEnemy ) continue;
 				for(var j:int = 0; j < behaviorsOfEnemy.length; j++)
 					if(!this.mBehaviorSet.hasOwnProperty(behaviorsOfEnemy[j]))
+					{
+						result += "【删除】行为"+behaviorsOfEnemy[j]+"不存在\n";
 						behaviorsOfEnemy.splice(j--, 1);
+					}
 			}
 			
-			
-			for(var bName:String in this.enemy_profile)
-				if(!enemy_bh.hasOwnProperty(bName))
-					enemy_bh[bName] = new Array;
-			
-			for( var lid:* in this.levels )
+			// clear the undefined enemies of level
+			for( var lid:* in this.mLevelProfiles )
 			{
-				var level:Object = this.levels[lid];
-				var table:Object = this.level2monster[lid];
+				var level:Object = this.mLevelProfiles[lid];
+				var table:Object = this.mLevelId2Enemies[lid];
 				if( !level || !table ) continue;
 				
 				for( var x:int = level.data.length-1; x >= 0; x --)
@@ -279,92 +227,97 @@ package
 					var monster:Object = level.data[x];
 					if( !(monster.type in table) && monster.type != "AreaTrigger" )
 					{
-						trace(monster.type+" is missing");
+						result += "【删除】敌人类型"+monster.type+"未被关卡定义\n";
 						level.data.splice( x, 1 );
 					}
 				}
 			}
-		}
-		
-//		public var conf:Object = null;
-//		
-		// definition of enemies
-		public var enemy_bh:Object = null;
-		public var enemy_profile:Object = null;
-		public var enemy_trigger:Object = null;
-		
-		// instances of enemy and map configs for every level
-		public var levels:Object = null;
-		public var level_xml:XML = null;
-		public var level_list:Array = null;
-		
-		// static image of enemies
-		public var skins:Dictionary; 
-		
-		// behavior 
-		public var bh_lib:Object = null;
-		public var bh_node:Object = null;
-		public var bh_xml:XML = null;
-		
-		// misc
-		private var level2monster:Object = null;
-		public var dynamic_args:Object = null;
-		//public var excel_reader:ExcelReader = null;
-		
-		// anchors
-		public var currSelectedLevel:String = "";
-		private var autoSaveTimer:Timer;
-		
-		// chapter datas 
-		private var mChapter:Object = null;
-		
-		// -------------------------------------------------
-		// -------------------------------------------------
-		
-		private function start():void
-		{
-			MapEditor.getInstance().addLog("加载bt..");
-			// clean up
-			{
-				for(var orgItem:* in this.enemy_bh)
-				{
-					//clear the unexist behaviors of each item.
-					var behaviorsOfEnemy:Array = this.enemy_bh[orgItem] as Array;
-					if( !behaviorsOfEnemy ) continue;
-					for(var j:int = 0; j < behaviorsOfEnemy.length; j++)
-						if(!this.bh_lib.hasOwnProperty(behaviorsOfEnemy[j]))
-							behaviorsOfEnemy.splice(j--, 1);
-				}
-				
-				for(var bName:String in this.enemy_profile)
-					if(!enemy_bh.hasOwnProperty(bName))
-						enemy_bh[bName] = new Array;
-				
-				for( var lid:* in this.levels )
-				{
-					var level:Object = this.levels[lid];
-					var table:Object = this.level2monster[lid];
-					if( !level || !table ) continue;
-					
-					for( var x:int = level.data.length-1; x >= 0; x --)
-					{
-						var monster:Object = level.data[x];
-						if( !(monster.type in table) && monster.type != "AreaTrigger" )
-						{
-							trace(monster.type+" is missing");
-							level.data.splice( x, 1 );
-						}
-					}
-				}
-			}
 			
-			// let's rock 'n' roll
-			MapEditor.getInstance().addLog("加载bt成功");
-			this.dispatchEvent( new Event(Event.COMPLETE) );
-		
-			var data:Object = this.getCurrentLevelEnemyProfile();
-			MapEditor.getInstance().matsView.refreshDataAndView(data);
+			if( result == "" ) return null;
+			return result;
 		}
+		
+		///////////////////////////////////////////////////////////////////////
+		////// level data
+		// the validity of data below is responsible to upper class
+		private var mLevelProfiles:Object 		= null;
+		private var mLevelInstancesTable:Object = null;
+		
+		private var mEnemyBehaviorsTable:Object = null;
+		private var mEnemyTriggersTable:Object 	= null;
+		
+		private var mBehaviorSet:Object 		= null;
+		
+		// --------------------------------------------------------------------------
+		public function getLevelDataById( lid:String ):Object
+		{
+			return this.mLevelInstancesTable[lid];
+		}
+		
+		public function updateLevelDataById( lid:String, inst:Object ):void
+		{
+			this.mLevelInstancesTable[lid] = inst;
+			Utils.WriteObjectToJSON( // persistence
+				this.getFileByRelativePath( "saved/levels.json" ),
+				this.mLevelInstancesTable
+			);
+		}
+		
+		public function getEnemyTriggersById( eid:String ):Object
+		{
+			return this.mEnemyTriggersTable[eid];
+		}
+		
+		public function updateEnemyTriggersById( eid:String, triggers:Object ):void
+		{
+			this.mEnemyTriggersTable[eid] = triggers;
+			Utils.WriteObjectToJSON( // persistence
+				this.getFileByRelativePath( "saved/enemy_trigger.json" ),
+				this.mEnemyTriggersTable
+			);
+		}
+		
+		public function getEnemyBehaviorsById( eid:String ):Object
+		{
+			return this.mEnemyBehaviorsTable[eid];
+		}
+		
+		public function getBehaviorById( bid:String ):Object
+		{
+			return this.mBehaviorSet[bid];
+		}
+		public function updateBehaviorSetById( bid:String, data:Object ):void
+		{
+			this.mBehaviorSet[bid] = data;
+			Utils.WriteObjectToJSON( // persistence
+				this.getFileByRelativePath( "saved/bh_lib.json" ),
+				this.mEnemyTriggersTable
+			);
+		}
+		
+		private function parseLocalData()
+		{
+			this.mLevelProfiles = this.loadJson(
+				this.mProjectRoot.resolvePath("saved/profiles.json"), false
+			) as Object || {};
+			
+			this.mLevelInstancesTable = this.loadJson( 
+				this.mProjectRoot.resolvePath("saved/levels.json"), false 
+			) as Object || {};
+			
+			this.mEnemyBehaviorsTable = this.loadJson(
+				this.mProjectRoot.resolvePath("saved/enemy_bh.json"), false
+			) as Object || {};
+			
+			this.mEnemyTriggersTable = this.loadJson(
+				this.mProjectRoot.resolvePath("saved/enemy_trigger.json"), false
+			) as Object || {};
+			
+			this.mBehaviorSet = this.loadJson(
+				this.mProjectRoot.resolvePath("saved/bh_lib.json"), false
+			) as Object || {};
+		}
+		
 		
 		// -------------------------------------------------------------
 		// persistence
@@ -388,7 +341,6 @@ package
 //				this.mChapter, this.fullpath("editor/saved/chapter.json")
 //			);
 			
-			autoSaveTimer.reset(); autoSaveTimer.start();
 			return true;
 		}
 		
@@ -397,24 +349,24 @@ package
 		{
 			var msg:String = "", skips:String = "";
 			
-			for each( var lid:String in this.level_list )
-			{
-				if( lid in this.levels )
-				{
-					var r:String = this.exportLevelJS(lid, lid);
-					if( r ) msg += ("["+lid+"]"+r+"\n"); 
-				}
-				//else
-				//	skips += lid+",";
-			}
-			
-			if( this.currSelectedLevel != "" )
-			{	
-				var rr:String = this.exportLevelJS(this.currSelectedLevel, "demo");
-				if( rr )  msg += ("[demo]"+rr+"\n"); 
-			}
-			
-			if( msg == "" ) msg ="【保存成功】";
+//			for each( var lid:String in this.level_list )
+//			{
+//				if( lid in this.levels )
+//				{
+//					var r:String = this.exportLevelJS(lid, lid);
+//					if( r ) msg += ("["+lid+"]"+r+"\n"); 
+//				}
+//				//else
+//				//	skips += lid+",";
+//			}
+//			
+//			if( this.currSelectedLevel != "" )
+//			{	
+//				var rr:String = this.exportLevelJS(this.currSelectedLevel, "demo");
+//				if( rr )  msg += ("[demo]"+rr+"\n"); 
+//			}
+//			
+//			if( msg == "" ) msg ="【保存成功】";
 				
 			//return msg+"\n跳过了关卡"+skips.slice(0, -2); why should i care about this?
 			return msg;
@@ -422,99 +374,99 @@ package
 		
 		private function exportLevelJS(lid:String, suffix:String):String
 		{	
-			if( !(lid in this.levels) ) return "【失败】无相关地图数据存在";
-				
-			var export:Object = new Object;
-			var source:Array = this.levels[lid].data;
-			
-			// confs
-			export.map = { speed : this.mEditorConfigs.speed };
-			
-			// parse instances 
-			export.objects = new Object, export.trigger = new Array;
-			var actors:Object = {}, traps:Object = {};
-			for each( var item:* in source ) 
-			{
-				if( item.type == "AreaTrigger" ) {
-					export.trigger.push({
-						cond : {
-							type: "Area",
-							area: "@@cc.rect("+item.x+","+item.y+","+item.width+","+item.height+")@@"
-						},
-						result : {
-							type: "Object", objs : item.objs
-						}
-					});
-					continue;
-				}
-
-				var data:Object = this.enemy_profile[item.type];
-				if( data.monster_type == "Bullet" ) {
-					return "【失败】子弹类型不可被放置在地图中"; 
-				}
-				if( data.monster_type == "Monster" ) actors[item.type] = data;
-				else traps[item.type] = data;
-				
-				var t:Number = item.triggerTime || item.y;
-				export.objects[item.id] = {
-					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@",
-					time : t
-				};
-			}
-			
-			export.actor = new Object; 
-			var bhs:Object = {};
-			for( var key:String in actors )
-			{
-				if( !this.enemy_bh.hasOwnProperty(key) || this.enemy_bh[key].length == 0 ) {
-					return "【失败】敌人"+key+"未被设置行为";
-				}
-				
-				export.actor[key] = Utils.deepCopy(actors[key]);	
-				export.actor[key].behaviors = this.enemy_bh[key];
-				export.actor[key].triggers = this.enemy_trigger[key] || [];
-				this.enemy_bh[key].forEach(function(item:*, ...args):void {
-					bhs[item] = true;
-				}, null);
-			}
-			
-			export.behavior = new Object;
-			for( var key:String in bhs )
-			{
-				if( !this.bh_lib.hasOwnProperty(key) ) {
-					return "【失败】试图导出不存在的行为"+key;
-				}
-				var raw:String = Utils.genBTreeJS(this.bh_lib[key]);
-				export.behavior[key] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
-					""+raw+";}@@");
-			} 
-			
-			export.trap = new Object;
-			for(  var key:* in traps )
-				export.trap[key] = Utils.deepCopy(traps[key]);
-			
-			// export bullet
-			export.bullet = new Object;
-			for( var key:* in this.enemy_profile ) 
-			{
-				if(this.enemy_profile[key].monster_type == "Bullet")
-				{
-					for( var bh:String in export.behavior )
-					{
-						if( export.behavior[bh].search(key) != -1)
-						{
-							export.bullet[key] = this.enemy_profile[key];
-						}
-					}
-				}
-			}
-			
-			// undefined
-			export.luck = new Object;
-			
-			var content:String = JSON.stringify(export, null, "\t");
-			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
-				adjustJS(content) + "; return level; }"; 
+//			if( !(lid in this.levels) ) return "【失败】无相关地图数据存在";
+//				
+//			var export:Object = new Object;
+//			var source:Array = this.levels[lid].data;
+//			
+//			// confs
+//			export.map = { speed : this.mEditorConfigs.speed };
+//			
+//			// parse instances 
+//			export.objects = new Object, export.trigger = new Array;
+//			var actors:Object = {}, traps:Object = {};
+//			for each( var item:* in source ) 
+//			{
+//				if( item.type == "AreaTrigger" ) {
+//					export.trigger.push({
+//						cond : {
+//							type: "Area",
+//							area: "@@cc.rect("+item.x+","+item.y+","+item.width+","+item.height+")@@"
+//						},
+//						result : {
+//							type: "Object", objs : item.objs
+//						}
+//					});
+//					continue;
+//				}
+//
+//				var data:Object = this.enemy_profile[item.type];
+//				if( data.monster_type == "Bullet" ) {
+//					return "【失败】子弹类型不可被放置在地图中"; 
+//				}
+//				if( data.monster_type == "Monster" ) actors[item.type] = data;
+//				else traps[item.type] = data;
+//				
+//				var t:Number = item.triggerTime || item.y;
+//				export.objects[item.id] = {
+//					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@",
+//					time : t
+//				};
+//			}
+//			
+//			export.actor = new Object; 
+//			var bhs:Object = {};
+//			for( var key:String in actors )
+//			{
+//				if( !this.enemy_bh.hasOwnProperty(key) || this.enemy_bh[key].length == 0 ) {
+//					return "【失败】敌人"+key+"未被设置行为";
+//				}
+//				
+//				export.actor[key] = Utils.deepCopy(actors[key]);	
+//				export.actor[key].behaviors = this.enemy_bh[key];
+//				export.actor[key].triggers = this.enemy_trigger[key] || [];
+//				this.enemy_bh[key].forEach(function(item:*, ...args):void {
+//					bhs[item] = true;
+//				}, null);
+//			}
+//			
+//			export.behavior = new Object;
+//			for( var key:String in bhs )
+//			{
+//				if( !this.bh_lib.hasOwnProperty(key) ) {
+//					return "【失败】试图导出不存在的行为"+key;
+//				}
+//				var raw:String = Utils.genBTreeJS(this.bh_lib[key]);
+//				export.behavior[key] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
+//					""+raw+";}@@");
+//			} 
+//			
+//			export.trap = new Object;
+//			for(  var key:* in traps )
+//				export.trap[key] = Utils.deepCopy(traps[key]);
+//			
+//			// export bullet
+//			export.bullet = new Object;
+//			for( var key:* in this.enemy_profile ) 
+//			{
+//				if(this.enemy_profile[key].monster_type == "Bullet")
+//				{
+//					for( var bh:String in export.behavior )
+//					{
+//						if( export.behavior[bh].search(key) != -1)
+//						{
+//							export.bullet[key] = this.enemy_profile[key];
+//						}
+//					}
+//				}
+//			}
+//			
+//			// undefined
+//			export.luck = new Object;
+//			
+//			var content:String = JSON.stringify(export, null, "\t");
+//			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
+//				adjustJS(content) + "; return level; }"; 
 //			Utils.write(wrap, this.fullpath("editor/export/level/"+suffix+".js"));
 //			
 			return null;
@@ -536,108 +488,108 @@ package
 			return xml;
 		}
 		
-		public function addBehaviors(name:String, data:Object):void
-		{
-			if(!this.bh_lib.hasOwnProperty(name))
-			{
-				if(XMLList(this.bh_xml.behavior).length() == 0)
-					EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.BT_XML_APPEND));
-				
-				this.bh_lib[name] = data;
-				this.bh_xml.appendChild(new XML("<behavior label='"+name+"'></behavior>"));
-				this.saveLocal();
-			}
-			else
-				trace("addBehaviors error: behavior exists!");
-		}
-		
-		public function updateBehavior(name:String, data:Object):void
-		{
-			this.bh_lib[name] = data;
-			this.saveLocal();
-		}
-		
-		public function renameBehavior(prevName:String, currName:String):void
-		{
-			if(this.bh_lib.hasOwnProperty(currName))
-			{
-				trace("renamebehavior:currname is invalid!");
-				return;
-			}
-			var isChangeEnemyData:Boolean = false;
-			for each(var btData:Array in this.enemy_bh)
-			{
-				var i:int = btData.indexOf(prevName);
-				if(i >= 0)
-				{
-					isChangeEnemyData = true;
-					btData[i] = currName;
-				}
-			}
-			if(isChangeEnemyData) this.saveLocal();
-			this.bh_lib[currName] = this.bh_lib[prevName];
-			delete this.bh_lib[prevName];
-			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
-			this.saveLocal();
-		}
-		
-		public function deleteBehaviors(name:String):void
-		{
-			
-			if(this.bh_lib.hasOwnProperty(name))
-			{
-				var isChangeEnemyData:Boolean = false;
-				for each(var btData:Array in this.enemy_bh)
-				{
-					var i:int = btData.indexOf(name);
-					if(i >= 0)
-					{
-						isChangeEnemyData = true;
-						btData.splice(i, 1);
-					}
-				}
-				if(isChangeEnemyData) this.saveLocal();
-				
-				delete this.bh_lib[name];
-				this.bh_xml = this.parseBehaviorXML(this.bh_lib);
-				this.saveLocal();
-			}
-		}
-		
-		public function addEnemyBehavior(enemyType:String, bName:String):void
-		{
-			if(!this.enemy_bh.hasOwnProperty(enemyType))
-			{
-				trace("addenemybehavior error:enemyType not exist!");
-				return;
-			}
-			var bts:Array = this.enemy_bh[enemyType] as Array;
-			if(enemyContainsBehavior(enemyType, bName))
-			{
-				trace("addenemybehavior error:try to add a behavior that has existed!");
-				return;
-			}
-			bts.push(bName);
-		}
-		
-		public function enemyContainsBehavior(enemyType:String, bName:String):Boolean
-		{
-			var bts:Array = this.enemy_bh[enemyType] as Array;
-			return bts.indexOf(bName) >= 0;
-		}
-		
-		public function setEnemyBehavior(enemyType:String, bName:String):void
-		{
-			if(this.enemy_bh.hasOwnProperty(enemyType))
-			{
-				this.enemy_bh[enemyType] = new Array;
-				if(bName != "")
-					this.enemy_bh[enemyType].push(bName);
-				this.saveLocal();
-			}
-			else
-				trace("set enemy data: enemytype not exist!");
-		}
+//		public function addBehaviors(name:String, data:Object):void
+//		{
+//			if(!this.bh_lib.hasOwnProperty(name))
+//			{
+//				if(XMLList(this.bh_xml.behavior).length() == 0)
+//					EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.BT_XML_APPEND));
+//				
+//				this.bh_lib[name] = data;
+//				this.bh_xml.appendChild(new XML("<behavior label='"+name+"'></behavior>"));
+//				this.saveLocal();
+//			}
+//			else
+//				trace("addBehaviors error: behavior exists!");
+//		}
+//		
+//		public function updateBehavior(name:String, data:Object):void
+//		{
+//			this.bh_lib[name] = data;
+//			this.saveLocal();
+//		}
+//		
+//		public function renameBehavior(prevName:String, currName:String):void
+//		{
+//			if(this.bh_lib.hasOwnProperty(currName))
+//			{
+//				trace("renamebehavior:currname is invalid!");
+//				return;
+//			}
+//			var isChangeEnemyData:Boolean = false;
+//			for each(var btData:Array in this.enemy_bh)
+//			{
+//				var i:int = btData.indexOf(prevName);
+//				if(i >= 0)
+//				{
+//					isChangeEnemyData = true;
+//					btData[i] = currName;
+//				}
+//			}
+//			if(isChangeEnemyData) this.saveLocal();
+//			this.bh_lib[currName] = this.bh_lib[prevName];
+//			delete this.bh_lib[prevName];
+//			this.bh_xml = this.parseBehaviorXML(this.bh_lib);
+//			this.saveLocal();
+//		}
+//		
+//		public function deleteBehaviors(name:String):void
+//		{
+//			
+//			if(this.bh_lib.hasOwnProperty(name))
+//			{
+//				var isChangeEnemyData:Boolean = false;
+//				for each(var btData:Array in this.enemy_bh)
+//				{
+//					var i:int = btData.indexOf(name);
+//					if(i >= 0)
+//					{
+//						isChangeEnemyData = true;
+//						btData.splice(i, 1);
+//					}
+//				}
+//				if(isChangeEnemyData) this.saveLocal();
+//				
+//				delete this.bh_lib[name];
+//				this.bh_xml = this.parseBehaviorXML(this.bh_lib);
+//				this.saveLocal();
+//			}
+//		}
+//		
+//		public function addEnemyBehavior(enemyType:String, bName:String):void
+//		{
+//			if(!this.enemy_bh.hasOwnProperty(enemyType))
+//			{
+//				trace("addenemybehavior error:enemyType not exist!");
+//				return;
+//			}
+//			var bts:Array = this.enemy_bh[enemyType] as Array;
+//			if(enemyContainsBehavior(enemyType, bName))
+//			{
+//				trace("addenemybehavior error:try to add a behavior that has existed!");
+//				return;
+//			}
+//			bts.push(bName);
+//		}
+//		
+//		public function enemyContainsBehavior(enemyType:String, bName:String):Boolean
+//		{
+//			var bts:Array = this.enemy_bh[enemyType] as Array;
+//			return bts.indexOf(bName) >= 0;
+//		}
+//		
+//		public function setEnemyBehavior(enemyType:String, bName:String):void
+//		{
+//			if(this.enemy_bh.hasOwnProperty(enemyType))
+//			{
+//				this.enemy_bh[enemyType] = new Array;
+//				if(bName != "")
+//					this.enemy_bh[enemyType].push(bName);
+//				this.saveLocal();
+//			}
+//			else
+//				trace("set enemy data: enemytype not exist!");
+//		}
 		/*
 		{
 			"id": int,
@@ -655,55 +607,55 @@ package
 		public function getLevelDataForServer():Array
 		{
 			var ret:Array = [];
-			for( var ind:* in this.level_list )
-			{
-				var lid:String = this.level_list[ind];
-				var l_path:String = "level/"+lid+".js";
-				var enemies:Object = {};
-				var c:Object =  Data.getChapterDataByLevelId(lid, this.mLevelProfiles);
-				if( !c )
-				{
-					Alert.show("数据出错！");
-				}
-				if ( !(lid in this.levels) )
-				{
-					ret.push( { 
-						id : lid,
-						stageId: c.chapter_id,
-						stage: c.chapter_name,
-						name: c.level_name,
-						path: l_path, enemies : [] });
-					continue;
-				}
-				for( var iter:* in this.levels[lid].data )
-				{
-					var item:Object = this.levels[lid].data[iter];
-					if( !(item.type in enemies) ) 
-					{
-						var m:Object = this.level2monster[lid][item.type];
-						enemies[item.type] = {
-							type 	: int(item.type),
-							count 	: 0,
-							coins 	: m.coins || "",
-							items 	: m.items || ""
-						};
-					}
-					enemies[item.type].count ++;
-				}
-				var l_enemies:Array = [];
-				for each( var mon:* in enemies )
-				{
-					l_enemies.push(mon);
-				}
-				ret.push( {
-					id : lid,
-					path : l_path,
-					stageId: c.chapter_id,
-					stage: c.chapter_name,
-					name: c.level_name,
-					enemies : l_enemies
-				});
-			}
+//			for( var ind:* in this.level_list )
+//			{
+//				var lid:String = this.level_list[ind];
+//				var l_path:String = "level/"+lid+".js";
+//				var enemies:Object = {};
+//				var c:Object =  Data.getChapterDataByLevelId(lid, this.mLevelProfiles);
+//				if( !c )
+//				{
+//					Alert.show("数据出错！");
+//				}
+//				if ( !(lid in this.levels) )
+//				{
+//					ret.push( { 
+//						id : lid,
+//						stageId: c.chapter_id,
+//						stage: c.chapter_name,
+//						name: c.level_name,
+//						path: l_path, enemies : [] });
+//					continue;
+//				}
+//				for( var iter:* in this.levels[lid].data )
+//				{
+//					var item:Object = this.levels[lid].data[iter];
+//					if( !(item.type in enemies) ) 
+//					{
+//						var m:Object = this.level2monster[lid][item.type];
+//						enemies[item.type] = {
+//							type 	: int(item.type),
+//							count 	: 0,
+//							coins 	: m.coins || "",
+//							items 	: m.items || ""
+//						};
+//					}
+//					enemies[item.type].count ++;
+//				}
+//				var l_enemies:Array = [];
+//				for each( var mon:* in enemies )
+//				{
+//					l_enemies.push(mon);
+//				}
+//				ret.push( {
+//					id : lid,
+//					path : l_path,
+//					stageId: c.chapter_id,
+//					stage: c.chapter_name,
+//					name: c.level_name,
+//					enemies : l_enemies
+//				});
+//			}
 					
 			return ret;
 		}
@@ -711,157 +663,65 @@ package
 		public function getCurrentLevelEnemyProfile():Object
 		{
 			// Utils.dumpObject( this.level2monster );
-			if( this.currSelectedLevel in this.level2monster )
-			{
-				return this.level2monster[this.currSelectedLevel];
-			}
-			trace(this.currSelectedLevel+" can't found");
+//			if( this.currSelectedLevel in this.level2monster )
+//			{
+//				return this.level2monster[this.currSelectedLevel];
+//			}
+//			trace(this.currSelectedLevel+" can't found");
 			return new Array;
 		}
-		
-		public function updateLevelById(lid:String, data:Array, endTime:int):Object
-		{
-			var ret:Object = this.getLevelDataById(lid);
-			ret.data = data;
-			ret.endTime = endTime;
-			this.levels[lid] = ret;
-			this.saveLocal();
-			return ret;
-		}
-		
-		public function getLevelDataById(lid:String):Object
-		{
-			var ret:Object = {
-				data : [],
-				endTime : 0
-			};
-			if( lid in this.levels ) return this.levels[lid];
-			this.levels[lid] = ret;
-			return ret;
-		}
-		
-		public function setEnemyTrigger(id:String, triggers:Object):void
-		{
-			this.enemy_trigger[id] = triggers;
-		}
-		
-		// ----------------------------------------------------------------
-		// parse excel 
-		public function parseChapterProfile(profile:File, onComplete:Function):void
-		{
-			var self:Object = this;
-			var excel_reader:ExcelReader = new ExcelReader();
-			excel_reader.parse( profile, function(raw:Object, msg:String=""):void
-			{
-				if( !raw ) onComplete( msg );
-				else {
-					self.mergeChapters( raw );
-					onComplete("成功");
-				}
-			});
-		}
-		
-		private function mergeChapters( raw:Object ):void
-		{
-			for( var key:* in raw )
-				this.mChapter[key] = raw[key];
-					
-			var self:Object = this;
-			//this.updateData(function():void { self.start(); });
-			
-		}
-		
-		// ------------------------------------------------------------------
-		// updates
-		static private function genMonstersTable( profiles ):Object
-		{
-			var ret:Object = {};
-			for each( var chapter:* in profiles )
-				for each( var level:* in chapter.levels )
-					for( var key:* in level.monsters )
-						ret[key] = level.monsters[key];
-			return ret;
-		}
-		
-		static private function genLevel2MonsterTable( profiles ):Object
-		{
-			var ret:Object = {};
-			for each( var item:* in profiles )
-			{
-				var kids:Object = item.levels;
-				for each( var l:* in kids )
-				{ 
-					ret[l.level_id] = l.monsters;
-				}
-			}
-			
-			return ret;
-		}
-				
-		static private function getChapterDataByLevelId( id:*, profiles:Object ):Object
-		{
-			for each( var item:* in profiles )
-			{
-				var kids:Object = item.levels;
-				for each( var l:* in kids )
-				{
-					if( l.level_id == id )
-					{
-						return {
-							chapter_id : item.chapter_id,
-							chapter_name : item.chapter_name,
-							level_name : l.level_name
-						};
-					}
-				}
-			}
-			return null;
-		}
-				
-		static private function genLevelIdList( profiles:Object ):Array
-		{
-			var ret:Array = [];
-			for each( var item:* in profiles )
-			{
-				var kids:Object = item.levels;
-				for each( var l:* in kids )
-					ret.push(l.level_id);	
-			}
-			return ret;
-		}
-				
-		static private function genLevelXML( profiles:Object ):XML 
-		{
-			var ret:XML = <root></root>;
-			for each( var item:* in profiles )
-			{
-				var kids:Object = item.levels;
-						
-				var lastNode:XML = new XML("<node label='" + item.chapter_name + "'></node>")
-				ret.appendChild(lastNode);
-						
-				var levelList:Array = new Array;
-						
-				for each(var l:Object in kids)
-					levelList.push(l);
-		
-				// sort by level id
-				levelList.sortOn("level_id");
-						
-				for(var i:int=0; i<levelList.length; i++)
-				{
-					var level:Object = levelList[i];
-							
-					var node:XML = new XML("<level></level>");
-					node.@label = level.level_name;
-					node.@level_id = level.level_id;
-							
-					lastNode.appendChild(node);
-				}
-			}
-			return ret;
-		}
-		
+//		
+//		public function updateLevelById(lid:String, data:Array, endTime:int):Object
+//		{
+//			var ret:Object = this.getLevelDataById(lid);
+//			ret.data = data;
+//			ret.endTime = endTime;
+//			this.levels[lid] = ret;
+//			this.saveLocal();
+//			return ret;
+//		}
+//		
+//		public function getLevelDataById(lid:String):Object
+//		{
+//			var ret:Object = {
+//				data : [],
+//				endTime : 0
+//			};
+//			if( lid in this.levels ) return this.levels[lid];
+//			this.levels[lid] = ret;
+//			return ret;
+//		}
+//		
+//		public function setEnemyTrigger(id:String, triggers:Object):void
+//		{
+//			this.enemy_trigger[id] = triggers;
+//		}
+//		
+//		// ----------------------------------------------------------------
+//		// parse excel 
+//		public function parseChapterProfile(profile:File, onComplete:Function):void
+//		{
+//			var self:Object = this;
+//			var excel_reader:ExcelReader = new ExcelReader();
+//			excel_reader.parse( profile, function(raw:Object, msg:String=""):void
+//			{
+//				if( !raw ) onComplete( msg );
+//				else {
+//					self.mergeChapters( raw );
+//					onComplete("成功");
+//				}
+//			});
+//		}
+//		
+//		private function mergeChapters( raw:Object ):void
+//		{
+//			for( var key:* in raw )
+//				this.mChapter[key] = raw[key];
+//					
+//			var self:Object = this;
+//			//this.updateData(function():void { self.start(); });
+//		}
+//		
 		// ---------------------------------------------------------------------------------
 		private function loadJson(file:File, warn:Boolean=true):Object
 		{

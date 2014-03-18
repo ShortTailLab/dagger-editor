@@ -20,7 +20,8 @@ package behaviorEdit
 			editTargetType = type;
 			if(!Data.getInstance().enemy_profile.hasOwnProperty(type))
 				Data.getInstance().enemy_profile[type] = new Array;
-			btArray = new ArrayCollection(Data.getInstance().enemy_bh[editTargetType] as Array);
+			
+			btArray = new ArrayCollection(Data.getInstance().getBehaviorById( editTargetType ) as Array);
 			
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_NEW_BT, onNewBT);
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_DONE, onCreateDone);
@@ -35,8 +36,10 @@ package behaviorEdit
 		public function addBT(bName:String):void
 		{
 			var data:Object = parPanel.editView.export();
-			if(!Data.getInstance().bh_lib.hasOwnProperty(bName))
-				Data.getInstance().addBehaviors(bName, data);
+			
+			if(!Data.getInstance().getBehaviorById(bName))
+				Data.getInstance().updateBehaviorSetById(bName, data);
+			
 			btArray.addItem(bName);
 			Data.getInstance().saveLocal();
 			
@@ -91,7 +94,7 @@ package behaviorEdit
 		
 		public function save(bName:String, data:Object):void
 		{
-			Data.getInstance().updateBehavior(bName, data);
+			Data.getInstance().updateBehaviorSetById(bName, data);
 		}
 		
 		public function setCurrEditBehavior(bName:String):void
@@ -103,7 +106,7 @@ package behaviorEdit
 			currEditBehavior = bName;
 			if(currEditBehavior != "")
 			{
-				parPanel.editView.init(Data.getInstance().bh_lib[bName]);
+				parPanel.editView.init( Data.getInstance().getBehaviorById(bName) );
 				parPanel.bar.selectedItem = currEditBehavior;
 			}
 			else
@@ -115,7 +118,7 @@ package behaviorEdit
 			if(e.msg != "")
 			{
 				currEditBehavior = "";
-				parPanel.editView.init(Data.getInstance().bh_lib[e.msg]);
+				parPanel.editView.init( Data.getInstance().getBehaviorById(e.msg) );
 			}
 			else if(currEditBehavior != "")
 				this.setCurrEditBehavior("");

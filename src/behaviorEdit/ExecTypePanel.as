@@ -28,9 +28,8 @@ package behaviorEdit
 			var i:int = 0;
 			var h:Number = 0.0;
 			var w:Number = 0.0;
-			for each(var item in Data.getInstance().bh_node)
+			for each(var item in Data.getInstance().behaviorNodes)
 			{
-				
 				var label:TextField = Utils.getLabel(item.func, 0, 0, 16);
 				label.selectable = false;
 				label.border = true;
@@ -105,7 +104,7 @@ package behaviorEdit
 		
 		private function getNodeByFuncName(name:String):Object
 		{
-			for each(var node in Data.getInstance().bh_node)
+			for each(var node in Data.getInstance().behaviorNodes)
 				if(node.func == name)
 					return node;
 			
