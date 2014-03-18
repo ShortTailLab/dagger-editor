@@ -318,6 +318,12 @@ package
 			Utils.writeObjectToJsonFile(this.conf, "editor/saved/conf.json");
 		}
 		
+		public function saveLastOpenedPath(path:String)
+		{
+			Data.getInstance().conf.sendFileCache = path;
+			Data.getInstance().saveConf();
+		}
+		
 		public function exportJS():String
 		{
 			var msg = "";

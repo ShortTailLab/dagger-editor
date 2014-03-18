@@ -74,11 +74,12 @@ package manager
 				loader.load( request );
 			}
 		}
-
+		
 		public function uploadConfigFileToOSS(file:File, onComplete:Function):void 
 		{
 			var path:File = File.desktopDirectory.resolvePath("editor/tmp/");
-			if( path.isDirectory ) path.deleteDirectory(true);
+			if( path.isDirectory ) 
+				path.deleteDirectory(true);
 			
 			var tmp:File = new File(path.url+"/config/"+file.name);
 			var fstream:FileStream = new FileStream();
