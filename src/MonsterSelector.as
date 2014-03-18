@@ -103,7 +103,7 @@ package
 				
 				with( item ) { x = px; y = py; }
 				this.mScrollingLayer.addChild( item );
-				iterX = (++iterX)%cols 
+				iterX = (++iterX)%cols;
 			}
 
 			with( this ) { height = item.y + 130; }
@@ -119,7 +119,6 @@ package
 				this.mSelected.select(true);
 				Runtime.getInstance().selectedComponentType = target.type;
 			}
-			else if(this.mSelected) this.clearSelection();
 		}
 		
 		private function clearSelection():void

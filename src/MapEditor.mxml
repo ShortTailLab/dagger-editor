@@ -49,7 +49,7 @@
 			
 			private function onRightClick(e:MouseEvent)
 			{
-//				matsView.clearSelection();
+				Runtime.getInstance().selectedComponentType = null;
 			}
 
 			private function onDataReady(e:Event=null):void
@@ -63,7 +63,7 @@
 			
 				{
 					// edit view
-					_enemyEditView = new EditView(this, middleArea);	
+					_enemyEditView = new MainScene(this, middleArea);	
 					middleArea.addElement(_enemyEditView);
 				}
 
@@ -270,7 +270,7 @@
 			private static var _instance:MapEditor;
 			private var _log:String = "";
 			
-			private var _enemyEditView:EditView;
+			private var _enemyEditView:MainScene;
 			private var _enemyEditVGroup:VGroup;
 			
 			private var _bgEditView:BgEditView;

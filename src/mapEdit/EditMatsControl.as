@@ -12,11 +12,11 @@ package mapEdit
 	public class EditMatsControl
 	{
 		public var mats:Array;
-		private var view:EditView;
+		private var view:MainScene;
 		
 		static private var idCount:int = 0;
 		
-		public function EditMatsControl(_view:EditView)
+		public function EditMatsControl(_view:MainScene)
 		{
 			mats = new Array;
 			view = _view;

@@ -8,11 +8,13 @@ package
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
+	import flash.events.TimerEvent;
 	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.ui.Keyboard;
 	import flash.utils.Dictionary;
+	import flash.utils.Timer;
 	
 	import mx.containers.Canvas;
 	import mx.controls.VSlider;
@@ -38,7 +40,7 @@ package
 	import tools.StateBtn;
 	
 	
-	public class EditView extends UIComponent
+	public class MainScene extends UIComponent
 	{
 		public var speed:Number = -1;//pixel per second
 		//mapView contains the map,the grid above and all mats.
@@ -77,10 +79,12 @@ package
 		//跟随鼠标的一些提示
 		private var tipsContainer:Sprite = null;
 		
+		private var tipsTimer:Timer = null;
+		
 		[Embed(source="map_snow1.png")]
 		static public var BgImage:Class;
 		
-		public function EditView(_main:MapEditor, _container:Canvas)
+		public function MainScene(_main:MapEditor, _container:Canvas)
 		{
 			//all the ui position will be recalculated in onResize()
 			
@@ -159,14 +163,20 @@ package
 			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
 			this.addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
 			this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
-			
-			this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
-			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-			this.addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
-			this.addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
-			
 			editViewBg.addEventListener(MouseEvent.MOUSE_OUT, onBGMouseOut);
+			
+			var self:MainScene = this;
+			this.tipsTimer = new Timer(0.03, 1);
+			this.tipsTimer.addEventListener(TimerEvent.TIMER, 
+				function():void
+				{
+					self.updateMouseTips();
+					self.tipsTimer.reset();
+					self.tipsTimer.start();
+				}
+			);
+			this.tipsTimer.start();
+			
 		}
 		
 		public function init(lid:String):void
@@ -284,19 +294,12 @@ package
 			else
 				setCurrTime(currTime+e.delta);
 		}
-		
-		private function onClick(e:MouseEvent):void
-		{
-			if( Runtime.getInstance().selectedComponentType )
-			{
-				matsControl.add(
-					Runtime.getInstance().selectedComponentType, e.localX, e.localY
-				);
-			}
-		}
+
 		private function onGridClick(e:TimeLineEvent):void
 		{
 			selectControl.unselect();
+			
+			var type:String = Runtime.getInstance().selectedComponentType;
 //			if(main.fView.selected)
 //			{
 //				if(main.matsView.selected)
@@ -309,35 +312,10 @@ package
 //					}
 //				}
 //			}
-//			else if(main.matsView.selected)
-//			{
-//				var type:String = main.matsView.selected.type;
-//				matsControl.add(type, e.data.x, -mapView.y-e.data.y);
-//			}
-		}
-		
-		private function onMouseDown(e:MouseEvent):void
-		{
-			var localPoint:Point = mapView.globalToLocal(new Point(e.stageX, e.stageY));
-			
-		}
-		
-		private function onMouseMove(e:MouseEvent):void
-		{
-			var localPoint:Point = mapView.globalToLocal(new Point(e.stageX, e.stageY));	
-			updateMouseTips();
-		}
-		
-		private function onMouseOut(e:MouseEvent):void
-		{
-		}
-		
-		private function onMouseOver(e:MouseEvent):void
-		{
-		}
-		
-		private function onMouseUp(e:MouseEvent):void
-		{
+			if( type )
+			{
+				matsControl.add(type, e.data.x, -mapView.y-e.data.y);
+			}
 		}
 		
 		private function onBGMouseOut(e:MouseEvent):void
@@ -368,7 +346,8 @@ package
 		
 		private function updateMouseTips():void
 		{
-			var type = Runtime.getInstance().selectedComponentType;
+			var type:String = Runtime.getInstance().selectedComponentType;
+
 			if( type && !tipsContainer)
 			{
 				tipsContainer = new Sprite;
@@ -376,7 +355,7 @@ package
 				if(main.fView.selected)
 				{
 					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
-					for each(var p in posData)
+					for each(var p:* in posData)
 					{
 						var mat:Component = MatFactory.createMat(type);
 						mat.x = p.x;

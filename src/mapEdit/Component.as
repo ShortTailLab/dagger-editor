@@ -13,9 +13,9 @@ package mapEdit
 		public var triggerTime:int = -1;
 		public var isSelected:Boolean = false;
 		public var triggerId:String = "";
-		protected var editView:EditView = null;
+		protected var editView:MainScene = null;
 		
-		public function Component(_editView:EditView = null, type:String = "")
+		public function Component(_editView:MainScene = null, type:String = "")
 		{
 			super();
 			this.editView = _editView;

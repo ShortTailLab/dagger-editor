@@ -28,7 +28,7 @@ package mapEdit
 		{
 			var scale:Number = 0.0;
 
-			var map:Bitmap = new EditView.BgImage as Bitmap;
+			var map:Bitmap = new MainScene.BgImage as Bitmap;
 			var scale:Number =  360 / map.width;
 			
 			map.scaleX = scale;

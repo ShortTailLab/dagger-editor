@@ -20,10 +20,10 @@ package mapEdit
 	public class SelectControl extends EventDispatcher
 	{
 		public var targets:Array = null;
-		public var view:EditView = null;
+		public var view:MainScene = null;
 		private var selectFrame:Shape = null;
 		
-		public function SelectControl(_view:EditView)
+		public function SelectControl(_view:MainScene)
 		{
 			targets = new Array;
 			this.view = _view;

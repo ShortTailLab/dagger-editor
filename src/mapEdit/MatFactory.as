@@ -10,7 +10,7 @@ package mapEdit
 				return new EntityComponent(null, type, -1, textWidth);
 		}
 		
-		static public function createMatOnView(editView:EditView, type:String, textWidth:int = -1):Component
+		static public function createMatOnView(editView:MainScene, type:String, textWidth:int = -1):Component
 		{
 			if(type == AreaTriggerComponent.TRIGGER_TYPE)
 				return new AreaTriggerComponent(editView);

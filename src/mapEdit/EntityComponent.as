@@ -22,7 +22,7 @@ package mapEdit
 		private var typeSpr:Sprite = null;
 		private var textWidth:int = 0;
 		
-		public function EntityComponent(_editView:EditView = null, _type:String = "", size:int = -1, _textWidth:int = -1)
+		public function EntityComponent(_editView:MainScene = null, _type:String = "", size:int = -1, _textWidth:int = -1)
 		{
 			super(_editView, _type);
 			this.trimSize = size;

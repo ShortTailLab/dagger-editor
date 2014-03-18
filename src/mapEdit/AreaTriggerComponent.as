@@ -24,7 +24,7 @@ package mapEdit
 		private var triggerLayer:Sprite;
 		private var editable:Boolean = false;
 		
-		public function AreaTriggerComponent(_editView:EditView = null)
+		public function AreaTriggerComponent(_editView:MainScene = null)
 		{
 			super(_editView, TRIGGER_TYPE);
 			//左上角为原点
