@@ -177,8 +177,10 @@ package
 			}
 			this.level_id = lid;
 			matsControl.clear();
+			
 			var level = Data.getInstance().getLevelDataById(lid);
 			if( !level ) level = { data : [], endTime : 0 };
+			
 			matsControl.init(level.data);
 			var end:int = level.endTime != 0? level.endTime : parContainer.height/speed;
 			setEndTime(end);

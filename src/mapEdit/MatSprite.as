@@ -49,14 +49,16 @@ package mapEdit
 			}
 
 			var face:String = Data.getInstance().getEnemyProfileById(this.type).face;
-			var skin:* = Data.getInstance().getSkinById( face );
-			if( skin )
+			var data:BitmapData = Data.getInstance().getSkinById( face );
+			if( data )
 			{
-				var bmpd:BitmapData = skin;
+				var bmpd:BitmapData = data;
+				
 				skinBmp = new Bitmap(bmpd);
 				skinBmp.scaleX = skinBmp.scaleY = 0.5;
 				skinBmp.x = -skinBmp.width*0.5;
 				skinBmp.y = -skinBmp.height;
+				
 				skin.addChild(skinBmp);
 			}
 			else
@@ -67,6 +69,7 @@ package mapEdit
 				empty.x = -empty.textWidth*0.5;
 				empty.y = -empty.textHeight;
 				empty.selectable = false;
+				
 				skin.addChild(empty);
 			}
 			

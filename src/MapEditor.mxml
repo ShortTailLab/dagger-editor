@@ -9,6 +9,8 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import com.hurlant.crypto.symmetric.NullPad;
+			
 			import mx.containers.TitleWindow;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
@@ -61,9 +63,7 @@
 			
 				{
 					// edit view
-					_enemyEditView = new EditView(this, middleArea);
-					_enemyEditView.init( Data.getInstance().getFirstLevelId() );
-					
+					_enemyEditView = new EditView(this, middleArea);	
 					middleArea.addElement(_enemyEditView);
 				}
 
@@ -123,8 +123,14 @@
 					matsView = new MatsView;
 					matsView.percentWidth = 100;
 					matsView.percentHeight = 100;
+
 					group.addElement(matsView);
 				}
+				
+				var lid:String = Data.getInstance().getFirstLevelId();
+				_enemyEditView.init( lid );
+				var data:Object = Data.getInstance().getEnemiesByLevelId(lid) || [];
+				matsView.refreshDataAndView(data);
 
 				_enemyEditVGroup = new VGroup();
 				_enemyEditVGroup.percentHeight = 100;
@@ -284,7 +290,6 @@
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="left">
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
-				<s:Label text="服务器Tag" color="0x777777"/>
 			</s:HGroup>
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
