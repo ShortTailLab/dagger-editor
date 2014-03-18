@@ -63,7 +63,7 @@
 			
 				{
 					// edit view
-					_enemyEditView = new MainScene(this, middleArea);	
+					_enemyEditView = new MainScene(middleArea);	
 					middleArea.addElement(_enemyEditView);
 				}
 

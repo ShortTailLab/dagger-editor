@@ -51,7 +51,6 @@ package
 		public var matsControl:EditMatsControl;
 		public var selectControl:SelectControl;
 		
-		private var main:MapEditor = null;
 		private var editViewMask:Sprite = null;
 		private var editViewBg:UIComponent = null;
 		
@@ -84,12 +83,10 @@ package
 		[Embed(source="map_snow1.png")]
 		static public var BgImage:Class;
 		
-		public function MainScene(_main:MapEditor, _container:Canvas)
+		public function MainScene(_container:Canvas)
 		{
 			//all the ui position will be recalculated in onResize()
 			
-
-			this.main = _main;
 			this.parContainer = _container;
 			this.parContainer.addEventListener(ResizeEvent.RESIZE, onResize);
 			if( Data.getInstance().conf.speed == 0 )
@@ -352,18 +349,18 @@ package
 			{
 				tipsContainer = new Sprite;
 				tipsContainer.alpha = 0.5;
-				if(main.fView.selected)
-				{
-					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
-					for each(var p:* in posData)
-					{
-						var mat:Component = MatFactory.createMat(type);
-						mat.x = p.x;
-						mat.y = p.y;
-						tipsContainer.addChild(mat);
-					}
-				}
-				else
+//				if(main.fView.selected)
+//				{
+//					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
+//					for each(var p:* in posData)
+//					{
+//						var mat:Component = MatFactory.createMat(type);
+//						mat.x = p.x;
+//						mat.y = p.y;
+//						tipsContainer.addChild(mat);
+//					}
+//				}
+//				else
 				{
 					var mat2:Component = MatFactory.createMat(type);
 					tipsContainer.addChild(mat2);
