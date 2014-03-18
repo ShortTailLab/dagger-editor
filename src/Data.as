@@ -75,7 +75,7 @@ package
 		{
 			super(target); var self:* = this;
 		
-			this.autoSaveTimer = new Timer(60000, 1); // auto save per minute
+			this.autoSaveTimer = new Timer(600000, 1); //
 			this.autoSaveTimer.addEventListener(
 				TimerEvent.TIMER, function():void { self.saveLocal(); }
 			);
@@ -279,7 +279,7 @@ package
 					for( var x:int = level.data.length-1; x >= 0; x --)
 					{
 						var monster:Object = level.data[x];
-						if( !(monster.type in table) )
+						if( !(monster.type in table) && monster.type != "AreaTrigger" )
 						{
 							trace(monster.type+" is missing");
 							level.data.splice( x, 1 );
@@ -320,14 +320,28 @@ package
 		
 		public function exportJS():String
 		{
-			var msg = "";
+			var msg:String = "", skips:String = "";
 			
 			for each( var lid:String in this.level_list )
-				msg += lid+" "+this.exportLevelJS(lid, lid)+"\n" ;
+			{
+				if( lid in this.levels )
+				{
+					var r:String = this.exportLevelJS(lid, lid);
+					if( r ) msg += ("["+lid+"]"+r+"\n"); 
+				}
+				//else
+				//	skips += lid+",";
+			}
 			
 			if( this.currSelectedLevel != "" )
-				msg += "demo "+this.exportLevelJS(this.currSelectedLevel, "demo")+"\n";
+			{	
+				var rr:String = this.exportLevelJS(this.currSelectedLevel, "demo");
+				if( rr )  msg += ("[demo]"+rr+"\n"); 
+			}
+			
+			if( msg == "" ) msg ="【保存成功】";
 				
+			//return msg+"\n跳过了关卡"+skips.slice(0, -2); why should i care about this?
 			return msg;
 		}
 		
@@ -428,7 +442,7 @@ package
 				adjustJS(content) + "; return level; }"; 
 			Utils.write(wrap, "editor/export/level/"+suffix+".js");
 			
-			return "【成功】";
+			return null;
 		}
 		
 		private function adjustJS(js:String):String

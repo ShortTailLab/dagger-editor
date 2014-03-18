@@ -155,7 +155,7 @@ package mapEdit
 		
 		override public function initFromData(data:Object):void
 		{
-			this.sid = data.sid;
+			this.sid = data.id;
 			this.x = data.x/2;
 			this.y = -data.y/2;
 			if( data.hasOwnProperty("triggerTime") ) this.triggerTime = data.triggerTime;

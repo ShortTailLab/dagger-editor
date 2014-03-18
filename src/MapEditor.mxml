@@ -185,7 +185,6 @@
 			
 			private function setCurrLevel(level_id:String):void
 			{
-				var list:Array = Data.getInstance().level_list;
 				Data.getInstance().currSelectedLevel = level_id;
 				_enemyEditView.init(level_id);
 				
@@ -216,7 +215,7 @@
 				var self:* = this;
 				var mask:* = this.MakeMask("上传关卡中，请稍后…");
 				var export:File = File.desktopDirectory.resolvePath("editor/export/");
-				SyncManager.getInstance().uploadLevelsToOSS( export, tagInput.text,  
+				SyncManager.getInstance().uploadLevelsToOSS( export, "dagger-levels",  
 					function(msg:String):void
 					{
 						self.ReleaseMask( mask );
@@ -314,7 +313,6 @@
 				<s:Button id="saveBtn" label="保存配置" click="saveFile(event)"/>
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
 				<s:Label text="服务器Tag" color="0x777777"/>
-				<s:TextInput id="tagInput" width="100" text="zwf"/>
 			</s:HGroup>
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
