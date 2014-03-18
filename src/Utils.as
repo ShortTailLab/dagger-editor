@@ -216,6 +216,11 @@ package
 			return true;
 		}
 		
+		static public function projectRoot():String
+		{
+			return File.desktopDirectory.resolvePath("editor").nativePath + "/";			
+		}
+		
 		static public function loadJsonFileToObject(path:String):Object
 		{
 			var file:File = File.desktopDirectory.resolvePath(path);

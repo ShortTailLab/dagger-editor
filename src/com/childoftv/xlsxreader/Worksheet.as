@@ -20,6 +20,8 @@ THE SOFTWARE.
 */
 package com.childoftv.xlsxreader
 {
+	import excel.Grid;
+
 	/**
 	 * A wrapper class for an individual XLSX Worksheet loaded through an XLSXLoader object
 	 * Instances of this class are created by the XLSX.worksheet function.
@@ -161,6 +163,7 @@ package com.childoftv.xlsxreader
 			default xml namespace=ns;
 			return getRows(column,from,to).v;
 		}
+		
 		private function rowsToValues(rows:XMLList):XMLList
 		{
 			//converts a set of rows to values
@@ -192,7 +195,77 @@ package com.childoftv.xlsxreader
 		public function toXMLString():String
 		{
 			return xml.toXMLString();
+		} 
+		
+		private function toColIndex(i:int) :String
+		{
+			var index:String = "";
+			while(i > 0)
+			{
+				index = LETTER_TABLE[i % 26] + index;
+				i = int(i / 26);
+			}
+			return index;
 		}
 		
+		private var LETTER_TABLE:Array = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+		
+		public function toGrid(width:int, height:int) : Grid
+		{
+			var grid:Grid = new Grid(width, height);
+			
+			for(var x:int=0; x<width; x++)
+			{
+				var colIndex:String = toColIndex(x+1);
+				
+				for(var y:int=0; y<height; y++)
+				{
+					var val:String = this.getCellValue(colIndex + ":" + (y+1));
+					if(val)
+						grid.se(x, y, val);
+					else
+						grid.se(x, y, "");					
+				}
+				/*
+				var excelRow:XMLList = this.getRowsAsValues(colIndex, 1, height);
+				for(var y:int=0; y<height; y++)
+				{
+					trace("val is : " + excelRow[y]);
+					if(excelRow[y])
+						grid.se(x, y, excelRow[y].toString());
+					else
+						grid.se(x, y, "");
+				}
+				*/
+			}
+			return grid;
+		}
+		
+		public function getMaxRowCount(col:String) :int
+		{
+			var list:XMLList = this.getRowsAsValues(col);
+			var count = 0;
+			for each(var item in list)
+			{
+				if(!item || item == "")
+					break;
+				count++;
+			}
+			return count;
+		}
+		
+		public function getMaxHeightCount(row:int) :int
+		{
+			var i:int=0;
+			while(i<2000)
+			{
+				i++;
+				var colIndex:String = this.toColIndex(i);
+				var val:String = this.getCellValue(colIndex + ":" + row);
+				if(!val || val == "")
+					break;
+			}
+			return i;
+		}
 	}
 }

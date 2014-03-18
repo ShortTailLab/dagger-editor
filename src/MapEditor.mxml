@@ -24,6 +24,8 @@
 			
 			import manager.SyncManager;
 			
+			import excel.SkillConfigReader;
+			
 			public var fView:FormationsView = null;
 			public var matsView:MatsView = null;
 			
@@ -230,6 +232,34 @@
 				SyncManager.getInstance().uploadLevelsToGameServer(dataList);
 			}
 			
+			private function parseSkillConfigFile(e:Event):void
+			{
+				var browser:File = new File(Data.getInstance().conf.sendFileCache);
+				browser.browseForOpen("请选择上传的技能配置文件(.xlsx)");
+				
+				var mask:* = this.MakeMask("解析技能配置中，请稍后…");
+				var self:* = this;
+				
+				browser.addEventListener(Event.SELECT, function (e:Event):void 
+				{
+					var file:File = e.target as File;
+					Data.getInstance().saveLastOpenedPath(file.nativePath);
+					
+					SkillConfigReader.parseSkillConfigFromPath(file.nativePath, function(skillDict:*)
+					{
+						var jsonOut:String = JSON.stringify(skillDict, null, 4);
+						Utils.write(jsonOut, "editor/config/skill.json");
+						
+						var skillJsonPath =  Utils.projectRoot() + "skill.json";
+						SyncManager.getInstance().uploadConfigFileToOSSFromPath(skillJsonPath, function(t:String):void 
+						{
+							self.ReleaseMask( mask );
+							Alert.show( t );
+						});
+					});
+				});
+			}
+			
 			private function uploadConfigFile(e:Event):void
 			{
 				var self:* = this;
@@ -320,7 +350,8 @@
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
 				<s:Label text="编辑器" color="0x777777"/>	
 				<s:Button id="parse_excel" label="场景文件" click="parseExcel(event)"/>
-				<s:Button id="config" label="配置文件" click="uploadConfigFile(event)"/>
+				<s:Button id="config" label="JSON配置" click="uploadConfigFile(event)"/>
+				<s:Button id="configSkill" label="技能配置" click="parseSkillConfigFile(event)"/>
 				<s:Button id="levels_to_game_server" label="关卡同步" click="syncServer(event)"/>
 			</s:HGroup>
 			
