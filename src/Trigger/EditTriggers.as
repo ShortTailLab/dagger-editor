@@ -12,15 +12,15 @@ package Trigger
 	
 	import spark.components.TitleWindow;
 	
-	import mapEdit.MatSprite;
+	import mapEdit.EntityComponent;
 	
 	import manager.EventManager;
 
 	public class EditTriggers extends TitleWindow
 	{
-		private var host:MatSprite = null;
+		private var host:EntityComponent = null;
 		
-		public function EditTriggers(target:MatSprite)
+		public function EditTriggers(target:EntityComponent)
 		{
 			this.host = target;
 			

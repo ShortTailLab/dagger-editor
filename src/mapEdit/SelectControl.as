@@ -33,7 +33,7 @@ package mapEdit
 			this.view.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 		}
 		
-		public function select(target:EditBase):void
+		public function select(target:Component):void
 		{
 			if(targets.length == 1 && targets[0] == target)
 				return;
@@ -59,12 +59,12 @@ package mapEdit
 			return selectFrame;
 		}
 		
-		public function unselect(target:EditBase = null):void
+		public function unselect(target:Component = null):void
 		{
 			for(var i:int = targets.length-1; i >= 0; i--)
 				if(!target)
 				{
-					var o:EditBase = targets.pop()
+					var o:Component = targets.pop()
 					o.select(false);
 					o.enablePosChangeDispatch(false);
 					o.removeEventListener(Event.REMOVED_FROM_STAGE , onRemoved);
@@ -84,7 +84,7 @@ package mapEdit
 		public function copySelect():void
 		{
 			var newMats:Array = new Array;
-			for each(var m:EditBase in targets)
+			for each(var m:Component in targets)
 			{
 				newMats.push(view.matsControl.add(m.type, m.x+30, m.y+30));
 			}
@@ -145,7 +145,7 @@ package mapEdit
 		private function getSelectMats(frame:Rectangle):Array
 		{
 			var result:Array = new Array;
-			for each(var m:EditBase in view.matsControl.mats)
+			for each(var m:Component in view.matsControl.mats)
 			{
 				var bound:Rectangle = m.getBounds(view);
 				if(frame.intersects(bound))
@@ -156,7 +156,7 @@ package mapEdit
 			return result;
 		}
 		
-		private function add(target:EditBase):void
+		private function add(target:Component):void
 		{
 			var menu:ContextMenu = new ContextMenu;
 			var item:ContextMenuItem = new ContextMenuItem("复制");
@@ -172,7 +172,7 @@ package mapEdit
 				
 				var copy:Array = targets.slice(0, targets.length);
 				//Utils.dumpObject(targets);
-				for each(var m:EditBase in copy)
+				for each(var m:Component in copy)
 				{
 					view.matsControl.remove(m.sid);
 				}
@@ -193,8 +193,8 @@ package mapEdit
 		
 		private function onRemoved(e:Event):void
 		{
-			if(e.target as EditBase)
-				unselect(e.target as EditBase);
+			if(e.target as Component)
+				unselect(e.target as Component);
 		}
 	}
 }

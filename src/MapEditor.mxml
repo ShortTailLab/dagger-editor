@@ -27,7 +27,7 @@
 			import manager.SyncManager;
 			
 			public var fView:FormationsView = null;
-			public var matsView:MatsView = null;
+			public var matsView:MonsterSelector = null;
 			
 			private function init():void
 			{
@@ -49,7 +49,7 @@
 			
 			private function onRightClick(e:MouseEvent)
 			{
-				matsView.clearSelection();
+//				matsView.clearSelection();
 			}
 
 			private function onDataReady(e:Event=null):void
@@ -120,17 +120,14 @@
 					vscrollbar.viewport = group;
 					hgroup.addElement(vscrollbar);
 					
-					matsView = new MatsView;
+					matsView = new MonsterSelector;
 					matsView.percentWidth = 100;
 					matsView.percentHeight = 100;
 
 					group.addElement(matsView);
 				}
 				
-				var lid:String = Data.getInstance().getFirstLevelId();
-				_enemyEditView.init( lid );
-				var data:Object = Data.getInstance().getEnemiesByLevelId(lid) || [];
-				matsView.refreshDataAndView(data);
+				this.setCurrLevel( Data.getInstance().getFirstLevelId() );
 
 				_enemyEditVGroup = new VGroup();
 				_enemyEditVGroup.percentHeight = 100;
@@ -180,9 +177,7 @@
 			private function setCurrLevel(lid:String):void
 			{
 				_enemyEditView.init(lid);
-				
-				var data:Object = Data.getInstance().getEnemiesByLevelId(lid) || [];
-				matsView.refreshDataAndView(data);
+				matsView.reset( lid );
 			}
 			
 			private function sendToStaticServer(e:Event):void

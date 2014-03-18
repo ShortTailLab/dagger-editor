@@ -11,7 +11,7 @@ package mapEdit
 	import flash.text.TextFormat;
 	
 
-	public class MatSprite extends EditBase
+	public class EntityComponent extends Component
 	{
 		public var trimSize:Number;
 		public var route:Array = null;
@@ -22,7 +22,7 @@ package mapEdit
 		private var typeSpr:Sprite = null;
 		private var textWidth:int = 0;
 		
-		public function MatSprite(_editView:EditView = null, _type:String = "", size:int = -1, _textWidth:int = -1)
+		public function EntityComponent(_editView:EditView = null, _type:String = "", size:int = -1, _textWidth:int = -1)
 		{
 			super(_editView, _type);
 			this.trimSize = size;
@@ -117,7 +117,7 @@ package mapEdit
 			}
 		}
 		
-		private var triggerShadow:EditBase = null;
+		private var triggerShadow:Component = null;
 		public function showTrigger():void
 		{
 			if(this.triggerTime > 0 && !triggerShadow)

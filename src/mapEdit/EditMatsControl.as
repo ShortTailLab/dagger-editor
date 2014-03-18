@@ -30,7 +30,7 @@ package mapEdit
 				if(!item.hasOwnProperty("id"))
 					item.id = getUID();
 				
-				var mat:EditBase = MatFactory.createMatOnView(view, item.type, 30);
+				var mat:Component = MatFactory.createMatOnView(view, item.type, 30);
 				mat.initFromData(item);
 				addMat(mat);
 			}
@@ -39,7 +39,7 @@ package mapEdit
 		public function getMatsData():Array
 		{
 			var data:Array = new Array;
-			for each(var m:EditBase in mats)
+			for each(var m:Component in mats)
 			{
 				if(m.triggerId.length > 0 && !getMat(m.triggerId))
 					m.triggerId = "";
@@ -49,9 +49,9 @@ package mapEdit
 			return data;
 		}
 		
-		public function getMat(sid:String):EditBase
+		public function getMat(sid:String):Component
 		{
-			for each(var m:EditBase in mats)
+			for each(var m:Component in mats)
 				if(m.sid == sid)
 					return m;
 			return null;
@@ -61,7 +61,7 @@ package mapEdit
 		{
 			var localPos:Point = view.mapView.globalToLocal(pos);
 			var result:Array = new Array;
-			for each(var m:EditBase in mats)
+			for each(var m:Component in mats)
 			{
 				var bound:Rectangle = m.getBounds(m.parent);
 				if(bound.contains(localPos.x, localPos.y))
@@ -70,9 +70,9 @@ package mapEdit
 			return result;
 		}
 		
-		public function add(type:String, px:int, py:int):EditBase
+		public function add(type:String, px:int, py:int):Component
 		{
-			var mat:EditBase = MatFactory.createMatOnView(view, type, 30);
+			var mat:Component = MatFactory.createMatOnView(view, type, 30);
 			
 			mat.x = px;
 			mat.y = py;
@@ -80,7 +80,7 @@ package mapEdit
 			return mat;
 		}
 		
-		private function addMat(mat:EditBase):void
+		private function addMat(mat:Component):void
 		{
 			if(mat.sid == "" || !mat.sid)
 				mat.sid = getUID();
@@ -97,9 +97,9 @@ package mapEdit
 		public function remove(id:String):void
 		{
 			for(var i:int = 0; i < mats.length; i++)
-				if(EditBase(mats[i]).sid == id)
+				if(Component(mats[i]).sid == id)
 				{
-					EditBase(mats[i]).onDelete();
+					Component(mats[i]).onDelete();
 					mats[i].removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
 					mats[i].removeEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
 					mats[i].removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
@@ -111,7 +111,7 @@ package mapEdit
 		
 		public function clear():void
 		{
-			for each(var m:EditBase in mats)
+			for each(var m:Component in mats)
 				view.mapView.removeChild(m);
 			mats.splice(0, mats.length);
 		}
@@ -131,12 +131,12 @@ package mapEdit
 			isClick = true;
 			currX = view.mouseX;
 			currY = view.mouseY;
-			var _draggingMat:EditBase = e.currentTarget as EditBase;
+			var _draggingMat:Component = e.currentTarget as Component;
 			
 			if(_draggingMat.isSelected)
 				draggingMats = view.selectControl.targets;
 			else
-				draggingMats = new Array(e.currentTarget as EditBase);
+				draggingMats = new Array(e.currentTarget as Component);
 			
 		}
 		private function onMatMove(e:MouseEvent):void
@@ -168,7 +168,7 @@ package mapEdit
 			
 			if(isClick)
 			{
-				var target:EditBase = e.currentTarget as EditBase;
+				var target:Component = e.currentTarget as Component;
 				view.selectControl.select(target);
 			}
 			isClick =false;
@@ -185,9 +185,9 @@ package mapEdit
 			if( this.doubleClickTimer )
 			{
 				// double click
-				var target:EditBase = e.currentTarget as EditBase;
+				var target:Component = e.currentTarget as Component;
 				var targetOfSameType:Array = new Array;
-				for each(var m:EditBase in view.matsControl.mats)
+				for each(var m:Component in view.matsControl.mats)
 				if(m.type == target.type)
 					targetOfSameType.push(m);
 				view.selectControl.selectMul(targetOfSameType);	

@@ -26,7 +26,7 @@ package
 	
 	import formationEdit.Formation;
 	
-	import mapEdit.EditBase;
+	import mapEdit.Component;
 	import mapEdit.EditMapControl;
 	import mapEdit.EditMatsControl;
 	import mapEdit.MatFactory;
@@ -240,7 +240,7 @@ package
 			if(code == Keyboard.DELETE && selectControl.targets.length > 0)
 			{
 				var copy:Array = selectControl.targets.slice(0, selectControl.targets.length);
-				for each(var m:EditBase in copy)
+				for each(var m:Component in copy)
 				{
 					matsControl.remove(m.sid);
 				}
@@ -287,32 +287,33 @@ package
 		
 		private function onClick(e:MouseEvent):void
 		{
-			if(main.matsView.selected)
+			if( Runtime.getInstance().selectedComponentType )
 			{
-				var type:String = main.matsView.selected.type;
-				matsControl.add(type, e.localX, e.localY);
+				matsControl.add(
+					Runtime.getInstance().selectedComponentType, e.localX, e.localY
+				);
 			}
 		}
 		private function onGridClick(e:TimeLineEvent):void
 		{
 			selectControl.unselect();
-			if(main.fView.selected)
-			{
-				if(main.matsView.selected)
-				{
-					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
-					for each(var p in posData)
-					{
-						var type:String = main.matsView.selected.type;
-						matsControl.add(type, e.data.x+p.x, -mapView.y-e.data.y+p.y);
-					}
-				}
-			}
-			else if(main.matsView.selected)
-			{
-				var type:String = main.matsView.selected.type;
-				matsControl.add(type, e.data.x, -mapView.y-e.data.y);
-			}
+//			if(main.fView.selected)
+//			{
+//				if(main.matsView.selected)
+//				{
+//					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
+//					for each(var p in posData)
+//					{
+//						var type:String = main.matsView.selected.type;
+//						matsControl.add(type, e.data.x+p.x, -mapView.y-e.data.y+p.y);
+//					}
+//				}
+//			}
+//			else if(main.matsView.selected)
+//			{
+//				var type:String = main.matsView.selected.type;
+//				matsControl.add(type, e.data.x, -mapView.y-e.data.y);
+//			}
 		}
 		
 		private function onMouseDown(e:MouseEvent):void
@@ -355,7 +356,7 @@ package
 		
 		public function snap(mats:Array):void
 		{
-			for each(var m:EditBase in mats)
+			for each(var m:Component in mats)
 			{
 				var pos:Point = new Point(m.x, m.y);
 				var pointOnGrid:Point = timeLine.globalToLocal(mapView.localToGlobal(pos));
@@ -367,17 +368,17 @@ package
 		
 		private function updateMouseTips():void
 		{
-			if(main.matsView.selected && !tipsContainer)
+			var type = Runtime.getInstance().selectedComponentType;
+			if( type && !tipsContainer)
 			{
 				tipsContainer = new Sprite;
 				tipsContainer.alpha = 0.5;
-				var type:String = main.matsView.selected.type;
 				if(main.fView.selected)
 				{
 					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
 					for each(var p in posData)
 					{
-						var mat:EditBase = MatFactory.createMat(type);
+						var mat:Component = MatFactory.createMat(type);
 						mat.x = p.x;
 						mat.y = p.y;
 						tipsContainer.addChild(mat);
@@ -385,12 +386,12 @@ package
 				}
 				else
 				{
-					var mat2:EditBase = MatFactory.createMat(type);
+					var mat2:Component = MatFactory.createMat(type);
 					tipsContainer.addChild(mat2);
 				}
 				this.addChild(tipsContainer);
 			}
-			else if(!main.matsView.selected && tipsContainer)
+			else if(!type && tipsContainer)
 			{
 				this.removeChild(tipsContainer);
 				tipsContainer = null;

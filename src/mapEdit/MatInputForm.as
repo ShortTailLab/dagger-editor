@@ -72,7 +72,7 @@ package mapEdit
 			triggerInput.text = "";
 			if(control.targets.length == 1)	
 			{
-				var data:Object = EditBase(control.targets[0]).toExportData();
+				var data:Object = Component(control.targets[0]).toExportData();
 				timeInput.text = data.y;
 				xInput.text = data.x;
 				if(data.hasOwnProperty("triggerTime"))
@@ -98,7 +98,7 @@ package mapEdit
 				
 				for(var i:int = 0; i < length; i++)
 				{
-					var m:EditBase = MatFactory.createMat(control.targets[i].type, 30);
+					var m:Component = MatFactory.createMat(control.targets[i].type, 30);
 					m.trim(40);
 					var pos:Point = Utils.makeGrid(new Point(0, 0), 50, 8, i);
 					m.x = pos.x;
@@ -107,7 +107,7 @@ package mapEdit
 				}
 				
 				if(length == 1)
-					EditBase(control.targets[0]).addEventListener(MsgEvent.POS_CHANGE, update);
+					Component(control.targets[0]).addEventListener(MsgEvent.POS_CHANGE, update);
 				
 			}
 			update();
@@ -120,7 +120,7 @@ package mapEdit
 		
 		private function onSubmitTime(e:FlexEvent):void
 		{
-			for each(var m:EditBase in control.targets)
+			for each(var m:Component in control.targets)
 			{
 				var data:Object = m.toExportData();
 				if(timeInput.text.length > 0)
@@ -131,7 +131,7 @@ package mapEdit
 		
 		private function onSubmitX(e:FlexEvent):void
 		{
-			for each(var m:EditBase in control.targets)
+			for each(var m:Component in control.targets)
 			{
 				var data:Object = m.toExportData();
 				if(xInput.text.length > 0)
@@ -142,7 +142,7 @@ package mapEdit
 		
 		private function onSubmitTrigger(e:FlexEvent):void
 		{
-			for each(var m:EditBase in control.targets)
+			for each(var m:Component in control.targets)
 			{
 				var data:Object = m.toExportData();
 				if(triggerInput.text.length > 0)
@@ -150,8 +150,8 @@ package mapEdit
 				else 
 					data.triggerTime = 0;
 				m.initFromData(data);
-				if(m is MatSprite)
-					MatSprite(m).showTrigger();
+				if(m is EntityComponent)
+					EntityComponent(m).showTrigger();
 			}
 		}
 	}

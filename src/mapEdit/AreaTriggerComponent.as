@@ -12,7 +12,7 @@ package mapEdit
 	
 	import mx.controls.Alert;
 
-	public class TriggerSprite extends EditBase
+	public class AreaTriggerComponent extends Component
 	{
 		private var dots:Vector.<Sprite> = new Vector.<Sprite>;
 		
@@ -24,7 +24,7 @@ package mapEdit
 		private var triggerLayer:Sprite;
 		private var editable:Boolean = false;
 		
-		public function TriggerSprite(_editView:EditView = null)
+		public function AreaTriggerComponent(_editView:EditView = null)
 		{
 			super(_editView, TRIGGER_TYPE);
 			//左上角为原点
@@ -76,7 +76,7 @@ package mapEdit
 			}
 		}
 		
-		public function addATrigger(mat:EditBase):void
+		public function addATrigger(mat:Component):void
 		{
 			if(dotsDic.hasOwnProperty(sid))
 				return;
@@ -156,7 +156,7 @@ package mapEdit
 			
 			if(id != "")
 			{
-				var mat:EditBase = editView.matsControl.getMat(id);
+				var mat:Component = editView.matsControl.getMat(id);
 				addATrigger(mat);
 			}
 				
@@ -167,7 +167,7 @@ package mapEdit
 		private function findId(globalPos:Point):String
 		{
 			var mats:Array = editView.matsControl.getMatsByPoint(globalPos);
-			for each(var m:EditBase in mats)
+			for each(var m:Component in mats)
 				if(m.sid != this.sid)
 					return m.sid;
 			return "";
@@ -296,7 +296,7 @@ package mapEdit
 				}
 				for(var id in dotsDic)
 				{
-					var mat:EditBase = editView.matsControl.getMat(id);
+					var mat:Component = editView.matsControl.getMat(id);
 					if(mat)
 					{
 						var pos:Point = this.globalToLocal(mat.parent.localToGlobal(new Point(mat.x, mat.y)));

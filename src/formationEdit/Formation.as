@@ -10,7 +10,7 @@ package formationEdit
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
 	
-	import mapEdit.MatSprite;
+	import mapEdit.EntityComponent;
 
 	public class Formation extends EventDispatcher
 	{
@@ -101,7 +101,7 @@ package formationEdit
 			var data:Array = new Array;
 			var minX:Number = mats[0].x;
 			var minY:Number = mats[0].y;
-			for each(var m:MatSprite in mats)
+			for each(var m:EntityComponent in mats)
 			{
 				minX = Math.min(m.x, minX);
 				minY = Math.max(m.y, minY);

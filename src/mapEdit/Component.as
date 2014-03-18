@@ -6,7 +6,7 @@ package mapEdit
 	import mx.core.UIComponent;
 	import mx.core.FlexSprite;
 	
-	public class EditBase extends FlexSprite
+	public class Component extends FlexSprite
 	{
 		public var sid:String = "";
 		public var type:String;
@@ -15,7 +15,7 @@ package mapEdit
 		public var triggerId:String = "";
 		protected var editView:EditView = null;
 		
-		public function EditBase(_editView:EditView = null, type:String = "")
+		public function Component(_editView:EditView = null, type:String = "")
 		{
 			super();
 			this.editView = _editView;
