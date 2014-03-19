@@ -26,10 +26,10 @@ package formationEdit
 			label.y = 6;
 			this.addChild(label);
 			
-			var posData:Array = Formation.getInstance().formations[name];
+			var posData:Array = Data.getInstance().getFormationById( name ) as Array;
 			dots = new Shape;
 			this.addChild(dots);
-			for each(var pos in posData)
+			for each(var pos:* in posData)
 			{
 				dots.graphics.beginFill(0xff0000);
 				dots.graphics.drawCircle(pos.x, pos.y, 8);

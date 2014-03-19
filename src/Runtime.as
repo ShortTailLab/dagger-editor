@@ -1,7 +1,5 @@
 package
 {
-	import com.hurlant.crypto.symmetric.NullPad;
-	
 	import flash.events.EventDispatcher;
 
 	public class Runtime extends EventDispatcher
@@ -14,9 +12,8 @@ package
 			return gRuntimeInstance;
 		}
 		
-		// 
-		//private var mSelectedComponentType:String = null;
-		
+		//
 		public var selectedComponentType:String = null;
+		public var selectedFormationType:String = null;
 	}
 }

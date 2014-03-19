@@ -39,6 +39,9 @@ package behaviorEdit
 				Data.getInstance().updateBehaviorSetById(bName, data);
 			
 			btArray.addItem(bName);
+			Data.getInstance().updateEnemyBehaviorsById( 
+				editTargetType, btArray.toArray() as Object 
+			);
 			
 			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_ADDED, bName);
 			EventManager.getInstance().dispatchEvent(evt);
@@ -47,6 +50,10 @@ package behaviorEdit
 		public function removeBTByIndex(index:int):void
 		{
 			btArray.removeItemAt(index);
+			Data.getInstance().updateEnemyBehaviorsById( 
+				editTargetType, btArray.toArray() as Object 
+			);
+			
 			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_REMOVED, index);
 			EventManager.getInstance().dispatchEvent(evt);
 			

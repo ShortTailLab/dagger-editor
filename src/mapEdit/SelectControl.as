@@ -14,7 +14,6 @@ package mapEdit
 	import mx.managers.PopUpManager;
 	
 	import tools.RenamePanel;
-	import formationEdit.Formation;
 	
 	
 	public class SelectControl extends EventDispatcher
@@ -93,17 +92,17 @@ package mapEdit
 		
 		
 		public function setSelectMatToFormation():void
-		{
-			var window:RenamePanel = new RenamePanel;
-			window.addEventListener(MsgEvent.RENAME_LEVEL, function(e:MsgEvent):void{
-				if(Formation.getInstance().hasFormation(e.hintMsg))
-					Alert.show("该阵型名已经存在！");
-				else
-					Formation.getInstance().add(e.hintMsg, targets);
-			});
-			
-			PopUpManager.addPopUp(window, this.view.parent, true);
-			PopUpManager.centerPopUp(window);
+		{	
+			var panel:RenamePanel = new RenamePanel(
+				function( ret:String = null ):void {
+					if( !ret ) return;
+					var formation:* = Data.getInstance().getFormationById( ret )
+					if( formation ) 
+						Alert.show("【错误】该阵型名已经存在!");
+					else
+						Data.getInstance().updateFormationSetById( ret, targets );
+				}
+			);
 		}
 		
 		

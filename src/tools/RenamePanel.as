@@ -14,56 +14,43 @@ package tools
 	
 	public class RenamePanel extends TitleWindow
 	{
-		private var input:TextInput;
+		private var mInputField:TextInput;
+		private var mConfirmButton:Button;
 		
-		public function RenamePanel()
+		public function RenamePanel(onComplete:Function)
 		{
-			this.title = "重命名";
-			this.width = 200;
-			this.height = 100;
-			
-			input = new TextInput;
-			input.height = 30;
-			input.width = 150;
-			this.addElement(input);
-			
-			var btn:Button = new Button;
-			btn.label = "确定";
-			btn.y = 40
-			btn.addEventListener(MouseEvent.CLICK, onRenameClick);
-			this.addElement(btn);
-			
-			this.addEventListener(CloseEvent.CLOSE, onClose);
-			this.addEventListener(Event.ADDED_TO_STAGE, onAdded);
-		}
-		
-		private function onClose(e:CloseEvent):void
-		{
-			stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-			PopUpManager.removePopUp(this);
-		}
-		
-		private function onAdded(e:Event):void
-		{
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-		}
-		
-		private function onKeyDown(e:KeyboardEvent):void
-		{
-			if(e.keyCode == Keyboard.ENTER)
-				onRenameClick(null);
-		}
-		
-		private function onRenameClick(e:MouseEvent):void
-		{
-			if(input.text.length > 0)
-			{
-				var evt:MsgEvent = new MsgEvent(MsgEvent.RENAME_LEVEL);
-				evt.hintMsg = input.text;
-				this.dispatchEvent(evt);
+			var self:RenamePanel = this;
+			with( this ) {
+				title = "重命名"; width = 200; height = 150;
 			}
-			stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-			PopUpManager.removePopUp(this);
+			
+			this.mInputField = new TextInput;
+			with( this.mInputField ) { 
+				x = 10; y = 10; height 30; width = 150; 
+			}
+			this.addElement(mInputField);
+			
+			this.mConfirmButton = new Button;
+			with( this.mConfirmButton ) {
+				label = "确定"; x = 10; y = 50;  
+			}
+			this.mConfirmButton.addEventListener( MouseEvent.CLICK, 
+				function( e:MouseEvent ) :void {
+					onComplete(mInputField.text);
+					PopUpManager.removePopUp(self);
+				}
+			);
+			this.addElement( this.mConfirmButton );
+			
+			this.addEventListener(CloseEvent.CLOSE, 
+				function():void {
+					onComplete(null);
+					PopUpManager.removePopUp(self);
+				}
+			);
+			
+			PopUpManager.addPopUp( this, this, true );
+			PopUpManager.centerPopUp( this );
 		}
 	}
 }

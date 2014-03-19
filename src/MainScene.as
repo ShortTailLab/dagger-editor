@@ -26,8 +26,6 @@ package
 	import spark.components.Button;
 	import spark.components.TextInput;
 	
-	import formationEdit.Formation;
-	
 	import mapEdit.Component;
 	import mapEdit.EditMapControl;
 	import mapEdit.EditMatsControl;

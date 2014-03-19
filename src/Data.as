@@ -221,6 +221,15 @@ package
 			return this.mEnemyBehaviorsTable[eid];
 		}
 		
+		public function updateEnemyBehaviorsById( eid:String, bhs:Object ):void
+		{
+			this.mEnemyBehaviorsTable[eid] = bhs;
+			Utils.WriteObjectToJSON(
+				this.getFileByRelativePath( "saved/enemy_bh.json" ),
+				this.mEnemyBehaviorsTable
+			);
+		}
+		
 		public function getEnemyTriggersById( eid:String ):Object
 		{
 			return this.mEnemyTriggersTable[eid];
@@ -240,27 +249,45 @@ package
 		{
 			return this.mBehaviorSet[bid];
 		}
+		public function eraseBehaviorById( fid:String ):void
+		{
+			delete this.mBehaviorSet[fid];
+			this.writeBehaviors();
+		}
 		public function updateBehaviorSetById( bid:String, data:Object ):void
 		{
 			this.mBehaviorSet[bid] = data;
+			this.writeBehaviors();
+		}
+		private function writeBehaviors():void
+		{
 			Utils.WriteObjectToJSON( // persistence
 				this.getFileByRelativePath( "saved/bh_lib.json" ),
 				this.mBehaviorSet
-			);
+			);			
 		}
 		
+		public function get formationSet():Object { return this.mFormationSet; }
 		public function getFormationById( fid:String ):Object
 		{
 			return this.mFormationSet[fid];
 		}
-		
+		public function eraseFormationById( fid:String ):void
+		{
+			delete this.mFormationSet[fid];
+			this.writeFormations();
+		}
 		public function updateFormationSetById( fid:String, data:Object):void
 		{
 			this.mFormationSet[fid] = data;
+			this.writeFormations();
+		}
+		private function writeFormations():void
+		{
 			Utils.WriteObjectToJSON( // persistence
 				this.getFileByRelativePath("saved/formations.json"),
 				this.mFormationSet
-			);
+			);			
 		}
 		
 		private function parseLocalData(onComplete:Function):void
