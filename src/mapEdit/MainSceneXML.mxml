@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300">
+	<s:VGroup width="100%" height="100%">
+		
+		<!-- timeline -->	
+		<s:Group width="100%" height="50">	
+			<!-- background color -->
+			<s:Rect top="0" left="0" right="0" bottom="0">
+				<s:fill><s:SolidColor color="0xEEEEEE"/></s:fill>
+			</s:Rect>
+			<s:HGroup width="100%" height="100%">
+				<s:HGroup width="120" height="100%" horizontalAlign="center" verticalAlign="middle">
+					<s:Label id="mNowTimeLabel" fontSize="12" text="当前时间：0s" width="90%"/>
+				</s:HGroup>
+				
+				<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" >
+					<mx:HSlider id="mTimeline" 
+							   minimum="0" maximum="10" 
+							   tickInterval="1" snapInterval="0.1"
+							   liveDragging="true" showDataTip="true"
+							   width="95%" horizontalCenter="center"/>
+				</s:HGroup>
+			</s:HGroup>
+		</s:Group>
+
+		<s:HGroup width="100%" height="95%">
+			<s:VGroup width="20" height="100%"/>
+			
+			<s:VGroup width="360" height="100%">
+				<s:Group id="mMonsterLayer" width="100%" height="100%">
+					<!-- background color -->
+					<s:Rect top="0" left="0" right="0" bottom="0">
+						<s:fill><s:SolidColor color="0xEEEEFF"/></s:fill>
+					</s:Rect>
+				</s:Group>
+			</s:VGroup>
+			<s:Group id="mAdaptiveLayer" width="100%" height="100%"/>
+			
+		</s:HGroup>
+	</s:VGroup>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+</s:Module>

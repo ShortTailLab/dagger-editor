@@ -1,12 +1,13 @@
 package mapEdit
 {
-	import flash.display.Sprite;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	
-	public class TimeLine extends Sprite
+	import spark.core.SpriteVisualElement;
+	
+	public class TimeLine extends SpriteVisualElement
 	{
 		private var marks:Vector.<TextField>;
 		private var interval:int;

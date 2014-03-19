@@ -3,6 +3,8 @@ this view contains the map,the time scroller, the inputform.
 */
 package 
 {
+	import com.hurlant.crypto.symmetric.NullPad;
+	
 	import flash.display.DisplayObject;
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -79,7 +81,6 @@ package
 		private var mapFreePieces:Array;
 		
 		//private var selectBoard:MatInputForm;
-		
 		//
 		
 		private var mMapSpeed:Number = 32;
@@ -168,6 +169,8 @@ package
 //			this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
 //			mBackgroundColor.addEventListener(MouseEvent.MOUSE_OUT, onBGMouseOut);
 			
+			//this.mMonsterLayer = new Group();
+			
 			var self:MainScene = this;
 			this.tipsTimer = new Timer(0.03, 1);
 			this.tipsTimer.addEventListener(TimerEvent.TIMER, 
@@ -176,8 +179,6 @@ package
 					self.updateMouseTips();
 					self.tipsTimer.reset();
 					self.tipsTimer.start();
-					self.mCoordinatorLayer.x = self.mouseX;
-					self.mCoordinatorLayer.y = self.mouseY;
 				}
 			);
 			this.tipsTimer.start();
@@ -198,8 +199,9 @@ package
 			
 			this.mCoordinator = new TimeLine( this.mMapSpeed, 5, 9);
 			this.mCoordinator.x = 0;
+			this.mCoordinator.resize( 1000 );
 			this.mCoordinator.addEventListener("gridClick", onGridClick);
-			this.mCoordinatorLayer.addChild( this.mCoordinator );
+			//this.mSceneLayer.addElement( this.mCoordinator );
 			
 			setCurrTime(10);
 			
@@ -212,8 +214,10 @@ package
 		private function setProgress( progress:Number ):void
 		{
 			if( progress < 0 ) return;
+			//trace("height " +this.mAdaptiveLayer.height);
 			this.mProgressInPixel = progress;
-			this.mMonsterLayer.y = this.mProgressInPixel + MainScene.kSCENE_HEIGHT;
+			this.mMonsterLayer.y = this.mProgressInPixel + this.mAdaptiveLayer.height;
+			trace( this.mMonsterLayer.y );
 		}
 		
 		private function onWheelMove(e:MouseEvent):void 
@@ -231,7 +235,7 @@ package
 			}else
 				this.setProgress( this.mProgressInPixel + e.delta );
 		}
-
+	
 		private var mMonsters:Vector.<Component> = null;
 		public function reset( lid:String ):void
 		{
@@ -262,7 +266,6 @@ package
 			if( item.sid == "" || !item.sid ) 
 				item.sid = new Date().time+String( gMonsterCountor++ );
 			
-			//trace(" insert at ("+item.x+", "+item.y);
 			this.mMonsterLayer.addElement( item );
 			this.mMonsters.push( item );
 		}
@@ -417,7 +420,7 @@ package
 				 this.mSelectFormation != Runtime.getInstance().selectedFormationType) 
 				&& this.mSelectedTipsLayer )
 			{
-				this.removeChild( this.mSelectedTipsLayer );
+				this.removeElement( this.mSelectedTipsLayer );
 				this.mSelectedTipsLayer = null;
 			}
 			
