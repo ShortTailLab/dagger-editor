@@ -225,6 +225,11 @@ package
 			stream.close();
 		}
 		
+		static public function projectRoot():String
+		{
+			return File.desktopDirectory.resolvePath("editor").nativePath + "/";			
+		}
+		
 		static public function LoadJSONToObject( file:File ):Object
 		{
 			var result:Object = null;
@@ -238,7 +243,7 @@ package
 			return result;
 		}
 		
-		static public function WriteObjectToJSON( file:File, item:Object)
+		static public function WriteObjectToJSON( file:File, item:Object):void
 		{
 			var stream:FileStream = new FileStream;
 			stream.open( file, FileMode.WRITE );

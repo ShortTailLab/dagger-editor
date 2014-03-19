@@ -34,5 +34,11 @@ package
 			this.mSelectedFormationType = v;
 			this.dispatchEvent( new Event(Runtime.SELECT_DATA_CHANGE) );
 		}
+		
+		// 
+		public static const FORMATION_DATA_CHANGE:String = "runtime.formation.data.change";
+		public function onFormationDataChange():void {
+			this.dispatchEvent( new Event(Runtime.FORMATION_DATA_CHANGE) );
+		}
 	}
 }

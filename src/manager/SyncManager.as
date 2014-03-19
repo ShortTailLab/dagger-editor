@@ -75,10 +75,24 @@ package manager
 			}
 		}
 
+		public function uploadConfigFileToOSSFromPath(path:String, onComplete:Function) :void
+		{
+			var file:File = new File(path);
+			var self:SyncManager = this;
+			
+			file.addEventListener(Event.COMPLETE, function(e:Event):void 
+			{
+				self.uploadConfigFileToOSS(file, onComplete);
+			});
+			file.load();
+		}
+		
 		public function uploadConfigFileToOSS(file:File, onComplete:Function):void 
 		{
-			var path:File = File.desktopDirectory.resolvePath("editor/tmp/");
-			if( path.isDirectory ) path.deleteDirectory(true);
+			
+			var path:File = Data.getInstance().resolvePath("tmp/");
+			if( path.isDirectory ) 
+				path.deleteDirectory(true);
 			
 			var tmp:File = new File(path.url+"/config/"+file.name);
 			var fstream:FileStream = new FileStream();
@@ -146,7 +160,7 @@ package manager
 					
 					function uploadVersion( msg:String ):void
 					{
-						var url:String = File.desktopDirectory.resolvePath("editor/").url;
+						var url:String = Data.getInstance().resolvePath("").url;
 						var vf:File = new File(url+"/"+vf_path);
 						var fstream:FileStream = new FileStream();
 						fstream.open(vf, FileMode.WRITE);

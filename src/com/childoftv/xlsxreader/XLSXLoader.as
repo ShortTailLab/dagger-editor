@@ -20,10 +20,6 @@ THE SOFTWARE.
 */
 package com.childoftv.xlsxreader
 {
-	
-	
-	
-	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
@@ -84,11 +80,12 @@ package com.childoftv.xlsxreader
 		 */
 		public function XLSXLoader()
 		{
-			
 			zipProcessor.addEventListener("complete",completed);
-			zipProcessor.addEventListener("ioError",function(e:IOErrorEvent):void{
+			zipProcessor.addEventListener("ioError", function(e:IOErrorEvent):void
+			{
 				MapEditor.getInstance().addLog("加载excel失败");
-				trace("ZIP Processor IO error:");trace(e)});
+				trace("ZIP Processor IO error:");trace(e)
+			});
 			
 		}
 		/**
@@ -196,7 +193,7 @@ package com.childoftv.xlsxreader
 			
 			var sheetNames:Vector.<String> = new Vector.<String>();
 			for each(var sheetName:String in manifestCache.sheets.sheet.@name)
-			sheetNames.push(sheetName);
+				sheetNames.push(sheetName);
 			
 			return sheetNames;
 		}

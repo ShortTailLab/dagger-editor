@@ -92,7 +92,7 @@ package
 				onComplete( file );
 			});
 		}
-		private function getFileByRelativePath(sub:String):File
+		public function resolvePath(sub:String):File
 		{
 			return this.mProjectRoot.resolvePath( sub );
 		}
@@ -126,7 +126,7 @@ package
 				{
 					MapEditor.getInstance().addLog("下载"+item.suffix+"成功");
 					Utils.WriteRawFile(
-						self.getFileByRelativePath("data/"+item.suffix),
+						self.resolvePath("data/"+item.suffix),
 						e.target.data
 					);
 					
@@ -171,7 +171,7 @@ package
 					// merge 
 					for( var key:* in raw ) this.mLevelProfiles[key] = raw[key];
 					Utils.WriteObjectToJSON( // persistence
-						this.getFileByRelativePath( "saved/profiles.json" ),
+						this.resolvePath( "saved/profiles.json" ),
 						this.mLevelProfiles
 					);
 					
@@ -211,7 +211,7 @@ package
 		{
 			this.mLevelInstancesTable[lid] = inst;
 			Utils.WriteObjectToJSON( // persistence
-				this.getFileByRelativePath( "saved/levels.json" ),
+				this.resolvePath( "saved/levels.json" ),
 				this.mLevelInstancesTable
 			);
 		}
@@ -225,7 +225,7 @@ package
 		{
 			this.mEnemyBehaviorsTable[eid] = bhs;
 			Utils.WriteObjectToJSON(
-				this.getFileByRelativePath( "saved/enemy_bh.json" ),
+				this.resolvePath( "saved/enemy_bh.json" ),
 				this.mEnemyBehaviorsTable
 			);
 		}
@@ -239,7 +239,7 @@ package
 		{
 			this.mEnemyTriggersTable[eid] = triggers;
 			Utils.WriteObjectToJSON( // persistence
-				this.getFileByRelativePath( "saved/enemy_trigger.json" ),
+				this.resolvePath( "saved/enemy_trigger.json" ),
 				this.mEnemyTriggersTable
 			);
 		}
@@ -262,7 +262,7 @@ package
 		private function writeBehaviors():void
 		{
 			Utils.WriteObjectToJSON( // persistence
-				this.getFileByRelativePath( "saved/bh_lib.json" ),
+				this.resolvePath( "saved/bh_lib.json" ),
 				this.mBehaviorSet
 			);			
 		}
@@ -285,43 +285,44 @@ package
 		private function writeFormations():void
 		{
 			Utils.WriteObjectToJSON( // persistence
-				this.getFileByRelativePath("saved/formations.json"),
+				this.resolvePath("saved/formations.json"),
 				this.mFormationSet
 			);			
+			Runtime.getInstance().onFormationDataChange();
 		}
 		
 		private function parseLocalData(onComplete:Function):void
 		{
 			this.mDynamicArgs = this.loadJson(
-				this.getFileByRelativePath("data/dynamic_args.json"), false
+				this.resolvePath("data/dynamic_args.json"), false
 			) as Object || {};
 			
 			this.mBehaviorNode = this.loadJson(
-				this.getFileByRelativePath("data/bt_node_format.json"), false
+				this.resolvePath("data/bt_node_format.json"), false
 			) as Object || {};
 			
 			this.mLevelProfiles = this.loadJson(
-				this.getFileByRelativePath("saved/profiles.json"), false
+				this.resolvePath("saved/profiles.json"), false
 			) as Object || {};
 			
 			this.mLevelInstancesTable = this.loadJson( 
-				this.getFileByRelativePath("saved/levels.json"), false 
+				this.resolvePath("saved/levels.json"), false 
 			) as Object || {};
 			
 			this.mEnemyBehaviorsTable = this.loadJson(
-				this.getFileByRelativePath("saved/enemy_bh.json"), false
+				this.resolvePath("saved/enemy_bh.json"), false
 			) as Object || {};
 			
 			this.mEnemyTriggersTable = this.loadJson(
-				this.getFileByRelativePath("saved/enemy_trigger.json"), false
+				this.resolvePath("saved/enemy_trigger.json"), false
 			) as Object || {};
 			
 			this.mBehaviorSet = this.loadJson(
-				this.getFileByRelativePath("saved/bh_lib.json"), false
+				this.resolvePath("saved/bh_lib.json"), false
 			) as Object || {};
 			
 			this.mFormationSet = this.loadJson(
-				this.getFileByRelativePath("saved/formations.json"), false
+				this.resolvePath("saved/formations.json"), false
 			) as Object || {};
 			
 			this.updateEditorData( onComplete );
@@ -389,7 +390,7 @@ package
 				this.mEnemySkins[face] = "icu";
 				
 				var bytes:ByteArray = new ByteArray;
-				var file:File = this.getFileByRelativePath("skins/"+face+".png");
+				var file:File = this.resolvePath("skins/"+face+".png");
 				if( !file.exists ) continue;
 				
 				length ++;
