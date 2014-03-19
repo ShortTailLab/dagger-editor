@@ -152,7 +152,7 @@ package mapEdit
 			}
 		}
 		
-		private function onMouseUp(e:MouseEvent):void
+		public function onMouseUp(e:MouseEvent):void
 		{
 			if(selectFrame)
 			{

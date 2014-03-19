@@ -71,8 +71,8 @@
 				}
 			
 				{
-					mVIEWScene = new MainScene(middleArea);	
-					middleArea.addElement(mVIEWScene);
+					mVIEWScene = new MainScene( this.mSceneCanvas );	
+					this.mSceneCanvas.addElement(mVIEWScene);
 				}
 
 				{
@@ -94,8 +94,9 @@
 	
 					var vscrollbar:VScrollBar = new VScrollBar();
 					with( vscrollbar ) {
-						percentHeight = 100; viewpoint = group;
+						percentHeight = 100;
 					}
+					vscrollbar.viewport = group;
 					
 					this.mVIEWFormation = new FormationSelector;
 					with( this.mVIEWFormation ) { percentWidth = 100; }
@@ -126,8 +127,9 @@
 					
 					vscrollbar = new VScrollBar();
 					with( vscrollbar ) {
-						percentHeight = 100; viewpoint = group;
+						percentHeight = 100;
 					}
+					vscrollbar.viewport = group;
 					
 					this.mVIEWMonster = new MonsterSelector;
 					with( this.mVIEWMonster ) {
@@ -310,13 +312,13 @@
 		</s:HGroup>
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
-			<s:Panel title="关卡列表" dropShadowVisible="false" width="200" height="100%">
-				<mx:Tree id="mLevelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);" labelField="@label">
-				</mx:Tree>
-			</s:Panel>
+				<s:Panel title="关卡列表" dropShadowVisible="false" width="200" height="100%">
+					<mx:Tree id="mLevelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);" labelField="@label">
+					</mx:Tree>
+				</s:Panel>
 			
 			<s:BorderContainer height="100%" width="100%">
-				<mx:Canvas id="middleArea" height="100%" width="100%" clipContent="true">
+				<mx:Canvas id="mSceneCanvas" height="100%" width="100%" clipContent="true">
 				</mx:Canvas>
 			</s:BorderContainer>
 		</s:HGroup>

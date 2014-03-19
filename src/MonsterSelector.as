@@ -67,8 +67,14 @@ package
 			mMonsters = null;
 			mMonsters = new Array;
 			
+			var self:MonsterSelector = this;
 			var triggerMat:Component = new AreaTriggerComponent();
 			triggerMat.trim(70);
+			triggerMat.addEventListener(MouseEvent.CLICK, function(e:MouseEvent):void
+			{
+				var target:Component = e.currentTarget as Component;
+				if(target) self.selectItem( target );
+			});
 			mMonsters.push(triggerMat);
 			
 			var enemies:Object = Data.getInstance().getEnemiesByLevelId(lid);
