@@ -1,12 +1,10 @@
 package mapEdit
 {
-	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.geom.Point;
-	import mx.core.UIComponent;
-	import mx.core.FlexSprite;
 	
-	public class Component extends FlexSprite
+	import spark.core.SpriteVisualElement;
+	public class Component extends SpriteVisualElement
 	{
 		public var sid:String = "";
 		public var type:String;

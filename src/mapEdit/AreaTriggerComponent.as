@@ -1,6 +1,5 @@
 package mapEdit
 {
-	import flash.display.DisplayObject;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;

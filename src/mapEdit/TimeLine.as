@@ -116,7 +116,6 @@ package mapEdit
 			this.graphics.drawRect(0, -gridRows*heightPerUnit, gridWidth, gridRows*heightPerUnit);
 			this.graphics.endFill();
 			
-			
 			for(var i:int = 0; i <gridRows; i++)
 			{
 				this.graphics.moveTo(0, -i*heightPerUnit);

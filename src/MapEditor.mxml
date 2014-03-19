@@ -11,6 +11,7 @@
 		<![CDATA[
 			import mx.controls.Alert;
 			import mx.controls.Tree;
+			import mx.events.ResizeEvent;
 			
 			import spark.components.Group;
 			import spark.components.VScrollBar;
@@ -32,7 +33,7 @@
 	
 			private var mVIEWFormation:FormationSelector = null;
 			private var mVIEWMonster:MonsterSelector = null;
-			private var mVIEWScene:MainScene;
+			private var mVIEWScene:MainScene = null;
 			
 			private var _bgEditView:BgEditView;
 			
@@ -52,9 +53,16 @@
 					
 				BgModel.getInstance().init();
 				
+				
+				this.addEventListener(ResizeEvent.RESIZE, onResize);
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 			}
 			
+			private function onResize(e:ResizeEvent):void
+			{
+				//if( this.mVIEWScene)
+					//this.mVIEWScene.onResize(e);
+			}
 			private function onRightClick(e:MouseEvent):void
 			{
 				Runtime.getInstance().selectedComponentType = null;
@@ -71,8 +79,8 @@
 				}
 			
 				{
-					this.mVIEWScene = new MainScene( );	
-					//this.mSceneCanvas.addElement(mVIEWScene);
+					this.mVIEWScene = new MainScene();	
+					this.mVIEWScene.init();
 					this.mSceneArea.addElement( this.mVIEWScene );
 				}
 
@@ -169,8 +177,9 @@
 			
 			private function setCurrLevel(lid:String):void
 			{
-				mVIEWScene.init(lid);
-				mVIEWMonster.reset( lid );
+				//mVIEWScene.init(lid);
+				this.mVIEWScene.reset( lid );
+				this.mVIEWMonster.reset( lid );
 			}
 			
 			private function sendToStaticServer(e:Event):void
@@ -313,14 +322,12 @@
 		</s:HGroup>
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
-				<s:Panel title="关卡列表" dropShadowVisible="false" width="200" height="100%">
-					<mx:Tree id="mLevelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);" labelField="@label">
-					</mx:Tree>
-				</s:Panel>
+			<s:Panel title="关卡列表" dropShadowVisible="false" width="200" height="100%">
+				<mx:Tree id="mLevelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);" labelField="@label">
+				</mx:Tree>
+			</s:Panel>
 			
 			<s:BorderContainer id="mSceneArea" height="100%" width="100%">
-				<mx:Canvas id="mSceneCanvas" height="100%" width="100%" clipContent="true">
-				</mx:Canvas>
 			</s:BorderContainer>
 		</s:HGroup>
 	</s:VGroup>
