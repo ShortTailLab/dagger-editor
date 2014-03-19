@@ -67,6 +67,7 @@
 			{
 				Runtime.getInstance().selectedComponentType = null;
 				Runtime.getInstance().selectedFormationType = null;
+				this.mVIEWScene.onCancelSelect();
 			}
 
 			private function onDataReady(e:Event=null):void

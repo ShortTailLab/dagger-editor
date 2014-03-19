@@ -205,7 +205,9 @@ package mapEdit
 			target.parent.setChildIndex(target, target.parent.numChildren-1);
 			target.contextMenu = menu;
 			target.select(true);
+			
 			target.enablePosChangeDispatch(true);
+			
 			target.addEventListener(Event.REMOVED_FROM_STAGE , onRemoved);
 			
 			targets.push(target);

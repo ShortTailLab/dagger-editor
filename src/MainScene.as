@@ -3,13 +3,19 @@ this view contains the map,the time scroller, the inputform.
 */
 package 
 {
-
+	import com.hurlant.crypto.symmetric.NullPad;
+	
+	import flash.display.Shape;
+	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
-	import flash.events.TextEvent;
-	import flash.ui.Keyboard;
+	import flash.geom.Rectangle;
+	import flash.ui.ContextMenu;
+	import flash.ui.ContextMenuItem;
+	import flash.utils.Timer;
 	
+	import mx.controls.Alert;
 	import mx.events.FlexEvent;
 	import mx.events.ResizeEvent;
 	import mx.events.SliderEvent;
@@ -24,7 +30,6 @@ package
 	import mapEdit.EntityComponent;
 	import mapEdit.MainSceneXML;
 	import mapEdit.MatFactory;
-	import mapEdit.SelectControl;
 	
 	public class MainScene extends MainSceneXML
 	{
@@ -36,10 +41,10 @@ package
 		public static const kSCENE_WIDTH:Number = 720;
 		public static const kSCENE_HEIGHT:Number = 1280;
 		
+		private var mLevelId:String 				= null;
 		
-		private var mMonsters:Vector.<Component> 		= null;
-		//private var mMonsterLayer:Group 				= null;
-		private var mMonsterMask:SpriteVisualElement 	= null;
+		private var mMonsters:Vector.<Component> 	= null;
+		private var mMonsterMask:SpriteVisualElement = null;
 		
 		private var mProgressInPixel:Number = 0;
 		private var mFinishingLine:Number = 0;
@@ -48,9 +53,16 @@ package
 		private var mCoordinator:Coordinator = null;
 		
 		// configs
-		private var mGridHeight:int = 16;
-		private var mGridWidth:int = 32;
-		private var mMapSpeed:Number = 32;
+		private var mGridHeight:int 	= 16;
+		private var mGridWidth:int 		= 32;
+		private var mMapSpeed:Number 	= 32;
+		
+		// selections
+		private var mSelectFrame:SpriteVisualElement 	= null;
+		private var mSelectedMonsters:Array 			= null;
+		private var mFocusMonster:Component 			= null;
+		
+		// facilities
 		
 		public function MainScene()
 		{
@@ -91,15 +103,26 @@ package
 			this.mAdaptiveLayer.addElement( this.mCoordinator );
 			
 			this.mMonsterMask = new SpriteVisualElement();
+			this.mAdaptiveLayer.setElementIndex( 
+				this.mMonsterLayer, this.mAdaptiveLayer.numElements-1 
+			);
+			//this.setChildIndex( this.mMonsterLayer, this.numChildren-1);
 			//this.addElement( this.mMonsterMask );
 			//this.mMonsterLayer.mask = this.mMonsterMask;
+			
+//			
+//			this.mMonsterLayer.addEventListener( MouseEvent.MOUSE_MOVE,
+//				function(e:MouseEvent):void {
+//					trace("mosterLayer");	
+//				}
+//			);
 			
 			//this.mMonsterLayer = new Group();
 			//this.mAdaptiveLayer.addElement( this.mMonsterLayer );
 			
 			// scene
-			this.mMonsterLayer.addEventListener( MouseEvent.CLICK, this.onMouseClick );
-			this.addEventListener( MouseEvent.CLICK, this.onMouseClick );
+			// this.mMonsterLayer.addEventListener( MouseEvent.CLICK, this.onMouseClick );
+			// this.addEventListener( MouseEvent.CLICK, this.onMouseClick );
 			
 			// configs
 			this.mMapSpeedInput.text 	= String(this.mMapSpeed);
@@ -141,6 +164,44 @@ package
 				}
 			);
 			
+			// selection
+			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
+				function(e:MouseEvent):void {
+					if( self.mSelectFrame ) return;
+					self.mSelectFrame = new SpriteVisualElement;
+					self.mSelectFrame.x = self.mCoordinator.mouseX;
+					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
+					self.mMonsterLayer.addElement( self.mSelectFrame );
+				}
+			);
+			this.addEventListener( MouseEvent.MOUSE_MOVE,
+				function(e:MouseEvent):void {
+					if( !self.mSelectFrame ) return;
+					
+					self.mSelectFrame.graphics.clear();
+					self.mSelectFrame.graphics.lineStyle(1);
+					self.mSelectFrame.graphics.drawRect(
+						0, 0, 
+						self.mCoordinator.mouseX-self.mSelectFrame.x, 
+						self.mCoordinator.mouseY-self.mProgressInPixel-self.mSelectFrame.y
+					);
+				}
+			);
+			this.addEventListener( MouseEvent.MOUSE_UP,
+				function(e:MouseEvent):void {
+					if( !self.mSelectFrame ) return;
+					
+					var bound:Rectangle =  self.mSelectFrame.getBounds(self);
+					if( (bound.right - bound.left) + (bound.bottom - bound.top) < 50 )
+						self.onMouseClick(null);
+					else
+						self.onSelectMonsters( );
+					
+					self.mMonsterLayer.removeElement( self.mSelectFrame );
+					self.mSelectFrame = null;
+				}
+			);
+			
 			this.addEventListener( MouseEvent.MOUSE_WHEEL, onWheelMove );
 			this.addEventListener( MouseEvent.MOUSE_MOVE, 
 				function(e:MouseEvent):void
@@ -148,6 +209,13 @@ package
 					self.mMousePos.text = 
 						"鼠标位置：("+int(self.mCoordinator.mouseX)+", "+
 									int(-self.mCoordinator.mouseY+self.mProgressInPixel)+")";
+									
+					if( self.isOutOfCoordinator() && self.mSelectFrame )
+					{
+						self.mMonsterLayer.removeElement( self.mSelectFrame );
+						self.mSelectFrame = null;
+					}
+					
 					self.updateMouseTips();
 				}
 			);
@@ -162,23 +230,28 @@ package
 		{
 			// clean up
 			this.mMonsters = new Vector.<Component>();
-			this.mMonsterLayer.removeChildren();
+			this.mMonsterLayer.removeAllElements();
 
-			// 
+			//
+			this.mLevelId = lid;
+			
 			var level:Object = Data.getInstance().getLevelDataById( lid );
-			if( !level ) level = { data:[], endTime:0 };
+			if( !level ) level = { data:[] };
 			
 			for each( var item:Object in level.data )
 			{
 				var one:Component = this.creator( item.type );			
 				one.initFromData(item);
-				this.insertMonster( one );
+				if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
+					this.insertMonster( one, false );
 			}
+			
+			this.onMonsterChange();
 		}
 		
 		// ------------------------------------------------------------
 		// user configs
-//		private function onChangeSpeed
+		
 		
 		// ------------------------------------------------------------
 		// user actions 
@@ -214,6 +287,8 @@ package
 		
 		private function onMouseClick(e:MouseEvent):void
 		{
+			this.onCancelSelect();
+			
 			var type:String = Runtime.getInstance().selectedComponentType;
 			var fid:String = Runtime.getInstance().selectedFormationType;
 			
@@ -227,15 +302,92 @@ package
 						var item:Component = this.creator( type );
 						item.x 	= p.x + this.mCoordinator.mouseX; 
 						item.y	= p.y + this.mCoordinator.mouseY - this.mProgressInPixel; 
-						this.insertMonster( item );
+						if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
+							this.insertMonster( item, false );
 					}
+					this.onMonsterChange();
 				} else {
 					item = this.creator( type );
 					item.x 	= this.mCoordinator.mouseX; 
 					item.y	= this.mCoordinator.mouseY - this.mProgressInPixel; 
-					this.insertMonster( item );
+					if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
+						this.insertMonster( item );
 				}
 			}
+		}
+		
+		public function onCancelSelect():void
+		{
+			if( this.mSelectedMonsters )
+			{
+				for each( var item:Component in this.mSelectedMonsters )
+				{
+					item.select( false );
+					item.contextMenu = null;
+				}
+			}
+			
+			this.mSelectedMonsters = [];
+		}
+		
+		private function selectMonster( item:Component ):void
+		{
+			var self:MainScene = this;
+			
+			item.select( true );
+			this.mSelectedMonsters.push(item);
+			this.mMonsterLayer.setElementIndex(item, this.mMonsterLayer.numElements-1);
+			
+			var menu:ContextMenu = new ContextMenu;
+			
+			var formation:ContextMenuItem = new ContextMenuItem("设为阵型");
+			formation.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, 
+				function(e:ContextMenuEvent):void {
+					self.makeSelectMonstersToFormation();
+				}
+			);
+			
+			var erase:ContextMenuItem = new ContextMenuItem("删除");
+			erase.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, 
+				function(e:ContextMenuEvent):void{
+					self.onDeleteSelectedMonsters();
+				}
+			);
+			
+			menu.addItem( formation );
+			menu.addItem( erase );
+			item.contextMenu = menu;
+		}
+		
+		private function onSelectMonsters( ):void
+		{
+			this.onCancelSelect();
+			
+			var frame:Rectangle = this.mSelectFrame.getBounds( this );
+			for each( var m:Component in this.mMonsters )
+			{
+				var bound:Rectangle = m.getBounds( this );
+				if( frame.intersects(bound) )
+					this.selectMonster( m );
+			}
+		}
+		
+		private function onDeleteSelectedMonsters() :void
+		{
+			for( var i:int=this.mMonsters.length-1; i>=0; i-- )
+			{
+				for each( var sm:Component in this.mSelectedMonsters )
+				{
+					if( this.mMonsters[i] == sm ) 
+					{
+						this.mMonsterLayer.removeElement( sm );
+						this.mMonsters.splice(i, 1);
+						break;
+					}
+				}
+			}
+			
+			this.onMonsterChange();
 		}
 		
 		// ------------------------------------------------------------
@@ -262,17 +414,31 @@ package
 			this.mTimeline.maximum = -max / this.mMapSpeed;
 			
 			this.mTotalMonsters.text = "实体数量："+this.mMonsters.length;
-			this.mMapLength.text = "地图长度："+Utils.getTimeFormat(this.mFinishingLine);
+			this.mMapLength.text = "地图长度："+Utils.getTimeFormat(this.mFinishingLine/this.mMapSpeed);
+			
+			Data.getInstance().updateLevelDataById( 
+				this.mLevelId, { data:this.getMatsData() }
+			);
 		}
 		private static var gMonsterCountor:int = 0;
-		private function insertMonster( item:Component ):void
+		private function insertMonster( item:Component, save:Boolean = true ):void
 		{
 			if( item.sid == "" || !item.sid ) 
 				item.sid = new Date().time+String( gMonsterCountor++ );
 			
+			trace( this.mMonsterLayer.numElements );
 			this.mMonsterLayer.addElement( item );
 			this.mMonsters.push( item );
-			this.onMonsterChange();
+			
+			var self:MainScene = this;
+			item.addEventListener( MouseEvent.CLICK,
+				function(e:MouseEvent) : void {
+					self.onCancelSelect();
+					self.selectMonster( item );
+				}
+			);
+			
+			if( save ) this.onMonsterChange();
 		}
 		
 		
@@ -281,11 +447,6 @@ package
 		
 		
 //		
-		
-		private function onAddToStage(e:Event):void
-		{
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-		}
 		private function onKeyDown(e:KeyboardEvent):void
 		{
 //			var code:uint = e.keyCode;
@@ -381,79 +542,10 @@ package
 				this.mSelectedTipsLayer.y = this.mouseY-1;
 			}
 		}
-		//adjust views pos when the canvas size change
-//		private function onResize(e:ResizeEvent = null):void
-//		{
-////			this.x = parContainer.width*0.5;
-////			this.y = parContainer.height;
-////			mBackgroundColor.graphics.clear();
-////			mBackgroundColor.graphics.beginFill(0xAFEEEE);
-////			mBackgroundColor.graphics.drawRect(-parContainer.width*0.5, -parContainer.height, parContainer.width, parContainer.height);
-////			mBackgroundColor.graphics.endFill();
-////			mVisibleMask.graphics.clear();
-////			mVisibleMask.graphics.beginFill(0xffffff);
-////			mVisibleMask.graphics.drawRect(-parContainer.width*0.5, -parContainer.height, parContainer.width, parContainer.height);
-////			mVisibleMask.graphics.endFill();
-////			mTimeline.x = -parContainer.width*0.5+50;
-////			mTimeline.y = -parContainer.height+80;
-//////			unitLabel.x = -170;
-//////			unitLabel.y = -30;
-//////			unitInput.x = -130;
-//////			unitInput.y = -30;
-//////			inputField.x = -parContainer.width*0.5+20;
-//////			inputField.y = -parContainer.height+30;
-//////			timeLabel.x = -parContainer.width*0.5+20;
-//////			timeLabel.y = -parContainer.height+10;
-////			mCoordinator.resize(parContainer.height);
-////			mCoordinator.setCurrTime(currTime);
-////			//selectBoard.x = -parContainer.width*0.5+30;
-////			//selectBoard.y = -parContainer.height+600;
-//		}
-		
-		
-		private function updateSlider():void
-		{
-//			mTimeline.maximum = endTime;
-//			mTimeline.value = currTime;
-//			mTimeline.tickInterval = 10;
-//			mTimeline.labels = ["0", String(endTime)];
-		}
-		
-		//this called when endTime changed
-		var timeLineInterval:int = mMapSpeed*5;
-		private function updateMapSize():void
-		{
-//			var mapTileHeight = EditMapControl.getInstance().mMapHeight;
-//			
-//			var clipLow:Number = mapView.y;
-//			var clipHigh:Number = mapView.y+parContainer.height;
-//			var lowIndex:int = int(clipLow/mapTileHeight);
-//			var highIndex:int = int(clipHigh/mapTileHeight);
-//			
-//			for(var i in mapPieces)
-//				if(int(i) < lowIndex || int(i)>highIndex)
-//				{
-//					map.removeChild(mapPieces[i]);
-//					mapFreePieces.push(mapPieces[i]);
-//					delete mapPieces[i];
-//				}
-//			
-//			for(var j:int = lowIndex; j <= highIndex; j++)
-//				if(!mapPieces.hasOwnProperty(j))
-//				{
-//					var img:DisplayObject = mapFreePieces.length == 0 ? 
-//											EditMapControl.getInstance().getAMap() : mapFreePieces.pop();
-//					img.x = 0;
-//					img.y = -j*mapTileHeight-mapTileHeight;
-//					
-//					map.addChild(img);
-//					mapPieces[j] = img;
-//				}
-		}
 		
 		// ------------------------
 		// facilities
-		private function creator( type ):Component
+		private function creator( type:String ):Component
 		{
 			if( type == AreaTriggerComponent.TRIGGER_TYPE )
 				return new AreaTriggerComponent( this );
@@ -461,5 +553,82 @@ package
 				return new EntityComponent( this, type, -1, 30 );
 		}
 		
+		private function getMatsData():Array
+		{
+			var data:Array = new Array;
+			for each(var m:Component in this.mMonsters)
+			{
+				if(m.triggerId.length > 0 && !getMat(m.triggerId))
+					m.triggerId = "";
+				
+				data.push(m.toExportData());
+			}
+			return data;
+		}
+		
+		private function getMat(sid:String):Component
+		{
+			for each(var m:Component in this.mMonsters)
+				if(m.sid == sid)
+					return m;
+			return null;
+		}
+		
+		private function isOutOfCoordinator():Boolean
+		{
+			var x:int = this.mouseX;
+			var y:int = this.mouseY;
+			
+			if( x < 0 || y < 0 ) return true;
+			if( x >= this.width ) return true;
+			if( y >= this.height ) return true;
+			
+			return false;
+		}
+		
+		private function makeSelectMonstersToFormation():void
+		{
+			if( !this.mSelectedMonsters || this.mSelectedMonsters.length <= 0 )
+				return;
+
+			var self:MainScene = this;
+			Utils.makeRenamePanel(
+				function( ret:String = null ):void {
+					if( !ret ) return;
+					var formation:* = Data.getInstance().getFormationById( ret )
+					if( formation ) 
+						Alert.show("【错误】该阵型名已经存在!");
+					else
+					{
+						Data.getInstance().updateFormationSetById( 
+							ret, format(self.mSelectedMonsters) 
+						);
+					}
+				}, this
+			);
+		}
+		
+		private function format(mats:Array):Array
+		{
+			var data:Array = new Array;
+			var minX:Number = mats[0].x;
+			var minY:Number = mats[0].y;
+			for each(var m:EntityComponent in mats)
+			{
+				minX = Math.min(m.x, minX);
+				minY = Math.max(m.y, minY);
+				
+				var point:Object = new Object;
+				point.x = m.x;
+				point.y = m.y;
+				data.push(point);
+			}
+			for each(var p in data)
+			{
+				p.x -= minX;
+				p.y -= minY;
+			}
+			return data;
+		}
 	}
 } 
