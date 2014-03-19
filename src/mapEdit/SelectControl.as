@@ -12,9 +12,6 @@ package mapEdit
 	
 	import mx.controls.Alert;
 	
-	import tools.RenamePanel;
-	
-	
 	public class SelectControl extends EventDispatcher
 	{
 		public var targets:Array = null;
@@ -92,7 +89,7 @@ package mapEdit
 		
 		public function setSelectMatToFormation():void
 		{	
-			var panel:RenamePanel = new RenamePanel(
+			Utils.makeRenamePanel(
 				function( ret:String = null ):void {
 					if( !ret ) return;
 					var formation:* = Data.getInstance().getFormationById( ret )

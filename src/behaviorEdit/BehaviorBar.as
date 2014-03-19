@@ -1,22 +1,18 @@
 package behaviorEdit
 {
-	import com.hurlant.crypto.symmetric.NullPad;
-	
 	import flash.events.ContextMenuEvent;
+	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
 	import mx.collections.ArrayCollection;
 	import mx.controls.Alert;
-	import mx.managers.PopUpManager;
 	
 	import spark.components.Button;
 	import spark.components.TabBar;
 	
 	import manager.EventManager;
-	
-	import tools.RenamePanel;
 	
 	public class BehaviorBar extends TabBar
 	{
@@ -47,8 +43,8 @@ package behaviorEdit
 			this.contextMenu = menu;
 			
 			updateBar();
-			EventManager.getInstance().addEventListener(BehaviorEvent.BT_ADDED, function(e):void{updateBar();});
-			EventManager.getInstance().addEventListener(BehaviorEvent.BT_REMOVED, function(e):void{updateBar();});
+			EventManager.getInstance().addEventListener(BehaviorEvent.BT_ADDED, function(e:Event):void{updateBar();});
+			EventManager.getInstance().addEventListener(BehaviorEvent.BT_REMOVED, function(e:Event):void{updateBar();});
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_NEW_BT, onCreateNewBT);
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_DONE, onCreateDone);
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_CANCEL, onCreateDone);
@@ -98,7 +94,7 @@ package behaviorEdit
 		
 		private function onRenameBT(e:ContextMenuEvent):void
 		{
-			new RenamePanel( function( bid:String=null ):void {
+			Utils.makeRenamePanel( function( bid:String=null ):void {
 				if( !bid ) return;
 				if( bid.length > 0 )
 				{

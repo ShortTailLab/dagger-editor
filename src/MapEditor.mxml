@@ -9,10 +9,8 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import mx.containers.TitleWindow;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
-			import mx.managers.PopUpManager;
 			
 			import spark.components.Group;
 			import spark.components.VScrollBar;
@@ -20,26 +18,36 @@
 			import bgedit.BgEditView;
 			import bgedit.BgModel;
 			
+			import excel.SkillConfigReader;
 			
 			import manager.SyncManager;
 			
-			public var fView:FormationSelector = null;
-			public var matsView:MonsterSelector = null;
-
-			import excel.SkillConfigReader;
-
+			// ---------------------------------------------------------
 			
+			////// entrance
+			private static var gMapEditorInstance:MapEditor = null;
+			public 	static function getInstance():MapEditor { return gMapEditorInstance; }
+
+			private var _log:String = "";
+	
+			private var mVIEWFormation:FormationSelector = null;
+			private var mVIEWMonster:MonsterSelector = null;
+			private var mVIEWScene:MainScene;
+			
+			private var _bgEditView:BgEditView;
+			
+			// setup during launch of app
 			private function init():void
 			{
-				_instance = this;
+				gMapEditorInstance = this;
+				var self:MapEditor = this;
 				
 				// address project path
-				
-				var mask:* = this.MakeMask("正在初始化数据（需要联网）…");
+				var mask:* = Utils.makeManualPanel("正在初始化数据（需要联网）…", this);
 				Data.getInstance().init(function():void
 				{
-					_instance.ReleaseMask( mask );
-					_instance.onDataReady();	
+					Utils.releaseManualPanel( mask );
+					self.onDataReady();	
 				});
 					
 				BgModel.getInstance().init();
@@ -55,90 +63,95 @@
 
 			private function onDataReady(e:Event=null):void
 			{
-				{
-					// update level tree view;
-					levelTree.visible = true;
-					levelTree.dataProvider = Data.getInstance().levelXML;
-					levelTree.selectedIndex = 0;
+				// update level tree view;
+				with( this.mLevelTree ) {
+					visible = true; 
+					selectedIndex = 0;
+					dataProvider = Data.getInstance().levelXML;
 				}
 			
 				{
-					// edit view
-					_enemyEditView = new MainScene(middleArea);	
-					middleArea.addElement(_enemyEditView);
+					mVIEWScene = new MainScene(middleArea);	
+					middleArea.addElement(mVIEWScene);
 				}
 
 				{
-					var modelView:Panel = new Panel();
-					modelView.percentHeight = 40;
-					modelView.percentWidth = 100;
-					modelView.title = "阵型";
-					modelView.setStyle("dropShadowVisible", false);
+					var formationPanel:Panel = new Panel();
+					with( formationPanel ) {
+						percentHeight = 40; percentWidth = 100; title = "阵型";
+					}
+					formationPanel.setStyle("dropShadowVisible", false);
 					
 					var hgroup:HGroup = new HGroup();
-					hgroup.percentWidth = 100;
-					hgroup.percentHeight = 100;
-					hgroup.horizontalAlign = "left";
-					modelView.addElement(hgroup);
+					with( hgroup ) {
+						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
+					}
 					
 					var group:Group = new Group();
-					group.clipAndEnableScrolling = true;
-					group.percentWidth = 100;
-					group.percentHeight = 100;
-					hgroup.addElement(group);
+					with( group ) {
+						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
+					}
 	
 					var vscrollbar:VScrollBar = new VScrollBar();
-					vscrollbar.percentHeight = 100;
-					vscrollbar.viewport = group;
+					with( vscrollbar ) {
+						percentHeight = 100; viewpoint = group;
+					}
+					
+					this.mVIEWFormation = new FormationSelector;
+					with( this.mVIEWFormation ) { percentWidth = 100; }
+				
+					group.addElement( this.mVIEWFormation );
+					hgroup.addElement(group);
 					hgroup.addElement(vscrollbar);
 					
-					fView = new FormationSelector;
-					fView.percentWidth = 100;
-					group.addElement(fView);
-				}
+					formationPanel.addElement( hgroup );
+				}	
 
 				{
-					var matsPanel:Panel = new Panel();
-					matsPanel.title = "资源";
-					matsPanel.percentHeight = 60;
-					matsPanel.percentWidth = 100;
-					matsPanel.setStyle("dropShadowVisible", false);
+					var monsterPanel:Panel = new Panel();
+					with( monsterPanel ) {
+						percentHeight = 60; percentWidth = 100; title = "资源";
+					}
+					monsterPanel.setStyle("dropShadowVisible", false);
 					
 					hgroup = new HGroup();
-					hgroup.percentWidth = 100;
-					hgroup.percentHeight = 100;
-					hgroup.horizontalAlign = "left";
-					matsPanel.addElement(hgroup);
+					with( hgroup ) {
+						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
+					}
 
 					group = new Group();
-					group.clipAndEnableScrolling = true;
-					group.percentWidth = 100;
-					group.percentHeight = 100;
-					hgroup.addElement(group);
+					with( group ) {
+						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
+					}
 					
 					vscrollbar = new VScrollBar();
-					vscrollbar.percentHeight = 100;
-					vscrollbar.viewport = group;
-					hgroup.addElement(vscrollbar);
+					with( vscrollbar ) {
+						percentHeight = 100; viewpoint = group;
+					}
 					
-					matsView = new MonsterSelector;
-					matsView.percentWidth = 100;
-					matsView.percentHeight = 100;
+					this.mVIEWMonster = new MonsterSelector;
+					with( this.mVIEWMonster ) {
+						percentWidth = percentHeight = 100;
+					}
 
-					group.addElement(matsView);
+					group.addElement( this.mVIEWMonster );
+					hgroup.addElement( group );
+					hgroup.addElement( vscrollbar );
+					
+					monsterPanel.addElement( hgroup );
 				}
 				
 				this.setCurrLevel( Data.getInstance().getFirstLevelId() );
-
-				_enemyEditVGroup = new VGroup();
-				_enemyEditVGroup.percentHeight = 100;
-				_enemyEditVGroup.percentWidth = 100;
-				_enemyEditVGroup.verticalAlign = "top";
-				_enemyEditVGroup.horizontalAlign = "center";
-				_enemyEditVGroup.addElement(modelView);
-				_enemyEditVGroup.addElement(matsPanel);
 				
-				rightArea.addElement(_enemyEditVGroup);
+				var leftVGroup:VGroup = new VGroup();
+				with( leftVGroup ) {
+					percentHeight = percentWidth = 100;
+					verticalAlign = "top"; horizontalAlign = "center";
+				}
+				leftVGroup.addElement(formationPanel);
+				leftVGroup.addElement(monsterPanel);
+				
+				rightArea.addElement(leftVGroup);
 			}
 
 			public function onItemClick(event:Event):void
@@ -146,56 +159,31 @@
 				var tree:Tree = event.currentTarget as Tree;
 				var item:XML = tree.selectedItem as XML;
 				if(item.name() == "level")
-				{
-					// leaf node, set current level
 					setCurrLevel(item.@level_id);
-				}
 				else
-				{
-					// expand/collapse node
 					tree.expandItem(tree.selectedItem, !tree.isItemOpen(tree.selectedItem));
-				}
-			}
-			
-			private function MakeMask(msg:String):TitleWindow 
-			{
-				var mask:TitleWindow = new TitleWindow();
-				with( mask ) {
-					width = 300; height = 50;
-					showCloseButton = false; title = msg;
-				}
-				
-				PopUpManager.addPopUp( mask, this, true );
-				PopUpManager.centerPopUp( mask );
-				return mask;
-			}
-			
-			private function ReleaseMask(mask:TitleWindow):void
-			{
-				PopUpManager.removePopUp( mask );
 			}
 			
 			private function setCurrLevel(lid:String):void
 			{
-				_enemyEditView.init(lid);
-				matsView.reset( lid );
+				mVIEWScene.init(lid);
+				mVIEWMonster.reset( lid );
 			}
 			
 			private function sendToStaticServer(e:Event):void
 			{
-				if(levelTree.selectedIndex == -1)
+				if(mLevelTree.selectedIndex == -1)
 				{
 					Alert.show("上传前请先选择关卡！");
 					return;
 				}
 		
-				var self:* = this;
-				var mask:* = this.MakeMask("上传关卡中，请稍后…");
+				var mask:* = Utils.makeManualPanel("上传关卡中，请稍后…", this);
 				var export:File = File.desktopDirectory.resolvePath("editor/export/");
 				SyncManager.getInstance().uploadLevelsToOSS( export, "dagger-levels",  
 					function(msg:String):void
 					{
-						self.ReleaseMask( mask );
+						Utils.releaseManualPanel( mask );
 						Alert.show(msg);
 					});
 			}
@@ -211,14 +199,13 @@
 				var browser:File = new File(Data.getInstance().conf.skillPathCache);
 				browser.browseForOpen("请选择上传的技能配置文件(.xlsx)");
 				
-				var mask:* = this.MakeMask("解析技能配置中，请稍后…");
 				var self:* = this;
-				
 				browser.addEventListener(Event.SELECT, function (e:Event):void 
 				{
 					var file:File = e.target as File;
 					Data.getInstance().setEditorConfig("skillPathCache", file.nativePath);
 					
+					var mask:* = Utils.makeManualPanel("解析技能配置中，请稍后…", self);	
 					SkillConfigReader.parseSkillConfigFromPath(file.nativePath, 
 						function(skillDict:*):void
 						{
@@ -231,7 +218,7 @@
 								saved.nativePath, 
 								function(t:String):void 
 								{
-									self.ReleaseMask( mask );
+									Utils.releaseManualPanel( mask );
 									Alert.show( t );
 								}
 							);
@@ -250,13 +237,13 @@
 					var file:File = e.target as File;
 					Data.getInstance().setEditorConfig("sendPathCache", file.nativePath);
 					
-					var mask:* = self.MakeMask("正在上传配置文件…");
+					var mask:* = Utils.makeManualPanel("正在上传配置文件…", self);
 					file.addEventListener(Event.COMPLETE, function(e:Event):void {
 						
 						SyncManager.getInstance().uploadConfigFileToOSS( file,
 							function(t:String):void 
 							{
-								self.ReleaseMask( mask );
+								Utils.releaseManualPanel( mask );
 								Alert.show( t );
 							}
 						);
@@ -299,16 +286,6 @@
 				fileStream.writeUTFBytes(_log);
 				fileStream.close();
 			}
-			
-			public static function getInstance():MapEditor { return _instance; }
-			
-			private static var _instance:MapEditor;
-			private var _log:String = "";
-			
-			private var _enemyEditView:MainScene;
-			private var _enemyEditVGroup:VGroup;
-			
-			private var _bgEditView:BgEditView;
 		]]>
 	</fx:Script>
 	
@@ -334,7 +311,7 @@
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
 			<s:Panel title="关卡列表" dropShadowVisible="false" width="200" height="100%">
-				<mx:Tree id="levelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);" labelField="@label">
+				<mx:Tree id="mLevelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);" labelField="@label">
 				</mx:Tree>
 			</s:Panel>
 			

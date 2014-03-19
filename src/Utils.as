@@ -1,5 +1,7 @@
 package 
 {
+	import flash.display.DisplayObject;
+	import flash.events.MouseEvent;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
@@ -8,7 +10,13 @@ package
 	import flash.text.TextFormat;
 	import flash.utils.ByteArray;
 	
+	import mx.containers.TitleWindow;
+	import mx.controls.TextInput;
 	import mx.core.UIComponent;
+	import mx.events.CloseEvent;
+	import mx.managers.PopUpManager;
+	
+	import spark.components.Button;
 	
 	import behaviorEdit.BType;
 	
@@ -303,5 +311,57 @@ package
 		}
 		
 		// ----------------------------------------------
+		static public function makeRenamePanel(onComplete:Function, root:DisplayObject):void
+		{
+			var panel:TitleWindow = new TitleWindow();
+			with( panel ) {
+				title = "重命名"; width = 170; height = 120;
+			}
+			
+			var inputField:TextInput = new TextInput;
+			with( inputField ) { 
+				x = 10; y = 10; height 30; width = 150; 
+			}
+			
+			var confirmButton:Button = new Button;
+			with( confirmButton ) {
+				label = "确定"; x = 10; y = 40;  
+			}
+			confirmButton.addEventListener( MouseEvent.CLICK, 
+				function( e:MouseEvent ) :void {
+					onComplete(inputField.text);
+					PopUpManager.removePopUp(panel);
+				}
+			);
+			
+			panel.addElement(inputField);
+			panel.addElement( confirmButton );
+			
+			panel.addEventListener(CloseEvent.CLOSE, function():void {
+				onComplete(null);
+				PopUpManager.removePopUp(panel);
+			});
+			
+			PopUpManager.addPopUp( panel, root, true );
+			PopUpManager.centerPopUp( panel );
+		}
+		
+		static public function makeManualPanel(msg:String, root:DisplayObject):TitleWindow
+		{
+			var mask:TitleWindow = new TitleWindow();
+			with( mask ) {
+				width = 300; height = 50;
+				showCloseButton = false; title = msg;
+			}
+			
+			PopUpManager.addPopUp( mask, root, true );
+			PopUpManager.centerPopUp( mask );
+			return mask;
+		}
+		
+		static public function releaseManualPanel( p:TitleWindow ):void
+		{
+			PopUpManager.removePopUp( p );
+		}
 	}
 }
