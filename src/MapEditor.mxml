@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
-					   xmlns:mx="library://ns.adobe.com/flex/mx" 
-					   creationComplete="init()">
+					   xmlns:mx="library://ns.adobe.com/flex/mx" width="1155" height="800"
+					   horizontalCenter="0" creationComplete="init()">
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
@@ -80,8 +80,8 @@
 			
 				{
 					this.mVIEWScene = new MainScene();	
-					this.mVIEWScene.init();
 					this.mSceneArea.addElement( this.mVIEWScene );
+					this.mVIEWScene.init();
 				}
 
 				{

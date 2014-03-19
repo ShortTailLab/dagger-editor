@@ -132,10 +132,10 @@ package mapEdit
 			currY = view.mouseY;
 			var _draggingMat:Component = e.currentTarget as Component;
 			
-			if(_draggingMat.isSelected)
-				draggingMats = view.selectControl.targets;
-			else
-				draggingMats = new Array(e.currentTarget as Component);
+//			if(_draggingMat.isSelected)
+//				draggingMats = view.selectControl.targets;
+//			else
+//				draggingMats = new Array(e.currentTarget as Component);
 			
 		}
 		private function onMatMove(e:MouseEvent):void
@@ -162,12 +162,12 @@ package mapEdit
 		private function onMatMouseUp(e:MouseEvent):void {
 			draggingMats = null;
 			
-			if(isClick)
-			{
-				var target:Component = e.currentTarget as Component;
-				view.selectControl.select(target);
-			}
-			isClick =false;
+//			if(isClick)
+//			{
+//				var target:Component = e.currentTarget as Component;
+//				view.selectControl.select(target);
+//			}
+//			isClick =false;
 		}
 		
 		private function onMatMiddleClick(e:MouseEvent):void {
@@ -186,7 +186,7 @@ package mapEdit
 				for each(var m:Component in view.matsControl.mats)
 				if(m.type == target.type)
 					targetOfSameType.push(m);
-				view.selectControl.selectMul(targetOfSameType);	
+//				view.selectControl.selectMul(targetOfSameType);	
 				
 				this.doubleClickTimer = null;
 			} else {

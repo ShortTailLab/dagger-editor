@@ -3,156 +3,62 @@ this view contains the map,the time scroller, the inputform.
 */
 package 
 {
-	import com.hurlant.crypto.symmetric.NullPad;
-	
-	import flash.display.DisplayObject;
-	import flash.display.Sprite;
+
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
-	import flash.events.TimerEvent;
-	import flash.geom.Point;
+	import flash.events.TextEvent;
 	import flash.ui.Keyboard;
-	import flash.utils.Dictionary;
-	import flash.utils.Timer;
 	
-	import mx.containers.Canvas;
-	import mx.controls.HSlider;
-	import mx.controls.Label;
-	import mx.controls.VSlider;
-	import mx.core.UIComponent;
 	import mx.events.FlexEvent;
 	import mx.events.ResizeEvent;
 	import mx.events.SliderEvent;
 	
 	import spark.components.Group;
-	import spark.components.HGroup;
-	import spark.components.VGroup;
+	import spark.core.SpriteVisualElement;
 	
 	import mapEdit.AreaTriggerComponent;
 	import mapEdit.Component;
-	import mapEdit.EditMapControl;
+	import mapEdit.Coordinator;
 	import mapEdit.EditMatsControl;
 	import mapEdit.EntityComponent;
 	import mapEdit.MainSceneXML;
 	import mapEdit.MatFactory;
-	import mapEdit.MatInputForm;
 	import mapEdit.SelectControl;
-	import mapEdit.TimeLine;
-	import mapEdit.TimeLineEvent;
 	
 	public class MainScene extends MainSceneXML
 	{
 		[Embed(source="map_snow1.png")]
 		static public var BgImage:Class;
 		
-		//public var speed:Number = -1;//pixel per second
-		//mapView contains the map,the grid above and all mats.
-		public var mapView:UIComponent = null;
-		public var map:UIComponent = null;
-		
-		//matsControl handle all the add and remove actions of mat.
 		public var matsControl:EditMatsControl;
-		public var selectControl:SelectControl;
 		
-		private var mVisibleMask:Sprite = null;
-		private var mBackgroundColor:UIComponent = null;
+		public static const kSCENE_WIDTH:Number = 720;
+		public static const kSCENE_HEIGHT:Number = 1280;
+		
+		
+		private var mMonsters:Vector.<Component> 		= null;
+		//private var mMonsterLayer:Group 				= null;
+		private var mMonsterMask:SpriteVisualElement 	= null;
+		
+		private var mProgressInPixel:Number = 0;
+		private var mFinishingLine:Number = 0;
 		
 		private var mSelectedTipsLayer:Group = null;
-		private var tipsTimer:Timer = null;
+		private var mCoordinator:Coordinator = null;
 		
-		private var mCoordinator:TimeLine = null;
-		//private var mTimeline:VSlider = null;
-		
-		//private var unitLabel:TextField = null;
-		//private var unitInput:TextInput = null;
-		//private var timeLabel:TextField = null;
-		//private var inputField:TextInput = null;
-		//private var submitBtn:Button = null;
-		//private var parContainer:Canvas;
-		private var scale:Number = 0.0;
-		
-		private var endTime:Number = 10;
-		private var currTime:Number = 0;
-		private var level_id:String = "";
-		
-		//used to the map recycle.
-		private var mapPieces:Dictionary;
-		private var mapFreePieces:Array;
-		
-		//private var selectBoard:MatInputForm;
-		//
-		
+		// configs
+		private var mGridHeight:int = 16;
+		private var mGridWidth:int = 32;
 		private var mMapSpeed:Number = 32;
-		//private var mTimeline:HSlider = null;
 		
 		public function MainScene()
 		{
 			with( this ) {
 				percentWidth = 100; percentHeight = 100;
 			}
-			//all the ui position will be recalculated in onResize()
-
-			//this.parContainer = _container;
-			//this.parContainer.addEventListener(ResizeEvent.RESIZE, onResize);
-			
-//			var self:MainScene = this;
-//			this.mTimeline.addEventListener( SliderEvent.CHANGE, 
-//				function(e:SliderEvent):void
-//				{
-//					self.mNowTimeLabel.text = "当前时间："+e.value+"s";
-//				}
-//			);
-			
-			// timeline
-			//{
-//				// TODO 
-//				// mTimeline.labels = ["0", String(10)];
-//				//			mTimeline.addEventListener(SliderEvent.CHANGE, onsliderChange);
-//				//			mTimeline.addEventListener(MouseEvent.MOUSE_DOWN, onSliderMouseDown);
-//				this.addElement(tlLayer);
-			//}
-			
-			mBackgroundColor = new UIComponent;
-			//this.addChild(mBackgroundColor);
-			this.addElement( mBackgroundColor );
-			
-			
-			
-//			mapView = new UIComponent;
-//			this.addChild(mapView);
-////			
-//			map = new UIComponent;
-//			mapView.addChild(map);
-//			mapPieces = new Dictionary;
-//			mapFreePieces = new Array;
-
-//			unitLabel = new TextField;
-//			unitLabel.defaultTextFormat = new TextFormat(null, 14);
-//			unitLabel.text = "速度：";
-//			this.addChild(unitLabel);
-//			
-//			unitInput = new TextInput;
-//			unitInput.width = 30;
-//			unitInput.height = 20;
-//			unitInput.restrict = "0123456789";
-//			unitInput.text = Data.getInstance().conf.speed;
-//			unitInput.addEventListener(FlexEvent.ENTER, onSpeedSubmit);
-//			this.addChild(unitInput);
-			
-			//mapView.addChild(mCoordinator);
-			
-//			timeLabel = Utils.getLabel("当前时间：", 0, 0, 14);
-//			this.addChild(timeLabel);
-//			inputField = new TextInput;
-//			inputField.width = 80;
-//			inputField.height = 30;
-//			inputField.restrict = "0123456789";
-//			inputField.addEventListener(FlexEvent.ENTER, onCurrTimeSubmit);
-//			this.addChild(inputField);
 			
 			matsControl = new EditMatsControl(this);
-			selectControl = new SelectControl(this);
 			
 			//selectBoard = new MatInputForm(selectControl);
 			//this.addChild(selectBoard);
@@ -163,80 +69,75 @@ package
 			//this.addElement(mVisibleMask);
 			//this.mask = mVisibleMask;
 			
-//			onResize();
-//			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
-//			this.addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
-//			this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
-//			mBackgroundColor.addEventListener(MouseEvent.MOUSE_OUT, onBGMouseOut);
+			//			onResize();
+			//			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
+			//			this.addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
+			//			this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
+			//			mBackgroundColor.addEventListener(MouseEvent.MOUSE_OUT, onBGMouseOut);
 			
 			//this.mMonsterLayer = new Group();
-			
+		}
+		
+		// ------------------------------------------------------------
+		// public operations 
+		public function init():void 
+		{
 			var self:MainScene = this;
-			this.tipsTimer = new Timer(0.03, 1);
-			this.tipsTimer.addEventListener(TimerEvent.TIMER, 
-				function():void
-				{
-					self.updateMouseTips();
-					self.tipsTimer.reset();
-					self.tipsTimer.start();
+			this.mTimeline.addEventListener( SliderEvent.CHANGE, 
+				function( e:SliderEvent ): void {
+					self.setProgress( e.value * self.mMapSpeed );
 				}
 			);
-			this.tipsTimer.start();
+	
+			this.mCoordinator = new Coordinator( );
+			this.mAdaptiveLayer.addElement( this.mCoordinator );
+			
+			this.mMonsterMask = new SpriteVisualElement();
+			//this.addElement( this.mMonsterMask );
+			//this.mMonsterLayer.mask = this.mMonsterMask;
+			
+			//this.mMonsterLayer = new Group();
+			//this.mAdaptiveLayer.addElement( this.mMonsterLayer );
+			
+			// scene
+			this.mMonsterLayer.addEventListener( MouseEvent.CLICK, this.onMouseClick );
+			this.addEventListener( MouseEvent.CLICK, this.onMouseClick );
+			
+			// configs
+			this.mGridWidthInput.text 	= String(this.mGridWidth);
+			this.mGridWidthInput.addEventListener( FlexEvent.ENTER,
+				function (e:FlexEvent):void {
+					self.mGridWidth = int(self.mGridWidthInput.text);
+					self.mCoordinator.setMeshDensity( 
+						self.mGridWidth, self.mGridHeight, self.height-65, self.mProgressInPixel 
+					);
+				}
+			);
+			
+			this.mGridHeightInput.text 	= String(this.mGridHeight);
+			this.mGridHeightInput.addEventListener( FlexEvent.ENTER,
+				function (e:FlexEvent):void {
+					self.mGridHeight = int(self.mGridHeightInput.text);
+					self.mCoordinator.setMeshDensity( 
+						self.mGridWidth, self.mGridHeight, self.height-65, self.mProgressInPixel 
+					);
+				}
+			);
+			
+			this.addEventListener( MouseEvent.MOUSE_WHEEL, onWheelMove );
+			this.addEventListener( MouseEvent.MOUSE_MOVE, 
+				function(e:MouseEvent):void
+				{
+					self.updateMouseTips();
+				}
+			);
+			this.addEventListener( ResizeEvent.RESIZE, onResize );
 			
 			Runtime.getInstance().addEventListener( 
 				Runtime.SELECT_DATA_CHANGE, this.onSelectChange
 			);
 		}
 		
-		public function init():void 
-		{
-			var self:MainScene = this;
-			this.mTimeline.addEventListener( SliderEvent.CHANGE, 
-				function(e:*):void {
-					self.mNowTimeLabel.text = "当前时间："+self.mTimeline.value+"s";
-				}
-			);
-			
-			this.mCoordinator = new TimeLine( this.mMapSpeed, 5, 9);
-			this.mCoordinator.x = 0;
-			this.mCoordinator.resize( 1000 );
-			this.mCoordinator.addEventListener("gridClick", onGridClick);
-			//this.mSceneLayer.addElement( this.mCoordinator );
-			
-			setCurrTime(10);
-			
-			this.addEventListener( MouseEvent.MOUSE_WHEEL, onWheelMove );
-		}
-		
-		private static const kSCENE_WIDTH:Number = 720;
-		private static const kSCENE_HEIGHT:Number = 1280;
-		private var mProgressInPixel:Number = 0;
-		private function setProgress( progress:Number ):void
-		{
-			if( progress < 0 ) return;
-			//trace("height " +this.mAdaptiveLayer.height);
-			this.mProgressInPixel = progress;
-			this.mMonsterLayer.y = this.mProgressInPixel + this.mAdaptiveLayer.height;
-			trace( this.mMonsterLayer.y );
-		}
-		
-		private function onWheelMove(e:MouseEvent):void 
-		{
-			if( e.ctrlKey && this.mMonsters.length > 0 ) // scale monsters in y axis 
-			{
-				var min:Number = this.mMonsters[0].y;
-				this.mMonsters.forEach( function(m:Component):void {
-					min = Math.max( m.y, min );
-				}, this);
-				
-				this.mMonsters.forEach( function(m:Component):void {
-					m.y = min + (m.y-min) * (1+e.delta*0.05);
-				}, this);
-			}else
-				this.setProgress( this.mProgressInPixel + e.delta );
-		}
-	
-		private var mMonsters:Vector.<Component> = null;
 		public function reset( lid:String ):void
 		{
 			// clean up
@@ -249,17 +150,97 @@ package
 			
 			for each( var item:Object in level.data )
 			{
-				var one:Component = null;
-				if( item.type == "AreaTrigger" )
-					one = new AreaTriggerComponent(this);
-				else 
-					one = new EntityComponent(this, item.type, -1, 30);
-				
+				var one:Component = this.creator( item.type );			
 				one.initFromData(item);
 				this.insertMonster( one );
 			}
 		}
 		
+		// ------------------------------------------------------------
+		// user configs
+//		private function onChangeSpeed
+		
+		// ------------------------------------------------------------
+		// user actions 
+		private function onResize( e:ResizeEvent ):void
+		{
+			var height:Number = this.height - 65;
+			this.mMonsterMask.graphics.clear();
+			this.mMonsterMask.graphics.beginFill(0xffffff);
+			this.mMonsterMask.graphics.drawRect(-180, -height, 360, height);
+			this.mMonsterMask.graphics.endFill();
+			this.mMonsterMask.height 	= height;
+			this.mMonsterLayer.y 		= this.mProgressInPixel + height;
+			this.mAdaptiveLayer.height 	= height;
+			this.mCoordinator.y 		= height;
+			this.mCoordinator.setMeshDensity( 
+				this.mGridWidth, this.mGridHeight, height, this.mProgressInPixel 
+			);
+		}
+		
+		private function onWheelMove(e:MouseEvent):void 
+		{
+			if( e.ctrlKey && this.mMonsters.length > 0 ) // scale monsters in y axis 
+			{
+				var min:Number = this.mMonsters[0].y;
+				for each( var m:Component in this.mMonsters )
+					min = Math.max( m.y, min );
+				
+				for each( var m2:Component in this.mMonsters )
+					m2.y = min + (m2.y-min) * (1+e.delta*0.05);
+			}else
+				this.setProgress( this.mProgressInPixel + e.delta );
+		}
+		
+		private function onMouseClick(e:MouseEvent):void
+		{
+			var type:String = Runtime.getInstance().selectedComponentType;
+			var fid:String = Runtime.getInstance().selectedFormationType;
+			
+			if( type )
+			{
+				if( fid )
+				{
+					var posData:Object = Data.getInstance().getFormationById( fid );
+					for each( var p:Object in posData )
+					{
+						var item:Component = this.creator( type );
+						item.x 	= p.x + this.mCoordinator.mouseX; 
+						item.y	= p.y + this.mCoordinator.mouseY - this.mProgressInPixel; 
+						this.insertMonster( item );
+					}
+				} else {
+					item = this.creator( type );
+					item.x 	= this.mCoordinator.mouseX; 
+					item.y	= this.mCoordinator.mouseY - this.mProgressInPixel; 
+					this.insertMonster( item );
+				}
+			}
+		}
+		
+		// ------------------------------------------------------------
+		private function setProgress( progress:Number ):void
+		{
+			if( progress < 0 ) return;
+			this.mProgressInPixel = progress;
+			this.mMonsterLayer.y = this.mProgressInPixel + this.height - 65;
+			this.mCoordinator.setMeshDensity( 
+				this.mGridWidth, this.mGridHeight, this.height-65, this.mProgressInPixel 
+			);
+			
+			this.mTimeline.value = this.mProgressInPixel /this.mMapSpeed;
+			this.mNowTimeLabel.text = "当前时间："+Utils.getTimeFormat(this.mTimeline.value);
+		}
+		
+		private function onMonsterChange():void
+		{
+			var max:Number = this.mMonsters[0].y;
+			for each( var m:Component in this.mMonsters )
+			max = Math.min( m.y, max );
+			
+			this.mFinishingLine = -max;
+			this.mTimeline.maximum = -max / this.mMapSpeed;
+		}
 		private static var gMonsterCountor:int = 0;
 		private function insertMonster( item:Component ):void
 		{
@@ -268,61 +249,15 @@ package
 			
 			this.mMonsterLayer.addElement( item );
 			this.mMonsters.push( item );
+			this.onMonsterChange();
 		}
 		
-//		public function init(lid:String):void
-//		{
-//			if(this.level_id != "")
-//			{
-//				save();
-//			}
-//			this.level_id = lid;
-//			matsControl.clear();
-//			
-//			var level = Data.getInstance().getLevelDataById(lid);
-//			if( !level ) level = { data : [], endTime : 0 };
-//			
-//			matsControl.init(level.data);
-//			//var end:int = level.endTime != 0? level.endTime : parContainer.height/speed;
-//			//setEndTime(end);
-//			setCurrTime(0);	
-//		}
+		
+		
+		// 
+		
+		
 //		
-		public function save():void
-		{
-			//Data.getInstance().conf.speed = int(unitInput.text);
-			var data:Array = matsControl.getMatsData();
-			Data.getInstance().updateLevelDataById(this.level_id, {
-				data:data, endTime:endTime
-			});
-		}
-		
-		//the map's current time.
-		public function setCurrTime(value:Number):void
-		{
-			if(value < 0)
-			{
-				return;
-			}
-			currTime = value;
-			if(currTime > endTime)
-				setEndTime(currTime);
-			updateSlider();
-			
-			mCoordinator.setCurrTime(currTime);
-		}
-		
-		public function setEndTime(value:Number):void
-		{
-			if(value < 0)
-			{
-				return;
-			}
-			if(value != endTime)
-			{
-				endTime = value;
-			}
-		}
 		
 		private function onAddToStage(e:Event):void
 		{
@@ -330,61 +265,25 @@ package
 		}
 		private function onKeyDown(e:KeyboardEvent):void
 		{
-			var code:uint = e.keyCode;
-			if(code == Keyboard.C && e.ctrlKey && selectControl.targets.length > 0)
-			{
-				selectControl.copySelect();
-			}
-			if(code == Keyboard.F && e.ctrlKey && selectControl.targets.length > 0)
-			{
-				selectControl.setSelectMatToFormation();
-			}
-			if(code == Keyboard.DELETE && selectControl.targets.length > 0)
-			{
-				var copy:Array = selectControl.targets.slice(0, selectControl.targets.length);
-				for each(var m:Component in copy)
-				{
-					matsControl.remove(m.sid);
-				}
-			}
-		}
-		private function onCurrTimeSubmit(e:FlexEvent):void
-		{
-			//setCurrTime(int(inputField.text));
-		}
-		private function onSpeedSubmit(e:FlexEvent):void
-		{
-			//var speed:int = int(unitInput.text);
-//			Data.getInstance().conf.speed = speed;
-//			mCoordinator.setSpeed(speed);
-//			mCoordinator.setCurrTime(currTime);
-		}
-		
-		private function onEnterFrame(e:Event):void
-		{
-			//mapView.y = currTime*speed;
-			//mCoordinator.y = -mapView.y;
-			updateMapSize();
-		}
-
-		private function onGridClick(e:TimeLineEvent):void
-		{
-			selectControl.unselect();
-			
-			var type:String = Runtime.getInstance().selectedComponentType;
-			var fid:String = Runtime.getInstance().selectedFormationType;
-
-//			if( type )
+//			var code:uint = e.keyCode;
+//			if(code == Keyboard.C && e.ctrlKey && selectControl.targets.length > 0)
 //			{
-//				if( fid )
+//				selectControl.copySelect();
+//			}
+//			if(code == Keyboard.F && e.ctrlKey && selectControl.targets.length > 0)
+//			{
+//				selectControl.setSelectMatToFormation();
+//			}
+//			if(code == Keyboard.DELETE && selectControl.targets.length > 0)
+//			{
+//				var copy:Array = selectControl.targets.slice(0, selectControl.targets.length);
+//				for each(var m:Component in copy)
 //				{
-//					var posData:Object = Data.getInstance().getFormationById( fid );
-//					for each( var p:Object in posData )
-//						matsControl.add(type, e.data.x+p.x, -mapView.y-e.data.y+p.y);
-//				}else
-//					matsControl.add(type, e.data.x, -mapView.y-e.data.y);
+//					matsControl.remove(m.sid);
+//				}
 //			}
 		}
+
 		
 		private function onBGMouseOut(e:MouseEvent):void
 		{
@@ -527,6 +426,16 @@ package
 //					map.addChild(img);
 //					mapPieces[j] = img;
 //				}
+		}
+		
+		// ------------------------
+		// facilities
+		private function creator( type ):Component
+		{
+			if( type == AreaTriggerComponent.TRIGGER_TYPE )
+				return new AreaTriggerComponent( this );
+			else 
+				return new EntityComponent( this, type, -1, 30 );
 		}
 		
 	}

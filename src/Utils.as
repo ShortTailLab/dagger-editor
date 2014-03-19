@@ -363,5 +363,16 @@ package
 		{
 			PopUpManager.removePopUp( p );
 		}
+		
+		static public function getTimeFormat( s:int ):String
+		{
+			var m:int = 0;
+			while( s > 60 ) {
+				m++; s-= 60;
+			}
+			
+			if( m>0 ) return m+"m"+s+"s";
+			return s+"s";
+		}
 	}
 }
