@@ -137,7 +137,7 @@ package mapEdit
 				selectFrame = new Shape;
 				selectFrame.x = pos.x;
 				selectFrame.y = pos.y;
-				view.addChild(selectFrame);
+				//view.addChild(selectFrame);
 			}
 		}
 		
@@ -157,7 +157,7 @@ package mapEdit
 			if(selectFrame)
 			{
 				selectMul(getSelectMats(selectFrame.getBounds(view)));
-				view.removeChild(selectFrame);
+				//view.removeChild(selectFrame);
 				selectFrame = null;
 			}
 		}

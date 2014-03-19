@@ -71,8 +71,9 @@
 				}
 			
 				{
-					mVIEWScene = new MainScene( this.mSceneCanvas );	
-					this.mSceneCanvas.addElement(mVIEWScene);
+					this.mVIEWScene = new MainScene( );	
+					//this.mSceneCanvas.addElement(mVIEWScene);
+					this.mSceneArea.addElement( this.mVIEWScene );
 				}
 
 				{
@@ -153,7 +154,7 @@
 				leftVGroup.addElement(formationPanel);
 				leftVGroup.addElement(monsterPanel);
 				
-				rightArea.addElement(leftVGroup);
+				this.mSelectorArea.addElement(leftVGroup);
 			}
 
 			public function onItemClick(event:Event):void
@@ -317,7 +318,7 @@
 					</mx:Tree>
 				</s:Panel>
 			
-			<s:BorderContainer height="100%" width="100%">
+			<s:BorderContainer id="mSceneArea" height="100%" width="100%">
 				<mx:Canvas id="mSceneCanvas" height="100%" width="100%" clipContent="true">
 				</mx:Canvas>
 			</s:BorderContainer>
@@ -325,7 +326,7 @@
 	</s:VGroup>
 	
 	<s:VGroup height="100%" width="280" verticalAlign="top" horizontalAlign="right" paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="5">
-		<s:BorderContainer id="rightArea" height="100%" width="100%" dropShadowVisible="false" borderVisible="false">
+		<s:BorderContainer id="mSelectorArea" height="100%" width="100%" dropShadowVisible="false" borderVisible="false">
 		</s:BorderContainer>
 	</s:VGroup>
 		

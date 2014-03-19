@@ -1,7 +1,5 @@
 package mapEdit
 {
-	import com.hurlant.crypto.symmetric.NullPad;
-	
 	import flash.display.Sprite;
 	import flash.events.MouseEvent;
 	import flash.events.TimerEvent;
@@ -59,15 +57,16 @@ package mapEdit
 		
 		public function getMatsByPoint(pos:Point):Array
 		{
-			var localPos:Point = view.mapView.globalToLocal(pos);
-			var result:Array = new Array;
-			for each(var m:Component in mats)
-			{
-				var bound:Rectangle = m.getBounds(m.parent);
-				if(bound.contains(localPos.x, localPos.y))
-					result.push(m);
-			}
-			return result;
+//			var localPos:Point = view.mapView.globalToLocal(pos);
+//			var result:Array = new Array;
+//			for each(var m:Component in mats)
+//			{
+//				var bound:Rectangle = m.getBounds(m.parent);
+//				if(bound.contains(localPos.x, localPos.y))
+//					result.push(m);
+//			}
+			//return result;
+			return [];
 		}
 		
 		public function add(type:String, px:int, py:int):Component
@@ -82,16 +81,16 @@ package mapEdit
 		
 		private function addMat(mat:Component):void
 		{
-			if(mat.sid == "" || !mat.sid)
-				mat.sid = getUID();
-
-			view.mapView.addChild(mat);
-			mats.push(mat);
-			mat.doubleClickEnabled = true;
-			mat.addEventListener(MouseEvent.CLICK, onMatClick);
-			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
-			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
-			mat.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
+//			if(mat.sid == "" || !mat.sid)
+//				mat.sid = getUID();
+//
+//			view.mapView.addChild(mat);
+//			mats.push(mat);
+//			mat.doubleClickEnabled = true;
+//			mat.addEventListener(MouseEvent.CLICK, onMatClick);
+//			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
+//			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
+//			mat.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
 		}
 		
 		public function remove(id:String):void
@@ -99,21 +98,21 @@ package mapEdit
 			for(var i:int = 0; i < mats.length; i++)
 				if(Component(mats[i]).sid == id)
 				{
-					Component(mats[i]).onDelete();
-					mats[i].removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
-					mats[i].removeEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
-					mats[i].removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
-					view.mapView.removeChild(mats[i]);
-					mats.splice(i, 1);
+//					Component(mats[i]).onDelete();
+//					mats[i].removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
+//					mats[i].removeEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
+//					mats[i].removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
+//					view.mapView.removeChild(mats[i]);
+//					mats.splice(i, 1);
 					break;
 				}
 		}
 		
 		public function clear():void
 		{
-			for each(var m:Component in mats)
-				view.mapView.removeChild(m);
-			mats.splice(0, mats.length);
+//			for each(var m:Component in mats)
+//				view.mapView.removeChild(m);
+//			mats.splice(0, mats.length);
 		}
 		
 		private function getUID():String
@@ -161,9 +160,6 @@ package mapEdit
 		}
 		
 		private function onMatMouseUp(e:MouseEvent):void {
-			if(view.snapBtn.isOn)
-				view.snap(draggingMats);
-			
 			draggingMats = null;
 			
 			if(isClick)
