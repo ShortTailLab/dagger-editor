@@ -49,6 +49,7 @@
 			private function onRightClick(e:MouseEvent)
 			{
 				Runtime.getInstance().selectedComponentType = null;
+				Runtime.getInstance().selectedFormationType = null;
 			}
 
 			private function onDataReady(e:Event=null):void

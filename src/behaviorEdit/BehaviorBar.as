@@ -15,6 +15,7 @@ package behaviorEdit
 	import spark.components.TabBar;
 	
 	import manager.EventManager;
+	
 	import tools.RenamePanel;
 	
 	public class BehaviorBar extends TabBar
@@ -97,22 +98,15 @@ package behaviorEdit
 		
 		private function onRenameBT(e:ContextMenuEvent):void
 		{
-			var window:RenamePanel = new RenamePanel;
-			window.addEventListener(MsgEvent.RENAME_LEVEL, onRenameConfirm);
-			
-			PopUpManager.addPopUp(window, this, true);
-			PopUpManager.centerPopUp(window);
-		}
-		
-		private function onRenameConfirm(e:MsgEvent):void
-		{
-			if(e.hintMsg.length > 0)
-			{
-				controller.renameBTbyIndex(this.selectedIndex, e.hintMsg);
-				Alert.okLabel = "确定";
-			}
-			else
-				Alert.show("命名不能未空");
+			new RenamePanel( function( bid:String=null ):void {
+				if( !bid ) return;
+				if( bid.length > 0 )
+				{
+					controller.renameBTbyIndex(this.selectedIndex, bid);
+					Alert.okLabel = "确定";
+				}else 
+					Alert.show("【错误】命名不能为空");
+			}, this);
 		}
 	}
 }

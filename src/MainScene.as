@@ -74,7 +74,7 @@ package
 		
 		private var selectBoard:MatInputForm;
 		//跟随鼠标的一些提示
-		private var tipsContainer:Sprite = null;
+		private var mSelectedTipsLayer:Sprite = null;
 		
 		private var tipsTimer:Timer = null;
 		
@@ -172,6 +172,9 @@ package
 			);
 			this.tipsTimer.start();
 			
+			Runtime.getInstance().addEventListener( 
+				Runtime.SELECT_DATA_CHANGE, this.onSelectChange
+			);
 		}
 		
 		public function init(lid:String):void
@@ -295,30 +298,26 @@ package
 			selectControl.unselect();
 			
 			var type:String = Runtime.getInstance().selectedComponentType;
-//			if(main.fView.selected)
-//			{
-//				if(main.matsView.selected)
-//				{
-//					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
-//					for each(var p in posData)
-//					{
-//						var type:String = main.matsView.selected.type;
-//						matsControl.add(type, e.data.x+p.x, -mapView.y-e.data.y+p.y);
-//					}
-//				}
-//			}
+			var fid:String = Runtime.getInstance().selectedFormationType;
+
 			if( type )
 			{
-				matsControl.add(type, e.data.x, -mapView.y-e.data.y);
+				if( fid )
+				{
+					var posData:Object = Data.getInstance().getFormationById( fid );
+					for each( var p:Object in posData )
+						matsControl.add(type, e.data.x+p.x, -mapView.y-e.data.y+p.y);
+				}else
+					matsControl.add(type, e.data.x, -mapView.y-e.data.y);
 			}
 		}
 		
 		private function onBGMouseOut(e:MouseEvent):void
 		{
-			if(tipsContainer)
+			if(mSelectedTipsLayer)
 			{
-				this.removeChild(tipsContainer);
-				tipsContainer = null;
+				this.removeChild(mSelectedTipsLayer);
+				mSelectedTipsLayer = null;
 			}
 		}
 		
@@ -339,42 +338,51 @@ package
 			}
 		}
 		
-		private function updateMouseTips():void
+		private var mSelectType:String 		= null;
+		private var mSelectFormation:String = null;
+		private function onSelectChange(e:Event):void 
 		{
-			var type:String = Runtime.getInstance().selectedComponentType;
-
-			if( type && !tipsContainer)
+			if( (this.mSelectType != Runtime.getInstance().selectedComponentType ||
+				 this.mSelectFormation != Runtime.getInstance().selectedFormationType) 
+				&& this.mSelectedTipsLayer )
 			{
-				tipsContainer = new Sprite;
-				tipsContainer.alpha = 0.5;
-//				if(main.fView.selected)
-//				{
-//					var posData:Array = Formation.getInstance().formations[main.fView.selected.fName];
-//					for each(var p:* in posData)
-//					{
-//						var mat:Component = MatFactory.createMat(type);
-//						mat.x = p.x;
-//						mat.y = p.y;
-//						tipsContainer.addChild(mat);
-//					}
-//				}
-//				else
-				{
-					var mat2:Component = MatFactory.createMat(type);
-					tipsContainer.addChild(mat2);
-				}
-				this.addChild(tipsContainer);
-			}
-			else if(!type && tipsContainer)
-			{
-				this.removeChild(tipsContainer);
-				tipsContainer = null;
+				this.removeChild( this.mSelectedTipsLayer );
+				this.mSelectedTipsLayer = null;
 			}
 			
-			if(tipsContainer)
+			this.mSelectedTipsLayer = new Sprite;
+			this.addChild( this.mSelectedTipsLayer );
+			this.mSelectedTipsLayer.alpha = 0.5;
+			
+			this.mSelectType = Runtime.getInstance().selectedComponentType;
+			this.mSelectFormation = Runtime.getInstance().selectedFormationType;
+			if( this.mSelectType ) 
 			{
-				tipsContainer.x = this.mouseX-1;
-				tipsContainer.y = this.mouseY-1;
+				if( this.mSelectFormation )
+				{
+					var posData:Object = Data.getInstance().getFormationById( this.mSelectFormation );
+					for each(var p:* in posData)
+					{
+						var mat:Component = MatFactory.createMat(this.mSelectType);
+						mat.x = p.x;
+						mat.y = p.y;
+						mSelectedTipsLayer.addChild(mat);
+					}
+				}
+				else 
+				{
+					var mat2:Component = MatFactory.createMat(this.mSelectType);
+					mSelectedTipsLayer.addChild(mat2);
+				}
+			}
+			
+		}
+		private function updateMouseTips():void
+		{
+			if(this.mSelectedTipsLayer)
+			{
+				this.mSelectedTipsLayer.x = this.mouseX-1;
+				this.mSelectedTipsLayer.y = this.mouseY-1;
 			}
 		}
 		//adjust views pos when the canvas size change

@@ -26,7 +26,8 @@ package formationEdit
 			label.y = 6;
 			this.addChild(label);
 			
-			var posData:Array = Data.getInstance().getFormationById( name ) as Array;
+			var posData:Object = Data.getInstance().getFormationById( name );
+		
 			dots = new Shape;
 			this.addChild(dots);
 			for each(var pos:* in posData)

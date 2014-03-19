@@ -1,5 +1,6 @@
 package tools
 {
+	import flash.display.DisplayObject;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
@@ -17,11 +18,11 @@ package tools
 		private var mInputField:TextInput;
 		private var mConfirmButton:Button;
 		
-		public function RenamePanel(onComplete:Function)
+		public function RenamePanel(onComplete:Function, root:DisplayObject)
 		{
 			var self:RenamePanel = this;
 			with( this ) {
-				title = "重命名"; width = 200; height = 150;
+				title = "重命名"; width = 170; height = 120;
 			}
 			
 			this.mInputField = new TextInput;
@@ -32,7 +33,7 @@ package tools
 			
 			this.mConfirmButton = new Button;
 			with( this.mConfirmButton ) {
-				label = "确定"; x = 10; y = 50;  
+				label = "确定"; x = 10; y = 40;  
 			}
 			this.mConfirmButton.addEventListener( MouseEvent.CLICK, 
 				function( e:MouseEvent ) :void {
@@ -49,7 +50,7 @@ package tools
 				}
 			);
 			
-			PopUpManager.addPopUp( this, this, true );
+			PopUpManager.addPopUp( this, root, true );
 			PopUpManager.centerPopUp( this );
 		}
 	}

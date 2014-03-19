@@ -49,6 +49,16 @@ package
 			
 			mScrollingLayer = new UIComponent;
 			this.addElement(mScrollingLayer);
+			
+			var self:MonsterSelector = this;
+			Runtime.getInstance().addEventListener( Runtime.SELECT_DATA_CHANGE,
+				function(e:Event):void {
+					if( !Runtime.getInstance().selectedComponentType && self.mSelected )
+					{
+						self.clearSelection();
+					}
+				}
+			);
 		}
 		
 		public function reset( lid:String ):void 
@@ -125,9 +135,9 @@ package
 		{
 			if(this.mSelected)
 			{
-				Runtime.getInstance().selectedComponentType = null;
 				this.mSelected.select(false);
 				this.mSelected = null;
+				Runtime.getInstance().selectedComponentType = null;
 			}
 		}
 		
