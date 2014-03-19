@@ -20,10 +20,31 @@
 							  horizontalCenter="0"
 							  verticalAlign="middle" 
 							  horizontalAlign="center">
-						<s:Panel width="100%" height="30%" title="相关信息" dropShadowVisible="false">
-							
+						<s:Panel width="100%" height="140" title="相关信息" dropShadowVisible="false">
+							<s:HGroup width="100%" height="100%" horizontalAlign="left"  verticalAlign="top">
+								<s:Group width="10" height="20"/>
+								<s:VGroup width="100%" height="100%">
+									<s:Group height="10"/>
+									
+									<s:HGroup >
+										<s:Label id="mInfoXLabel" fontSize="12" text="X轴坐标：" horizontalCenter="0" />
+										<s:TextInput id="mInfoXInput" width="50" restrict="0-9"/>
+									</s:HGroup>
+									
+									<s:HGroup >
+										<s:Label id="mInfoYLabel" fontSize="12" text="Y轴坐标：" horizontalCenter="0"/>
+										<s:TextInput id="mInfoYInput" width="50" restrict="0-9" />
+									</s:HGroup>
+									
+									<s:HGroup >
+										<s:Label id="mInfoTimeLabel" fontSize="12" text="触发时间：" horizontalCenter="0"/>
+										<s:TextInput id="mInfoTimeInput" width="50" restrict="0-9" />
+									</s:HGroup>
+									
+								</s:VGroup>
+							</s:HGroup>
 						</s:Panel>
-						<s:Panel width="100%" height="25%" title="选中对象" dropShadowVisible="false">
+						<s:Panel width="100%" height="30%" title="选中对象" dropShadowVisible="false">
 							
 						</s:Panel>
 						<s:Panel width="100%" height="220" title="地图配置及信息" dropShadowVisible="false">
@@ -54,12 +75,12 @@
 				</s:Group>
 
 				<s:VGroup width="360" height="100%" verticalAlign="middle" horizontalAlign="right">
-					<s:Group id="mAdaptiveLayer" width="100%" height="10">
+					<s:Group id="mAdaptiveLayer" width="360" height="10">
 						<!-- background color -->
 						<s:Rect top="0" left="0" right="0" bottom="0">
 							<s:fill><s:SolidColor color="0xEEEEFF"/></s:fill>
 						</s:Rect>
-						<s:Group id="mMonsterLayer" width="100%" height="0"/>
+						<s:Group id="mMonsterLayer" width="360" height="0"/>
 					</s:Group>
 				</s:VGroup>
 				<s:VGroup width="20" height="100%"/>

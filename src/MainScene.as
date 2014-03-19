@@ -3,13 +3,11 @@ this view contains the map,the time scroller, the inputform.
 */
 package 
 {
-	import com.hurlant.crypto.symmetric.NullPad;
-	
-	import flash.display.Shape;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
+	import flash.events.TimerEvent;
 	import flash.geom.Rectangle;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
@@ -59,10 +57,11 @@ package
 		
 		// selections
 		private var mSelectFrame:SpriteVisualElement 	= null;
-		private var mSelectedMonsters:Array 			= null;
+		private var mSelectedMonsters:Array 			= [];
 		private var mFocusMonster:Component 			= null;
 		
 		// facilities
+		private var mAutoSaver:Timer = null;
 		
 		public function MainScene()
 		{
@@ -72,13 +71,6 @@ package
 			
 			matsControl = new EditMatsControl(this);
 			
-			//selectBoard = new MatInputForm(selectControl);
-			//this.addChild(selectBoard);
-			//			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
-			//			this.addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
-			//			this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
-			//			mBackgroundColor.addEventListener(MouseEvent.MOUSE_OUT, onBGMouseOut);
-			
 			var s:* = Data.getInstance().conf.mapSpeed;
 			if( s && s>0 ) this.mMapSpeed = s;
 			
@@ -86,6 +78,24 @@ package
 			if( w && w>0 ) this.mGridWidth = w;
 			
 			var h:* = Data.getInstance().conf.gridHeight;
+			
+			var self:MainScene = this;
+			this.mAutoSaver = new Timer(5000, 1);
+			this.mAutoSaver.addEventListener(TimerEvent.TIMER,
+				function(e:TimerEvent) : void {
+					self.mAutoSaver.reset();
+					self.mAutoSaver.start();
+					
+					if( self.mLevelId )
+					{
+						trace("save "+self.mLevelId);
+						Data.getInstance().updateLevelDataById( 
+							self.mLevelId, { data:self.getMatsData() }
+						);
+					}
+				}
+			);
+			this.mAutoSaver.start();
 		}
 		
 		// ------------------------------------------------------------
@@ -109,20 +119,6 @@ package
 			//this.setChildIndex( this.mMonsterLayer, this.numChildren-1);
 			//this.addElement( this.mMonsterMask );
 			//this.mMonsterLayer.mask = this.mMonsterMask;
-			
-//			
-//			this.mMonsterLayer.addEventListener( MouseEvent.MOUSE_MOVE,
-//				function(e:MouseEvent):void {
-//					trace("mosterLayer");	
-//				}
-//			);
-			
-			//this.mMonsterLayer = new Group();
-			//this.mAdaptiveLayer.addElement( this.mMonsterLayer );
-			
-			// scene
-			// this.mMonsterLayer.addEventListener( MouseEvent.CLICK, this.onMouseClick );
-			// this.addEventListener( MouseEvent.CLICK, this.onMouseClick );
 			
 			// configs
 			this.mMapSpeedInput.text 	= String(this.mMapSpeed);
@@ -164,6 +160,39 @@ package
 				}
 			);
 			
+			// informations
+			this.mInfoXInput.addEventListener( FlexEvent.ENTER,
+				function (e:FlexEvent):void {
+					if( self.mSelectedMonsters.length == 1 )
+					{
+						self.mSelectedMonsters[0].x = int(self.mInfoXInput.text)/2;
+						self.onMonsterChange();
+					}
+				}
+			);
+			
+			this.mInfoYInput.addEventListener( FlexEvent.ENTER,
+				function (e:FlexEvent):void {
+					if( self.mSelectedMonsters.length == 1 )
+					{
+						self.mSelectedMonsters[0].y = -int(self.mInfoYInput.text)/2;
+						self.onMonsterChange();
+					}
+				}
+			);	
+			
+			this.mInfoTimeInput.addEventListener( FlexEvent.ENTER,
+				function (e:FlexEvent):void {
+					for each( var item:Component in self.mSelectedMonsters )
+					{
+						item.triggerTime = int(self.mInfoTimeInput.text);
+						if( item as EntityComponent )
+							(item as EntityComponent).showTrigger();
+					}
+					self.onMonsterChange();
+				}
+			);	
+			
 			// selection
 			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent):void {
@@ -174,8 +203,35 @@ package
 					self.mMonsterLayer.addElement( self.mSelectFrame );
 				}
 			);
+
 			this.addEventListener( MouseEvent.MOUSE_MOVE,
 				function(e:MouseEvent):void {
+					if( self.mFocusMonster ) 
+					{
+						var deltaX:Number = (self.mouseX - self.mDraggingX);
+						var deltaY:Number = (self.mouseY - self.mDraggingY);
+						
+						self.mFocusMonster.x += deltaX;
+						self.mFocusMonster.y += deltaY;
+						for each( var item:Component in self.mSelectedMonsters )
+						{
+							if( item != self.mFocusMonster )
+							{
+								item.x += deltaX;
+								item.y += deltaY;
+							}
+						}
+					
+						self.mDraggingX = self.mouseX;
+						self.mDraggingY = self.mouseY;
+						
+						self.mInfoXInput.text = String(self.mFocusMonster.x*2);
+						self.mInfoYInput.text = String(-self.mFocusMonster.y*2);
+						self.mInfoTimeInput.text = String(self.mFocusMonster.triggerTime);
+						
+						self.onMonsterChange();
+					}
+					
 					if( !self.mSelectFrame ) return;
 					
 					self.mSelectFrame.graphics.clear();
@@ -185,10 +241,19 @@ package
 						self.mCoordinator.mouseX-self.mSelectFrame.x, 
 						self.mCoordinator.mouseY-self.mProgressInPixel-self.mSelectFrame.y
 					);
+					
+					if( !e.buttonDown )
+					{
+						self.mMonsterLayer.removeElement( self.mSelectFrame );
+						self.mSelectFrame = null;
+					}
 				}
 			);
+			
 			this.addEventListener( MouseEvent.MOUSE_UP,
 				function(e:MouseEvent):void {
+					self.mFocusMonster = null;
+					
 					if( !self.mSelectFrame ) return;
 					
 					var bound:Rectangle =  self.mSelectFrame.getBounds(self);
@@ -242,17 +307,13 @@ package
 			{
 				var one:Component = this.creator( item.type );			
 				one.initFromData(item);
-				if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
+				if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH )
 					this.insertMonster( one, false );
 			}
 			
 			this.onMonsterChange();
 		}
-		
-		// ------------------------------------------------------------
-		// user configs
-		
-		
+
 		// ------------------------------------------------------------
 		// user actions 
 		private function onResize( e:ResizeEvent ):void
@@ -282,7 +343,7 @@ package
 				for each( var m2:Component in this.mMonsters )
 					m2.y = min + (m2.y-min) * (1+e.delta*0.05);
 			}else
-				this.setProgress( this.mProgressInPixel + e.delta );
+				this.setProgress( this.mProgressInPixel + e.delta*this.mGridHeight );
 		}
 		
 		private function onMouseClick(e:MouseEvent):void
@@ -357,6 +418,25 @@ package
 			menu.addItem( formation );
 			menu.addItem( erase );
 			item.contextMenu = menu;
+			
+			this.mInfoXInput.text = String(item.x*2);
+			this.mInfoYInput.text = String(-item.y*2);
+			this.mInfoTimeInput.text = String(item.triggerTime);
+		}
+		
+		private function selectMonstersByType( type:String ):void
+		{
+			this.onCancelSelect();
+			
+			for each( var m:Component in this.mMonsters )
+				if( m.type == type ) this.selectMonster( m );
+			
+			if( this.mSelectedMonsters.length > 1 )
+			{
+				this.mInfoXInput.text 		= "";
+				this.mInfoYInput.text 		= "";
+				this.mInfoTimeInput.text 	= "";
+			}
 		}
 		
 		private function onSelectMonsters( ):void
@@ -369,6 +449,13 @@ package
 				var bound:Rectangle = m.getBounds( this );
 				if( frame.intersects(bound) )
 					this.selectMonster( m );
+			}
+			
+			if( this.mSelectedMonsters.length > 1 )
+			{
+				this.mInfoXInput.text 		= "";
+				this.mInfoYInput.text 		= "";
+				this.mInfoTimeInput.text 	= "";
 			}
 		}
 		
@@ -416,36 +503,51 @@ package
 			this.mTotalMonsters.text = "实体数量："+this.mMonsters.length;
 			this.mMapLength.text = "地图长度："+Utils.getTimeFormat(this.mFinishingLine/this.mMapSpeed);
 			
-			Data.getInstance().updateLevelDataById( 
-				this.mLevelId, { data:this.getMatsData() }
-			);
+//			Data.getInstance().updateLevelDataById( 
+//				this.mLevelId, { data:this.getMatsData() }
+//			);
 		}
+		
+		private var mDraggingX:Number = -1;
+		private var mDraggingY:Number = -1;
 		private static var gMonsterCountor:int = 0;
 		private function insertMonster( item:Component, save:Boolean = true ):void
 		{
 			if( item.sid == "" || !item.sid ) 
 				item.sid = new Date().time+String( gMonsterCountor++ );
 			
-			trace( this.mMonsterLayer.numElements );
 			this.mMonsterLayer.addElement( item );
 			this.mMonsters.push( item );
 			
 			var self:MainScene = this;
+		
+			var timer:Timer = new Timer(300, 1);
 			item.addEventListener( MouseEvent.CLICK,
 				function(e:MouseEvent) : void {
-					self.onCancelSelect();
-					self.selectMonster( item );
+					if( timer.running ) {
+						timer.stop();
+						self.selectMonstersByType( item.type );
+					} else {
+						timer.start();
+						if( self.mSelectedMonsters.length <= 1 )
+						{
+							self.onCancelSelect();
+							self.selectMonster( item );
+						}
+					}
+				}
+			);
+			
+			item.addEventListener( MouseEvent.MOUSE_DOWN,
+				function(e:MouseEvent) : void {
+					self.mFocusMonster = item;
+					self.mDraggingX = self.mouseX;
+					self.mDraggingY = self.mouseY;
 				}
 			);
 			
 			if( save ) this.onMonsterChange();
 		}
-		
-		
-		
-		// 
-		
-		
 //		
 		private function onKeyDown(e:KeyboardEvent):void
 		{
@@ -465,33 +567,6 @@ package
 //				{
 //					matsControl.remove(m.sid);
 //				}
-//			}
-		}
-
-		
-		private function onBGMouseOut(e:MouseEvent):void
-		{
-			if(mSelectedTipsLayer)
-			{
-				this.removeChild(mSelectedTipsLayer);
-				mSelectedTipsLayer = null;
-			}
-		}
-		
-		private function onSliderMouseDown(e:MouseEvent):void
-		{
-			e.stopPropagation();
-		}
-		
-		public function snap(mats:Array):void
-		{
-//			for each(var m:Component in mats)
-//			{
-//				var pos:Point = new Point(m.x, m.y);
-//				var pointOnGrid:Point = mCoordinator.globalToLocal(mapView.localToGlobal(pos));
-//				var p:Point = mCoordinator.getGridPos(pointOnGrid.x, pointOnGrid.y);
-//				m.x = p.x;
-//				m.y = -mapView.y-p.y;
 //			}
 		}
 		
@@ -623,7 +698,7 @@ package
 				point.y = m.y;
 				data.push(point);
 			}
-			for each(var p in data)
+			for each(var p:* in data)
 			{
 				p.x -= minX;
 				p.y -= minY;

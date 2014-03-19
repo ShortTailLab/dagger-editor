@@ -452,9 +452,9 @@ package
 		}
 		
 		
-		public function exportJS():String
-		{
-			var msg:String = "", skips:String = "";
+		public function exportJS( lid:String ):String
+		{	
+			var msg:String = this.exportLevelJS( lid, lid );
 			
 //			for each( var lid:String in this.level_list )
 //			{
@@ -481,101 +481,101 @@ package
 		
 		private function exportLevelJS(lid:String, suffix:String):String
 		{	
-//			if( !(lid in this.levels) ) return "【失败】无相关地图数据存在";
-//				
-//			var export:Object = new Object;
-//			var source:Array = this.levels[lid].data;
-//			
-//			// confs
-//			export.map = { speed : this.mEditorConfigs.speed };
-//			
-//			// parse instances 
-//			export.objects = new Object, export.trigger = new Array;
-//			var actors:Object = {}, traps:Object = {};
-//			for each( var item:* in source ) 
-//			{
-//				if( item.type == "AreaTrigger" ) {
-//					export.trigger.push({
-//						cond : {
-//							type: "Area",
-//							area: "@@cc.rect("+item.x+","+item.y+","+item.width+","+item.height+")@@"
-//						},
-//						result : {
-//							type: "Object", objs : item.objs
-//						}
-//					});
-//					continue;
-//				}
-//
-//				var data:Object = this.enemy_profile[item.type];
-//				if( data.monster_type == "Bullet" ) {
-//					return "【失败】子弹类型不可被放置在地图中"; 
-//				}
-//				if( data.monster_type == "Monster" ) actors[item.type] = data;
-//				else traps[item.type] = data;
-//				
-//				var t:Number = item.triggerTime || item.y;
-//				export.objects[item.id] = {
-//					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@",
-//					time : t
-//				};
-//			}
-//			
-//			export.actor = new Object; 
-//			var bhs:Object = {};
-//			for( var key:String in actors )
-//			{
-//				if( !this.enemy_bh.hasOwnProperty(key) || this.enemy_bh[key].length == 0 ) {
-//					return "【失败】敌人"+key+"未被设置行为";
-//				}
-//				
-//				export.actor[key] = Utils.deepCopy(actors[key]);	
-//				export.actor[key].behaviors = this.enemy_bh[key];
-//				export.actor[key].triggers = this.enemy_trigger[key] || [];
-//				this.enemy_bh[key].forEach(function(item:*, ...args):void {
-//					bhs[item] = true;
-//				}, null);
-//			}
-//			
-//			export.behavior = new Object;
-//			for( var key:String in bhs )
-//			{
-//				if( !this.bh_lib.hasOwnProperty(key) ) {
-//					return "【失败】试图导出不存在的行为"+key;
-//				}
-//				var raw:String = Utils.genBTreeJS(this.bh_lib[key]);
-//				export.behavior[key] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
-//					""+raw+";}@@");
-//			} 
-//			
-//			export.trap = new Object;
-//			for(  var key:* in traps )
-//				export.trap[key] = Utils.deepCopy(traps[key]);
-//			
-//			// export bullet
-//			export.bullet = new Object;
-//			for( var key:* in this.enemy_profile ) 
-//			{
-//				if(this.enemy_profile[key].monster_type == "Bullet")
-//				{
-//					for( var bh:String in export.behavior )
-//					{
-//						if( export.behavior[bh].search(key) != -1)
-//						{
-//							export.bullet[key] = this.enemy_profile[key];
-//						}
-//					}
-//				}
-//			}
-//			
-//			// undefined
-//			export.luck = new Object;
-//			
-//			var content:String = JSON.stringify(export, null, "\t");
-//			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
-//				adjustJS(content) + "; return level; }"; 
-//			Utils.write(wrap, this.fullpath("editor/export/level/"+suffix+".js"));
-//			
+			if( !(lid in this.mLevelInstancesTable ) ) return "【失败】无相关地图数据存在";
+				
+			var export:Object = new Object;
+			var source:Array = this.mLevelInstancesTable[lid].data;
+			
+			// confs
+			export.map = { speed : this.mEditorConfigs.speed };
+			
+			// parse instances 
+			export.objects = new Object, export.trigger = new Array;
+			var actors:Object = {}, traps:Object = {};
+			for each( var item:* in source ) 
+			{
+				if( item.type == "AreaTrigger" ) {
+					export.trigger.push({
+						cond : {
+							type: "Area",
+							area: "@@cc.rect("+item.x+","+item.y+","+item.width+","+item.height+")@@"
+						},
+						result : {
+							type: "Object", objs : item.objs
+						}
+					});
+					continue;
+				}
+
+				var data:Object = this.mEnemyProfilesTalbe[item.type];
+				if( data.monster_type == "Bullet" ) {
+					return "【失败】子弹类型不可被放置在地图中"; 
+				}
+				if( data.monster_type == "Monster" ) actors[item.type] = data;
+				else traps[item.type] = data;
+				
+				var t:Number = item.triggerTime || item.y;
+				export.objects[item.id] = {
+					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@",
+					time : t
+				};
+			}
+
+			export.actor = new Object; 
+			var bhs:Object = {};
+			for( var key:String in actors )
+			{
+				if( !this.mEnemyBehaviorsTable.hasOwnProperty(key) || this.mEnemyBehaviorsTable[key].length == 0 ) {
+					return "【失败】敌人"+key+"未被设置行为";
+				}
+				
+				export.actor[key] = Utils.deepCopy(actors[key]);	
+				export.actor[key].behaviors = this.mEnemyBehaviorsTable[key];
+				export.actor[key].triggers = this.mEnemyTriggersTable[key] || [];
+				this.mEnemyBehaviorsTable[key].forEach(function(item:*, ...args):void {
+					bhs[item] = true;
+				}, null);
+			}
+
+			export.behavior = new Object;
+			for( key in bhs )
+			{
+				if( !this.mBehaviorSet.hasOwnProperty(key) ) {
+					return "【失败】试图导出不存在的行为"+key;
+				}
+				var raw:String = Utils.genBTreeJS(this.mBehaviorSet[key]);
+				export.behavior[key] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
+					""+raw+";}@@");
+			} 
+			
+			export.trap = new Object;
+			for( key in traps )
+				export.trap[key] = Utils.deepCopy(traps[key]);
+			
+			// export bullet
+			export.bullet = new Object;
+			for( key in this.mEnemyProfilesTalbe ) 
+			{
+				if(this.mEnemyProfilesTalbe[key].monster_type == "Bullet")
+				{
+					for( var bh:String in export.behavior )
+					{
+						if( export.behavior[bh].search(key) != -1)
+						{
+							export.bullet[key] = this.mEnemyProfilesTalbe[key];
+						}
+					}
+				}
+			}
+			
+			// undefined
+			export.luck = new Object;
+			
+			var content:String = JSON.stringify(export, null, "\t");
+			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
+				adjustJS(content) + "; return level; }"; 
+			
+			Utils.WriteRawFile( this.resolvePath("/export/level/"+suffix+".js"), wrap );
 			return null;
 		}
 		

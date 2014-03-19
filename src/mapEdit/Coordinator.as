@@ -31,7 +31,9 @@ package mapEdit
 			this.mUnitHeight 	= unitHeight;
 			
 			this.mNumRows 		= int(height / unitHeight);
-			this.mNumColums 	= int( MainScene.kSCENE_WIDTH/2 / unitWidth );
+			this.mNumColums 	= int( MainScene.kSCENE_WIDTH / unitWidth );
+			this.mNumColums    /= 2;
+			this.mUnitWidth 	= MainScene.kSCENE_WIDTH/2 / this.mNumColums;
 			
 			this.mTickInterval 	= height / (this.mNumRows/5);
 			
@@ -49,7 +51,7 @@ package mapEdit
 				var mark:TextField = new TextField();
 				with( mark ) {
 					x = -35; y = -currHeight-15; width = 60; 
-					text =  String(int(base+currHeight));
+					text =  String(2*int(base+currHeight));
 				}
 				mark.defaultTextFormat = new TextFormat(null, 20);
 				
