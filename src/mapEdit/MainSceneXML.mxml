@@ -19,14 +19,18 @@
 					<s:Panel width="100%" height="30%" title="相关信息" dropShadowVisible="false">
 						
 					</s:Panel>
-					<s:Panel width="100%" height="30%" title="选中对象" dropShadowVisible="false">
+					<s:Panel width="100%" height="25%" title="选中对象" dropShadowVisible="false">
 						
 					</s:Panel>
-					<s:Panel width="100%" height="30%" title="地图配置及信息" dropShadowVisible="false">
+					<s:Panel width="100%" height="35%" title="地图配置及信息" dropShadowVisible="false">
 						<s:HGroup width="100%" height="100%" horizontalAlign="left"  verticalAlign="top">
 							<s:Group width="10" height="20"/>
 							<s:VGroup width="100%" height="100%">
 								<s:Group height="10"/>
+								<s:HGroup >
+									<s:Label id="mMapSpeedLabel" fontSize="12" text="地图速度："/>
+									<s:TextInput id="mMapSpeedInput" width="50" restrict="0-9"/>
+								</s:HGroup>
 								<s:CheckBox id="mShowGrid" label="是否显示网格" selected="true"/>
 								<s:HGroup >
 									<s:Label id="mGridWidthLabel" fontSize="12" text="网格宽度："/>
@@ -36,8 +40,9 @@
 									<s:Label id="mGridHeightLabel" fontSize="12" text="网格高度："/>
 									<s:TextInput id="mGridHeightInput" width="50" restrict="0-9" />
 								</s:HGroup>
-								<s:Label id="mTotalMonsters" fontSize="12" text="实体数量：0"/>
+								<s:Label id="mMousePos" fontSize="12" text="鼠标位置：(0, 0)"/>
 								<s:Label id="mMapLength" fontSize="12" text="地图长度：0"/>
+								<s:Label id="mTotalMonsters" fontSize="12" text="实体数量：0"/>
 							</s:VGroup>
 						</s:HGroup>
 					</s:Panel>

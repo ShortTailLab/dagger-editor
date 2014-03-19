@@ -62,20 +62,18 @@ package
 			
 			//selectBoard = new MatInputForm(selectControl);
 			//this.addChild(selectBoard);
-			
-			//setEndTime(parContainer.height/speed);
-			
-			//mVisibleMask = new Sprite;
-			//this.addElement(mVisibleMask);
-			//this.mask = mVisibleMask;
-			
-			//			onResize();
 			//			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
 			//			this.addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
 			//			this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
 			//			mBackgroundColor.addEventListener(MouseEvent.MOUSE_OUT, onBGMouseOut);
 			
-			//this.mMonsterLayer = new Group();
+			var s:* = Data.getInstance().conf.mapSpeed;
+			if( s && s>0 ) this.mMapSpeed = s;
+			
+			var w:* = Data.getInstance().conf.gridWidth;
+			if( w && w>0 ) this.mGridWidth = w;
+			
+			var h:* = Data.getInstance().conf.gridHeight;
 		}
 		
 		// ------------------------------------------------------------
@@ -104,10 +102,28 @@ package
 			this.addEventListener( MouseEvent.CLICK, this.onMouseClick );
 			
 			// configs
+			this.mMapSpeedInput.text 	= String(this.mMapSpeed);
+			this.mMapSpeedInput.addEventListener( FlexEvent.ENTER,
+				function (e:FlexEvent):void {
+					self.mMapSpeed = int(self.mMapSpeedInput.text);
+					Data.getInstance().setEditorConfig("mapSpeed", self.mMapSpeed);
+				}
+			);
+			
+			this.mShowGrid.addEventListener( Event.CHANGE, 
+				function (e:Event):void {
+					self.mCoordinator.showGrid( self.mShowGrid.selected );	
+					self.mCoordinator.setMeshDensity( 
+						self.mGridWidth, self.mGridHeight, self.height-65, self.mProgressInPixel 
+					);
+				}
+			);
+				
 			this.mGridWidthInput.text 	= String(this.mGridWidth);
 			this.mGridWidthInput.addEventListener( FlexEvent.ENTER,
 				function (e:FlexEvent):void {
 					self.mGridWidth = int(self.mGridWidthInput.text);
+					Data.getInstance().setEditorConfig("gridWidth", self.mGridWidth);
 					self.mCoordinator.setMeshDensity( 
 						self.mGridWidth, self.mGridHeight, self.height-65, self.mProgressInPixel 
 					);
@@ -118,6 +134,7 @@ package
 			this.mGridHeightInput.addEventListener( FlexEvent.ENTER,
 				function (e:FlexEvent):void {
 					self.mGridHeight = int(self.mGridHeightInput.text);
+					Data.getInstance().setEditorConfig("gridHeight", self.mGridHeight);
 					self.mCoordinator.setMeshDensity( 
 						self.mGridWidth, self.mGridHeight, self.height-65, self.mProgressInPixel 
 					);
@@ -128,6 +145,9 @@ package
 			this.addEventListener( MouseEvent.MOUSE_MOVE, 
 				function(e:MouseEvent):void
 				{
+					self.mMousePos.text = 
+						"鼠标位置：("+int(self.mCoordinator.mouseX)+", "+
+									int(-self.mCoordinator.mouseY+self.mProgressInPixel)+")";
 					self.updateMouseTips();
 				}
 			);
@@ -240,6 +260,9 @@ package
 			
 			this.mFinishingLine = -max;
 			this.mTimeline.maximum = -max / this.mMapSpeed;
+			
+			this.mTotalMonsters.text = "实体数量："+this.mMonsters.length;
+			this.mMapLength.text = "地图长度："+Utils.getTimeFormat(this.mFinishingLine);
 		}
 		private static var gMonsterCountor:int = 0;
 		private function insertMonster( item:Component ):void
