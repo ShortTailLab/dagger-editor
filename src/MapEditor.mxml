@@ -57,7 +57,7 @@
 				this.addEventListener(ResizeEvent.RESIZE, onResize);
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 			}
-			
+		
 			private function onResize(e:ResizeEvent):void
 			{
 				//if( this.mVIEWScene)

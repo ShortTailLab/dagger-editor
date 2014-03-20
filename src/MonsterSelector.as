@@ -44,7 +44,7 @@ package
 			with( this.mSearchBox ) {
 				prompt = "搜索"; percentWidth = 100; height = 30;
 			}
-			this.addEventListener( Event.CHANGE, onSearching );
+			this.mSearchBox.addEventListener( Event.CHANGE, onSearching );
 			this.addElement( this.mSearchBox );
 			
 			mScrollingLayer = new UIComponent;
@@ -70,11 +70,7 @@ package
 			var self:MonsterSelector = this;
 			var triggerMat:Component = new AreaTriggerComponent();
 			triggerMat.trim(70);
-			triggerMat.addEventListener(MouseEvent.CLICK, function(e:MouseEvent):void
-			{
-				var target:Component = e.currentTarget as Component;
-				if(target) self.selectItem( target );
-			});
+			this.registerEventHandler( triggerMat );
 			mMonsters.push(triggerMat);
 			
 			var enemies:Object = Data.getInstance().getEnemiesByLevelId(lid);
@@ -112,17 +108,20 @@ package
 	
 			var iterX:int = 0;
 			var px:int = 0, py:int = 0;
+			with( this ) { height = 130; }
 			for each( var item:Component in itemList )
 			{
 				px = 60 + iterX * MonsterSelector.kGRID_WIDTH;
 				if( iterX % cols == 0 ) py += MonsterSelector.kGRID_HEIGHT;
+				iterX = (++iterX)%cols;
 				
 				with( item ) { x = px; y = py; }
+				with( this ) { height = item.y + 130; }
+				
 				this.mScrollingLayer.addChild( item );
-				iterX = (++iterX)%cols;
 			}
 
-			with( this ) { height = item.y + 130; }
+			
 		}
 		
 		

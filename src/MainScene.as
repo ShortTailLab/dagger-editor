@@ -11,6 +11,7 @@ package
 	import flash.geom.Rectangle;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
+	import flash.ui.Keyboard;
 	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
@@ -24,10 +25,8 @@ package
 	import mapEdit.AreaTriggerComponent;
 	import mapEdit.Component;
 	import mapEdit.Coordinator;
-	import mapEdit.EditMatsControl;
 	import mapEdit.EntityComponent;
 	import mapEdit.MainSceneXML;
-	import mapEdit.MatFactory;
 	
 	public class MainScene extends MainSceneXML
 	{
@@ -76,7 +75,7 @@ package
 			var h:* = Data.getInstance().conf.gridHeight;
 			
 			var self:MainScene = this;
-			this.mAutoSaver = new Timer(5000, 1);
+			this.mAutoSaver = new Timer(60000, 1); // auto save per minute
 			this.mAutoSaver.addEventListener(TimerEvent.TIMER,
 				function(e:TimerEvent) : void {
 					self.mAutoSaver.reset();
@@ -90,7 +89,7 @@ package
 					}
 				}
 			);
-			this.mAutoSaver.start();
+//			this.mAutoSaver.start();
 		}
 		
 		// ------------------------------------------------------------
@@ -279,6 +278,7 @@ package
 					self.updateMouseTips();
 				}
 			);
+			this.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			this.addEventListener( ResizeEvent.RESIZE, onResize );
 			
 			Runtime.getInstance().addEventListener( 
@@ -534,10 +534,6 @@ package
 			
 			this.mTotalMonsters.text = "实体数量："+this.mMonsters.length;
 			this.mMapLength.text = "地图长度："+Utils.getTimeFormat(this.mFinishingLine/this.mMapSpeed);
-			
-//			Data.getInstance().updateLevelDataById( 
-//				this.mLevelId, { data:this.getMatsData() }
-//			);
 		}
 		
 		private var mDraggingX:Number = -1;
@@ -583,23 +579,64 @@ package
 //		
 		private function onKeyDown(e:KeyboardEvent):void
 		{
-//			var code:uint = e.keyCode;
-//			if(code == Keyboard.C && e.ctrlKey && selectControl.targets.length > 0)
-//			{
-//				selectControl.copySelect();
-//			}
-//			if(code == Keyboard.F && e.ctrlKey && selectControl.targets.length > 0)
-//			{
-//				selectControl.setSelectMatToFormation();
-//			}
-//			if(code == Keyboard.DELETE && selectControl.targets.length > 0)
-//			{
-//				var copy:Array = selectControl.targets.slice(0, selectControl.targets.length);
-//				for each(var m:Component in copy)
-//				{
-//					matsControl.remove(m.sid);
-//				}
-//			}
+			var code:uint = e.keyCode;
+			if( code == Keyboard.V && e.ctrlKey )
+			{
+				if( this.mSelectedMonsters.length <= 0 ) return;
+				
+				var top:int 	= this.mSelectedMonsters[0].y; 
+				var bottom:int 	= this.mSelectedMonsters[0].y; 
+				for each( var item:Component in this.mSelectedMonsters )
+				{
+					top 	= Math.min( top, item.y );
+					bottom 	= Math.max( bottom, item.y ); 
+				}
+				var delta:int = this.mCoordinator.mouseY - (top+bottom)/2;
+				
+				var toMonsters:Array = [];	
+				for each( item in this.mSelectedMonsters )
+				{
+					var one:Component = this.creator( item.type );
+					one.x = item.x;
+					one.y = item.y + delta;
+					this.insertMonster( one, false );
+					toMonsters.push( one );
+				}
+				
+				this.onMonsterChange();
+				this.onCancelSelect();
+				for each( item in toMonsters )
+					this.selectMonster( item );	
+				
+			}
+			else if( code == Keyboard.S && e.ctrlKey )
+			{
+				this.save();
+			}
+			else if( code == Keyboard.DELETE || code == Keyboard.BACKSPACE )
+			{  
+				this.onDeleteSelectedMonsters();
+			}
+			else if( code == Keyboard.LEFT )
+			{
+				for each( item in this.mSelectedMonsters )
+					item.x -= 1;
+			}
+			else if( code == Keyboard.RIGHT )
+			{
+				for each( item in this.mSelectedMonsters )
+					item.x += 1;
+			}
+			else if( code == Keyboard.UP )
+			{
+				for each( item in this.mSelectedMonsters )
+					item.y -= 1;	
+			}			
+			else if( code == Keyboard.DOWN )
+			{
+				for each( item in this.mSelectedMonsters )
+					item.y += 1;	
+			}
 		}
 		
 		private var mSelectType:String 		= null;
@@ -618,6 +655,7 @@ package
 			this.addElement( this.mSelectedTipsLayer );
 			this.mSelectedTipsLayer.alpha = 0.5;
 			
+			var self:MainScene = this;
 			this.mSelectType = Runtime.getInstance().selectedComponentType;
 			this.mSelectFormation = Runtime.getInstance().selectedFormationType;
 			if( this.mSelectType ) 
@@ -627,15 +665,21 @@ package
 					var posData:Object = Data.getInstance().getFormationById( this.mSelectFormation );
 					for each(var p:* in posData)
 					{
-						var mat:Component = MatFactory.createMat(this.mSelectType);
+						var mat:Component = this.creator( this.mSelectType );
 						mat.x = p.x;
 						mat.y = p.y;
+						mat.addEventListener(MouseEvent.CLICK, function(e:*):void {
+							self.onMouseClick(e);
+						});
 						mSelectedTipsLayer.addElement(mat);
 					}
 				}
 				else 
 				{
-					var mat2:Component = MatFactory.createMat(this.mSelectType);
+					var mat2:Component = this.creator( this.mSelectType );
+					mat2.addEventListener(MouseEvent.CLICK, function(e:*):void {
+						self.onMouseClick(e);
+					});
 					mSelectedTipsLayer.addElement(mat2);
 				}
 			}

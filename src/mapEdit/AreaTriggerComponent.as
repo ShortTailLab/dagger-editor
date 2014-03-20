@@ -31,11 +31,6 @@ package mapEdit
 			triggerMatIds = new Array;
 			dotsDic = new Dictionary;
 			initRectDots();
-			
-			if(editView)
-			{
-				this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
-			}
 		}
 		
 		public function initTriggerMats():void
@@ -339,6 +334,7 @@ package mapEdit
 				}
 			}
 			
+			trace( rect.x+", "+rect.y+", "+rect.right);
 			this.graphics.clear();
 			this.graphics.lineStyle(1);
 			this.graphics.beginFill(0x000000, 0.5);
