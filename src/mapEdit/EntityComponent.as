@@ -117,12 +117,20 @@ package mapEdit
 			}
 		}
 		
+		private function creator( type:String ):Component
+		{
+			if(type == "AreaTrigger")
+				return new AreaTriggerComponent;
+			else
+				return new EntityComponent(null, type, -1, -1);
+		}
+		
 		private var triggerShadow:Component = null;
 		public function showTrigger():void
 		{
 			if(this.triggerTime > 0 && !triggerShadow)
 			{
-				triggerShadow = MatFactory.createMat(this.type);
+				triggerShadow = this.creator( this.type );
 				triggerShadow.alpha = 0.5;
 				triggerShadow.x = 0;
 				triggerShadow.y = 0;
