@@ -25,6 +25,8 @@ package
 	import spark.core.SpriteVisualElement;
 	import spark.primitives.Rect;
 	
+	import manager.MsgInform;
+	
 	import mapEdit.AreaTriggerComponent;
 	import mapEdit.Component;
 	import mapEdit.Coordinator;
@@ -57,7 +59,7 @@ package
 		
 		// selections
 		private var mSelectFrame:SpriteVisualElement 	= null;
-		private var mSelectedMonsters:Dictionary 		= new Dictionary;
+		private var mSelectedMonsters:Array 			= [];
 		private var mFocusMonster:Component 			= null;
 		
 		// facilities
@@ -305,6 +307,8 @@ package
 				Data.getInstance().updateLevelDataById( 
 					this.mLevelId, { data:this.getMatsData() }
 				);
+				MsgInform.shared().show(this.mRelatedInfo, "保存关卡"+this.mLevelId);
+				//Alert.show("【成功】保存关卡"+this.mLevelId);
 			}			
 		}
 		public function reset( lid:String ):void
@@ -325,8 +329,20 @@ package
 			{
 				var one:Component = this.creator( item.type );			
 				one.initFromData(item);
-				if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH )
-					this.insertMonster( one, false );
+				//if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH )
+				this.insertMonster( one, false );
+			}
+			
+			for each( var m:Component in this.mMonsters )
+			{
+				var tm:AreaTriggerComponent = m as AreaTriggerComponent;
+				if( !tm ) continue;
+				for each( var sid:String in tm.getSelectedMonsters() )
+				{
+					var entity:Component = this.getMonsterBySID( sid );
+					if( entity && entity.type != "AreaTrigger" )
+						entity.triggerId = tm.sid;
+				}
 			}
 			
 			this.onMonsterChange();
@@ -353,12 +369,8 @@ package
 		private function onWheelMove(e:MouseEvent):void 
 		{
 			if( e.ctrlKey && this.mMonsters.length > 0 ) // scale monsters in y axis 
-			{
-				var min:Number = this.mMonsters[0].y;
-				for each( var m:Component in this.mMonsters )
-					min = Math.max( m.y, min );
-				
-				for each( var m2:Component in this.mMonsters )
+			{	
+				for each( var item:Component in this.mMonsters )
 				{
 //					if( m2.triggerTime >= 0 ) {
 //						trace( m2.y - m2.triggerTime );
@@ -367,7 +379,8 @@ package
 //						m2.triggerTime = m2.y - delta;
 //						trace( m2.y - m2.triggerTime );
 //					} else 
-						m2.y = min + (m2.y-min) * (1+e.delta*0.05);
+//						m2.y = min + (m2.y-min) * (1+e.delta*0.05);
+					item.y = item.y*(1+e.delta*0.05);
 				}
 			}else
 				this.setProgress( this.mProgressInPixel + e.delta*this.mGridHeight );
@@ -415,7 +428,7 @@ package
 				}
 			}
 			
-			this.mSelectedMonsters = new Dictionary;
+			this.mSelectedMonsters = [];
 			this.mSelectedBoard.removeAllElements();
 		}
 		
@@ -430,7 +443,7 @@ package
 			
 			// update selected monsters in scene
 			item.select( true );
-			this.mSelectedMonsters[item.sid] = item;
+			this.mSelectedMonsters.push(item);
 			this.mMonsterLayer.setElementIndex(item, this.mMonsterLayer.numElements-1);
 			
 			var menu:ContextMenu = new ContextMenu;
@@ -539,9 +552,13 @@ package
 		
 		private function onMonsterChange():void
 		{
-			var max:Number = this.mMonsters[0].y;
-			for each( var m:Component in this.mMonsters )
-			max = Math.min( m.y, max );
+			var max:Number = 0;
+			if( this.mMonsters.length > 0 )
+			{
+				max = this.mMonsters[0].y;
+				for each( var m:Component in this.mMonsters )
+					max = Math.min( m.y, max );
+			} 
 			
 			this.mFinishingLine = -max;
 			this.mTimeline.maximum = -max / this.mMapSpeed;
@@ -574,11 +591,9 @@ package
 						self.selectMonstersByType( item.type );
 					} else {
 						timer.start();
-						if( self.mSelectedMonsters.length <= 1 )
-						{
-							self.onCancelSelect();
-							self.selectMonster( item );
-						}
+
+						self.onCancelSelect();
+						self.selectMonster( item );
 					}
 				}
 			);
@@ -596,6 +611,7 @@ package
 //		
 		private function onKeyDown(e:KeyboardEvent):void
 		{
+			e.stopPropagation();
 			var code:uint = e.keyCode;
 			if( code == Keyboard.V && e.ctrlKey )
 			{
@@ -608,7 +624,11 @@ package
 					top 	= Math.min( top, item.y );
 					bottom 	= Math.max( bottom, item.y ); 
 				}
-				var delta:int = this.mCoordinator.mouseY - (top+bottom)/2;
+				
+				var delta:int = this.mMonsterLayer.mouseY - (top+bottom)/2;
+				
+				if( this.mSelectedMonsters.length == 1 ) 
+					delta = this.mMonsterLayer.mouseY - top;
 				
 				var toMonsters:Array = [];	
 				for each( item in this.mSelectedMonsters )
@@ -773,7 +793,7 @@ package
 			);
 		}
 		
-		private function format(mats:Dictionary):Array
+		private function format(mats:Array):Array
 		{
 			var data:Array = new Array;
 			var minX:Number = mats[0].x;
@@ -798,14 +818,16 @@ package
 		
 		public function getMonsterByPoint( pos:Point ):EntityComponent
 		{
-			var local:Point = this.globalToLocal(pos);
+			var local:Point = this.mMonsterLayer.globalToLocal(pos);
 			for each( var m:Component in this.mMonsters )
 			{
 				var em:EntityComponent = m as EntityComponent;
 				if( !em ) continue;
 				var bound:Rectangle = em.getBounds( this.mMonsterLayer );
 				if( bound.contains( local.x, local.y ) )
+				{
 					return em;
+				}
 			}
 			return null;
 		}

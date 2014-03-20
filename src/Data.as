@@ -212,9 +212,13 @@ package
 		// --------------------------------------------------------------------------
 		public function getFirstLevelId():String
 		{
+			var min:String = "99999999999"; 
 			for( var item:* in this.mLevelInstancesTable )
-				return item;
-			return "undefined";
+			{
+				if( int(item) < int(min) ) min = item;
+			}
+			trace (min);
+			return min;
 		}
 		public function getLevelDataById( lid:String ):Object
 		{
@@ -461,6 +465,8 @@ package
 					}
 				}
 			}
+			
+			delete this.mLevelInstancesTable["null"];
 	
 			return result;
 		}
