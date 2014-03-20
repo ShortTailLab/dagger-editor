@@ -8,10 +8,12 @@ package
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import flash.events.TimerEvent;
+	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.ui.Keyboard;
+	import flash.utils.Dictionary;
 	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
@@ -21,6 +23,7 @@ package
 	
 	import spark.components.Group;
 	import spark.core.SpriteVisualElement;
+	import spark.primitives.Rect;
 	
 	import mapEdit.AreaTriggerComponent;
 	import mapEdit.Component;
@@ -54,7 +57,7 @@ package
 		
 		// selections
 		private var mSelectFrame:SpriteVisualElement 	= null;
-		private var mSelectedMonsters:Array 			= [];
+		private var mSelectedMonsters:Dictionary 		= new Dictionary;
 		private var mFocusMonster:Component 			= null;
 		
 		// facilities
@@ -202,12 +205,21 @@ package
 				function(e:MouseEvent):void {
 					if( self.mFocusMonster ) 
 					{
+						var inSelected:Boolean = false;
+						for each( var item:Component in self.mSelectedMonsters )
+							if( item == self.mFocusMonster )
+							{
+								inSelected = true;
+								break;
+							}
+						if( !inSelected ) self.onCancelSelect();
+						
 						var deltaX:Number = (self.mouseX - self.mDraggingX);
 						var deltaY:Number = (self.mouseY - self.mDraggingY);
 						
 						self.mFocusMonster.x += deltaX;
 						self.mFocusMonster.y += deltaY;
-						for each( var item:Component in self.mSelectedMonsters )
+						for each( item in self.mSelectedMonsters )
 						{
 							if( item != self.mFocusMonster )
 							{
@@ -403,7 +415,7 @@ package
 				}
 			}
 			
-			this.mSelectedMonsters = [];
+			this.mSelectedMonsters = new Dictionary;
 			this.mSelectedBoard.removeAllElements();
 		}
 		
@@ -412,11 +424,13 @@ package
 		private static const kSELECTED_BOARD_COLUMS:int 		= 3;
 		private function selectMonster( item:Component ):void
 		{
+			if( this.mSelectedMonsters.hasOwnProperty(item.sid) ) return;
+			
 			var self:MainScene = this;
 			
 			// update selected monsters in scene
 			item.select( true );
-			this.mSelectedMonsters.push(item);
+			this.mSelectedMonsters[item.sid] = item;
 			this.mMonsterLayer.setElementIndex(item, this.mMonsterLayer.numElements-1);
 			
 			var menu:ContextMenu = new ContextMenu;
@@ -543,6 +557,9 @@ package
 		{
 			if( item.sid == "" || !item.sid ) 
 				item.sid = new Date().time+String( gMonsterCountor++ );
+			
+			if( item.type == "AreaTrigger" ) 
+				(item as AreaTriggerComponent).enableEditing(this);
 			
 			this.mMonsterLayer.addElement( item );
 			this.mMonsters.push( item );
@@ -709,9 +726,6 @@ package
 			var data:Array = new Array;
 			for each(var m:Component in this.mMonsters)
 			{
-				if(m.triggerId.length > 0 && !getMat(m.triggerId))
-					m.triggerId = "";
-				
 				data.push(m.toExportData());
 			}
 			return data;
@@ -759,7 +773,7 @@ package
 			);
 		}
 		
-		private function format(mats:Array):Array
+		private function format(mats:Dictionary):Array
 		{
 			var data:Array = new Array;
 			var minX:Number = mats[0].x;
@@ -780,6 +794,30 @@ package
 				p.y -= minY;
 			}
 			return data;
+		}
+		
+		public function getMonsterByPoint( pos:Point ):EntityComponent
+		{
+			var local:Point = this.globalToLocal(pos);
+			for each( var m:Component in this.mMonsters )
+			{
+				var em:EntityComponent = m as EntityComponent;
+				if( !em ) continue;
+				var bound:Rectangle = em.getBounds( this.mMonsterLayer );
+				if( bound.contains( local.x, local.y ) )
+					return em;
+			}
+			return null;
+		}
+		
+		public function getMonsterBySID( sid:String ):EntityComponent
+		{
+			for each( var item:Component in this.mMonsters )
+			{
+				var em:EntityComponent = item as EntityComponent;
+				if( em && em.sid == sid ) return em; 
+			}
+			return null;
 		}
 	}
 } 

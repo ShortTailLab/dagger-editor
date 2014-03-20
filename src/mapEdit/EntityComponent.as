@@ -94,7 +94,7 @@ package mapEdit
 		
 		override public function select(value:Boolean):void
 		{
-			isSelected = value;
+			mIsSelected = value;
 			if(value && !selectFrame)
 			{
 				selectFrame = new Shape;

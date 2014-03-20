@@ -9,7 +9,7 @@ package mapEdit
 		public var sid:String = "";
 		public var type:String;
 		public var triggerTime:int = -1;
-		public var isSelected:Boolean = false;
+		public var mIsSelected:Boolean = false;
 		public var triggerId:String = "";
 		protected var editView:MainScene = null;
 		

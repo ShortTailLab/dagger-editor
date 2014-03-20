@@ -64,11 +64,10 @@ package
 		public function reset( lid:String ):void 
 		{
 			// explicitly remove mats array
-			mMonsters = null;
-			mMonsters = new Array;
+			mMonsters = [];
 			
 			var self:MonsterSelector = this;
-			var triggerMat:Component = new AreaTriggerComponent();
+			var triggerMat:Component = new AreaTriggerComponent;
 			triggerMat.trim(70);
 			this.registerEventHandler( triggerMat );
 			mMonsters.push(triggerMat);
@@ -120,8 +119,9 @@ package
 				
 				this.mScrollingLayer.addChild( item );
 			}
-
-			
+//			var n = new AreaTriggerComponent;
+//			n.x = 50; n.y = 50;
+//			this.mScrollingLayer.addChild( new AreaTriggerComponent );
 		}
 		
 		
