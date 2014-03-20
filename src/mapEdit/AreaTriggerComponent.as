@@ -96,15 +96,15 @@ package mapEdit
 		private function onTirggerDotMouseDown(e:MouseEvent):void
 		{
 			e.stopPropagation();
-			for(var id in dotsDic)
-				if(dotsDic[id] == e.currentTarget)
-				{
-					controlDot = dotsDic[id];
-					control(controlDot);
-					removeATrigger(id);
-					editView.matsControl.getMat(id).triggerId = "";
-					return;
-				}
+//			for(var id in dotsDic)
+//				if(dotsDic[id] == e.currentTarget)
+//				{
+//					controlDot = dotsDic[id];
+//					control(controlDot);
+//					removeATrigger(id);
+//					editView.matsControl.getMat(id).triggerId = "";
+//					return;
+//				}
 		}
 		
 		public function removeATrigger(id:String):void
@@ -153,11 +153,11 @@ package mapEdit
 			var globalPos:Point = triggerLayer.localToGlobal(new Point(controlDot.x, controlDot.y));
 			var id:String = findId(globalPos);
 			
-			if(id != "")
-			{
-				var mat:Component = editView.matsControl.getMat(id);
-				addATrigger(mat);
-			}
+//			if(id != "")
+//			{
+//				var mat:Component = editView.matsControl.getMat(id);
+//				addATrigger(mat);
+//			}
 				
 			triggerLayer.removeChild(controlDot);
 			controlDot = null;
@@ -165,10 +165,10 @@ package mapEdit
 		
 		private function findId(globalPos:Point):String
 		{
-			var mats:Array = editView.matsControl.getMatsByPoint(globalPos);
-			for each(var m:Component in mats)
-				if(m.sid != this.sid)
-					return m.sid;
+//			var mats:Array = editView.matsControl.getMatsByPoint(globalPos);
+//			for each(var m:Component in mats)
+//				if(m.sid != this.sid)
+//					return m.sid;
 			return "";
 		}
 		
@@ -210,10 +210,10 @@ package mapEdit
 		
 		override public function onDelete():void
 		{
-			for each(var id:String in triggerMatIds)
-			{
-				editView.matsControl.getMat(id).triggerId = "";
-			}
+//			for each(var id:String in triggerMatIds)
+//			{
+//				editView.matsControl.getMat(id).triggerId = "";
+//			}
 		}
 		
 		override public function trim(size:Number):void
@@ -242,10 +242,10 @@ package mapEdit
 			this.rect = new Rectangle(0, -data.height, data.width, data.height);
 			initRectDots();
 			this.triggerMatIds = data.objs as Array;
-			if(data.hasOwnProperty("triggerTime"))
-				this.triggerTime = data.triggerTime;
-			if(data.hasOwnProperty("triggerId") && editView.matsControl.getMat(data.triggerId))
-				this.triggerId = data.triggerId;
+//			if(data.hasOwnProperty("triggerTime"))
+//				this.triggerTime = data.triggerTime;
+//			if(data.hasOwnProperty("triggerId") && editView.matsControl.getMat(data.triggerId))
+//				this.triggerId = data.triggerId;
 		}
 		
 		override public function toExportData():Object
@@ -295,17 +295,17 @@ package mapEdit
 				}
 				for(var id in dotsDic)
 				{
-					var mat:Component = editView.matsControl.getMat(id);
-					if(mat)
-					{
-						var pos:Point = this.globalToLocal(mat.parent.localToGlobal(new Point(mat.x, mat.y)));
-						dotsDic[id].x = pos.x;
-						dotsDic[id].y = pos.y;
-						triggerLayer.graphics.lineStyle(1, 0.5);
-						triggerLayer.graphics.moveTo(beginTriDot.x, beginTriDot.y);
-						triggerLayer.graphics.lineTo(pos.x, pos.y);
-					}
-					else
+//					var mat:Component = editView.matsControl.getMat(id);
+//					if(mat)
+//					{
+//						var pos:Point = this.globalToLocal(mat.parent.localToGlobal(new Point(mat.x, mat.y)));
+//						dotsDic[id].x = pos.x;
+//						dotsDic[id].y = pos.y;
+//						triggerLayer.graphics.lineStyle(1, 0.5);
+//						triggerLayer.graphics.moveTo(beginTriDot.x, beginTriDot.y);
+//						triggerLayer.graphics.lineTo(pos.x, pos.y);
+//					}
+//					else
 					{
 						removeATrigger(id);
 					}

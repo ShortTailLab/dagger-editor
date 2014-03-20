@@ -34,8 +34,6 @@ package
 		[Embed(source="map_snow1.png")]
 		static public var BgImage:Class;
 		
-		public var matsControl:EditMatsControl;
-		
 		public static const kSCENE_WIDTH:Number = 720;
 		public static const kSCENE_HEIGHT:Number = 1280;
 		
@@ -68,8 +66,6 @@ package
 			with( this ) {
 				percentWidth = 100; percentHeight = 100;
 			}
-			
-			matsControl = new EditMatsControl(this);
 			
 			var s:* = Data.getInstance().conf.mapSpeed;
 			if( s && s>0 ) this.mMapSpeed = s;
@@ -107,7 +103,7 @@ package
 					self.setProgress( e.value * self.mMapSpeed );
 				}
 			);
-	
+			
 			this.mCoordinator = new Coordinator( );
 			this.mAdaptiveLayer.addElement( this.mCoordinator );
 			
@@ -408,12 +404,17 @@ package
 			}
 			
 			this.mSelectedMonsters = [];
+			this.mSelectedBoard.removeAllElements();
 		}
 		
+		private static const kSELECTED_BOARD_UNIT_WIDTH:int 	= 50;
+		private static const kSELECTED_BOARD_UNIT_HEIGHT:int 	= 50;
+		private static const kSELECTED_BOARD_COLUMS:int 		= 3;
 		private function selectMonster( item:Component ):void
 		{
 			var self:MainScene = this;
 			
+			// update selected monsters in scene
 			item.select( true );
 			this.mSelectedMonsters.push(item);
 			this.mMonsterLayer.setElementIndex(item, this.mMonsterLayer.numElements-1);
@@ -438,9 +439,21 @@ package
 			menu.addItem( erase );
 			item.contextMenu = menu;
 			
+			// update information panel
 			this.mInfoXInput.text = String(item.x*2);
 			this.mInfoYInput.text = String(-item.y*2);
 			this.mInfoTimeInput.text = String(item.triggerTime);
+			
+			// update board of monsters
+			var index:int = this.mSelectedBoard.numElements;
+			var row:int = index / MainScene.kSELECTED_BOARD_COLUMS;
+			var col:int = index % MainScene.kSELECTED_BOARD_COLUMS;
+			
+			var one:Component = this.creator( item.type );
+			one.trim(40);
+			one.x = 30 + col*MainScene.kSELECTED_BOARD_UNIT_WIDTH;
+			one.y = 40 + row*MainScene.kSELECTED_BOARD_UNIT_HEIGHT;
+			this.mSelectedBoard.addElement( one );
 		}
 		
 		private function selectMonstersByType( type:String ):void

@@ -45,7 +45,7 @@
 							</s:HGroup>
 						</s:Panel>
 						<s:Panel width="100%" height="30%" title="选中对象" dropShadowVisible="false">
-							
+							<s:Group id="mSelectedBoard" width="100%" height="100%"/>
 						</s:Panel>
 						<s:Panel width="100%" height="220" title="地图配置及信息" dropShadowVisible="false">
 							<s:HGroup width="100%" height="100%" horizontalAlign="left"  verticalAlign="top">
