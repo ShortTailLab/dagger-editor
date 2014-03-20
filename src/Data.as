@@ -183,6 +183,20 @@ package
 				}
 			});
 		}
+		public function getLevelProfileById( lid:String ):Object
+		{
+			for each( var chapter:* in this.mLevelProfiles )
+			{
+				for( var key:* in chapter.levels ) 
+					if( key == lid ) {
+						var ret:* = chapter.levels[key];
+						ret.chapter_id = chapter.chapter_id;
+						ret.chapter_name = chapter.chapter_name;
+						return ret;
+					}
+			}
+			return null;
+		}
 		
 		///////////////////////////////////////////////////////////////////////
 		////// level data
@@ -451,35 +465,7 @@ package
 			return result;
 		}
 		
-		
-		public function exportJS( lid:String ):String
-		{	
-			var msg:String = this.exportLevelJS( lid, lid );
-			
-//			for each( var lid:String in this.level_list )
-//			{
-//				if( lid in this.levels )
-//				{
-//					var r:String = this.exportLevelJS(lid, lid);
-//					if( r ) msg += ("["+lid+"]"+r+"\n"); 
-//				}
-//				//else
-//				//	skips += lid+",";
-//			}
-//			
-//			if( this.currSelectedLevel != "" )
-//			{	
-//				var rr:String = this.exportLevelJS(this.currSelectedLevel, "demo");
-//				if( rr )  msg += ("[demo]"+rr+"\n"); 
-//			}
-//			
-//			if( msg == "" ) msg ="【保存成功】";
-				
-			//return msg+"\n跳过了关卡"+skips.slice(0, -2); why should i care about this?
-			return msg;
-		}
-		
-		private function exportLevelJS(lid:String, suffix:String):String
+		public function exportLevelJS(lid:String, suffix:String):String
 		{	
 			if( !(lid in this.mLevelInstancesTable ) ) return "【失败】无相关地图数据存在";
 				
@@ -575,7 +561,7 @@ package
 			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
 				adjustJS(content) + "; return level; }"; 
 			
-			Utils.WriteRawFile( this.resolvePath("/export/level/"+suffix+".js"), wrap );
+			Utils.WriteRawFile( this.resolvePath("export/level/"+suffix+".js"), wrap );
 			return null;
 		}
 		
@@ -587,62 +573,49 @@ package
 			return result;
 		}
 		
-		public function getLevelDataForServer():Array
-		{
-			var ret:Array = [];
-//			for( var ind:* in this.level_list )
-//			{
-//				var lid:String = this.level_list[ind];
-//				var l_path:String = "level/"+lid+".js";
-//				var enemies:Object = {};
-//				var c:Object =  Data.getChapterDataByLevelId(lid, this.mLevelProfiles);
-//				if( !c )
-//				{
-//					Alert.show("数据出错！");
-//				}
-//				if ( !(lid in this.levels) )
-//				{
-//					ret.push( { 
-//						id : lid,
-//						stageId: c.chapter_id,
-//						stage: c.chapter_name,
-//						name: c.level_name,
-//						path: l_path, enemies : [] });
-//					continue;
-//				}
-//				for( var iter:* in this.levels[lid].data )
-//				{
-//					var item:Object = this.levels[lid].data[iter];
-//					if( !(item.type in enemies) ) 
-//					{
-//						var m:Object = this.level2monster[lid][item.type];
-//						enemies[item.type] = {
-//							type 	: int(item.type),
-//							count 	: 0,
-//							coins 	: m.coins || "",
-//							items 	: m.items || ""
-//						};
-//					}
-//					enemies[item.type].count ++;
-//				}
-//				var l_enemies:Array = [];
-//				for each( var mon:* in enemies )
-//				{
-//					l_enemies.push(mon);
-//				}
-//				ret.push( {
-//					id : lid,
-//					path : l_path,
-//					stageId: c.chapter_id,
-//					stage: c.chapter_name,
-//					name: c.level_name,
-//					enemies : l_enemies
-//				});
-//			}
-					
-			return ret;
+		public function getLevelDataForServer( lid:String ):Object
+		{	
+			var profile:Object = this.getLevelProfileById( lid );
+			if( !profile ) return null;
+	
+			if( !(lid in this.mLevelInstancesTable) ) 
+				return { 
+					id : lid,
+					stageId: profile.chapter_id,
+					stage: profile.chapter_name,
+					name: profile.level_name,
+					path: "level/"+lid+".js", enemies : [] 
+				};
+			
+			var inst:Object = this.mLevelInstancesTable[lid];
+			var enemies:Object = {};
+			for each( var item:* in inst.data ) 
+			{
+				if( item.type == "AreaTrigger" ) continue;
+				if( !(item.type in enemies) ) {
+					var m:Object = this.mLevelId2Enemies[lid][item.type];
+					enemies[item.type] = {
+						type 	: int(item.type),
+						count 	: 0,
+						coins 	: m.coins || "",
+						items 	: m.items || ""
+					};
+				}
+				enemies[item.type].count ++;
+			}
+			
+			var array:Array = [];
+			for each( var monster:* in enemies )
+				array.push( monster );
+			
+			return {
+				id : lid,
+				stageId: profile.chapter_id, stage: profile.chapter_name,
+				name: profile.level_name, path: "level/"+lid+".js", 
+				enemies : array
+			};
 		}
-
+		
 		// ---------------------------------------------------------------------------------
 		private function loadJson(file:File, warn:Boolean=true):Object
 		{

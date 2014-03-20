@@ -35,6 +35,34 @@ package manager
 		
 		
 		private const kGAMELEVEL_API_ADDRESS:String = "https://sh-test.shorttaillab.com/api/gameLevel";
+		public function uploadLevelToGameServer( lid:String, data:Object, onComplete:Function):void
+		{
+			var details:String = "";
+			
+			data.key = "nimei123.J$p1ter";
+			var json:String = JSON.stringify(data);
+			
+			var request:URLRequest = new URLRequest(this.kGAMELEVEL_API_ADDRESS);
+			request.method = URLRequestMethod.POST;
+			request.contentType = "application/json";
+			request.data = json;
+			
+			var loader:URLLoader = new URLLoader(); 
+			loader.addEventListener(Event.COMPLETE, function(e:Event):void
+			{
+				onComplete( details );
+			});
+			
+			loader.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, 
+				function(e:HTTPStatusEvent):void
+				{
+					details += "\n上传: "+e.responseURL+"\n状态: ";
+					if(e.status==200) details+="成功"
+					else details+=("失败 "+e.status+"\n");
+				});
+			
+			loader.load( request );
+		}
 		public function uploadLevelsToGameServer(dataList:Array):void
 		{	
 			var total:int = dataList.length;
@@ -109,9 +137,38 @@ package manager
 			);
 		}
 		
-		public function uploadLevelsToOSS(dir:File, tag:String, onComplete:Function):void 
+		public function uploadLevelsToOSS( lid:String, onComplete:Function ):void 
 		{
-			this.oss_upload( dir, tag, "LEVEL-VERSION.json", onComplete );
+			var export:File = Data.getInstance().resolvePath("export/");
+			if( export.exists && export.isDirectory )
+				export.deleteDirectory(true);
+			
+			var err1:String = Data.getInstance().exportLevelJS( lid, lid );
+			var stats:Object = Data.getInstance().getLevelDataForServer( lid );
+			
+			if( err1 || !stats ) {
+				
+				if( export.exists && export.isDirectory )
+					export.deleteDirectory(true);
+				onComplete( err1 +"\n生成服务器数据时出错" );
+				
+			} else {
+				
+				var self:SyncManager = this;
+				// may dismath between oss and gameserver
+				this.oss_upload( export, "dagger-levels", "LEVEL-VERSION.json", 
+					function(m:String) : void {
+						if( export.exists && export.isDirectory )
+							export.deleteDirectory(true);
+						self.uploadLevelToGameServer( lid, stats,
+							function( m2:String ): void {
+								onComplete( m +"\n" +m2 );
+							}
+						);
+					}
+				);
+				
+			}
 		}
 		
 		// -----------------------------------------------------
@@ -123,7 +180,7 @@ package manager
 		private function oss_upload( path:File, tag:String, vf_path:String, onComplete:Function):void 
 		{;
 			if( !path.exists || !path.isDirectory ) {
-				onComplete( path+" 不是一个有效的文件夹地址" );
+				onComplete( path.url+" 不是一个有效的文件夹地址" );
 				return;
 			}
 			var self:* = this;
@@ -160,16 +217,21 @@ package manager
 					
 					function uploadVersion( msg:String ):void
 					{
-						var url:String = Data.getInstance().resolvePath("").url;
-						var vf:File = new File(url+"/"+vf_path);
+						var vf:File = Data.getInstance().resolvePath(vf_path);
 						var fstream:FileStream = new FileStream();
 						fstream.open(vf, FileMode.WRITE);
 						fstream.writeUTFBytes(JSON.stringify(version));
 						fstream.close();
 						self.oss_upload_file_aux(
 							vf, tag+"/"+vf_path, 
-							function(t:String):void { onComplete(msg); }, 
-							function(t:String):void { onComplete("[ERROR] version.json failed to upload"); }
+							function(t:String):void {
+								vf.deleteFile();
+								onComplete(msg); 
+							}, 
+							function(t:String):void {
+								vf.deleteFile();
+								onComplete("[ERROR] version.json failed to upload"); 
+							}
 						);
 					}
 					

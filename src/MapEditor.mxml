@@ -183,6 +183,11 @@
 				this.mVIEWMonster.reset( lid );
 			}
 			
+			private function saveLevel(e:Event):void
+			{
+				this.mVIEWScene.save();
+			}
+			
 			private function sendToStaticServer(e:Event):void
 			{
 				if(mLevelTree.selectedIndex == -1)
@@ -192,19 +197,14 @@
 				}
 		
 				var mask:* = Utils.makeManualPanel("上传关卡中，请稍后…", this);
-				var export:File = File.desktopDirectory.resolvePath("editor/export/");
-				SyncManager.getInstance().uploadLevelsToOSS( export, "dagger-levels",  
+				var export:File = Data.getInstance().resolvePath("export/");
+				SyncManager.getInstance().uploadLevelsToOSS( 
+					(this.mLevelTree.selectedItem as XML).@level_id,  
 					function(msg:String):void
 					{
 						Utils.releaseManualPanel( mask );
 						Alert.show(msg);
 					});
-			}
-			
-			private function syncServer(e:Event):void
-			{
-				var dataList:Array = Data.getInstance().getLevelDataForServer();
-				SyncManager.getInstance().uploadLevelsToGameServer(dataList);
 			}
 			
 			private function parseSkillConfigFile(e:Event):void
@@ -309,6 +309,7 @@
 		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="left">
+				<s:Button id="saveLevelBtn" label="保存关卡" click="saveLevel(event)"/>
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
 			</s:HGroup>
 			
@@ -317,7 +318,6 @@
 				<s:Button id="parse_excel" label="场景文件" click="parseExcel(event)"/>
 				<s:Button id="config" label="JSON配置" click="uploadConfigFile(event)"/>
 				<s:Button id="configSkill" label="技能配置" click="parseSkillConfigFile(event)"/>
-				<s:Button id="levels_to_game_server" label="关卡同步" click="syncServer(event)"/>
 			</s:HGroup>
 			
 		</s:HGroup>

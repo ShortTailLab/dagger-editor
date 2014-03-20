@@ -88,7 +88,6 @@ package
 					
 					if( self.mLevelId )
 					{
-						trace("save "+self.mLevelId);
 						Data.getInstance().updateLevelDataById( 
 							self.mLevelId, { data:self.getMatsData() }
 						);
@@ -291,8 +290,19 @@ package
 			);
 		}
 		
+		public function save():void
+		{			
+			if( this.mLevelId ) 
+			{
+				Data.getInstance().updateLevelDataById( 
+					this.mLevelId, { data:this.getMatsData() }
+				);
+			}			
+		}
 		public function reset( lid:String ):void
 		{
+			this.save();
+			
 			// clean up
 			this.mMonsters = new Vector.<Component>();
 			this.mMonsterLayer.removeAllElements();
@@ -341,7 +351,16 @@ package
 					min = Math.max( m.y, min );
 				
 				for each( var m2:Component in this.mMonsters )
-					m2.y = min + (m2.y-min) * (1+e.delta*0.05);
+				{
+//					if( m2.triggerTime >= 0 ) {
+//						trace( m2.y - m2.triggerTime );
+//						var delta:int = m2.y - m2.triggerTime;
+//						m2.y = min + (m2.y-min) * (1+e.delta*0.05);
+//						m2.triggerTime = m2.y - delta;
+//						trace( m2.y - m2.triggerTime );
+//					} else 
+						m2.y = min + (m2.y-min) * (1+e.delta*0.05);
+				}
 			}else
 				this.setProgress( this.mProgressInPixel + e.delta*this.mGridHeight );
 		}
