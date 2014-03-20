@@ -1,7 +1,5 @@
 package mapEdit
 {
-	import com.hurlant.crypto.symmetric.NullPad;
-	
 	import flash.display.Sprite;
 	import flash.events.MouseEvent;
 	import flash.events.TimerEvent;
@@ -12,11 +10,11 @@ package mapEdit
 	public class EditMatsControl
 	{
 		public var mats:Array;
-		private var view:EditView;
+		private var view:MainScene;
 		
 		static private var idCount:int = 0;
 		
-		public function EditMatsControl(_view:EditView)
+		public function EditMatsControl(_view:MainScene)
 		{
 			mats = new Array;
 			view = _view;
@@ -30,7 +28,7 @@ package mapEdit
 				if(!item.hasOwnProperty("id"))
 					item.id = getUID();
 				
-				var mat:EditBase = MatFactory.createMatOnView(view, item.type, 30);
+				var mat:Component = MatFactory.createMatOnView(view, item.type, 30);
 				mat.initFromData(item);
 				addMat(mat);
 			}
@@ -39,7 +37,7 @@ package mapEdit
 		public function getMatsData():Array
 		{
 			var data:Array = new Array;
-			for each(var m:EditBase in mats)
+			for each(var m:Component in mats)
 			{
 				if(m.triggerId.length > 0 && !getMat(m.triggerId))
 					m.triggerId = "";
@@ -49,9 +47,9 @@ package mapEdit
 			return data;
 		}
 		
-		public function getMat(sid:String):EditBase
+		public function getMat(sid:String):Component
 		{
-			for each(var m:EditBase in mats)
+			for each(var m:Component in mats)
 				if(m.sid == sid)
 					return m;
 			return null;
@@ -59,20 +57,21 @@ package mapEdit
 		
 		public function getMatsByPoint(pos:Point):Array
 		{
-			var localPos:Point = view.mapView.globalToLocal(pos);
-			var result:Array = new Array;
-			for each(var m:EditBase in mats)
-			{
-				var bound:Rectangle = m.getBounds(m.parent);
-				if(bound.contains(localPos.x, localPos.y))
-					result.push(m);
-			}
-			return result;
+//			var localPos:Point = view.mapView.globalToLocal(pos);
+//			var result:Array = new Array;
+//			for each(var m:Component in mats)
+//			{
+//				var bound:Rectangle = m.getBounds(m.parent);
+//				if(bound.contains(localPos.x, localPos.y))
+//					result.push(m);
+//			}
+			//return result;
+			return [];
 		}
 		
-		public function add(type:String, px:int, py:int):EditBase
+		public function add(type:String, px:int, py:int):Component
 		{
-			var mat:EditBase = MatFactory.createMatOnView(view, type, 30);
+			var mat:Component = MatFactory.createMatOnView(view, type, 30);
 			
 			mat.x = px;
 			mat.y = py;
@@ -80,40 +79,40 @@ package mapEdit
 			return mat;
 		}
 		
-		private function addMat(mat:EditBase):void
+		private function addMat(mat:Component):void
 		{
-			if(mat.sid == "" || !mat.sid)
-				mat.sid = getUID();
-
-			view.mapView.addChild(mat);
-			mats.push(mat);
-			mat.doubleClickEnabled = true;
-			mat.addEventListener(MouseEvent.CLICK, onMatClick);
-			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
-			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
-			mat.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
+//			if(mat.sid == "" || !mat.sid)
+//				mat.sid = getUID();
+//
+//			view.mapView.addChild(mat);
+//			mats.push(mat);
+//			mat.doubleClickEnabled = true;
+//			mat.addEventListener(MouseEvent.CLICK, onMatClick);
+//			mat.addEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
+//			mat.addEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
+//			mat.addEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
 		}
 		
 		public function remove(id:String):void
 		{
 			for(var i:int = 0; i < mats.length; i++)
-				if(EditBase(mats[i]).sid == id)
+				if(Component(mats[i]).sid == id)
 				{
-					EditBase(mats[i]).onDelete();
-					mats[i].removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
-					mats[i].removeEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
-					mats[i].removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
-					view.mapView.removeChild(mats[i]);
-					mats.splice(i, 1);
+//					Component(mats[i]).onDelete();
+//					mats[i].removeEventListener(MouseEvent.MOUSE_DOWN, onMatMouseDown);
+//					mats[i].removeEventListener(MouseEvent.MIDDLE_CLICK, onMatMiddleClick);
+//					mats[i].removeEventListener(MouseEvent.MOUSE_UP, onMatMouseUp);
+//					view.mapView.removeChild(mats[i]);
+//					mats.splice(i, 1);
 					break;
 				}
 		}
 		
 		public function clear():void
 		{
-			for each(var m:EditBase in mats)
-				view.mapView.removeChild(m);
-			mats.splice(0, mats.length);
+//			for each(var m:Component in mats)
+//				view.mapView.removeChild(m);
+//			mats.splice(0, mats.length);
 		}
 		
 		private function getUID():String
@@ -131,12 +130,12 @@ package mapEdit
 			isClick = true;
 			currX = view.mouseX;
 			currY = view.mouseY;
-			var _draggingMat:EditBase = e.currentTarget as EditBase;
+			var _draggingMat:Component = e.currentTarget as Component;
 			
-			if(_draggingMat.isSelected)
-				draggingMats = view.selectControl.targets;
-			else
-				draggingMats = new Array(e.currentTarget as EditBase);
+//			if(_draggingMat.isSelected)
+//				draggingMats = view.selectControl.targets;
+//			else
+//				draggingMats = new Array(e.currentTarget as Component);
 			
 		}
 		private function onMatMove(e:MouseEvent):void
@@ -161,17 +160,14 @@ package mapEdit
 		}
 		
 		private function onMatMouseUp(e:MouseEvent):void {
-			if(view.snapBtn.isOn)
-				view.snap(draggingMats);
-			
 			draggingMats = null;
 			
-			if(isClick)
-			{
-				var target:EditBase = e.currentTarget as EditBase;
-				view.selectControl.select(target);
-			}
-			isClick =false;
+//			if(isClick)
+//			{
+//				var target:Component = e.currentTarget as Component;
+//				view.selectControl.select(target);
+//			}
+//			isClick =false;
 		}
 		
 		private function onMatMiddleClick(e:MouseEvent):void {
@@ -185,12 +181,12 @@ package mapEdit
 			if( this.doubleClickTimer )
 			{
 				// double click
-				var target:EditBase = e.currentTarget as EditBase;
+				var target:Component = e.currentTarget as Component;
 				var targetOfSameType:Array = new Array;
-				for each(var m:EditBase in view.matsControl.mats)
+				for each(var m:Component in view.matsControl.mats)
 				if(m.type == target.type)
 					targetOfSameType.push(m);
-				view.selectControl.selectMul(targetOfSameType);	
+//				view.selectControl.selectMul(targetOfSameType);	
 				
 				this.doubleClickTimer = null;
 			} else {

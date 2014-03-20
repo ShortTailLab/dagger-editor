@@ -2,20 +2,20 @@ package mapEdit
 {
 	public class MatFactory
 	{
-		static public function createMat(type:String, textWidth:int = -1):EditBase
+		static public function createMat(type:String, textWidth:int = -1):Component
 		{
-			if(type == TriggerSprite.TRIGGER_TYPE)
-				return new TriggerSprite;
+			if(type == AreaTriggerComponent.TRIGGER_TYPE)
+				return new AreaTriggerComponent;
 			else
-				return new MatSprite(null, type, -1, textWidth);
+				return new EntityComponent(null, type, -1, textWidth);
 		}
 		
-		static public function createMatOnView(editView:EditView, type:String, textWidth:int = -1):EditBase
+		static public function createMatOnView(editView:MainScene, type:String, textWidth:int = -1):Component
 		{
-			if(type == TriggerSprite.TRIGGER_TYPE)
-				return new TriggerSprite(editView);
+			if(type == AreaTriggerComponent.TRIGGER_TYPE)
+				return new AreaTriggerComponent(editView);
 			else
-				return new MatSprite(editView, type, -1, textWidth);
+				return new EntityComponent(editView, type, -1, textWidth);
 		}
 	}
 }

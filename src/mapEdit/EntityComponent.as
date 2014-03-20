@@ -11,7 +11,7 @@ package mapEdit
 	import flash.text.TextFormat;
 	
 
-	public class MatSprite extends EditBase
+	public class EntityComponent extends Component
 	{
 		public var trimSize:Number;
 		public var route:Array = null;
@@ -22,7 +22,7 @@ package mapEdit
 		private var typeSpr:Sprite = null;
 		private var textWidth:int = 0;
 		
-		public function MatSprite(_editView:EditView = null, _type:String = "", size:int = -1, _textWidth:int = -1)
+		public function EntityComponent(_editView:MainScene = null, _type:String = "", size:int = -1, _textWidth:int = -1)
 		{
 			super(_editView, _type);
 			this.trimSize = size;
@@ -47,16 +47,18 @@ package mapEdit
 				this.addChild(typeSpr);
 				setTextWidth(textWidth);
 			}
-			
-			var data = Data.getInstance();
-			var face = data.enemy_profile[this.type].face;
-			if( data.skins.hasOwnProperty( face ) )
+
+			var face:String = Data.getInstance().getEnemyProfileById(this.type).face;
+			var data:BitmapData = Data.getInstance().getSkinById( face );
+			if( data )
 			{
-				var bmpd:BitmapData = data.skins[face];
+				var bmpd:BitmapData = data;
+				
 				skinBmp = new Bitmap(bmpd);
 				skinBmp.scaleX = skinBmp.scaleY = 0.5;
 				skinBmp.x = -skinBmp.width*0.5;
 				skinBmp.y = -skinBmp.height;
+				
 				skin.addChild(skinBmp);
 			}
 			else
@@ -67,6 +69,7 @@ package mapEdit
 				empty.x = -empty.textWidth*0.5;
 				empty.y = -empty.textHeight;
 				empty.selectable = false;
+				
 				skin.addChild(empty);
 			}
 			
@@ -91,7 +94,7 @@ package mapEdit
 		
 		override public function select(value:Boolean):void
 		{
-			isSelected = value;
+			mIsSelected = value;
 			if(value && !selectFrame)
 			{
 				selectFrame = new Shape;
@@ -114,7 +117,7 @@ package mapEdit
 			}
 		}
 		
-		private var triggerShadow:EditBase = null;
+		private var triggerShadow:Component = null;
 		public function showTrigger():void
 		{
 			if(this.triggerTime > 0 && !triggerShadow)
@@ -155,7 +158,7 @@ package mapEdit
 		
 		override public function initFromData(data:Object):void
 		{
-			this.sid = data.sid;
+			this.sid = data.id;
 			this.x = data.x/2;
 			this.y = -data.y/2;
 			if( data.hasOwnProperty("triggerTime") ) this.triggerTime = data.triggerTime;

@@ -10,8 +10,8 @@ package behaviorEdit
 	import spark.components.Panel;
 	import spark.components.TextInput;
 	
-	import mapEdit.EditBase;
-	import mapEdit.MatSprite;
+	import mapEdit.Component;
+	import mapEdit.EntityComponent;
 	
 	import manager.EventManager;
 	
@@ -55,7 +55,7 @@ package behaviorEdit
 			btnsView.addChild(newBtn);
 			
 			
-			var icon:EditBase = new MatSprite(null, controller.editTargetType, 100, 70);
+			var icon:Component = new EntityComponent(null, controller.editTargetType, 100, 70);
 			icon.x = 60;
 			icon.y = 110;
 			btnsView.addChild(icon);
@@ -149,17 +149,17 @@ package behaviorEdit
 				Alert.show("行为名不能为空！");
 				return;
 			}
-			else if(Data.getInstance().enemyContainsBehavior(controller.editTargetType, newBtInput.text))
+			
+			var behaviors:Array = Data.getInstance().getEnemyBehaviorsById( controller.editTargetType ) as Array || [];
+			if( behaviors && behaviors.indexOf( newBtInput.text ) >= 0 )
 			{
 				Alert.show("该行为已经存在！");
 				return;
 			}
-			else
-			{
-				controller.addBT(bName);
-				EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.CREATE_BT_DONE, bName));
-				onCreateCancel();
-			}
+			
+			controller.addBT(bName);
+			EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.CREATE_BT_DONE, bName));
+			onCreateCancel();
 		}
 		
 		public function onCancel(e:MouseEvent = null):void

@@ -1,5 +1,7 @@
 package 
 {
+	import flash.display.DisplayObject;
+	import flash.events.MouseEvent;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
@@ -8,7 +10,13 @@ package
 	import flash.text.TextFormat;
 	import flash.utils.ByteArray;
 	
+	import mx.containers.TitleWindow;
+	import mx.controls.TextInput;
 	import mx.core.UIComponent;
+	import mx.events.CloseEvent;
+	import mx.managers.PopUpManager;
+	
+	import spark.components.Button;
 	
 	import behaviorEdit.BType;
 	
@@ -208,7 +216,8 @@ package
 		
 		static public function write(src:String, path:String):Boolean
 		{
-			var file:File = File.desktopDirectory.resolvePath(path);
+			var file:File = new File(path);
+			
 			var stream:FileStream = new FileStream;
 			stream.open(file, FileMode.WRITE);
 			stream.writeUTFBytes( src );
@@ -216,33 +225,38 @@ package
 			return true;
 		}
 		
+		static public function WriteRawFile( file:File, str:String ):void
+		{
+			var stream:FileStream = new FileStream;
+			stream.open( file, FileMode.WRITE );
+			stream.writeUTFBytes( str );
+			stream.close();
+		}
+		
 		static public function projectRoot():String
 		{
 			return File.desktopDirectory.resolvePath("editor").nativePath + "/";			
 		}
 		
-		static public function loadJsonFileToObject(path:String):Object
+		static public function LoadJSONToObject( file:File ):Object
 		{
-			var file:File = File.desktopDirectory.resolvePath(path);
 			var result:Object = null;
-			MapEditor.getInstance().addLog("正在解析"+path+"..");
-			if(file.exists)
+			if( file.exists ) 
 			{
-				MapEditor.getInstance().addLog(path+"存在，读取");
 				var stream:FileStream = new FileStream;
 				stream.open(file, FileMode.READ);
 				result = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
 			}
-			else {
-				MapEditor.getInstance().addLog(path+"不存在");
-			}
 			return result;
 		}
 		
-		static public function writeObjectToJsonFile(item:Object, filepath:String):Boolean
+		static public function WriteObjectToJSON( file:File, item:Object):void
 		{
-			return Utils.write( JSON.stringify(item), filepath );
+			var stream:FileStream = new FileStream;
+			stream.open( file, FileMode.WRITE );
+			stream.writeUTFBytes( JSON.stringify(item, null, "\t") );
+			stream.close();
 		}
 		
 		static public function copyDirectoryTo(from:String, to:String):void
@@ -294,6 +308,71 @@ package
 			fileStream.readBytes(bytesArray, 0, fileStream.bytesAvailable);
 			fileStream.close();
 			return MD5.hashBytes(bytesArray);
+		}
+		
+		// ----------------------------------------------
+		static public function makeRenamePanel(onComplete:Function, root:DisplayObject):void
+		{
+			var panel:TitleWindow = new TitleWindow();
+			with( panel ) {
+				title = "重命名"; width = 170; height = 120;
+			}
+			
+			var inputField:TextInput = new TextInput;
+			with( inputField ) { 
+				x = 10; y = 10; height 30; width = 150; 
+			}
+			
+			var confirmButton:Button = new Button;
+			with( confirmButton ) {
+				label = "确定"; x = 10; y = 40;  
+			}
+			confirmButton.addEventListener( MouseEvent.CLICK, 
+				function( e:MouseEvent ) :void {
+					onComplete(inputField.text);
+					PopUpManager.removePopUp(panel);
+				}
+			);
+			
+			panel.addElement(inputField);
+			panel.addElement( confirmButton );
+			
+			panel.addEventListener(CloseEvent.CLOSE, function():void {
+				onComplete(null);
+				PopUpManager.removePopUp(panel);
+			});
+			
+			PopUpManager.addPopUp( panel, root, true );
+			PopUpManager.centerPopUp( panel );
+		}
+		
+		static public function makeManualPanel(msg:String, root:DisplayObject):TitleWindow
+		{
+			var mask:TitleWindow = new TitleWindow();
+			with( mask ) {
+				width = 300; height = 50;
+				showCloseButton = false; title = msg;
+			}
+			
+			PopUpManager.addPopUp( mask, root, true );
+			PopUpManager.centerPopUp( mask );
+			return mask;
+		}
+		
+		static public function releaseManualPanel( p:TitleWindow ):void
+		{
+			PopUpManager.removePopUp( p );
+		}
+		
+		static public function getTimeFormat( s:int ):String
+		{
+			var m:int = 0;
+			while( s > 60 ) {
+				m++; s-= 60;
+			}
+			
+			if( m>0 ) return m+"m"+s+"s";
+			return s+"s";
 		}
 	}
 }

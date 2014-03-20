@@ -11,19 +11,14 @@ package mapEdit
 	import flash.ui.ContextMenuItem;
 	
 	import mx.controls.Alert;
-	import mx.managers.PopUpManager;
-	
-	import tools.RenamePanel;
-	import formationEdit.Formation;
-	
 	
 	public class SelectControl extends EventDispatcher
 	{
 		public var targets:Array = null;
-		public var view:EditView = null;
+		public var view:MainScene = null;
 		private var selectFrame:Shape = null;
 		
-		public function SelectControl(_view:EditView)
+		public function SelectControl(_view:MainScene)
 		{
 			targets = new Array;
 			this.view = _view;
@@ -33,7 +28,7 @@ package mapEdit
 			this.view.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 		}
 		
-		public function select(target:EditBase):void
+		public function select(target:Component):void
 		{
 			if(targets.length == 1 && targets[0] == target)
 				return;
@@ -59,12 +54,12 @@ package mapEdit
 			return selectFrame;
 		}
 		
-		public function unselect(target:EditBase = null):void
+		public function unselect(target:Component = null):void
 		{
 			for(var i:int = targets.length-1; i >= 0; i--)
 				if(!target)
 				{
-					var o:EditBase = targets.pop()
+					var o:Component = targets.pop()
 					o.select(false);
 					o.enablePosChangeDispatch(false);
 					o.removeEventListener(Event.REMOVED_FROM_STAGE , onRemoved);
@@ -84,7 +79,7 @@ package mapEdit
 		public function copySelect():void
 		{
 			var newMats:Array = new Array;
-			for each(var m:EditBase in targets)
+			for each(var m:Component in targets)
 			{
 				newMats.push(view.matsControl.add(m.type, m.x+30, m.y+30));
 			}
@@ -93,17 +88,42 @@ package mapEdit
 		
 		
 		public function setSelectMatToFormation():void
+		{	
+			Utils.makeRenamePanel(
+				function( ret:String = null ):void {
+					if( !ret ) return;
+					var formation:* = Data.getInstance().getFormationById( ret )
+					if( formation ) 
+						Alert.show("【错误】该阵型名已经存在!");
+					else
+					{
+						Data.getInstance().updateFormationSetById( ret, format(targets) );
+					}
+				}, this.view.parent
+			);
+		}
+		
+		private function format(mats:Array):Array
 		{
-			var window:RenamePanel = new RenamePanel;
-			window.addEventListener(MsgEvent.RENAME_LEVEL, function(e:MsgEvent):void{
-				if(Formation.getInstance().hasFormation(e.hintMsg))
-					Alert.show("该阵型名已经存在！");
-				else
-					Formation.getInstance().add(e.hintMsg, targets);
-			});
-			
-			PopUpManager.addPopUp(window, this.view.parent, true);
-			PopUpManager.centerPopUp(window);
+			var data:Array = new Array;
+			var minX:Number = mats[0].x;
+			var minY:Number = mats[0].y;
+			for each(var m:EntityComponent in mats)
+			{
+				minX = Math.min(m.x, minX);
+				minY = Math.max(m.y, minY);
+				
+				var point:Object = new Object;
+				point.x = m.x;
+				point.y = m.y;
+				data.push(point);
+			}
+			for each(var p in data)
+			{
+				p.x -= minX;
+				p.y -= minY;
+			}
+			return data;
 		}
 		
 		
@@ -117,7 +137,7 @@ package mapEdit
 				selectFrame = new Shape;
 				selectFrame.x = pos.x;
 				selectFrame.y = pos.y;
-				view.addChild(selectFrame);
+				//view.addChild(selectFrame);
 			}
 		}
 		
@@ -132,12 +152,12 @@ package mapEdit
 			}
 		}
 		
-		private function onMouseUp(e:MouseEvent):void
+		public function onMouseUp(e:MouseEvent):void
 		{
 			if(selectFrame)
 			{
 				selectMul(getSelectMats(selectFrame.getBounds(view)));
-				view.removeChild(selectFrame);
+				//view.removeChild(selectFrame);
 				selectFrame = null;
 			}
 		}
@@ -145,7 +165,7 @@ package mapEdit
 		private function getSelectMats(frame:Rectangle):Array
 		{
 			var result:Array = new Array;
-			for each(var m:EditBase in view.matsControl.mats)
+			for each(var m:Component in view.matsControl.mats)
 			{
 				var bound:Rectangle = m.getBounds(view);
 				if(frame.intersects(bound))
@@ -156,7 +176,7 @@ package mapEdit
 			return result;
 		}
 		
-		private function add(target:EditBase):void
+		private function add(target:Component):void
 		{
 			var menu:ContextMenu = new ContextMenu;
 			var item:ContextMenuItem = new ContextMenuItem("复制");
@@ -172,7 +192,7 @@ package mapEdit
 				
 				var copy:Array = targets.slice(0, targets.length);
 				//Utils.dumpObject(targets);
-				for each(var m:EditBase in copy)
+				for each(var m:Component in copy)
 				{
 					view.matsControl.remove(m.sid);
 				}
@@ -185,7 +205,9 @@ package mapEdit
 			target.parent.setChildIndex(target, target.parent.numChildren-1);
 			target.contextMenu = menu;
 			target.select(true);
+			
 			target.enablePosChangeDispatch(true);
+			
 			target.addEventListener(Event.REMOVED_FROM_STAGE , onRemoved);
 			
 			targets.push(target);
@@ -193,8 +215,8 @@ package mapEdit
 		
 		private function onRemoved(e:Event):void
 		{
-			if(e.target as EditBase)
-				unselect(e.target as EditBase);
+			if(e.target as Component)
+				unselect(e.target as Component);
 		}
 	}
 }

@@ -1,21 +1,19 @@
 package mapEdit
 {
-	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.geom.Point;
-	import mx.core.UIComponent;
-	import mx.core.FlexSprite;
 	
-	public class EditBase extends FlexSprite
+	import spark.core.SpriteVisualElement;
+	public class Component extends SpriteVisualElement
 	{
 		public var sid:String = "";
 		public var type:String;
 		public var triggerTime:int = -1;
-		public var isSelected:Boolean = false;
+		public var mIsSelected:Boolean = false;
 		public var triggerId:String = "";
-		protected var editView:EditView = null;
+		protected var editView:MainScene = null;
 		
-		public function EditBase(_editView:EditView = null, type:String = "")
+		public function Component(_editView:MainScene = null, type:String = "")
 		{
 			super();
 			this.editView = _editView;

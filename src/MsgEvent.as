@@ -14,6 +14,8 @@ package
 		public var hintMsg:String = "";
 		public var hintData:*;
 		
+		static public var CANCEL_SELECT:String = "CANCEL_SELECT";
+		
 		public function MsgEvent(type:String, msg:String = "")
 		{
 			super(type);

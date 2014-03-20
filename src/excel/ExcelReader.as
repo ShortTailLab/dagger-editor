@@ -25,7 +25,7 @@ package excel
 			fstream.readBytes( bytes, 0, fstream.bytesAvailable );
 			fstream.close();
 			
-			var self = this;
+			var self:ExcelReader = this;
 			this.mExcelLoader = new XLSXLoader();
 			this.mExcelLoader.addEventListener(Event.COMPLETE, function(e:Event):void
 			{
@@ -38,14 +38,14 @@ package excel
 					return;
 				}
 				
-				var sheet = self.mExcelLoader.worksheet(titles[0]);
+				var sheet:Worksheet = self.mExcelLoader.worksheet(titles[0]);
 				self.parseSheet(sheet, onComplete);
 				self.mExcelLoader.close();
 			});
 			this.mExcelLoader.loadFromByteArray( bytes );
 		}
 		
-		private const kSTART_LINE = 3;
+		private const kSTART_LINE:int = 3;
 		private function parseSheet( sheet:Worksheet, onComplete:Function ):void
 		{	
 			var indices:Array = [];
@@ -66,7 +66,7 @@ package excel
 			}
 			
 			//
-			var struct:Object = Data.getInstance().dynamic_args;
+			var struct:Object = Data.getInstance().dynamicArgs;
 			if( !struct.hasOwnProperty("Chapter") || 
 				!struct.hasOwnProperty("Level") )
 			{
@@ -78,8 +78,11 @@ package excel
 			var enum_must:Array = [
 				{"chapter_id":"string", "chapter_name":"string"},
 				{"level_id":"string","level_name":"string"},
-				{"monster_id":"string", "monster_type":"string",
-				 "monster_name":"string", "face":"string"}
+				{
+					"monster_id":"string", "monster_type":"string",
+				 	"monster_name":"string", "face":"string", 
+				 	"coins":"array_int", "items":"array_int", "props":"array_int"
+				}
 			];
 			var enum_key:Array  = ["chapter_id", "level_id", "monster_id"];
 			var enum_configs:Array = [
@@ -167,11 +170,12 @@ package excel
 		
 		private function process_val(prefix:String, key:String, value:String):*
 		{
-			var struct:Object = Data.getInstance().dynamic_args;
+			var struct:Object = Data.getInstance().dynamicArgs;
 			if( !(prefix in struct) ) 
 				return value;
 			
 			var argType:String = struct[prefix][key];
+
 			if(argType == "ccp")
 				return Utils.arrayStr2ccpStr(value);
 			else if(argType == "ccsize")
@@ -185,6 +189,11 @@ package excel
 			{
 				if( value == "" ) return 0;
 				return Number(value);
+			} 
+			else if( argType == "array_int" )
+			{
+				if( value == "" ) return [];
+				return JSON.parse( value );
 			}
 			else
 				return value;

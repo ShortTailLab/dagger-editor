@@ -1,18 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
-					   xmlns:mx="library://ns.adobe.com/flex/mx" 
-					   creationComplete="init()">
+					   xmlns:mx="library://ns.adobe.com/flex/mx" width="1155" height="800"
+					   horizontalCenter="0" creationComplete="init()">
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
 	
 	<fx:Script>
 		<![CDATA[
-			import mx.containers.TitleWindow;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
-			import mx.managers.PopUpManager;
+			import mx.events.ResizeEvent;
 			
 			import spark.components.Group;
 			import spark.components.VScrollBar;
@@ -20,135 +19,151 @@
 			import bgedit.BgEditView;
 			import bgedit.BgModel;
 			
-			import formationEdit.FormationsView;
+			import excel.SkillConfigReader;
 			
 			import manager.SyncManager;
 			
-			import excel.SkillConfigReader;
+			// ---------------------------------------------------------
 			
-			public var fView:FormationsView = null;
-			public var matsView:MatsView = null;
+			////// entrance
+			private static var gMapEditorInstance:MapEditor = null;
+			public 	static function getInstance():MapEditor { return gMapEditorInstance; }
+
+			private var _log:String = "";
+	
+			private var mVIEWFormation:FormationSelector = null;
+			private var mVIEWMonster:MonsterSelector = null;
+			private var mVIEWScene:MainScene = null;
 			
+			private var _bgEditView:BgEditView;
+			
+			// setup during launch of app
 			private function init():void
 			{
-				_instance = this;
-					
-				var mask:* = this.MakeMask("正在初始化数据（需要联网）…");
-				Data.getInstance().init();
+				gMapEditorInstance = this;
+				var self:MapEditor = this;
 				
-				Data.getInstance().addEventListener(Event.COMPLETE, function(e:Event):void
+				// address project path
+				var mask:* = Utils.makeManualPanel("正在初始化数据（需要联网）…", this);
+				Data.getInstance().init(function():void
 				{
-					_instance.ReleaseMask( mask );
-					_instance.onDataReady(e);
+					Utils.releaseManualPanel( mask );
+					self.onDataReady();	
 				});
-				
+					
 				BgModel.getInstance().init();
 				
-				this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
+				
+				this.addEventListener(ResizeEvent.RESIZE, onResize);
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 			}
-			
-			private function onRightClick(e:MouseEvent)
+		
+			private function onResize(e:ResizeEvent):void
 			{
-				matsView.clearSelection();
+				//if( this.mVIEWScene)
+					//this.mVIEWScene.onResize(e);
 			}
-			
-			private function onAddToStage(e:Event):void
+			private function onRightClick(e:MouseEvent):void
 			{
-				stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-			} 
-			private function onKeyDown(e:KeyboardEvent):void
-			{
-				var code = e.keyCode;
-				if(code == Keyboard.S && e.ctrlKey)
-					saveFile(null);
+				Runtime.getInstance().selectedComponentType = null;
+				Runtime.getInstance().selectedFormationType = null;
+				this.mVIEWScene.onCancelSelect();
 			}
-			
-			private function onDataReady(e:Event):void
+
+			private function onDataReady(e:Event=null):void
 			{
-				{
-					// update level tree view;
-					levelTree.visible = true;
-					levelTree.dataProvider = Data.getInstance().level_xml;
-					levelTree.selectedIndex = 0;
+				// update level tree view;
+				with( this.mLevelTree ) {
+					visible = true; 
+					selectedIndex = 0;
+					dataProvider = Data.getInstance().levelXML;
 				}
 			
 				{
-					// edit view
-					_enemyEditView = new EditView(this, middleArea);
-					_enemyEditView.init(Data.getInstance().level_list[0]);
-					
-					middleArea.addElement(_enemyEditView);
+					this.mVIEWScene = new MainScene();	
+					this.mSceneArea.addElement( this.mVIEWScene );
+					this.mVIEWScene.init();
 				}
 
 				{
-					var modelView:Panel = new Panel();
-					modelView.percentHeight = 40;
-					modelView.percentWidth = 100;
-					modelView.title = "阵型";
-					modelView.setStyle("dropShadowVisible", false);
+					var formationPanel:Panel = new Panel();
+					with( formationPanel ) {
+						percentHeight = 40; percentWidth = 100; title = "阵型";
+					}
+					formationPanel.setStyle("dropShadowVisible", false);
 					
 					var hgroup:HGroup = new HGroup();
-					hgroup.percentWidth = 100;
-					hgroup.percentHeight = 100;
-					hgroup.horizontalAlign = "left";
-					modelView.addElement(hgroup);
+					with( hgroup ) {
+						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
+					}
 					
 					var group:Group = new Group();
-					group.clipAndEnableScrolling = true;
-					group.percentWidth = 100;
-					group.percentHeight = 100;
-					hgroup.addElement(group);
+					with( group ) {
+						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
+					}
 	
 					var vscrollbar:VScrollBar = new VScrollBar();
-					vscrollbar.percentHeight = 100;
+					with( vscrollbar ) {
+						percentHeight = 100;
+					}
 					vscrollbar.viewport = group;
+					
+					this.mVIEWFormation = new FormationSelector;
+					with( this.mVIEWFormation ) { percentWidth = 100; }
+				
+					group.addElement( this.mVIEWFormation );
+					hgroup.addElement(group);
 					hgroup.addElement(vscrollbar);
 					
-					fView = new FormationsView;
-					fView.percentWidth = 100;
-					group.addElement(fView);
-				}
+					formationPanel.addElement( hgroup );
+				}	
 
 				{
-					var matsPanel:Panel = new Panel();
-					matsPanel.title = "资源";
-					matsPanel.percentHeight = 60;
-					matsPanel.percentWidth = 100;
-					matsPanel.setStyle("dropShadowVisible", false);
+					var monsterPanel:Panel = new Panel();
+					with( monsterPanel ) {
+						percentHeight = 60; percentWidth = 100; title = "资源";
+					}
+					monsterPanel.setStyle("dropShadowVisible", false);
 					
 					hgroup = new HGroup();
-					hgroup.percentWidth = 100;
-					hgroup.percentHeight = 100;
-					hgroup.horizontalAlign = "left";
-					matsPanel.addElement(hgroup);
+					with( hgroup ) {
+						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
+					}
 
 					group = new Group();
-					group.clipAndEnableScrolling = true;
-					group.percentWidth = 100;
-					group.percentHeight = 100;
-					hgroup.addElement(group);
+					with( group ) {
+						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
+					}
 					
 					vscrollbar = new VScrollBar();
-					vscrollbar.percentHeight = 100;
+					with( vscrollbar ) {
+						percentHeight = 100;
+					}
 					vscrollbar.viewport = group;
-					hgroup.addElement(vscrollbar);
 					
-					matsView = new MatsView;
-					matsView.percentWidth = 100;
-					matsView.percentHeight = 100;
-					group.addElement(matsView);
-				}
+					this.mVIEWMonster = new MonsterSelector;
+					with( this.mVIEWMonster ) {
+						percentWidth = percentHeight = 100;
+					}
 
-				_enemyEditVGroup = new VGroup();
-				_enemyEditVGroup.percentHeight = 100;
-				_enemyEditVGroup.percentWidth = 100;
-				_enemyEditVGroup.verticalAlign = "top";
-				_enemyEditVGroup.horizontalAlign = "center";
-				_enemyEditVGroup.addElement(modelView);
-				_enemyEditVGroup.addElement(matsPanel);
+					group.addElement( this.mVIEWMonster );
+					hgroup.addElement( group );
+					hgroup.addElement( vscrollbar );
+					
+					monsterPanel.addElement( hgroup );
+				}
 				
-				rightArea.addElement(_enemyEditVGroup);
+				this.setCurrLevel( Data.getInstance().getFirstLevelId() );
+				
+				var leftVGroup:VGroup = new VGroup();
+				with( leftVGroup ) {
+					percentHeight = percentWidth = 100;
+					verticalAlign = "top"; horizontalAlign = "center";
+				}
+				leftVGroup.addElement(formationPanel);
+				leftVGroup.addElement(monsterPanel);
+				
+				this.mSelectorArea.addElement(leftVGroup);
 			}
 
 			public function onItemClick(event:Event):void
@@ -156,128 +171,92 @@
 				var tree:Tree = event.currentTarget as Tree;
 				var item:XML = tree.selectedItem as XML;
 				if(item.name() == "level")
-				{
-					// leaf node, set current level
 					setCurrLevel(item.@level_id);
-				}
 				else
-				{
-					// expand/collapse node
 					tree.expandItem(tree.selectedItem, !tree.isItemOpen(tree.selectedItem));
-				}
 			}
 			
-			private function MakeMask(msg:String):TitleWindow 
+			private function setCurrLevel(lid:String):void
 			{
-				var mask:TitleWindow = new TitleWindow();
-				with( mask ) {
-					width = 300; height = 50;
-					showCloseButton = false; title = msg;
-				}
-				
-				PopUpManager.addPopUp( mask, this, true );
-				PopUpManager.centerPopUp( mask );
-				return mask;
+				//mVIEWScene.init(lid);
+				this.mVIEWScene.reset( lid );
+				this.mVIEWMonster.reset( lid );
 			}
 			
-			private function ReleaseMask(mask:TitleWindow):void
+			private function saveLevel(e:Event):void
 			{
-				PopUpManager.removePopUp( mask );
-			}
-			
-			private function setCurrLevel(level_id:String):void
-			{
-				var list:Array = Data.getInstance().level_list;
-				Data.getInstance().currSelectedLevel = level_id;
-				_enemyEditView.init(level_id);
-				
-				var data:Object = Data.getInstance().getCurrentLevelEnemyProfile();
-				matsView.refreshDataAndView(data);
-			}
-					
-			private function saveFile(event:Event, showAlert:Boolean = true):void
-			{
-				_enemyEditView.save();
-				 
-				Data.getInstance().saveLocal();
-				var msg:String = Data.getInstance().exportJS();
-				
-				if( showAlert ) Alert.show( msg );
+				this.mVIEWScene.save();
 			}
 			
 			private function sendToStaticServer(e:Event):void
 			{
-				if(levelTree.selectedIndex == -1)
+				if(mLevelTree.selectedIndex == -1)
 				{
 					Alert.show("上传前请先选择关卡！");
 					return;
 				}
 		
-				saveFile(null, false);
-				
-				var self:* = this;
-				var mask:* = this.MakeMask("上传关卡中，请稍后…");
-				var export:File = File.desktopDirectory.resolvePath("editor/export/");
-				SyncManager.getInstance().uploadLevelsToOSS( export, tagInput.text,  
+				var mask:* = Utils.makeManualPanel("上传关卡中，请稍后…", this);
+				var export:File = Data.getInstance().resolvePath("export/");
+				SyncManager.getInstance().uploadLevelsToOSS( 
+					(this.mLevelTree.selectedItem as XML).@level_id,  
 					function(msg:String):void
 					{
-						self.ReleaseMask( mask );
+						Utils.releaseManualPanel( mask );
 						Alert.show(msg);
 					});
 			}
 			
-			private function syncServer(e:Event):void
-			{
-				var dataList:Array = Data.getInstance().getLevelDataForServer();
-				SyncManager.getInstance().uploadLevelsToGameServer(dataList);
-			}
-			
 			private function parseSkillConfigFile(e:Event):void
 			{
-				var browser:File = new File(Data.getInstance().conf.sendFileCache);
+				var browser:File = new File(Data.getInstance().conf.skillPathCache);
 				browser.browseForOpen("请选择上传的技能配置文件(.xlsx)");
 				
-				var mask:* = this.MakeMask("解析技能配置中，请稍后…");
 				var self:* = this;
-				
 				browser.addEventListener(Event.SELECT, function (e:Event):void 
 				{
 					var file:File = e.target as File;
-					Data.getInstance().saveLastOpenedPath(file.nativePath);
+					Data.getInstance().setEditorConfig("skillPathCache", file.nativePath);
 					
-					SkillConfigReader.parseSkillConfigFromPath(file.nativePath, function(skillDict:*)
-					{
-						var jsonOut:String = JSON.stringify(skillDict, null, 4);
-						Utils.write(jsonOut, "editor/config/skill.json");
-						
-						var skillJsonPath =  Utils.projectRoot() + "skill.json";
-						SyncManager.getInstance().uploadConfigFileToOSSFromPath(skillJsonPath, function(t:String):void 
+					var mask:* = Utils.makeManualPanel("解析技能配置中，请稍后…", self);	
+					SkillConfigReader.parseSkillConfigFromPath(file.nativePath, 
+						function(skillDict:*):void
 						{
-							self.ReleaseMask( mask );
-							Alert.show( t );
-						});
-					});
+							var jsonOut:String = JSON.stringify(skillDict, null, "\t");
+
+							var saved:File = Data.getInstance().resolvePath("config/skill.json");
+							Utils.WriteRawFile( saved, jsonOut );
+							
+							SyncManager.getInstance().uploadConfigFileToOSSFromPath(
+								saved.nativePath, 
+								function(t:String):void 
+								{
+									Utils.releaseManualPanel( mask );
+									Alert.show( t );
+								}
+							);
+						}
+					);
 				});
 			}
 			
 			private function uploadConfigFile(e:Event):void
 			{
 				var self:* = this;
-				var browser:File = new File(Data.getInstance().conf.sendFileCache);
+				var browser:File = new File(Data.getInstance().conf.sendPathCache);
 				browser.browseForOpen("请选择上传的配置文件");
 				browser.addEventListener(Event.SELECT, function (e:Event):void {
 					
 					var file:File = e.target as File;
-					Data.getInstance().conf.sendFileCache = file.nativePath;
-					Data.getInstance().saveConf();
+					Data.getInstance().setEditorConfig("sendPathCache", file.nativePath);
 					
-					var mask:* = self.MakeMask("正在上传配置文件…");
+					var mask:* = Utils.makeManualPanel("正在上传配置文件…", self);
 					file.addEventListener(Event.COMPLETE, function(e:Event):void {
 						
 						SyncManager.getInstance().uploadConfigFileToOSS( file,
 							function(t:String):void 
 							{
-								self.ReleaseMask( mask );
+								Utils.releaseManualPanel( mask );
 								Alert.show( t );
 							}
 						);
@@ -290,26 +269,32 @@
 			private function parseExcel(e:Event):void
 			{
 				var self:* = this;
-				var browser:File = new File(Data.getInstance().conf.excelPathCache);
+				var browser:File = new File(Data.getInstance().conf.profilePathCache);
 				browser.browseForOpen("请选择上传的场景文件");
 				browser.addEventListener(Event.SELECT, function (e:Event):void {
 					
 					var file:File = e.target as File;
-					Data.getInstance().conf.excelPathCache = file.nativePath;
-					Data.getInstance().saveConf();
+					Data.getInstance().setEditorConfig("profilePathCache", file.nativePath);
 					
-					var mask:* = self.MakeMask("正在上传配置文件…");
-			
+					var mask:* = Utils.makeManualPanel("正在上传配置文件…", self);
 					file.addEventListener(Event.COMPLETE, function(e:Event):void {
-						Data.getInstance().parseChapterProfile( file, 
+						Data.getInstance().mergeLevelProfile( file, 
 							function(t:String):void
 							{
-								self.ReleaseMask( mask );
+								Utils.releaseManualPanel( mask );
 								Alert.show( t );
 							}
 						);
 					});
 					file.load();
+				});
+			}
+			
+			private function setPathRoot(e:Event):void 
+			{
+				Data.getInstance().setProjectPath(function(msg:String):void
+				{
+					Alert.show(msg);
 				});
 			}
 			
@@ -321,16 +306,6 @@
 				fileStream.writeUTFBytes(_log);
 				fileStream.close();
 			}
-			
-			public static function getInstance():MapEditor { return _instance; }
-			
-			private static var _instance:MapEditor;
-			private var _log:String = "";
-			
-			private var _enemyEditView:EditView;
-			private var _enemyEditVGroup:VGroup;
-			
-			private var _bgEditView:BgEditView;
 		]]>
 	</fx:Script>
 	
@@ -341,37 +316,34 @@
 		<s:HGroup id="toolbar" width="100%" verticalAlign="middle" horizontalAlign="left">
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="left">
-				<s:Button id="saveBtn" label="保存配置" click="saveFile(event)"/>
+				<s:Button id="saveLevelBtn" label="保存关卡" click="saveLevel(event)"/>
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
-				<s:Label text="服务器Tag" color="0x777777"/>
-				<s:TextInput id="tagInput" width="100" text="zwf"/>
 			</s:HGroup>
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
 				<s:Label text="编辑器" color="0x777777"/>	
+				<s:Button id="set_project_path" label="重设路径" click="setPathRoot(event)"/>
+				<s:Label text="配置项目" color="0x777777"/>	
 				<s:Button id="parse_excel" label="场景文件" click="parseExcel(event)"/>
 				<s:Button id="config" label="JSON配置" click="uploadConfigFile(event)"/>
 				<s:Button id="configSkill" label="技能配置" click="parseSkillConfigFile(event)"/>
-				<s:Button id="levels_to_game_server" label="关卡同步" click="syncServer(event)"/>
 			</s:HGroup>
 			
 		</s:HGroup>
 		
 		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
 			<s:Panel title="关卡列表" dropShadowVisible="false" width="200" height="100%">
-				<mx:Tree id="levelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);" labelField="@label">
+				<mx:Tree id="mLevelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);" labelField="@label">
 				</mx:Tree>
 			</s:Panel>
 			
-			<s:BorderContainer height="100%" width="100%">
-				<mx:Canvas id="middleArea" height="100%" width="100%" clipContent="true">
-				</mx:Canvas>
+			<s:BorderContainer id="mSceneArea" height="100%" width="100%">
 			</s:BorderContainer>
 		</s:HGroup>
 	</s:VGroup>
 	
 	<s:VGroup height="100%" width="280" verticalAlign="top" horizontalAlign="right" paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="5">
-		<s:BorderContainer id="rightArea" height="100%" width="100%" dropShadowVisible="false" borderVisible="false">
+		<s:BorderContainer id="mSelectorArea" height="100%" width="100%" dropShadowVisible="false" borderVisible="false">
 		</s:BorderContainer>
 	</s:VGroup>
 		

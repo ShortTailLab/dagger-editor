@@ -15,7 +15,7 @@ package behaviorEdit
 	import spark.components.VGroup;
 	import spark.components.VScrollBar;
 	
-	import mapEdit.MatSprite;
+	import mapEdit.EntityComponent;
 	
 	import manager.EventManager;
 	
@@ -30,7 +30,7 @@ package behaviorEdit
 		
 		private var controller:BTEditController = null;
 		
-		public function BTEditPanel(target:MatSprite)
+		public function BTEditPanel(target:EntityComponent)
 		{
 			BNodeFactory.numCount = 0;
 			this.title = "行为编辑";
@@ -146,7 +146,7 @@ package behaviorEdit
 			
 			var msg:String = "";
 			for each(var bname:String in controller.getBTs())
-				if(Utils.genBTreeJS(Data.getInstance().bh_lib[bname]) == "")
+				if(Utils.genBTreeJS(Data.getInstance().getBehaviorById(bname)) == "")
 				{
 					trace(bname);
 					msg += bname + " ";

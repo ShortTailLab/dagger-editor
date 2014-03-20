@@ -12,15 +12,15 @@ package Trigger
 	
 	import spark.components.TitleWindow;
 	
-	import mapEdit.MatSprite;
+	import mapEdit.EntityComponent;
 	
 	import manager.EventManager;
 
 	public class EditTriggers extends TitleWindow
 	{
-		private var host:MatSprite = null;
+		private var host:EntityComponent = null;
 		
-		public function EditTriggers(target:MatSprite)
+		public function EditTriggers(target:EntityComponent)
 		{
 			this.host = target;
 			
@@ -43,7 +43,7 @@ package Trigger
 			this.addEventListener(CloseEvent.CLOSE, onClose);
 			EventManager.getInstance().addEventListener(TriggerEvent.REMOVE_TRIGGER, onRemoveNode);
 			
-			var triggers = Data.getInstance().enemy_trigger[host.type];
+			var triggers = Data.getInstance().getEnemyTriggersById( host.type );
 			if( triggers )
 			{
 				for each( var item:* in triggers )
@@ -67,7 +67,7 @@ package Trigger
 				var e:TNode = this.getElementAt(i) as TNode;
 				triggers.push(e.serialize());
 			}
-			Data.getInstance().setEnemyTrigger(host.type, triggers);
+			Data.getInstance().updateEnemyTriggersById(host.type, triggers);
 		} 
 		
 		private function validChecking():String

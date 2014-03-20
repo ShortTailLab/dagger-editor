@@ -1,7 +1,5 @@
 package Trigger
 {
-	import com.as3xls.xls.Type;
-	
 	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
@@ -10,7 +8,6 @@ package Trigger
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
-	import mx.charts.BubbleChart;
 	import mx.collections.ArrayCollection;
 	import mx.controls.Button;
 	import mx.controls.ComboBox;
@@ -61,8 +58,8 @@ package Trigger
 			this.addChild(this.condArgs);
 			this.addChild(this.retArgs);
 			
-			var conds:Object 	= Data.getInstance().dynamic_args.TriggerCond;
-			var rets:Object 	= Data.getInstance().dynamic_args.TriggerResult;
+			var conds:Object 	= Data.getInstance().dynamicArgs.TriggerCond;
+			var rets:Object 	= Data.getInstance().dynamicArgs.TriggerResult;
 			
 			var conds_arr:Array = [], rets_arr:Array = [];
 			for( var key:String in conds ) conds_arr.push(key);
@@ -156,7 +153,7 @@ package Trigger
 		private function onCondTypeChange(e:Event=null):void
 		{
 			var type:* = this.enumCond.selectedItem;
-			var dynamics:* = Data.getInstance().dynamic_args;
+			var dynamics:* = Data.getInstance().dynamicArgs;
 			
 			this.condArgs.removeChildren();
 			
@@ -205,7 +202,7 @@ package Trigger
 		private function onRetTypeChange(e:Event=null):void
 		{
 			var type = this.enumResult.selectedItem;
-			var dynamics = Data.getInstance().dynamic_args;
+			var dynamics = Data.getInstance().dynamicArgs;
 			
 			this.retArgs.removeChildren();
 			if( dynamics[type] )
@@ -273,7 +270,7 @@ package Trigger
 			var retType = this.enumResult.selectedItem;
 			if( !condType || !retType ) return false;
 			
-			var dynamics = Data.getInstance().dynamic_args;
+			var dynamics = Data.getInstance().dynamicArgs;
 			if( condType in dynamics )
 				for( var key:* in dynamics[condType] )
 					if( !this.condItems.hasOwnProperty(key) || this.condItems[key] == "" ) return false;
@@ -290,7 +287,7 @@ package Trigger
 			var condType = this.enumCond.selectedItem;
 			var resultType = this.enumResult.selectedItem;
 			
-			var trigger:Object = {}, data:Object = Data.getInstance().dynamic_args;
+			var trigger:Object = {}, data:Object = Data.getInstance().dynamicArgs;
 			trigger.cond = {}; trigger.result = {};
 			
 			trigger.cond.type = condType; 
