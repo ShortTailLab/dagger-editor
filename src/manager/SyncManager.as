@@ -3,6 +3,7 @@ package manager
 	import com.hurlant.crypto.Crypto;
 	import com.probertson.utils.GZIPBytesEncoder;
 	
+	import flash.errors.IOError;
 	import flash.events.Event;
 	import flash.events.HTTPStatusEvent;
 	import flash.events.IOErrorEvent;
@@ -146,6 +147,7 @@ package manager
 			var err1:String = Data.getInstance().exportLevelJS( lid, lid );
 			var stats:Object = Data.getInstance().getLevelDataForServer( lid );
 			
+			Utils.dumpObject(stats);
 			if( err1 || !stats ) {
 				
 				if( export.exists && export.isDirectory )
@@ -160,11 +162,17 @@ package manager
 					function(m:String) : void {
 						if( export.exists && export.isDirectory )
 							export.deleteDirectory(true);
-						self.uploadLevelToGameServer( lid, stats,
-							function( m2:String ): void {
-								onComplete( m +"\n" +m2 );
-							}
-						);
+						try
+						{
+							self.uploadLevelToGameServer( lid, stats,
+								function( m2:String ): void {
+									onComplete( m +"\n" +m2 );
+								}
+							);
+						}catch(err:IOError) {
+							onComplete(m +"\n【失败】未能成功连接；");
+						}
+						
 					}
 				);
 				

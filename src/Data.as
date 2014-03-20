@@ -80,7 +80,7 @@ package
 				this.mEditorConfigs
 			);
 		}
-		private function setProjectPath(onComplete:Function):void
+		public function setProjectPath(onComplete:Function):void
 		{
 			var browser:File = new File();
 			browser.browseForDirectory("请选择工程文件夹：");
@@ -169,14 +169,14 @@ package
 				else {
 					
 					// merge 
-					for( var key:* in raw ) this.mLevelProfiles[key] = raw[key];
+					for( var key:* in raw ) self.mLevelProfiles[key] = raw[key];
 					Utils.WriteObjectToJSON( // persistence
-						this.resolvePath( "saved/profiles.json" ),
-						this.mLevelProfiles
+						self.resolvePath( "saved/profiles.json" ),
+						self.mLevelProfiles
 					);
 					
 					// update
-					this.updateEditorData( function(msg:String):void
+					self.updateEditorData( function(msg:String):void
 					{
 						onComplete(msg+"\n【成功】更新关卡配置");
 					});
@@ -217,7 +217,6 @@ package
 			{
 				if( int(item) < int(min) ) min = item;
 			}
-			trace (min);
 			return min;
 		}
 		public function getLevelDataById( lid:String ):Object
@@ -348,7 +347,7 @@ package
 		
 		///////////////////////////////////////////////////////////////////////
 		////// second-hand data of editor
-		private var mEnemySkins:Dictionary 		= null;
+		private var mEnemySkins:Dictionary 		= new Dictionary;
 		private var mEnemyProfilesTalbe:Object 	= null;
 		
 		private var mLevelId2Enemies:Object 	= null;
@@ -377,7 +376,7 @@ package
 			this.mLevelXML 			 = DataParser.genLevelXML( this.mLevelProfiles );
 			
 			// load skins async
-			this.mEnemySkins 	     = new Dictionary();
+			//this.mEnemySkins 	     = new Dictionary();
 			
 			var self:Data = this;
 			var length:Number = 0, countor:Number = 0; 

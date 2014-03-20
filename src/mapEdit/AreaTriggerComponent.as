@@ -215,7 +215,7 @@ package mapEdit
 				if( self.mCtrlDOT )
 				{
 					self.mInfoLayer.graphics.lineStyle(1, 0.5);
-					self.mInfoLayer.graphics.moveTo(self.mAnchorDOT.x, self.mAnchorDOT.y);
+					self.mInfoLayer.graphics.moveTo( self.mAnchorDOT.x, self.mAnchorDOT.y);
 					self.mInfoLayer.graphics.lineTo( self.mCtrlDOT.x,  self.mCtrlDOT.y);
 				}
 				for( var sid:String in self.mDotsOnMonster )

@@ -370,17 +370,17 @@ package
 		{
 			if( e.ctrlKey && this.mMonsters.length > 0 ) // scale monsters in y axis 
 			{	
+				var min:Number = this.mMonsters[0].y;
 				for each( var item:Component in this.mMonsters )
-				{
-//					if( m2.triggerTime >= 0 ) {
-//						trace( m2.y - m2.triggerTime );
-//						var delta:int = m2.y - m2.triggerTime;
-//						m2.y = min + (m2.y-min) * (1+e.delta*0.05);
-//						m2.triggerTime = m2.y - delta;
-//						trace( m2.y - m2.triggerTime );
-//					} else 
-//						m2.y = min + (m2.y-min) * (1+e.delta*0.05);
-					item.y = item.y*(1+e.delta*0.05);
+					min = Math.max( min, item.y);
+						
+				
+				for each( item in this.mMonsters )
+				{					
+					var delta:Number = (item.y-min)*e.delta*0.05;
+					
+					item.y += delta;
+					item.triggerTime -= (delta*2); 
 				}
 			}else
 				this.setProgress( this.mProgressInPixel + e.delta*this.mGridHeight );
