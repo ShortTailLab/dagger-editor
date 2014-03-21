@@ -337,8 +337,6 @@ package
 				var profiles:Array = PROFILE.getDirectoryListing();
 				for each(var file:File in profiles)
 				{
-					trace("[PROFILE] loading "+file.name);
-					
 					var name:String = file.name.split(".")[0];
 					var to:Object = {}; 
 					to[name] = Utils.LoadJSONToObject( file );
@@ -373,8 +371,6 @@ package
 				var levels:Array = LEVEL.getDirectoryListing();
 				for each( file in levels )
 				{
-					trace("[LEVEL] loading +"+file.name);
-					
 					name = file.name.split(".")[0];
 					to = {}; 
 					to[name] = Utils.LoadJSONToObject( file );
@@ -418,8 +414,6 @@ package
 				var bhs:Array = BEHAVIOR.getDirectoryListing();
 				for each( file in bhs )
 				{
-					trace("[BEHAVIOR] loading "+file.name);
-					
 					name = file.name.split(".")[0];
 					to = {};
 					to[name] = Utils.LoadJSONToObject( file );
@@ -442,8 +436,6 @@ package
 				var formats:Array = FORMAT.getDirectoryListing();
 				for each( file in formats )
 				{
-					trace("[BEHAVIOR] loading "+file.name);
-					
 					name = file.name.split(".")[0];
 					to = {};
 					to[name] = Utils.LoadJSONToObject( file );

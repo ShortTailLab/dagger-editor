@@ -111,14 +111,27 @@ package
 				}
 			);
 			
+			this.mShowGrid.selected = Data.getInstance().conf["main.scene.show.grid"] || true;
 			this.mShowGrid.addEventListener( Event.CHANGE, 
 				function (e:Event):void {
-					self.mCoordinator.showGrid( self.mShowGrid.selected );	
+					Data.getInstance().setEditorConfig(
+						"main.scene.show.grid", self.mShowGrid.selected
+					);
+					self.mCoordinator.showGrid( self.mShowGrid.selected );
 					self.mCoordinator.setMeshDensity( 
 						self.mGridWidth, self.mGridHeight, self.height-65, self.mProgressInPixel 
 					);
 				}
 			);
+			
+			this.mRestrictGrid.selected = Data.getInstance().conf["main.scene.restrict.grid"] || true;
+			this.mRestrictGrid.addEventListener( Event.CHANGE, 
+				function (e:Event):void {
+					Data.getInstance().setEditorConfig(
+						"main.scene.restrict.grid", self.mRestrictGrid.selected
+					);
+				}
+			);			
 				
 			this.mGridWidthInput.text 	= String(this.mGridWidth);
 			this.mGridWidthInput.addEventListener( FlexEvent.ENTER,
@@ -384,16 +397,25 @@ package
 					for each( var p:Object in posData )
 					{
 						var item:Component = this.creator( type );
-						item.x 	= p.x + this.mCoordinator.mouseX; 
-						item.y	= p.y + this.mCoordinator.mouseY - this.mProgressInPixel; 
+						
+						var gridPos:Point = this.mCoordinator.getGridPos();
+						if( !this.mRestrictGrid.selected )
+					 		gridPos = this.mCoordinator.getPos();
+						
+						item.x 	= p.x + gridPos.x; 
+						item.y	= p.y + gridPos.y - this.mProgressInPixel; 
 						if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
 							this.insertMonster( item, false );
 					}
 					this.onMonsterChange();
 				} else {
-					item = this.creator( type );
-					item.x 	= this.mCoordinator.mouseX; 
-					item.y	= this.mCoordinator.mouseY - this.mProgressInPixel; 
+					item 	= this.creator( type );					
+					gridPos = this.mCoordinator.getGridPos();
+					if( !this.mRestrictGrid.selected )
+						gridPos = this.mCoordinator.getPos();
+					
+					item.x 	= gridPos.x; 
+					item.y	= gridPos.y - this.mProgressInPixel; 
 					if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
 						this.insertMonster( item );
 				}
@@ -640,22 +662,52 @@ package
 			else if( code == Keyboard.LEFT )
 			{
 				for each( item in this.mSelectedMonsters )
-					item.x -= 1;
+				{
+					if( this.mRestrictGrid.selected )
+						item.x -= Number(this.mGridWidthInput.text)
+					else
+						item.x -= 1;			
+				}
 			}
 			else if( code == Keyboard.RIGHT )
 			{
 				for each( item in this.mSelectedMonsters )
-					item.x += 1;
+				{
+					if( this.mRestrictGrid.selected )
+						item.x += Number(this.mGridWidthInput.text)
+					else
+						item.x += 1;
+				}
 			}
 			else if( code == Keyboard.UP )
 			{
 				for each( item in this.mSelectedMonsters )
-					item.y -= 1;	
+				{
+					if( this.mRestrictGrid.selected )
+						item.y -= Number(this.mGridHeightInput.text)
+					else
+						item.y -= 1;
+				}
 			}			
 			else if( code == Keyboard.DOWN )
 			{
 				for each( item in this.mSelectedMonsters )
-					item.y += 1;	
+				{
+					if( this.mRestrictGrid.selected )
+						item.y += Number(this.mGridHeightInput.text)
+					else
+						item.y += 1;;	
+				}
+			}
+			
+			if( this.mRestrictGrid.selected )
+			{
+				for each( item in this.mSelectedMonsters )
+				{
+					var now:Point = this.mCoordinator.getGridPos( item.x, item.y );
+					item.x = now.x;
+					item.y = now.y;	
+				}
 			}
 		}
 		

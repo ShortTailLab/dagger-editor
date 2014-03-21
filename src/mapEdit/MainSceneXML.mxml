@@ -47,7 +47,7 @@
 						<s:Panel width="100%" height="30%" title="选中对象" dropShadowVisible="false">
 							<s:Group id="mSelectedBoard" width="100%" height="100%"/>
 						</s:Panel>
-						<s:Panel id="mRelatedInfo" width="100%" height="220" title="地图配置及信息" dropShadowVisible="false">
+						<s:Panel id="mRelatedInfo" width="100%" height="240" title="地图配置及信息" dropShadowVisible="false">
 							<s:HGroup width="100%" height="100%" horizontalAlign="left"  verticalAlign="top">
 								<s:Group width="10" height="20"/>
 								<s:VGroup width="100%" height="100%">
@@ -57,6 +57,7 @@
 										<s:TextInput id="mMapSpeedInput" width="50" restrict="0-9"/>
 									</s:HGroup>
 									<s:CheckBox id="mShowGrid" label="是否显示网格" selected="true"/>
+									<s:CheckBox id="mRestrictGrid" label="是否紧贴网格" selected="false"/>
 									<s:HGroup >
 										<s:Label id="mGridWidthLabel" fontSize="12" text="网格宽度："/>
 										<s:TextInput id="mGridWidthInput" width="50" restrict="0-9"/>
@@ -73,7 +74,8 @@
 						</s:Panel>
 					</s:VGroup>
 				</s:Group>
-
+				
+				<s:VGroup width="20" height="100%"/>
 				<s:VGroup width="360" height="100%" verticalAlign="middle" horizontalAlign="right">
 					<s:Group id="mAdaptiveLayer" width="360" height="10">
 						<!-- background color -->
