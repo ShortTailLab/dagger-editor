@@ -213,7 +213,9 @@ package
 		public function getLevelDataById( lid:String ):Object
 		{
 			if( !(lid in this.mLevelInstancesTable) )
-				this.mLevelInstancesTable[lid] = {};
+				this.mLevelInstancesTable[lid] = {
+					data : [], behavior : {}, trigger : {}
+				};
 			
 			return this.mLevelInstancesTable[lid].data;
 		}
@@ -221,7 +223,9 @@ package
 		public function updateLevelDataById( lid:String, inst:Object ):void
 		{
 			if( !(lid in this.mLevelInstancesTable) )
-				this.mLevelInstancesTable[lid] = {};
+				this.mLevelInstancesTable[lid] = {
+					data : [], behavior : {}, trigger : {}
+				};
 			
 			this.mLevelInstancesTable[lid].data = inst;
 			this.writeToLevel( lid );
@@ -230,7 +234,9 @@ package
 		public function getEnemyBehaviorsById( lid:String, eid:String ):Object
 		{
 			if( !(lid in this.mLevelInstancesTable) )
-				this.mLevelInstancesTable[lid] = {};
+				this.mLevelInstancesTable[lid] = {
+					data : [], behavior : {}, trigger : {}
+				};
 			
 			return this.mLevelInstancesTable[lid].behavior[eid];
 		}
@@ -238,7 +244,9 @@ package
 		public function updateEnemyBehaviorsById( lid:String, eid:String, bhs:Object ):void
 		{	
 			if( !(lid in this.mLevelInstancesTable) )
-				this.mLevelInstancesTable[lid] = {};
+				this.mLevelInstancesTable[lid] = {
+					data : [], behavior : {}, trigger : {}
+				};
 			
 			this.mLevelInstancesTable[lid].behavior[eid] = bhs;
 			this.writeToLevel( lid );
@@ -247,7 +255,9 @@ package
 		public function getEnemyTriggersById( lid:String, eid:String ):Object
 		{
 			if( !(lid in this.mLevelInstancesTable) )
-				this.mLevelInstancesTable[lid] = {};
+				this.mLevelInstancesTable[lid] = {
+					data : [], behavior : {}, trigger : {}
+				};
 			
 			return this.mLevelInstancesTable[lid].trigger[eid];
 		}
@@ -255,7 +265,9 @@ package
 		public function updateEnemyTriggersById( lid:String, eid:String, triggers:Object ):void
 		{
 			if( !(lid in this.mLevelInstancesTable) )
-				this.mLevelInstancesTable[lid] = {};
+				this.mLevelInstancesTable[lid] = {
+					data : [], behavior : {}, trigger : {}
+				};
 			
 			this.mLevelInstancesTable[lid].trigger[eid] = triggers;
 			this.writeToLevel( lid );
