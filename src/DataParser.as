@@ -9,43 +9,44 @@ package
 		static public function genMonstersTable( profiles:Object ):Object
 		{
 			var ret:Object = {};
-			for each( var chapter:* in profiles )
-			for each( var level:* in chapter.levels )
-			for( var key:* in level.monsters )
-				ret[key] = level.monsters[key];
-			return ret;
+			for( var lid:String in profiles )
+			{
+				for( var mid:String in profiles[lid].monsters )
+				{
+					ret[mid] = profiles[lid].monsters[mid];
+				}
+			}
+			return ret; 
 		}
 		
 		static public function genLevel2MonsterTable( profiles:Object ):Object
 		{
 			var ret:Object = {};
-			for each( var item:* in profiles )
+			for( var lid:String in profiles )
 			{
-				var kids:Object = item.levels;
-				for each( var l:* in kids )
-				{ 
-					ret[l.level_id] = l.monsters;
+				ret[lid] = profiles[lid].monsters;
+			}
+			return ret;
+		}
+		
+		static public function genLevelXML( levelProfiles:Object ):XML 
+		{
+			var profiles:Object = {};
+			for each( var level:Object in levelProfiles)
+			{
+				if( !profiles.hasOwnProperty( level.chapter_id ) )
+				{
+					profiles[level.chapter_id] = {
+						levels : [],
+						chapter_name : level.chapter_name,
+						chapter_id : level.chapter_id
+					};
 				}
+				
+				profiles[level.chapter_id].levels.push( level );
 			}
 			
-			return ret;
-		}
-		
-		static public function genLevelIdList( profiles:Object ):Array
-		{
-			var ret:Array = [];
-			for each( var item:* in profiles )
-			{
-				var kids:Object = item.levels;
-				for each( var l:* in kids )
-				ret.push(l.level_id);	
-			}
-			return ret;
-		}
-		
-		static public function genLevelXML( profiles:Object ):XML 
-		{
-			var ret:XML = <root></root>;
+			var ret:XML = <root></root>;		
 			for each( var item:* in profiles )
 			{
 				var kids:Object = item.levels;
@@ -56,7 +57,7 @@ package
 				var levelList:Array = new Array;
 				
 				for each(var l:Object in kids)
-				levelList.push(l);
+					levelList.push(l);
 				
 				// sort by level id
 				levelList.sortOn("level_id");

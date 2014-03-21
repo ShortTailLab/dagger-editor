@@ -169,11 +169,19 @@ package
 				else {
 					
 					// merge 
-					for( var key:* in raw ) self.mLevelProfiles[key] = raw[key];
-					Utils.WriteObjectToJSON( // persistence
-						self.resolvePath( "saved/profiles.json" ),
-						self.mLevelProfiles
-					);
+					for each( var chapter:* in raw )
+					{
+						for( var lid:String in chapter.levels )
+						{
+							this.mLevelProfiles[lid] = chapter.levels[lid];
+							this.mLevelProfiles[lid].chapter_name 	= chapter.chapter_name;
+							this.mLevelProfiles[lid].chapter_id 	= chapter.chapter_id;
+							Utils.WriteObjectToJSON( // persistence
+								this.resolvePath("saved/profile/"+lid+".json"),
+								this.mLevelProfiles[lid]
+							);
+						}
+					}
 					
 					// update
 					self.updateEditorData( function(msg:String):void
@@ -182,20 +190,6 @@ package
 					});
 				}
 			});
-		}
-		public function getLevelProfileById( lid:String ):Object
-		{
-			for each( var chapter:* in this.mLevelProfiles )
-			{
-				for( var key:* in chapter.levels ) 
-					if( key == lid ) {
-						var ret:* = chapter.levels[key];
-						ret.chapter_id = chapter.chapter_id;
-						ret.chapter_name = chapter.chapter_name;
-						return ret;
-					}
-			}
-			return null;
 		}
 		
 		///////////////////////////////////////////////////////////////////////
@@ -218,33 +212,51 @@ package
 		}
 		public function getLevelDataById( lid:String ):Object
 		{
+			if( !(lid in this.mLevelInstancesTable) )
+				this.mLevelInstancesTable[lid] = {};
+			
 			return this.mLevelInstancesTable[lid].data;
 		}
 		
 		public function updateLevelDataById( lid:String, inst:Object ):void
 		{
+			if( !(lid in this.mLevelInstancesTable) )
+				this.mLevelInstancesTable[lid] = {};
+			
 			this.mLevelInstancesTable[lid].data = inst;
 			this.writeToLevel( lid );
 		}
 		
 		public function getEnemyBehaviorsById( lid:String, eid:String ):Object
 		{
+			if( !(lid in this.mLevelInstancesTable) )
+				this.mLevelInstancesTable[lid] = {};
+			
 			return this.mLevelInstancesTable[lid].behavior[eid];
 		}
 		
 		public function updateEnemyBehaviorsById( lid:String, eid:String, bhs:Object ):void
-		{
+		{	
+			if( !(lid in this.mLevelInstancesTable) )
+				this.mLevelInstancesTable[lid] = {};
+			
 			this.mLevelInstancesTable[lid].behavior[eid] = bhs;
 			this.writeToLevel( lid );
 		}
 		
 		public function getEnemyTriggersById( lid:String, eid:String ):Object
 		{
+			if( !(lid in this.mLevelInstancesTable) )
+				this.mLevelInstancesTable[lid] = {};
+			
 			return this.mLevelInstancesTable[lid].trigger[eid];
 		}
 		
 		public function updateEnemyTriggersById( lid:String, eid:String, triggers:Object ):void
 		{
+			if( !(lid in this.mLevelInstancesTable) )
+				this.mLevelInstancesTable[lid] = {};
+			
 			this.mLevelInstancesTable[lid].trigger[eid] = triggers;
 			this.writeToLevel( lid );
 		}
@@ -337,7 +349,20 @@ package
 				var old:Object = this.loadJson(
 					this.resolvePath("saved/profiles.json"), false
 				) as Object || {};
-				this.merge( this.mLevelProfiles, old );
+				
+				for each( var chapter:* in old )
+				{
+					for( var lid:String in chapter.levels )
+					{
+						this.mLevelProfiles[lid] = chapter.levels[lid];
+						this.mLevelProfiles[lid].chapter_name 	= chapter.chapter_name;
+						this.mLevelProfiles[lid].chapter_id 	= chapter.chapter_id;
+						Utils.WriteObjectToJSON( // persistence
+							this.resolvePath("saved/profile/"+lid+".json"),
+							this.mLevelProfiles[lid]
+						);
+					}
+				}
 			}
 			
 			
@@ -373,11 +398,16 @@ package
 				var l2m:Object = DataParser.genLevel2MonsterTable( this.mLevelProfiles );
 				for( var lid:String in this.mLevelInstancesTable )
 				{
+					this.mLevelInstancesTable[lid].behavior = {};
+					this.mLevelInstancesTable[lid].trigger = {};
+					
 					for( var mid:String in l2m[lid] )
 					{
-						this.mLevelInstancesTable.behavior[mid] = _bhs[mid] || [];
-						this.mLevelInstancesTable.trigger[mid] = _tri[mid] || [];
+						this.mLevelInstancesTable[lid].behavior[mid] = _bhs[mid] || [];
+						this.mLevelInstancesTable[lid].trigger[mid] = _tri[mid] || [];
 					}
+					
+					this.writeToLevel( lid );
 				}
 			}
 			
@@ -400,6 +430,9 @@ package
 				this.mBehaviorSet = this.loadJson(
 					this.resolvePath("saved/bh_lib.json"), false
 				) as Object || {};	
+				
+				for( var bid:String in this.mBehaviorSet ) 
+					this.updateBehaviorSetById( bid, this.mBehaviorSet[bid] );
 			}
 			
 			this.mFormationSet = {};
@@ -421,6 +454,9 @@ package
 				this.mFormationSet = this.loadJson(
 					this.resolvePath("saved/formations.json"), false
 				) as Object || {};
+				
+				for( var fid:String in this.mFormationSet )
+					this.updateFormationSetById( fid, this.mFormationSet[fid] );
 			}
 			
 			this.updateEditorData( onComplete );
@@ -429,7 +465,7 @@ package
 		///////////////////////////////////////////////////////////////////////
 		////// second-hand data of editor
 		private var mEnemySkins:Dictionary 		= new Dictionary;
-		private var mEnemyProfilesTalbe:Object 	= null;
+		private var mEnemyProfilesTable:Object 	= null;
 		
 		private var mLevelId2Enemies:Object 	= null;
 		private var mLevelXML:XML 				= null;
@@ -442,7 +478,7 @@ package
 		}
 		public function getEnemyProfileById( eid:String ):Object
 		{
-			return this.mEnemyProfilesTalbe[eid];
+			return this.mEnemyProfilesTable[eid];
 		}
 		public function getEnemiesByLevelId( lid:String ):Object
 		{
@@ -452,7 +488,7 @@ package
 			
 		private function updateEditorData(onComplete:Function):void
 		{
-			this.mEnemyProfilesTalbe = DataParser.genMonstersTable( this.mLevelProfiles );
+			this.mEnemyProfilesTable = DataParser.genMonstersTable( this.mLevelProfiles );
 			this.mLevelId2Enemies    = DataParser.genLevel2MonsterTable( this.mLevelProfiles );
 			this.mLevelXML 			 = DataParser.genLevelXML( this.mLevelProfiles );
 			
@@ -463,6 +499,7 @@ package
 			var length:Number = 0, countor:Number = 0; 
 			var callback:Function = function():void
 			{
+				Runtime.getInstance().onProfileDataChange();
 				var msg:String = self.validityCheckAndCleanUp();
 				onComplete( msg + "\n【成功】载入"+length+"个图像资源\n");
 			}
@@ -481,7 +518,7 @@ package
 				}
 			}
 			
-			for each(var item:Object in this.mEnemyProfilesTalbe)
+			for each(var item:Object in this.mEnemyProfilesTable)
 			{
 				var face:String = item.face;
 				if( this.mEnemySkins.hasOwnProperty(face) ) continue;
@@ -518,8 +555,8 @@ package
 			for( var lid:String in this.mLevelInstancesTable )
 			{
 				var data:Array = this.mLevelInstancesTable[lid].data || [];
-				var triggers:Array = this.mLevelInstancesTable[lid].trigger || [];
-				var bhs:Array = this.mLevelInstancesTable[lid].behavior || [];
+				var triggers:Object = this.mLevelInstancesTable[lid].trigger || {};
+				var bhs:Object = this.mLevelInstancesTable[lid].behavior || {};
 				
 				var monsters:Object = this.mLevelId2Enemies[lid] || {};
 				for( var iter:int = data.length-1; iter>=0; iter-- )
@@ -534,15 +571,14 @@ package
 				
 				for( iter = triggers.length-1; iter>=0; iter-- )
 				{
-					if( !(iter in monsters) ) 
-						triggers.splice( iter, 1 );
+					if( !(iter in monsters) ) delete triggers[iter];
 				}
 				
 				for( iter = bhs.length-1; iter>=0; iter-- )
 				{
 					if( !(iter in monsters) )
 					{
-						bhs.splice( iter, 1 );
+						delete bhs[iter];
 						continue;
 					}
 					for( var j:int=bhs[iter].length-1; j>=0; j-- )
@@ -589,7 +625,7 @@ package
 					continue;
 				}
 
-				var data:Object = this.mEnemyProfilesTalbe[item.type];
+				var data:Object = this.mEnemyProfilesTable[item.type];
 				if( data.monster_type == "Bullet" ) {
 					return "【失败】子弹类型不可被放置在地图中"; 
 				}
@@ -607,16 +643,16 @@ package
 			var bhs:Object = {};
 			for( var key:String in actors )
 			{
-				if( !this.mLevelInstancesTable.behavior.hasOwnProperty(key) ||
-					this.mLevelInstancesTable.behavior[key].length == 0 )
+				if( !this.mLevelInstancesTable[lid].behavior.hasOwnProperty(key) ||
+					this.mLevelInstancesTable[lid].behavior[key].length == 0 )
 				{
 					return "【失败】敌人"+key+"未被设置行为";
 				}
 				
 				export.actor[key] = Utils.deepCopy(actors[key]);	
-				export.actor[key].behaviors = this.mLevelInstancesTable.behavior[key];
-				export.actor[key].triggers = this.mLevelInstancesTable.trigger[key] || [];
-				this.mLevelInstancesTable.behavior[key].forEach(
+				export.actor[key].behaviors = this.mLevelInstancesTable[lid].behavior[key];
+				export.actor[key].triggers = this.mLevelInstancesTable[lid].trigger[key] || [];
+				this.mLevelInstancesTable[lid].behavior[key].forEach(
 					function(item:*, ...args):void {
 						bhs[item] = true;
 					}, 
@@ -640,15 +676,15 @@ package
 			
 			// export bullet
 			export.bullet = new Object;
-			for( key in this.mEnemyProfilesTalbe ) 
+			for( key in this.mEnemyProfilesTable ) 
 			{
-				if(this.mEnemyProfilesTalbe[key].monster_type == "Bullet")
+				if(this.mEnemyProfilesTable[key].monster_type == "Bullet")
 				{
 					for( var bh:String in export.behavior )
 					{
 						if( export.behavior[bh].search(key) != -1)
 						{
-							export.bullet[key] = this.mEnemyProfilesTalbe[key];
+							export.bullet[key] = this.mEnemyProfilesTable[key];
 						}
 					}
 				}
@@ -675,7 +711,7 @@ package
 		
 		public function getLevelDataForServer( lid:String ):Object
 		{	
-			var profile:Object = this.getLevelProfileById( lid );
+			var profile:Object = this.mLevelProfiles[lid];
 			if( !profile ) return null;
 	
 			if( !(lid in this.mLevelInstancesTable) ) 

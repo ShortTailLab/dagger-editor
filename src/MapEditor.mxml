@@ -53,8 +53,10 @@
 					
 				BgModel.getInstance().init();
 				
-				
 				this.addEventListener(ResizeEvent.RESIZE, onResize);
+				this.addEventListener(MouseEvent.CLICK, function(e:*):void{
+					self.stage.focus = self.mVIEWScene; 
+				});
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 			}
 		
@@ -63,15 +65,17 @@
 				//if( this.mVIEWScene)
 					//this.mVIEWScene.onResize(e);
 			}
+			
 			private function onRightClick(e:MouseEvent):void
 			{
+				this.stage.focus = this.mVIEWScene;
 				Runtime.getInstance().selectedComponentType = null;
 				Runtime.getInstance().selectedFormationType = null;
 				this.mVIEWScene.onCancelSelect();
 			}
 
 			private function onDataReady(e:Event=null):void
-			{
+			{	
 				// update level tree view;
 				with( this.mLevelTree ) {
 					visible = true; 

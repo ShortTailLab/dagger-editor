@@ -226,7 +226,7 @@ package Trigger
 						text.addEventListener(Event.CHANGE, (function(nkey) {
 							return function(e:Event):void
 							{
-								self.retItems[nkey] = e.target.text;
+								self.retItems[nkey] = Number(e.target.text);
 							}
 						})(key));
 						
