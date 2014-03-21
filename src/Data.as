@@ -173,12 +173,12 @@ package
 					{
 						for( var lid:String in chapter.levels )
 						{
-							this.mLevelProfiles[lid] = chapter.levels[lid];
-							this.mLevelProfiles[lid].chapter_name 	= chapter.chapter_name;
-							this.mLevelProfiles[lid].chapter_id 	= chapter.chapter_id;
+							self.mLevelProfiles[lid] = chapter.levels[lid];
+							self.mLevelProfiles[lid].chapter_name 	= chapter.chapter_name;
+							self.mLevelProfiles[lid].chapter_id 	= chapter.chapter_id;
 							Utils.WriteObjectToJSON( // persistence
-								this.resolvePath("saved/profile/"+lid+".json"),
-								this.mLevelProfiles[lid]
+								self.resolvePath("saved/profile/"+lid+".json"),
+								self.mLevelProfiles[lid]
 							);
 						}
 					}
