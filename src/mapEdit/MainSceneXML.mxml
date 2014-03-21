@@ -44,7 +44,7 @@
 								</s:VGroup>
 							</s:HGroup>
 						</s:Panel>
-						<s:Panel width="100%" height="30%" title="选中对象" dropShadowVisible="false">
+						<s:Panel id="mSelectionPanel" width="100%" height="30%" title="选中对象 剪贴板：关闭" dropShadowVisible="false">
 							<s:Group id="mSelectedBoard" width="100%" height="100%"/>
 						</s:Panel>
 						<s:Panel id="mRelatedInfo" width="100%" height="240" title="地图配置及信息" dropShadowVisible="false">

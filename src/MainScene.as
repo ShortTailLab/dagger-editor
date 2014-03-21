@@ -58,6 +58,7 @@ package
 		private var mMapSpeed:Number 	= 32;
 		
 		// selections
+		private var mReadyToPaste:Boolean 				= false;
 		private var mSelectFrame:SpriteVisualElement 	= null;
 		private var mSelectedMonsters:Array 			= [];
 		private var mFocusMonster:Component 			= null;
@@ -435,6 +436,16 @@ package
 			
 			this.mSelectedMonsters = [];
 			this.mSelectedBoard.removeAllElements();
+			
+			this.onPaste( false );
+		}
+		
+		private function onPaste( v:Boolean ):void
+		{
+			if( v ) this.mSelectionPanel.title = "选中对象 剪贴板：开启";
+			else this.mSelectionPanel.title = "选中对象 剪贴板：关闭";
+				
+			this.mReadyToPaste = v;
 		}
 		
 		private static const kSELECTED_BOARD_UNIT_WIDTH:int 	= 50;
@@ -620,6 +631,7 @@ package
 			var code:uint = e.keyCode;
 			if( code == Keyboard.V && e.ctrlKey )
 			{
+				if( !this.mReadyToPaste ) return;
 				if( this.mSelectedMonsters.length <= 0 ) return;
 				
 				var top:int 	= this.mSelectedMonsters[0].y; 
@@ -647,18 +659,23 @@ package
 				
 				this.onMonsterChange();
 				this.onCancelSelect();
-				for each( item in toMonsters )
+				for each( item in toMonsters ) 
 					this.selectMonster( item );	
-				
+					
+				this.onPaste( true );
+			}
+			else if( code == Keyboard.C && e.ctrlKey )
+			{
+				this.onPaste(true);
 			}
 			else if( code == Keyboard.S && e.ctrlKey )
 			{
 				this.save();
 			}
-			else if( code == Keyboard.DELETE || code == Keyboard.BACKSPACE )
-			{  
-				this.onDeleteSelectedMonsters();
-			}
+//			else if( code == Keyboard.DELETE || code == Keyboard.BACKSPACE )
+//			{  
+//				this.onDeleteSelectedMonsters();
+//			}
 			else if( code == Keyboard.LEFT )
 			{
 				for each( item in this.mSelectedMonsters )
