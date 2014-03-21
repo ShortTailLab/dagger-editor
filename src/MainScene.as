@@ -78,23 +78,6 @@ package
 			if( w && w>0 ) this.mGridWidth = w;
 			
 			var h:* = Data.getInstance().conf.gridHeight;
-			
-			var self:MainScene = this;
-			this.mAutoSaver = new Timer(60000, 1); // auto save per minute
-			this.mAutoSaver.addEventListener(TimerEvent.TIMER,
-				function(e:TimerEvent) : void {
-					self.mAutoSaver.reset();
-					self.mAutoSaver.start();
-					
-					if( self.mLevelId )
-					{
-						Data.getInstance().updateLevelDataById( 
-							self.mLevelId, { data:self.getMatsData() }
-						);
-					}
-				}
-			);
-//			this.mAutoSaver.start();
 		}
 		
 		// ------------------------------------------------------------
@@ -305,7 +288,7 @@ package
 			if( this.mLevelId ) 
 			{
 				Data.getInstance().updateLevelDataById( 
-					this.mLevelId, { data:this.getMatsData() }
+					this.mLevelId, this.getMatsData()
 				);
 				MsgInform.shared().show(this.mRelatedInfo, "保存关卡"+this.mLevelId);
 				//Alert.show("【成功】保存关卡"+this.mLevelId);
@@ -322,10 +305,10 @@ package
 			//
 			this.mLevelId = lid;
 			
-			var level:Object = Data.getInstance().getLevelDataById( lid );
-			if( !level ) level = { data:[] };
+			var level:Array = Data.getInstance().getLevelDataById( lid ) as Array;
+			if( !level ) level = [];
 			
-			for each( var item:Object in level.data )
+			for each( var item:Object in level )
 			{
 				var one:Component = this.creator( item.type );			
 				one.initFromData(item);

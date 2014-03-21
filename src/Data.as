@@ -126,7 +126,7 @@ package
 				{
 					MapEditor.getInstance().addLog("下载"+item.suffix+"成功");
 					Utils.WriteRawFile(
-						self.resolvePath("data/"+item.suffix),
+						File.applicationStorageDirectory.resolvePath(item.suffix),
 						e.target.data
 					);
 					
@@ -203,9 +203,6 @@ package
 		// the validity of data below is responsible to upper class
 		private var mLevelInstancesTable:Object = null;
 		
-		private var mEnemyBehaviorsTable:Object = null;
-		private var mEnemyTriggersTable:Object 	= null;
-		
 		private var mBehaviorSet:Object 		= null;
 		private var mFormationSet:Object 		= null;
 		
@@ -221,43 +218,42 @@ package
 		}
 		public function getLevelDataById( lid:String ):Object
 		{
-			return this.mLevelInstancesTable[lid];
+			return this.mLevelInstancesTable[lid].data;
 		}
 		
 		public function updateLevelDataById( lid:String, inst:Object ):void
 		{
-			this.mLevelInstancesTable[lid] = inst;
+			this.mLevelInstancesTable[lid].data = inst;
+			this.writeToLevel( lid );
+		}
+		
+		public function getEnemyBehaviorsById( lid:String, eid:String ):Object
+		{
+			return this.mLevelInstancesTable[lid].behavior[eid];
+		}
+		
+		public function updateEnemyBehaviorsById( lid:String, eid:String, bhs:Object ):void
+		{
+			this.mLevelInstancesTable[lid].behavior[eid] = bhs;
+			this.writeToLevel( lid );
+		}
+		
+		public function getEnemyTriggersById( lid:String, eid:String ):Object
+		{
+			return this.mLevelInstancesTable[lid].trigger[eid];
+		}
+		
+		public function updateEnemyTriggersById( lid:String, eid:String, triggers:Object ):void
+		{
+			this.mLevelInstancesTable[lid].trigger[eid] = triggers;
+			this.writeToLevel( lid );
+		}
+		
+		private function writeToLevel( lid:String ):void
+		{
 			Utils.WriteObjectToJSON( // persistence
-				this.resolvePath( "saved/levels.json" ),
-				this.mLevelInstancesTable
-			);
-		}
-		
-		public function getEnemyBehaviorsById( eid:String ):Object
-		{
-			return this.mEnemyBehaviorsTable[eid];
-		}
-		
-		public function updateEnemyBehaviorsById( eid:String, bhs:Object ):void
-		{
-			this.mEnemyBehaviorsTable[eid] = bhs;
-			Utils.WriteObjectToJSON(
-				this.resolvePath( "saved/enemy_bh.json" ),
-				this.mEnemyBehaviorsTable
-			);
-		}
-		
-		public function getEnemyTriggersById( eid:String ):Object
-		{
-			return this.mEnemyTriggersTable[eid];
-		}
-		
-		public function updateEnemyTriggersById( eid:String, triggers:Object ):void
-		{
-			this.mEnemyTriggersTable[eid] = triggers;
-			Utils.WriteObjectToJSON( // persistence
-				this.resolvePath( "saved/enemy_trigger.json" ),
-				this.mEnemyTriggersTable
+				this.resolvePath( "saved/level/"+lid+".json" ),
+				this.mLevelInstancesTable[lid]
 			);
 		}
 		
@@ -266,22 +262,19 @@ package
 		{
 			return this.mBehaviorSet[bid];
 		}
-		public function eraseBehaviorById( fid:String ):void
+		public function eraseBehaviorById( bid:String ):void
 		{
-			delete this.mBehaviorSet[fid];
-			this.writeBehaviors();
+			delete this.mBehaviorSet[bid];
+			var file:File = this.resolvePath( "saved/behavior/"+bid+".json" );
+			if( file.exists ) file.deleteFile();
 		}
 		public function updateBehaviorSetById( bid:String, data:Object ):void
 		{
 			this.mBehaviorSet[bid] = data;
-			this.writeBehaviors();
-		}
-		private function writeBehaviors():void
-		{
 			Utils.WriteObjectToJSON( // persistence
-				this.resolvePath( "saved/bh_lib.json" ),
+				this.resolvePath( "saved/behavior/"+bid+".json" ),
 				this.mBehaviorSet
-			);			
+			);	
 		}
 		
 		public function get formationSet():Object { return this.mFormationSet; }
@@ -292,55 +285,143 @@ package
 		public function eraseFormationById( fid:String ):void
 		{
 			delete this.mFormationSet[fid];
-			this.writeFormations();
+			var file:File = this.resolvePath( "saved/format/"+fid+".json" );
+			if( file.exists ) file.deleteFile();
+			Runtime.getInstance().onFormationDataChange();
 		}
 		public function updateFormationSetById( fid:String, data:Object):void
 		{
 			this.mFormationSet[fid] = data;
-			this.writeFormations();
-		}
-		private function writeFormations():void
-		{
 			Utils.WriteObjectToJSON( // persistence
-				this.resolvePath("saved/formations.json"),
-				this.mFormationSet
-			);			
+				this.resolvePath("saved/format/"+fid+".json"),
+				this.mFormationSet[fid]
+			);
 			Runtime.getInstance().onFormationDataChange();
+		}
+		
+		private function merge(to:Object, from:Object):void
+		{
+			for( var key:* in from )
+			{
+				if( key in to ) trace(" collision happened at "+key );
+				to[key] = from[key];
+			}
 		}
 		
 		private function parseLocalData(onComplete:Function):void
 		{
 			this.mDynamicArgs = this.loadJson(
-				this.resolvePath("data/dynamic_args.json"), false
+				File.applicationStorageDirectory.resolvePath("dynamic_args.json"), false
 			) as Object || {};
 			
 			this.mBehaviorNode = this.loadJson(
-				this.resolvePath("data/bt_node_format.json"), false
+				File.applicationStorageDirectory.resolvePath("bt_node_format.json"), false
 			) as Object || {};
 			
-			this.mLevelProfiles = this.loadJson(
-				this.resolvePath("saved/profiles.json"), false
-			) as Object || {};
+			this.mLevelProfiles = {};
+			var PROFILE:File = this.resolvePath("saved/profile");
+			if( PROFILE.exists && PROFILE.isDirectory )
+			{
+				var profiles:Array = PROFILE.getDirectoryListing();
+				for each(var file:File in profiles)
+				{
+					trace("[PROFILE] loading "+file.name);
+					
+					var name:String = file.name.split(".")[0];
+					var to:Object = {}; 
+					to[name] = Utils.LoadJSONToObject( file );
+					
+					this.merge(this.mLevelProfiles, to );
+				}
+			}else {
+				var old:Object = this.loadJson(
+					this.resolvePath("saved/profiles.json"), false
+				) as Object || {};
+				this.merge( this.mLevelProfiles, old );
+			}
 			
-			this.mLevelInstancesTable = this.loadJson( 
-				this.resolvePath("saved/levels.json"), false 
-			) as Object || {};
 			
-			this.mEnemyBehaviorsTable = this.loadJson(
-				this.resolvePath("saved/enemy_bh.json"), false
-			) as Object || {};
+			this.mLevelInstancesTable = {};
+			var LEVEL:File = this.resolvePath("saved/level");
+			if( LEVEL.exists && LEVEL.isDirectory )
+			{
+				var levels:Array = LEVEL.getDirectoryListing();
+				for each( file in levels )
+				{
+					trace("[LEVEL] loading +"+file.name);
+					
+					name = file.name.split(".")[0];
+					to = {}; 
+					to[name] = Utils.LoadJSONToObject( file );
+					
+					this.merge( this.mLevelInstancesTable,  to );
+				}
+				
+			} else {
+				this.mLevelInstancesTable = this.loadJson( 
+					this.resolvePath("saved/levels.json"), false 
+				) as Object || {};
+				
+				var _bhs:Object = this.loadJson(
+					this.resolvePath("saved/enemy_bh.json"), false
+				) as Object || {};
+				
+				var _tri:Object = this.loadJson(
+					this.resolvePath("saved/enemy_trigger.json"), false
+				) as Object || {};
+				
+				var l2m:Object = DataParser.genLevel2MonsterTable( this.mLevelProfiles );
+				for( var lid:String in this.mLevelInstancesTable )
+				{
+					for( var mid:String in l2m[lid] )
+					{
+						this.mLevelInstancesTable.behavior[mid] = _bhs[mid] || [];
+						this.mLevelInstancesTable.trigger[mid] = _tri[mid] || [];
+					}
+				}
+			}
 			
-			this.mEnemyTriggersTable = this.loadJson(
-				this.resolvePath("saved/enemy_trigger.json"), false
-			) as Object || {};
+			this.mBehaviorSet = {};
+			var BEHAVIOR:File = this.resolvePath( "saved/behavior" );
+			if( BEHAVIOR.exists && BEHAVIOR.isDirectory )
+			{
+				var bhs:Array = BEHAVIOR.getDirectoryListing();
+				for each( file in bhs )
+				{
+					trace("[BEHAVIOR] loading "+file.name);
+					
+					name = file.name.split(".")[0];
+					to = {};
+					to[name] = Utils.LoadJSONToObject( file );
+					
+					this.merge( this.mBehaviorSet, to );
+				}
+			} else {
+				this.mBehaviorSet = this.loadJson(
+					this.resolvePath("saved/bh_lib.json"), false
+				) as Object || {};	
+			}
 			
-			this.mBehaviorSet = this.loadJson(
-				this.resolvePath("saved/bh_lib.json"), false
-			) as Object || {};
-			
-			this.mFormationSet = this.loadJson(
-				this.resolvePath("saved/formations.json"), false
-			) as Object || {};
+			this.mFormationSet = {};
+			var FORMAT:File = this.resolvePath( "saved/format" );
+			if( FORMAT.exists && FORMAT.isDirectory )
+			{
+				var formats:Array = FORMAT.getDirectoryListing();
+				for each( file in formats )
+				{
+					trace("[BEHAVIOR] loading "+file.name);
+					
+					name = file.name.split(".")[0];
+					to = {};
+					to[name] = Utils.LoadJSONToObject( file );
+					
+					this.merge( this.mFormationSet, to );
+				}
+			} else {
+				this.mFormationSet = this.loadJson(
+					this.resolvePath("saved/formations.json"), false
+				) as Object || {};
+			}
 			
 			this.updateEditorData( onComplete );
 		}
@@ -432,35 +513,45 @@ package
 		private function validityCheckAndCleanUp():String
 		{
 			var result:String = "";
+			
 			// [TODO] add args checking for behaviors
-			
-			//clear the unexist behaviors of each item.
-			for(var orgItem:* in this.mEnemyBehaviorsTable)
+			for( var lid:String in this.mLevelInstancesTable )
 			{
-				var behaviorsOfEnemy:Array = this.mEnemyBehaviorsTable[orgItem] as Array;
-				if( !behaviorsOfEnemy ) continue;
-				for(var j:int = 0; j < behaviorsOfEnemy.length; j++)
-					if(!this.mBehaviorSet.hasOwnProperty(behaviorsOfEnemy[j]))
-					{
-						result += "【删除】行为"+behaviorsOfEnemy[j]+"不存在\n";
-						behaviorsOfEnemy.splice(j--, 1);
-					}
-			}
-			
-			// clear the undefined enemies of level
-			for( var lid:* in this.mLevelProfiles )
-			{
-				var level:Object = this.mLevelProfiles[lid];
-				var table:Object = this.mLevelId2Enemies[lid];
-				if( !level || !table ) continue;
+				var data:Array = this.mLevelInstancesTable[lid].data || [];
+				var triggers:Array = this.mLevelInstancesTable[lid].trigger || [];
+				var bhs:Array = this.mLevelInstancesTable[lid].behavior || [];
 				
-				for( var x:int = level.data.length-1; x >= 0; x --)
+				var monsters:Object = this.mLevelId2Enemies[lid] || {};
+				for( var iter:int = data.length-1; iter>=0; iter-- )
 				{
-					var monster:Object = level.data[x];
-					if( !(monster.type in table) && monster.type != "AreaTrigger" )
+					if( !(data[iter].type in monsters) && 
+						  data[iter].type != "AreaTrigger" )
 					{
-						result += "【删除】敌人类型"+monster.type+"未被关卡定义\n";
-						level.data.splice( x, 1 );
+						result += "【删除】敌人"+data[iter].type+"未被关卡"+lid+"定义\n";
+						data.splice( iter, 1 );
+					}
+				}
+				
+				for( iter = triggers.length-1; iter>=0; iter-- )
+				{
+					if( !(iter in monsters) ) 
+						triggers.splice( iter, 1 );
+				}
+				
+				for( iter = bhs.length-1; iter>=0; iter-- )
+				{
+					if( !(iter in monsters) )
+					{
+						bhs.splice( iter, 1 );
+						continue;
+					}
+					for( var j:int=bhs[iter].length-1; j>=0; j-- )
+					{
+						if( !this.mBehaviorSet.hasOwnProperty(bhs[iter][j]) )
+						{
+							result += "【删除】行为"+bhs[iter][j]+"不存在\n";
+							bhs[iter].splice( j, 1 );
+						}
 					}
 				}
 			}
@@ -516,16 +607,20 @@ package
 			var bhs:Object = {};
 			for( var key:String in actors )
 			{
-				if( !this.mEnemyBehaviorsTable.hasOwnProperty(key) || this.mEnemyBehaviorsTable[key].length == 0 ) {
+				if( !this.mLevelInstancesTable.behavior.hasOwnProperty(key) ||
+					this.mLevelInstancesTable.behavior[key].length == 0 )
+				{
 					return "【失败】敌人"+key+"未被设置行为";
 				}
 				
 				export.actor[key] = Utils.deepCopy(actors[key]);	
-				export.actor[key].behaviors = this.mEnemyBehaviorsTable[key];
-				export.actor[key].triggers = this.mEnemyTriggersTable[key] || [];
-				this.mEnemyBehaviorsTable[key].forEach(function(item:*, ...args):void {
-					bhs[item] = true;
-				}, null);
+				export.actor[key].behaviors = this.mLevelInstancesTable.behavior[key];
+				export.actor[key].triggers = this.mLevelInstancesTable.trigger[key] || [];
+				this.mLevelInstancesTable.behavior[key].forEach(
+					function(item:*, ...args):void {
+						bhs[item] = true;
+					}, 
+				null);
 			}
 
 			export.behavior = new Object;

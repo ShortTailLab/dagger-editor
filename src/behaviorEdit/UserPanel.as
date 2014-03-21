@@ -150,7 +150,9 @@ package behaviorEdit
 				return;
 			}
 			
-			var behaviors:Array = Data.getInstance().getEnemyBehaviorsById( controller.editTargetType ) as Array || [];
+			var behaviors:Array = Data.getInstance().getEnemyBehaviorsById( 
+				Runtime.getInstance().currentLevelID, controller.editTargetType 
+			) as Array || [];
 			if( behaviors && behaviors.indexOf( newBtInput.text ) >= 0 )
 			{
 				Alert.show("该行为已经存在！");

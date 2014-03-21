@@ -168,19 +168,22 @@
 
 			public function onItemClick(event:Event):void
 			{
-				var tree:Tree = event.currentTarget as Tree;
-				var item:XML = tree.selectedItem as XML;
+				var item:XML = this.mLevelTree.selectedItem as XML;
 				if(item.name() == "level")
 					setCurrLevel(item.@level_id);
-				else
-					tree.expandItem(tree.selectedItem, !tree.isItemOpen(tree.selectedItem));
+				else {
+					this.mLevelTree.expandItem(
+						this.mLevelTree.selectedItem, 
+						!this.mLevelTree.isItemOpen(this.mLevelTree.selectedItem)
+					);
+				}
 			}
 			
-			private function setCurrLevel(lid:String):void
+			private function setCurrLevel( lid:String ):void
 			{
-				//mVIEWScene.init(lid);
 				this.mVIEWScene.reset( lid );
 				this.mVIEWMonster.reset( lid );
+				Runtime.getInstance().currentLevelID = lid;
 			}
 			
 			private function saveLevel(e:Event):void

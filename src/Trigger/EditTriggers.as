@@ -43,7 +43,9 @@ package Trigger
 			this.addEventListener(CloseEvent.CLOSE, onClose);
 			EventManager.getInstance().addEventListener(TriggerEvent.REMOVE_TRIGGER, onRemoveNode);
 			
-			var triggers = Data.getInstance().getEnemyTriggersById( host.type );
+			var triggers = Data.getInstance().getEnemyTriggersById( 
+				Runtime.getInstance().currentLevelID, host.type 
+			);
 			if( triggers )
 			{
 				for each( var item:* in triggers )
@@ -67,7 +69,9 @@ package Trigger
 				var e:TNode = this.getElementAt(i) as TNode;
 				triggers.push(e.serialize());
 			}
-			Data.getInstance().updateEnemyTriggersById(host.type, triggers);
+			Data.getInstance().updateEnemyTriggersById(
+				Runtime.getInstance().currentLevelID, host.type, triggers
+			);
 		} 
 		
 		private function validChecking():String

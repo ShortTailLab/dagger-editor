@@ -14,6 +14,15 @@ package
 		}
 		
 		//
+		private var mCurrentLevelID:String = null;
+		public function get currentLevelID(): String {
+			return this.mCurrentLevelID;
+		}
+		public function set currentLevelID(v:String):void {
+			this.mCurrentLevelID = v;
+		}
+		
+		//
 		public static const SELECT_DATA_CHANGE:String = "runtime.select.data.change";
 		private var mSelectedComponentType:String = null;
 		private var mSelectedFormationType:String = null;
@@ -39,6 +48,12 @@ package
 		public static const FORMATION_DATA_CHANGE:String = "runtime.formation.data.change";
 		public function onFormationDataChange():void {
 			this.dispatchEvent( new Event(Runtime.FORMATION_DATA_CHANGE) );
+		}
+		
+		//
+		public static const PROFILE_DATA_CHANGE:String = "runtime.profile.data.change";
+		public function onProfileDataChange():void {
+			this.dispatchEvent( new Event(Runtime.PROFILE_DATA_CHANGE) );
 		}
 	}
 }
