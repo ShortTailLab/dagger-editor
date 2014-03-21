@@ -90,39 +90,20 @@ package mapEdit
 			
 		}
 		
-		public function getGridPos(x:int, y:int):Point
+		public function getGridPos( srcX:Number = -1, srcY:Number = -1):Point
 		{
-			var gX:int = x/mUnitWidth;
-			var gY:int = -y/mUnitHeight;
-			if(gX>=0 && gX<=mNumColums && gY>=0 && gY<=mNumRows)
-				return new Point(gX*mUnitWidth+mUnitWidth*0.5, gY*mUnitHeight);
-			return null;
+			if( srcX==-1 ) srcX = this.mouseX;
+			if( srcY==-1 ) srcY = this.mouseY;
+			
+			var gX:int = srcX/mUnitWidth;
+			var gY:int = -srcY/mUnitHeight;
+			
+			return new Point(gX*mUnitWidth+mUnitWidth*0.5, -gY*mUnitHeight);
 		}
-	
-//		private function onMouseDown(e:MouseEvent):void
-//		{
-//			isClick = true;
-//		}
-//		
-//		private function onMouseMove(e:MouseEvent):void
-//		{
-//			isClick = false;
-//		}
-//		private function onMouseUp(e:MouseEvent):void
-//		{
-//			if(isClick)
-//			{
-//				var gX:int = e.localX/mUnitWidth;
-//				var gY:int = -e.localY/mUnitHeight;
-//				if(gX>=0 && gX<=mNumColums && gY>=0 && gY<=mNumRows)
-//				{
-//					var evt:TimeLineEvent = new TimeLineEvent("gridClick");
-//					evt.data.x = gX*mUnitWidth+mUnitWidth*0.5;
-//					evt.data.y = gY*mUnitHeight;
-//					this.dispatchEvent(evt);
-//				}
-//				isClick = false;
-//			}
-//		}
+		
+		public function getPos():Point
+		{
+			return new Point(this.mouseX, this.mouseY);
+		}
 	}
 }

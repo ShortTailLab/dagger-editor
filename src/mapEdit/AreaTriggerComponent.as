@@ -81,7 +81,7 @@ package mapEdit
 			
 			this.graphics.clear();
 			this.graphics.lineStyle(1);
-			this.graphics.beginFill(0xFFDDDD, 0.4);
+			this.graphics.beginFill(0x555555, 0.4);
 			this.graphics.moveTo(this.mRectangle.x, 	this.mRectangle.y);
 			this.graphics.lineTo(this.mRectangle.right, this.mRectangle.y);
 			this.graphics.lineTo(this.mRectangle.right, this.mRectangle.bottom);
@@ -166,7 +166,7 @@ package mapEdit
 		override public function select(value:Boolean):void
 		{
 			this.mIsSelected = value;
-			var color:uint = value ? 0xff0000 : 0;
+			var color:uint = value ? 0xff5555 : 0;
 			var transform:ColorTransform = new ColorTransform;
 			transform.color = color;
 			this.transform.colorTransform = transform;

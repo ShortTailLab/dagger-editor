@@ -58,6 +58,7 @@ package
 		private var mMapSpeed:Number 	= 32;
 		
 		// selections
+		private var mReadyToPaste:Boolean 				= false;
 		private var mSelectFrame:SpriteVisualElement 	= null;
 		private var mSelectedMonsters:Array 			= [];
 		private var mFocusMonster:Component 			= null;
@@ -78,23 +79,6 @@ package
 			if( w && w>0 ) this.mGridWidth = w;
 			
 			var h:* = Data.getInstance().conf.gridHeight;
-			
-			var self:MainScene = this;
-			this.mAutoSaver = new Timer(60000, 1); // auto save per minute
-			this.mAutoSaver.addEventListener(TimerEvent.TIMER,
-				function(e:TimerEvent) : void {
-					self.mAutoSaver.reset();
-					self.mAutoSaver.start();
-					
-					if( self.mLevelId )
-					{
-						Data.getInstance().updateLevelDataById( 
-							self.mLevelId, { data:self.getMatsData() }
-						);
-					}
-				}
-			);
-//			this.mAutoSaver.start();
 		}
 		
 		// ------------------------------------------------------------
@@ -128,14 +112,27 @@ package
 				}
 			);
 			
+			this.mShowGrid.selected = Data.getInstance().conf["main.scene.show.grid"] || true;
 			this.mShowGrid.addEventListener( Event.CHANGE, 
 				function (e:Event):void {
-					self.mCoordinator.showGrid( self.mShowGrid.selected );	
+					Data.getInstance().setEditorConfig(
+						"main.scene.show.grid", self.mShowGrid.selected
+					);
+					self.mCoordinator.showGrid( self.mShowGrid.selected );
 					self.mCoordinator.setMeshDensity( 
 						self.mGridWidth, self.mGridHeight, self.height-65, self.mProgressInPixel 
 					);
 				}
 			);
+			
+			this.mRestrictGrid.selected = Data.getInstance().conf["main.scene.restrict.grid"] || true;
+			this.mRestrictGrid.addEventListener( Event.CHANGE, 
+				function (e:Event):void {
+					Data.getInstance().setEditorConfig(
+						"main.scene.restrict.grid", self.mRestrictGrid.selected
+					);
+				}
+			);			
 				
 			this.mGridWidthInput.text 	= String(this.mGridWidth);
 			this.mGridWidthInput.addEventListener( FlexEvent.ENTER,
@@ -305,7 +302,7 @@ package
 			if( this.mLevelId ) 
 			{
 				Data.getInstance().updateLevelDataById( 
-					this.mLevelId, { data:this.getMatsData() }
+					this.mLevelId, this.getMatsData()
 				);
 				MsgInform.shared().show(this.mRelatedInfo, "保存关卡"+this.mLevelId);
 				//Alert.show("【成功】保存关卡"+this.mLevelId);
@@ -322,10 +319,10 @@ package
 			//
 			this.mLevelId = lid;
 			
-			var level:Object = Data.getInstance().getLevelDataById( lid );
-			if( !level ) level = { data:[] };
+			var level:Array = Data.getInstance().getLevelDataById( lid ) as Array;
+			if( !level ) level = [];
 			
-			for each( var item:Object in level.data )
+			for each( var item:Object in level )
 			{
 				var one:Component = this.creator( item.type );			
 				one.initFromData(item);
@@ -401,16 +398,25 @@ package
 					for each( var p:Object in posData )
 					{
 						var item:Component = this.creator( type );
-						item.x 	= p.x + this.mCoordinator.mouseX; 
-						item.y	= p.y + this.mCoordinator.mouseY - this.mProgressInPixel; 
+						
+						var gridPos:Point = this.mCoordinator.getGridPos();
+						if( !this.mRestrictGrid.selected )
+					 		gridPos = this.mCoordinator.getPos();
+						
+						item.x 	= p.x + gridPos.x; 
+						item.y	= p.y + gridPos.y - this.mProgressInPixel; 
 						if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
 							this.insertMonster( item, false );
 					}
 					this.onMonsterChange();
 				} else {
-					item = this.creator( type );
-					item.x 	= this.mCoordinator.mouseX; 
-					item.y	= this.mCoordinator.mouseY - this.mProgressInPixel; 
+					item 	= this.creator( type );					
+					gridPos = this.mCoordinator.getGridPos();
+					if( !this.mRestrictGrid.selected )
+						gridPos = this.mCoordinator.getPos();
+					
+					item.x 	= gridPos.x; 
+					item.y	= gridPos.y - this.mProgressInPixel; 
 					if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
 						this.insertMonster( item );
 				}
@@ -430,6 +436,16 @@ package
 			
 			this.mSelectedMonsters = [];
 			this.mSelectedBoard.removeAllElements();
+			
+			this.onPaste( false );
+		}
+		
+		private function onPaste( v:Boolean ):void
+		{
+			if( v ) this.mSelectionPanel.title = "选中对象 剪贴板：开启";
+			else this.mSelectionPanel.title = "选中对象 剪贴板：关闭";
+				
+			this.mReadyToPaste = v;
 		}
 		
 		private static const kSELECTED_BOARD_UNIT_WIDTH:int 	= 50;
@@ -615,6 +631,7 @@ package
 			var code:uint = e.keyCode;
 			if( code == Keyboard.V && e.ctrlKey )
 			{
+				if( !this.mReadyToPaste ) return;
 				if( this.mSelectedMonsters.length <= 0 ) return;
 				
 				var top:int 	= this.mSelectedMonsters[0].y; 
@@ -642,37 +659,72 @@ package
 				
 				this.onMonsterChange();
 				this.onCancelSelect();
-				for each( item in toMonsters )
+				for each( item in toMonsters ) 
 					this.selectMonster( item );	
-				
+					
+				this.onPaste( true );
+			}
+			else if( code == Keyboard.C && e.ctrlKey )
+			{
+				this.onPaste(true);
 			}
 			else if( code == Keyboard.S && e.ctrlKey )
 			{
 				this.save();
 			}
-			else if( code == Keyboard.DELETE || code == Keyboard.BACKSPACE )
-			{  
-				this.onDeleteSelectedMonsters();
-			}
+//			else if( code == Keyboard.DELETE || code == Keyboard.BACKSPACE )
+//			{  
+//				this.onDeleteSelectedMonsters();
+//			}
 			else if( code == Keyboard.LEFT )
 			{
 				for each( item in this.mSelectedMonsters )
-					item.x -= 1;
+				{
+					if( this.mRestrictGrid.selected )
+						item.x -= Number(this.mGridWidthInput.text)
+					else
+						item.x -= 1;			
+				}
 			}
 			else if( code == Keyboard.RIGHT )
 			{
 				for each( item in this.mSelectedMonsters )
-					item.x += 1;
+				{
+					if( this.mRestrictGrid.selected )
+						item.x += Number(this.mGridWidthInput.text)
+					else
+						item.x += 1;
+				}
 			}
 			else if( code == Keyboard.UP )
 			{
 				for each( item in this.mSelectedMonsters )
-					item.y -= 1;	
+				{
+					if( this.mRestrictGrid.selected )
+						item.y -= Number(this.mGridHeightInput.text)
+					else
+						item.y -= 1;
+				}
 			}			
 			else if( code == Keyboard.DOWN )
 			{
 				for each( item in this.mSelectedMonsters )
-					item.y += 1;	
+				{
+					if( this.mRestrictGrid.selected )
+						item.y += Number(this.mGridHeightInput.text)
+					else
+						item.y += 1;;	
+				}
+			}
+			
+			if( this.mRestrictGrid.selected )
+			{
+				for each( item in this.mSelectedMonsters )
+				{
+					var now:Point = this.mCoordinator.getGridPos( item.x, item.y );
+					item.x = now.x;
+					item.y = now.y;	
+				}
 			}
 		}
 		

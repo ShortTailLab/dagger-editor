@@ -19,7 +19,11 @@ package behaviorEdit
 			parPanel = par;
 			editTargetType = type;
 			
-			btArray = new ArrayCollection(Data.getInstance().getEnemyBehaviorsById( editTargetType ) as Array);
+			btArray = new ArrayCollection(
+				Data.getInstance().getEnemyBehaviorsById( 
+					Runtime.getInstance().currentLevelID, editTargetType 
+				) as Array
+			);
 			
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_NEW_BT, onNewBT);
 			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_DONE, onCreateDone);
@@ -40,7 +44,7 @@ package behaviorEdit
 			
 			btArray.addItem(bName);
 			Data.getInstance().updateEnemyBehaviorsById( 
-				editTargetType, btArray.toArray() as Object 
+				Runtime.getInstance().currentLevelID, editTargetType, btArray.toArray() as Object 
 			);
 			
 			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_ADDED, bName);
@@ -51,7 +55,7 @@ package behaviorEdit
 		{
 			btArray.removeItemAt(index);
 			Data.getInstance().updateEnemyBehaviorsById( 
-				editTargetType, btArray.toArray() as Object 
+				Runtime.getInstance().currentLevelID, editTargetType, btArray.toArray() as Object 
 			);
 			
 			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_REMOVED, index);
