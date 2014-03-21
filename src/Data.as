@@ -285,7 +285,7 @@ package
 			this.mBehaviorSet[bid] = data;
 			Utils.WriteObjectToJSON( // persistence
 				this.resolvePath( "saved/behavior/"+bid+".json" ),
-				this.mBehaviorSet
+				this.mBehaviorSet[bid]
 			);	
 		}
 		
