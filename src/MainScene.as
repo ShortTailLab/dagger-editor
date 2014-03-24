@@ -719,7 +719,8 @@ package
 				}
 			}
 			
-			if( this.mRestrictGrid.selected )
+			if( this.mRestrictGrid.selected && 
+				code in [Keyboard.UP, Keyboard.LEFT, Keyboard.DOWN, Keyboard.RIGHT] )
 			{
 				for each( item in this.mSelectedMonsters )
 				{

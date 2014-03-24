@@ -38,7 +38,7 @@
 									
 									<s:HGroup >
 										<s:Label id="mInfoTimeLabel" fontSize="12" text="触发时间：" horizontalCenter="0"/>
-										<s:TextInput id="mInfoTimeInput" width="50" restrict="0-9" />
+										<s:TextInput id="mInfoTimeInput" width="50" restrict="0-9\-" />
 									</s:HGroup>
 									
 								</s:VGroup>
