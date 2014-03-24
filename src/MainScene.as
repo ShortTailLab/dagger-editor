@@ -254,6 +254,7 @@ package
 			
 			this.addEventListener( MouseEvent.MOUSE_UP,
 				function(e:MouseEvent):void {
+					e.stopPropagation();
 					self.mFocusMonster = null;
 					
 					if( !self.mSelectFrame ) return;
@@ -444,6 +445,31 @@ package
 			this.mReadyToPaste = v;
 		}
 		
+		private function onChangeSelectedType( type:String ):void
+		{
+			if( !Data.getInstance().getEnemyProfileById( type ) )
+			{
+				Alert.show("【错误】无法识别的类型id，请检查后重新填写");
+				return;
+			}
+			
+			//trace( this.mSelectedMonsters.length );
+			var monsters:Array = [];
+			for each( var item:Component in this.mSelectedMonsters )
+			{
+				//trace( item.type +" -> "+ type);
+				var one:Component = this.creator( type );
+				one.x = item.x;
+				one.y = item.y;
+				this.insertMonster( one, false );
+			}
+			this.onMonsterChange();
+			
+			this.onDeleteSelectedMonsters();
+			for each( item in monsters )
+				this.selectMonster( item );
+		}
+		
 		private static const kSELECTED_BOARD_UNIT_WIDTH:int 	= 50;
 		private static const kSELECTED_BOARD_UNIT_HEIGHT:int 	= 50;
 		private static const kSELECTED_BOARD_COLUMS:int 		= 3;
@@ -463,6 +489,29 @@ package
 			
 			var menu:ContextMenu = new ContextMenu;
 			
+			var changeType:ContextMenuItem = new ContextMenuItem("更换敌人");
+			changeType.addEventListener( ContextMenuEvent.MENU_ITEM_SELECT,
+				function(e:ContextMenuEvent):void {
+					var enemies:Object = Data.getInstance().getEnemiesByLevelId(self.mLevelId);
+					var data:Array = [];
+					for each( var item:* in enemies )
+					{
+						data.push(
+							{
+								label:item.monster_id+"|"+item.monster_name,
+								type:item.monster_id
+							}
+						);
+					}
+					
+					Utils.makeComboboxPanel(function(ind:int):void
+					{
+						if( ind < 0 ) return;
+						self.onChangeSelectedType( data[ind].type );
+					}, self, data, "请选择");
+				}
+			);
+			
 			var formation:ContextMenuItem = new ContextMenuItem("设为阵型");
 			formation.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, 
 				function(e:ContextMenuEvent):void {
@@ -477,6 +526,7 @@ package
 				}
 			);
 			
+			menu.addItem( changeType );
 			menu.addItem( formation );
 			menu.addItem( erase );
 			item.contextMenu = menu;
@@ -517,6 +567,7 @@ package
 		
 		private function onSelectMonsters( ):void
 		{
+			//trace("onSelectMonsters");
 			this.onCancelSelect();
 			
 			var frame:Rectangle = this.mSelectFrame.getBounds( this );
@@ -719,8 +770,9 @@ package
 				}
 			}
 			
-			if( this.mRestrictGrid.selected && 
-				code in [Keyboard.UP, Keyboard.LEFT, Keyboard.DOWN, Keyboard.RIGHT] )
+			if( this.mRestrictGrid.selected &&
+				( code == Keyboard.UP || code == Keyboard.LEFT || 
+				  code == Keyboard.DOWN || code == Keyboard.RIGHT ) )
 			{
 				for each( item in this.mSelectedMonsters )
 				{

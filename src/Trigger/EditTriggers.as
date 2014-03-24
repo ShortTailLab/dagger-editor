@@ -29,7 +29,7 @@ package Trigger
 			this.setStyle("backgroundColor", 0xEEE8AA);
 			
 			var addNewTrigger:Button = new Button;
-			var view = new UIComponent;
+			var view:UIComponent = new UIComponent;
 			view.addChild(addNewTrigger);
 			this.addElement(view);
 			
@@ -37,7 +37,7 @@ package Trigger
 			addNewTrigger.width = 80;
 			addNewTrigger.height = 30;
 			addNewTrigger.x = 10; addNewTrigger.y = 10;
-			var self = this;
+			var self:EditTriggers = this;
 			addNewTrigger.addEventListener(MouseEvent.CLICK, onAddTrigger);
 		
 			this.addEventListener(CloseEvent.CLOSE, onClose);
