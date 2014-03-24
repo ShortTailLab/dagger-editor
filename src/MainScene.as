@@ -7,13 +7,11 @@ package
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
-	import flash.events.TimerEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.ui.Keyboard;
-	import flash.utils.Dictionary;
 	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
@@ -23,7 +21,6 @@ package
 	
 	import spark.components.Group;
 	import spark.core.SpriteVisualElement;
-	import spark.primitives.Rect;
 	
 	import manager.MsgInform;
 	
@@ -441,10 +438,9 @@ package
 		}
 		
 		private function onPaste( v:Boolean ):void
-		{
-			if( v ) this.mSelectionPanel.title = "选中对象 剪贴板：开启";
-			else this.mSelectionPanel.title = "选中对象 剪贴板：关闭";
-				
+		{			
+			this.mSelectionPanel.title = "选中对象("+this.mSelectedMonsters.length+") 剪贴板："+
+				(this.mReadyToPaste ? "开启":"关闭");
 			this.mReadyToPaste = v;
 		}
 		
@@ -456,7 +452,10 @@ package
 			if( this.mSelectedMonsters.hasOwnProperty(item.sid) ) return;
 			
 			var self:MainScene = this;
-			
+				
+			for each ( var t:Component in this.mSelectedMonsters )
+				if( t == item ) return;
+
 			// update selected monsters in scene
 			item.select( true );
 			this.mSelectedMonsters.push(item);
@@ -497,6 +496,8 @@ package
 			one.x = 30 + col*MainScene.kSELECTED_BOARD_UNIT_WIDTH;
 			one.y = 40 + row*MainScene.kSELECTED_BOARD_UNIT_HEIGHT;
 			this.mSelectedBoard.addElement( one );
+			
+			this.onPaste( false );
 		}
 		
 		private function selectMonstersByType( type:String ):void
@@ -608,7 +609,8 @@ package
 					} else {
 						timer.start();
 
-						self.onCancelSelect();
+						if( !e.shiftKey )
+							self.onCancelSelect();
 						self.selectMonster( item );
 					}
 				}
@@ -672,10 +674,10 @@ package
 			{
 				this.save();
 			}
-//			else if( code == Keyboard.DELETE || code == Keyboard.BACKSPACE )
-//			{  
-//				this.onDeleteSelectedMonsters();
-//			}
+			else if( code == Keyboard.D && e.ctrlKey )
+			{  
+				this.onDeleteSelectedMonsters();
+			}
 			else if( code == Keyboard.LEFT )
 			{
 				for each( item in this.mSelectedMonsters )
@@ -772,7 +774,6 @@ package
 					mSelectedTipsLayer.addElement(mat2);
 				}
 			}
-			
 		}
 		private function updateMouseTips():void
 		{

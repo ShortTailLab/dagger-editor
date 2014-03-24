@@ -609,7 +609,7 @@ package
 			var source:Array = this.mLevelInstancesTable[lid].data;
 			
 			// confs
-			export.map = { speed : this.mEditorConfigs.speed };
+			export.map = { speed : this.mEditorConfigs.mapSpeed };
 			
 			// parse instances 
 			export.objects = new Object, export.trigger = new Array;

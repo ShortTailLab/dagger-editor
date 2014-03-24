@@ -52,11 +52,11 @@
 				});
 					
 				BgModel.getInstance().init();
-				
+			
 				this.addEventListener(ResizeEvent.RESIZE, onResize);
-				this.addEventListener(MouseEvent.CLICK, function(e:*):void{
-					self.stage.focus = self.mVIEWScene; 
-				});
+//				this.addEventListener(MouseEvent.CLICK, function(e:*):void{
+//					self.stage.focus = self.mVIEWScene; 
+//				});
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 			}
 		
@@ -82,11 +82,14 @@
 					selectedIndex = 0;
 					dataProvider = Data.getInstance().levelXML;
 				}
+				this.mLevelTree.mouseFocusEnabled = false;
+				this.mLevelTree.focusEnabled = false;
 			
 				{
 					this.mVIEWScene = new MainScene();	
 					this.mSceneArea.addElement( this.mVIEWScene );
 					this.mVIEWScene.init();
+					this.mVIEWScene.mouseFocusEnabled = true;
 				}
 
 				{
