@@ -608,7 +608,8 @@ package
 					} else {
 						timer.start();
 
-						self.onCancelSelect();
+						if( !e.shiftKey )
+							self.onCancelSelect();
 						self.selectMonster( item );
 					}
 				}
@@ -672,10 +673,10 @@ package
 			{
 				this.save();
 			}
-//			else if( code == Keyboard.DELETE || code == Keyboard.BACKSPACE )
-//			{  
-//				this.onDeleteSelectedMonsters();
-//			}
+			else if( code == Keyboard.D && e.ctrlKey )
+			{  
+				this.onDeleteSelectedMonsters();
+			}
 			else if( code == Keyboard.LEFT )
 			{
 				for each( item in this.mSelectedMonsters )
