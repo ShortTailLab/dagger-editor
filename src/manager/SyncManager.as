@@ -238,7 +238,7 @@ package manager
 							}, 
 							function(t:String):void {
 								vf.deleteFile();
-								onComplete("[ERROR] version.json failed to upload"); 
+								onComplete("[ERROR] version.json failed to upload, "+t); 
 							}
 						);
 					}
