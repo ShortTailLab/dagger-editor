@@ -71,7 +71,7 @@
 				this.stage.focus = this.mVIEWScene;
 				Runtime.getInstance().selectedComponentType = null;
 				Runtime.getInstance().selectedFormationType = null;
-				this.mVIEWScene.onCancelSelect();
+				//this.mVIEWScene.onCancelSelect();
 			}
 
 			private function onDataReady(e:Event=null):void
@@ -82,6 +82,7 @@
 					selectedIndex = 0;
 					dataProvider = Data.getInstance().levelXML;
 				}
+				
 				this.mLevelTree.mouseFocusEnabled = false;
 				this.mLevelTree.focusEnabled = false;
 			

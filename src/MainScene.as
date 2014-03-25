@@ -15,6 +15,8 @@ package
 	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
+	import mx.core.IVisualElement;
+	import mx.core.UIComponent;
 	import mx.events.FlexEvent;
 	import mx.events.ResizeEvent;
 	import mx.events.SliderEvent;
@@ -24,10 +26,10 @@ package
 	
 	import manager.MsgInform;
 	
-	import mapEdit.AreaTriggerComponent;
+	import mapEdit.AreaTrigger;
 	import mapEdit.Component;
 	import mapEdit.Coordinator;
-	import mapEdit.EntityComponent;
+	import mapEdit.Entity;
 	import mapEdit.MainSceneXML;
 	
 	public class MainScene extends MainSceneXML
@@ -39,8 +41,8 @@ package
 		public static const kSCENE_HEIGHT:Number = 1280;
 		
 		private var mLevelId:String 				= null;
-		
-		private var mMonsters:Vector.<Component> 	= null;
+
+		private var mComponents:Vector.<Component> 	= null;
 		private var mMonsterMask:SpriteVisualElement = null;
 		
 		private var mProgressInPixel:Number = 0;
@@ -57,11 +59,12 @@ package
 		// selections
 		private var mReadyToPaste:Boolean 				= false;
 		private var mSelectFrame:SpriteVisualElement 	= null;
-		private var mSelectedMonsters:Array 			= [];
-		private var mFocusMonster:Component 			= null;
+		private var mSelectedComponents:Array 			= [];
+		private var mFocusComponent:Component 			= null;
 		
 		// facilities
 		private var mAutoSaver:Timer = null;
+		private var mTipsFontSize:Number = 12;
 		
 		public function MainScene()
 		{
@@ -94,7 +97,7 @@ package
 			
 			this.mMonsterMask = new SpriteVisualElement();
 			this.mAdaptiveLayer.setElementIndex( 
-				this.mMonsterLayer, this.mAdaptiveLayer.numElements-1 
+				this.mComponentsLayer, this.mAdaptiveLayer.numElements-1 
 			);
 			//this.setChildIndex( this.mMonsterLayer, this.numChildren-1);
 			//this.addElement( this.mMonsterMask );
@@ -109,7 +112,8 @@ package
 				}
 			);
 			
-			this.mShowGrid.selected = Data.getInstance().conf["main.scene.show.grid"] || true;
+			this.mShowGrid.selected = Data.getInstance().conf["main.scene.show.grid"] || false;
+			this.mCoordinator.showGrid( this.mShowGrid.selected );
 			this.mShowGrid.addEventListener( Event.CHANGE, 
 				function (e:Event):void {
 					Data.getInstance().setEditorConfig(
@@ -122,7 +126,7 @@ package
 				}
 			);
 			
-			this.mRestrictGrid.selected = Data.getInstance().conf["main.scene.restrict.grid"] || true;
+			this.mRestrictGrid.selected = Data.getInstance().conf["main.scene.restrict.grid"] || false;
 			this.mRestrictGrid.addEventListener( Event.CHANGE, 
 				function (e:Event):void {
 					Data.getInstance().setEditorConfig(
@@ -156,9 +160,9 @@ package
 			// informations
 			this.mInfoXInput.addEventListener( FlexEvent.ENTER,
 				function (e:FlexEvent):void {
-					if( self.mSelectedMonsters.length == 1 )
+					if( self.mSelectedComponents.length == 1 )
 					{
-						self.mSelectedMonsters[0].x = int(self.mInfoXInput.text)/2;
+						self.mSelectedComponents[0].x = int(self.mInfoXInput.text)/2;
 						self.onMonsterChange();
 					}
 				}
@@ -166,9 +170,9 @@ package
 			
 			this.mInfoYInput.addEventListener( FlexEvent.ENTER,
 				function (e:FlexEvent):void {
-					if( self.mSelectedMonsters.length == 1 )
+					if( self.mSelectedComponents.length == 1 )
 					{
-						self.mSelectedMonsters[0].y = -int(self.mInfoYInput.text)/2;
+						self.mSelectedComponents[0].y = -int(self.mInfoYInput.text)/2;
 						self.onMonsterChange();
 					}
 				}
@@ -176,11 +180,13 @@ package
 			
 			this.mInfoTimeInput.addEventListener( FlexEvent.ENTER,
 				function (e:FlexEvent):void {
-					for each( var item:Component in self.mSelectedMonsters )
+					for each( var item:Component in self.mSelectedComponents )
 					{
-						item.triggerTime = int(self.mInfoTimeInput.text);
-						if( item as EntityComponent )
-							(item as EntityComponent).showTrigger();
+						var t2:Entity = item as Entity;
+						if( !t2 ) continue;
+						
+						t2.triggeredTime = Number(self.mInfoTimeInput.text);
+						t2.showTimeTriggerTips();
 					}
 					self.onMonsterChange();
 				}
@@ -193,17 +199,32 @@ package
 					self.mSelectFrame = new SpriteVisualElement;
 					self.mSelectFrame.x = self.mCoordinator.mouseX;
 					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
-					self.mMonsterLayer.addElement( self.mSelectFrame );
+					self.mComponentsLayer.addElement( self.mSelectFrame );
+				}
+			);
+			
+			// others 
+			this.mTipsFontSize = Number(Data.getInstance().conf["main.scene.tips.size"] || 12);
+			this.mTipsSizeInput.text = String(this.mTipsFontSize);
+			this.mTipsSizeInput.addEventListener(FlexEvent.ENTER,
+				function (e:FlexEvent):void {
+					self.mTipsFontSize = Number(self.mTipsSizeInput.text);
+					Data.getInstance().setEditorConfig("main.scene.tips.size", self.mTipsFontSize);
+					for each(var item:Component in self.mComponents )
+					{
+						if ( item as Entity )
+							(item as Entity).setTextTipsSize( self.mTipsFontSize );
+					}
 				}
 			);
 
 			this.addEventListener( MouseEvent.MOUSE_MOVE,
 				function(e:MouseEvent):void {
-					if( self.mFocusMonster ) 
+					if( self.mFocusComponent ) 
 					{
 						var inSelected:Boolean = false;
-						for each( var item:Component in self.mSelectedMonsters )
-							if( item == self.mFocusMonster )
+						for each( var item:Component in self.mSelectedComponents )
+							if( item == self.mFocusComponent )
 							{
 								inSelected = true;
 								break;
@@ -213,11 +234,11 @@ package
 						var deltaX:Number = (self.mouseX - self.mDraggingX);
 						var deltaY:Number = (self.mouseY - self.mDraggingY);
 						
-						self.mFocusMonster.x += deltaX;
-						self.mFocusMonster.y += deltaY;
-						for each( item in self.mSelectedMonsters )
+						self.mFocusComponent.x += deltaX;
+						self.mFocusComponent.y += deltaY;
+						for each( item in self.mSelectedComponents )
 						{
-							if( item != self.mFocusMonster )
+							if( item != self.mFocusComponent )
 							{
 								item.x += deltaX;
 								item.y += deltaY;
@@ -227,9 +248,14 @@ package
 						self.mDraggingX = self.mouseX;
 						self.mDraggingY = self.mouseY;
 						
-						self.mInfoXInput.text = String(self.mFocusMonster.x*2);
-						self.mInfoYInput.text = String(-self.mFocusMonster.y*2);
-						self.mInfoTimeInput.text = String(self.mFocusMonster.triggerTime);
+						self.mInfoXInput.text = String(self.mFocusComponent.x*2);
+						self.mInfoYInput.text = String(-self.mFocusComponent.y*2);
+						if( (self.mFocusComponent as Entity) )
+						{
+							self.mInfoTimeInput.text = String(
+								(self.mFocusComponent as Entity).triggeredTime
+							);
+						}
 						
 						self.onMonsterChange();
 					}
@@ -246,7 +272,7 @@ package
 					
 					if( !e.buttonDown )
 					{
-						self.mMonsterLayer.removeElement( self.mSelectFrame );
+						self.mComponentsLayer.removeElement( self.mSelectFrame );
 						self.mSelectFrame = null;
 					}
 				}
@@ -254,7 +280,8 @@ package
 			
 			this.addEventListener( MouseEvent.MOUSE_UP,
 				function(e:MouseEvent):void {
-					self.mFocusMonster = null;
+					e.stopPropagation();
+					self.mFocusComponent = null;
 					
 					if( !self.mSelectFrame ) return;
 					
@@ -264,7 +291,7 @@ package
 					else
 						self.onSelectMonsters( );
 					
-					self.mMonsterLayer.removeElement( self.mSelectFrame );
+					self.mComponentsLayer.removeElement( self.mSelectFrame );
 					self.mSelectFrame = null;
 				}
 			);
@@ -279,7 +306,7 @@ package
 									
 					if( self.isOutOfCoordinator() && self.mSelectFrame )
 					{
-						self.mMonsterLayer.removeElement( self.mSelectFrame );
+						self.mComponentsLayer.removeElement( self.mSelectFrame );
 						self.mSelectFrame = null;
 					}
 					
@@ -310,8 +337,8 @@ package
 			this.save();
 			
 			// clean up
-			this.mMonsters = new Vector.<Component>();
-			this.mMonsterLayer.removeAllElements();
+			this.mComponents = new Vector.<Component>();
+			this.mComponentsLayer.removeAllElements();
 
 			//
 			this.mLevelId = lid;
@@ -321,24 +348,11 @@ package
 			
 			for each( var item:Object in level )
 			{
-				var one:Component = this.creator( item.type );			
-				one.initFromData(item);
-				//if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH )
-				this.insertMonster( one, false );
+				var one:Component = this.creator( item.type, this.mTipsFontSize );
+				one.unserialize(item);
+				this.insertComponent( one, false );
 			}
-			
-			for each( var m:Component in this.mMonsters )
-			{
-				var tm:AreaTriggerComponent = m as AreaTriggerComponent;
-				if( !tm ) continue;
-				for each( var sid:String in tm.getSelectedMonsters() )
-				{
-					var entity:Component = this.getMonsterBySID( sid );
-					if( entity && entity.type != "AreaTrigger" )
-						entity.triggerId = tm.sid;
-				}
-			}
-			
+		
 			this.onMonsterChange();
 		}
 
@@ -352,7 +366,7 @@ package
 			this.mMonsterMask.graphics.drawRect(-180, -height, 360, height);
 			this.mMonsterMask.graphics.endFill();
 			this.mMonsterMask.height 	= height;
-			this.mMonsterLayer.y 		= this.mProgressInPixel + height;
+			this.mComponentsLayer.y 		= this.mProgressInPixel + height;
 			this.mAdaptiveLayer.height 	= height;
 			this.mCoordinator.y 		= height;
 			this.mCoordinator.setMeshDensity( 
@@ -362,19 +376,19 @@ package
 		
 		private function onWheelMove(e:MouseEvent):void 
 		{
-			if( e.ctrlKey && this.mMonsters.length > 0 ) // scale monsters in y axis 
+			if( e.ctrlKey && this.mComponents.length > 0 ) // scale monsters in y axis 
 			{	
-				var min:Number = this.mMonsters[0].y;
-				for each( var item:Component in this.mMonsters )
+				var min:Number = this.mComponents[0].y;
+				for each( var item:Component in this.mComponents )
 					min = Math.max( min, item.y);
 						
-				
-				for each( item in this.mMonsters )
+				for each( item in this.mComponents )
 				{					
 					var delta:Number = (item.y-min)*e.delta*0.05;
 					
 					item.y += delta;
-					item.triggerTime -= (delta*2); 
+					if( item as Entity )
+						(item as Entity).triggeredTime -= (delta*2); 
 				}
 			}else
 				this.setProgress( this.mProgressInPixel + e.delta*this.mGridHeight );
@@ -394,44 +408,45 @@ package
 					var posData:Object = Data.getInstance().getFormationById( fid );
 					for each( var p:Object in posData )
 					{
-						var item:Component = this.creator( type );
+						var item:Component = this.creator( type, this.mTipsFontSize );
 						
-						var gridPos:Point = this.mCoordinator.getGridPos();
-						if( !this.mRestrictGrid.selected )
-					 		gridPos = this.mCoordinator.getPos();
+						var gridPos:Point = this.mCoordinator.getPos();
+						var size:Point = this.getTipsLayerSize();
 						
-						item.x 	= p.x + gridPos.x; 
-						item.y	= p.y + gridPos.y - this.mProgressInPixel; 
+						item.x 	= p.x + gridPos.x - size.x/2; 
+						item.y	= p.y + gridPos.y - this.mProgressInPixel + size.y/2;
+						
 						if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
-							this.insertMonster( item, false );
+							this.insertComponent( item, false );
 					}
 					this.onMonsterChange();
 				} else {
-					item 	= this.creator( type );					
+					item 	= this.creator( type, this.mTipsFontSize );					
 					gridPos = this.mCoordinator.getGridPos();
 					if( !this.mRestrictGrid.selected )
 						gridPos = this.mCoordinator.getPos();
 					
 					item.x 	= gridPos.x; 
-					item.y	= gridPos.y - this.mProgressInPixel; 
+					item.y	= gridPos.y - this.mProgressInPixel;
+					
 					if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
-						this.insertMonster( item );
+						this.insertComponent( item );
 				}
 			}
 		}
 		
 		public function onCancelSelect():void
 		{
-			if( this.mSelectedMonsters )
+			if( this.mSelectedComponents )
 			{
-				for each( var item:Component in this.mSelectedMonsters )
+				for each( var item:Component in this.mSelectedComponents )
 				{
 					item.select( false );
 					item.contextMenu = null;
 				}
 			}
 			
-			this.mSelectedMonsters = [];
+			this.mSelectedComponents = [];
 			this.mSelectedBoard.removeAllElements();
 			
 			this.onPaste( false );
@@ -439,29 +454,77 @@ package
 		
 		private function onPaste( v:Boolean ):void
 		{			
-			this.mSelectionPanel.title = "选中对象("+this.mSelectedMonsters.length+") 剪贴板："+
+			this.mSelectionPanel.title = "选中对象("+this.mSelectedComponents.length+") 剪贴板："+
 				(this.mReadyToPaste ? "开启":"关闭");
 			this.mReadyToPaste = v;
+		}
+		
+		private function onChangeSelectedType( type:String ):void
+		{
+			if( !Data.getInstance().getEnemyProfileById( type ) )
+			{
+				Alert.show("【错误】无法识别的类型id，请检查后重新填写");
+				return;
+			}
+			
+			//trace( this.mSelectedMonsters.length );
+			var monsters:Array = [];
+			for each( var item:Component in this.mSelectedComponents )
+			{
+				//trace( item.type +" -> "+ type);
+				var one:Component = this.creator( type, this.mTipsFontSize );
+				one.x = item.x;
+				one.y = item.y;
+				this.insertComponent( one, false );
+			}
+			this.onMonsterChange();
+			
+			this.onDeleteSelectedMonsters();
+			for each( item in monsters )
+				this.selectComponent( item );
 		}
 		
 		private static const kSELECTED_BOARD_UNIT_WIDTH:int 	= 50;
 		private static const kSELECTED_BOARD_UNIT_HEIGHT:int 	= 50;
 		private static const kSELECTED_BOARD_COLUMS:int 		= 3;
-		private function selectMonster( item:Component ):void
+		private function selectComponent( item:Component ):void
 		{
-			if( this.mSelectedMonsters.hasOwnProperty(item.sid) ) return;
+			if( this.mSelectedComponents.hasOwnProperty(item.globalId) ) return;
 			
 			var self:MainScene = this;
 				
-			for each ( var t:Component in this.mSelectedMonsters )
+			for each ( var t:Component in this.mSelectedComponents )
 				if( t == item ) return;
 
 			// update selected monsters in scene
 			item.select( true );
-			this.mSelectedMonsters.push(item);
-			this.mMonsterLayer.setElementIndex(item, this.mMonsterLayer.numElements-1);
+			this.mSelectedComponents.push(item);
+			this.mComponentsLayer.setElementIndex(item, this.mComponentsLayer.numElements-1);
 			
 			var menu:ContextMenu = new ContextMenu;
+			
+			var changeType:ContextMenuItem = new ContextMenuItem("更换敌人");
+			changeType.addEventListener( ContextMenuEvent.MENU_ITEM_SELECT,
+				function(e:ContextMenuEvent):void {
+					var enemies:Object = Data.getInstance().getEnemiesByLevelId(self.mLevelId);
+					var data:Array = [];
+					for each( var item:* in enemies )
+					{
+						data.push(
+							{
+								label:item.monster_id+"|"+item.monster_name,
+								type:item.monster_id
+							}
+						);
+					}
+					
+					Utils.makeComboboxPanel(function(ind:int):void
+					{
+						if( ind < 0 ) return;
+						self.onChangeSelectedType( data[ind].type );
+					}, self, data, "请选择");
+				}
+			);
 			
 			var formation:ContextMenuItem = new ContextMenuItem("设为阵型");
 			formation.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, 
@@ -477,24 +540,43 @@ package
 				}
 			);
 			
+			menu.addItem( changeType );
 			menu.addItem( formation );
 			menu.addItem( erase );
 			item.contextMenu = menu;
 			
 			// update information panel
+			if( item.type == AreaTrigger.TRIGGER_TYPE )
+			{
+				this.mInfoId.text = "ID:   " + String(item.type);
+				this.mInfoName.text = "NAME: ";
+			} else {
+				this.mInfoId.text = "ID:   " + String(item.type);
+				this.mInfoName.text = "NAME: " + 
+					String( Data.getInstance().getEnemyProfileById(item.type).monster_name );
+			}
 			this.mInfoXInput.text = String(item.x*2);
 			this.mInfoYInput.text = String(-item.y*2);
-			this.mInfoTimeInput.text = String(item.triggerTime);
+			if( item as Entity )
+				this.mInfoTimeInput.text = String( (item as Entity).triggeredTime );
+			else 
+				this.mInfoTimeInput.text = String( -1 );
 			
 			// update board of monsters
 			var index:int = this.mSelectedBoard.numElements;
 			var row:int = index / MainScene.kSELECTED_BOARD_COLUMS;
 			var col:int = index % MainScene.kSELECTED_BOARD_COLUMS;
 			
-			var one:Component = this.creator( item.type );
-			one.trim(40);
+			var one:Component = this.creator( item.type, 8 );
 			one.x = 30 + col*MainScene.kSELECTED_BOARD_UNIT_WIDTH;
 			one.y = 40 + row*MainScene.kSELECTED_BOARD_UNIT_HEIGHT;
+			if( one as Entity )
+			{
+				(one as Entity).setSize(20);
+			}else{ 
+				one.y -= MainScene.kSELECTED_BOARD_UNIT_HEIGHT/2;
+				one.setBaseSize( 30 );
+			}
 			this.mSelectedBoard.addElement( one );
 			
 			this.onPaste( false );
@@ -504,10 +586,19 @@ package
 		{
 			this.onCancelSelect();
 			
-			for each( var m:Component in this.mMonsters )
-				if( m.type == type ) this.selectMonster( m );
-			
-			if( this.mSelectedMonsters.length > 1 )
+			for each( var m:Component in this.mComponents )
+				if( m.type == type ) this.selectComponent( m );
+				
+			if( type == AreaTrigger.TRIGGER_TYPE )
+			{
+				this.mInfoId.text = "ID:   " + String(type);
+				this.mInfoName.text = "NAME: ";
+			} else {
+				this.mInfoId.text = "ID:   " + String(type);
+				this.mInfoName.text = "NAME: " + 
+					String( Data.getInstance().getEnemyProfileById(type).monster_name );
+			}
+			if( this.mSelectedComponents.length > 1 )
 			{
 				this.mInfoXInput.text 		= "";
 				this.mInfoYInput.text 		= "";
@@ -517,18 +608,21 @@ package
 		
 		private function onSelectMonsters( ):void
 		{
+			//trace("onSelectMonsters");
 			this.onCancelSelect();
 			
 			var frame:Rectangle = this.mSelectFrame.getBounds( this );
-			for each( var m:Component in this.mMonsters )
+			for each( var m:Component in this.mComponents )
 			{
 				var bound:Rectangle = m.getBounds( this );
 				if( frame.intersects(bound) )
-					this.selectMonster( m );
+					this.selectComponent( m );
 			}
 			
-			if( this.mSelectedMonsters.length > 1 )
+			if( this.mSelectedComponents.length > 1 )
 			{
+				this.mInfoId.text 			= "ID:   ";
+				this.mInfoName.text  		= "NAME: ";
 				this.mInfoXInput.text 		= "";
 				this.mInfoYInput.text 		= "";
 				this.mInfoTimeInput.text 	= "";
@@ -537,14 +631,15 @@ package
 		
 		private function onDeleteSelectedMonsters() :void
 		{
-			for( var i:int=this.mMonsters.length-1; i>=0; i-- )
+			for( var i:int=this.mComponents.length-1; i>=0; i-- )
 			{
-				for each( var sm:Component in this.mSelectedMonsters )
+				for each( var sm:Component in this.mSelectedComponents )
 				{
-					if( this.mMonsters[i] == sm ) 
+					if( this.mComponents[i] == sm ) 
 					{
-						this.mMonsterLayer.removeElement( sm );
-						this.mMonsters.splice(i, 1);
+						sm.dtor();
+						this.mComponentsLayer.removeElement( sm );
+						this.mComponents.splice(i, 1);
 						break;
 					}
 				}
@@ -558,7 +653,7 @@ package
 		{
 			if( progress < 0 ) return;
 			this.mProgressInPixel = progress;
-			this.mMonsterLayer.y = this.mProgressInPixel + this.height - 65;
+			this.mComponentsLayer.y = this.mProgressInPixel + this.height - 65;
 			this.mCoordinator.setMeshDensity( 
 				this.mGridWidth, this.mGridHeight, this.height-65, this.mProgressInPixel 
 			);
@@ -570,36 +665,37 @@ package
 		private function onMonsterChange():void
 		{
 			var max:Number = 0;
-			if( this.mMonsters.length > 0 )
+			if( this.mComponents.length > 0 )
 			{
-				max = this.mMonsters[0].y;
-				for each( var m:Component in this.mMonsters )
+				max = this.mComponents[0].y;
+				for each( var m:Component in this.mComponents )
 					max = Math.min( m.y, max );
 			} 
 			
 			this.mFinishingLine = -max;
 			this.mTimeline.maximum = -max / this.mMapSpeed;
 			
-			this.mTotalMonsters.text = "实体数量："+this.mMonsters.length;
+			this.mTotalMonsters.text = "实体数量："+this.mComponents.length;
 			this.mMapLength.text = "地图长度："+Utils.getTimeFormat(this.mFinishingLine/this.mMapSpeed);
 		}
 		
 		private var mDraggingX:Number = -1;
 		private var mDraggingY:Number = -1;
-		private static var gMonsterCountor:int = 0;
-		private function insertMonster( item:Component, save:Boolean = true ):void
-		{
-			if( item.sid == "" || !item.sid ) 
-				item.sid = new Date().time+String( gMonsterCountor++ );
+		private static var gComponentCountor:int = 0;
+		private function insertComponent( item:Component, save:Boolean = true ):void
+		{	
+			if( item.globalId == "" || !item.globalId )
+				item.globalId = new Date().time+String( gComponentCountor++ );
 			
-			if( item.type == "AreaTrigger" ) 
-				(item as AreaTriggerComponent).enableEditing(this);
+			if( item as AreaTrigger )
+				(item as AreaTrigger).enableEditing( this );
+			else if( item as Entity )
+				(item as Entity).setBaseSize( 50 );
 			
-			this.mMonsterLayer.addElement( item );
-			this.mMonsters.push( item );
-			
-			var self:MainScene = this;
+			this.mComponents.push( item );
+			this.mComponentsLayer.addElement( item );
 		
+			var self:MainScene = this;
 			var timer:Timer = new Timer(300, 1);
 			item.addEventListener( MouseEvent.CLICK,
 				function(e:MouseEvent) : void {
@@ -611,14 +707,14 @@ package
 
 						if( !e.shiftKey )
 							self.onCancelSelect();
-						self.selectMonster( item );
+						self.selectComponent( item );
 					}
 				}
 			);
 			
 			item.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent) : void {
-					self.mFocusMonster = item;
+					self.mFocusComponent = item;
 					self.mDraggingX = self.mouseX;
 					self.mDraggingY = self.mouseY;
 				}
@@ -634,35 +730,35 @@ package
 			if( code == Keyboard.V && e.ctrlKey )
 			{
 				if( !this.mReadyToPaste ) return;
-				if( this.mSelectedMonsters.length <= 0 ) return;
+				if( this.mSelectedComponents.length <= 0 ) return;
 				
-				var top:int 	= this.mSelectedMonsters[0].y; 
-				var bottom:int 	= this.mSelectedMonsters[0].y; 
-				for each( var item:Component in this.mSelectedMonsters )
+				var top:int 	= this.mSelectedComponents[0].y; 
+				var bottom:int 	= this.mSelectedComponents[0].y; 
+				for each( var item:Component in this.mSelectedComponents )
 				{
 					top 	= Math.min( top, item.y );
 					bottom 	= Math.max( bottom, item.y ); 
 				}
 				
-				var delta:int = this.mMonsterLayer.mouseY - (top+bottom)/2;
+				var delta:int = this.mComponentsLayer.mouseY - (top+bottom)/2;
 				
-				if( this.mSelectedMonsters.length == 1 ) 
-					delta = this.mMonsterLayer.mouseY - top;
+				if( this.mSelectedComponents.length == 1 ) 
+					delta = this.mComponentsLayer.mouseY - top;
 				
 				var toMonsters:Array = [];	
-				for each( item in this.mSelectedMonsters )
+				for each( item in this.mSelectedComponents )
 				{
-					var one:Component = this.creator( item.type );
+					var one:Component = this.creator( item.type, this.mTipsFontSize );
 					one.x = item.x;
 					one.y = item.y + delta;
-					this.insertMonster( one, false );
+					this.insertComponent( one, false );
 					toMonsters.push( one );
 				}
 				
 				this.onMonsterChange();
 				this.onCancelSelect();
 				for each( item in toMonsters ) 
-					this.selectMonster( item );	
+					this.selectComponent( item );	
 					
 				this.onPaste( true );
 			}
@@ -680,7 +776,7 @@ package
 			}
 			else if( code == Keyboard.LEFT )
 			{
-				for each( item in this.mSelectedMonsters )
+				for each( item in this.mSelectedComponents )
 				{
 					if( this.mRestrictGrid.selected )
 						item.x -= Number(this.mGridWidthInput.text)
@@ -690,7 +786,7 @@ package
 			}
 			else if( code == Keyboard.RIGHT )
 			{
-				for each( item in this.mSelectedMonsters )
+				for each( item in this.mSelectedComponents )
 				{
 					if( this.mRestrictGrid.selected )
 						item.x += Number(this.mGridWidthInput.text)
@@ -700,7 +796,7 @@ package
 			}
 			else if( code == Keyboard.UP )
 			{
-				for each( item in this.mSelectedMonsters )
+				for each( item in this.mSelectedComponents )
 				{
 					if( this.mRestrictGrid.selected )
 						item.y -= Number(this.mGridHeightInput.text)
@@ -710,7 +806,7 @@ package
 			}			
 			else if( code == Keyboard.DOWN )
 			{
-				for each( item in this.mSelectedMonsters )
+				for each( item in this.mSelectedComponents )
 				{
 					if( this.mRestrictGrid.selected )
 						item.y += Number(this.mGridHeightInput.text)
@@ -719,9 +815,11 @@ package
 				}
 			}
 			
-			if( this.mRestrictGrid.selected )
+			if( this.mRestrictGrid.selected &&
+				( code == Keyboard.UP || code == Keyboard.LEFT || 
+				  code == Keyboard.DOWN || code == Keyboard.RIGHT ) )
 			{
-				for each( item in this.mSelectedMonsters )
+				for each( item in this.mSelectedComponents )
 				{
 					var now:Point = this.mCoordinator.getGridPos( item.x, item.y );
 					item.x = now.x;
@@ -743,6 +841,7 @@ package
 			}
 			
 			this.mSelectedTipsLayer = new Group;
+			
 			this.addElement( this.mSelectedTipsLayer );
 			this.mSelectedTipsLayer.alpha = 0.5;
 			
@@ -756,21 +855,25 @@ package
 					var posData:Object = Data.getInstance().getFormationById( this.mSelectFormation );
 					for each(var p:* in posData)
 					{
-						var mat:Component = this.creator( this.mSelectType );
+						var mat:Component = this.creator( this.mSelectType, 0 );
 						mat.x = p.x;
 						mat.y = p.y;
 						mat.addEventListener(MouseEvent.CLICK, function(e:*):void {
 							self.onMouseClick(e);
 						});
+						if( mat as Entity )
+							(mat as Entity).setBaseSize( 50 );
 						mSelectedTipsLayer.addElement(mat);
 					}
 				}
 				else 
 				{
-					var mat2:Component = this.creator( this.mSelectType );
+					var mat2:Component = this.creator( this.mSelectType, 0 );
 					mat2.addEventListener(MouseEvent.CLICK, function(e:*):void {
 						self.onMouseClick(e);
 					});
+					if( mat2 as Entity )
+						(mat2 as Entity).setBaseSize( 50 );
 					mSelectedTipsLayer.addElement(mat2);
 				}
 			}
@@ -779,35 +882,71 @@ package
 		{
 			if(this.mSelectedTipsLayer)
 			{
-				this.mSelectedTipsLayer.x = this.mouseX-1;
-				this.mSelectedTipsLayer.y = this.mouseY-1;
+				if( this.mSelectFormation )
+				{
+					var size:Point = this.getTipsLayerSize();
+					this.mSelectedTipsLayer.x = this.mouseX - size.x/2;
+					this.mSelectedTipsLayer.y = this.mouseY + size.y/2;
+				} else {
+					this.mSelectedTipsLayer.x = this.mouseX;
+					this.mSelectedTipsLayer.y = this.mouseY;	
+				}
 			}
 		}
 		
 		// ------------------------
 		// facilities
-		private function creator( type:String ):Component
+		private function creator( type:String, fontSize:Number ):Component
 		{
-			if( type == AreaTriggerComponent.TRIGGER_TYPE )
-				return new AreaTriggerComponent( this );
+			if( type == AreaTrigger.TRIGGER_TYPE )
+				return new AreaTrigger( );
 			else 
-				return new EntityComponent( this, type, -1, 30 );
+			{
+				var ret:Entity =  new Entity( type, true );
+				ret.setBaseSize( 50 );
+				ret.setTextTipsSize( fontSize );
+				return ret;
+			}
+		}
+		
+		private function getTipsLayerSize():Point 
+		{
+			if( this.mSelectedTipsLayer && this.mSelectedTipsLayer.numElements > 0 )
+			{
+				var min_x:Number = this.mSelectedTipsLayer.getElementAt(0).x;
+				var max_x:Number = this.mSelectedTipsLayer.getElementAt(0).x;
+				
+				var min_y:Number = this.mSelectedTipsLayer.getElementAt(0).y;
+				var max_y:Number = this.mSelectedTipsLayer.getElementAt(0).y;
+				
+				for( var i:int=0; i<this.mSelectedTipsLayer.numElements; i++ )
+				{
+					var item:IVisualElement = this.mSelectedTipsLayer.getElementAt(i);
+					min_x = Math.min( min_x, item.x);
+					max_x = Math.max( max_x, item.x);
+					min_y = Math.min( min_y, item.y);
+					max_y = Math.max( max_y, item.y);
+				}
+
+				return new Point( Math.abs( max_x - min_x ), Math.abs( max_y - min_y ) );
+			} else 
+				return new Point();
 		}
 		
 		private function getMatsData():Array
 		{
 			var data:Array = new Array;
-			for each(var m:Component in this.mMonsters)
+			for each(var m:Component in this.mComponents)
 			{
-				data.push(m.toExportData());
+				data.push(m.serialize());
 			}
 			return data;
 		}
 		
 		private function getMat(sid:String):Component
 		{
-			for each(var m:Component in this.mMonsters)
-				if(m.sid == sid)
+			for each(var m:Component in this.mComponents)
+				if(m.globalId == sid)
 					return m;
 			return null;
 		}
@@ -826,7 +965,7 @@ package
 		
 		private function makeSelectMonstersToFormation():void
 		{
-			if( !this.mSelectedMonsters || this.mSelectedMonsters.length <= 0 )
+			if( !this.mSelectedComponents || this.mSelectedComponents.length <= 0 )
 				return;
 
 			var self:MainScene = this;
@@ -839,7 +978,7 @@ package
 					else
 					{
 						Data.getInstance().updateFormationSetById( 
-							ret, format(self.mSelectedMonsters) 
+							ret, format(self.mSelectedComponents) 
 						);
 					}
 				}, this
@@ -851,7 +990,7 @@ package
 			var data:Array = new Array;
 			var minX:Number = mats[0].x;
 			var minY:Number = mats[0].y;
-			for each(var m:EntityComponent in mats)
+			for each(var m:Entity in mats)
 			{
 				minX = Math.min(m.x, minX);
 				minY = Math.max(m.y, minY);
@@ -869,14 +1008,26 @@ package
 			return data;
 		}
 		
-		public function getMonsterByPoint( pos:Point ):EntityComponent
+		public function hasMonsterCaputuredByTrigger( sid:String ):Boolean
 		{
-			var local:Point = this.mMonsterLayer.globalToLocal(pos);
-			for each( var m:Component in this.mMonsters )
+			for each( var m:Component in this.mComponents )
 			{
-				var em:EntityComponent = m as EntityComponent;
+				var ati:AreaTrigger = m as AreaTrigger;
+				if( !ati ) continue;
+				if( ati.isMonsterIn( sid ) ) return true;
+			}
+			return false;
+		}
+		
+		public function getMonsterByPoint( pos:Point ):Entity
+		{
+			var local:Point = this.mComponentsLayer.globalToLocal(pos);
+			for each( var m:Component in this.mComponents )
+			{
+				var em:Entity = m as Entity;
 				if( !em ) continue;
-				var bound:Rectangle = em.getBounds( this.mMonsterLayer );
+				
+				var bound:Rectangle = em.getBounds( this.mComponentsLayer );
 				if( bound.contains( local.x, local.y ) )
 				{
 					return em;
@@ -885,12 +1036,12 @@ package
 			return null;
 		}
 		
-		public function getMonsterBySID( sid:String ):EntityComponent
+		public function getMonsterBySID( sid:String ):Entity
 		{
-			for each( var item:Component in this.mMonsters )
+			for each( var item:Component in this.mComponents )
 			{
-				var em:EntityComponent = item as EntityComponent;
-				if( em && em.sid == sid ) return em; 
+				var em:Entity = item as Entity;
+				if( em && em.globalId == sid ) return em; 
 			}
 			return null;
 		}

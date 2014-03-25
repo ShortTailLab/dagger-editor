@@ -42,6 +42,8 @@ package
 		private function refresh():void
 		{
 			this.removeChildren();
+			this.mNumOfForms = 0;
+			
 			var formations:* = Data.getInstance().formationSet;
 			for( var fid:String in formations )
 			{

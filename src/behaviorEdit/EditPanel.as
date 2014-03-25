@@ -25,11 +25,11 @@ package behaviorEdit
 	import spark.components.TitleWindow;
 	
 	import mapEdit.Component;
-	import mapEdit.EntityComponent;
+	import mapEdit.Entity;
 	
 	public class EditPanel extends TitleWindow
 	{
-		private var editTarget:EntityComponent;
+		private var editTarget:Entity;
 		private var dots:Array;
 		private var line:Shape;
 		private var map:Sprite;
@@ -49,7 +49,7 @@ package behaviorEdit
 		
 		private var actions:ActionsCenter;
 		
-		public function EditPanel(target:EntityComponent)
+		public function EditPanel(target:Entity)
 		{
 			this.editTarget = target;
 			actions = new ActionsCenter(this);
@@ -61,7 +61,7 @@ package behaviorEdit
 			var mapContain:UIComponent = new UIComponent;
 			this.addElement(mapContain);
 			
-			var icon:Component = new EntityComponent(null, target.type, 100);
+			var icon:Component = new Entity(null, target.type, 100);
 			icon.x = 70;
 			icon.y = 110;
 			mapContain.addChild(icon);
