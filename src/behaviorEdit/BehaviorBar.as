@@ -1,108 +1,101 @@
 package behaviorEdit
 {
 	import flash.events.ContextMenuEvent;
-	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
-	import mx.collections.ArrayCollection;
 	import mx.controls.Alert;
 	
 	import spark.components.Button;
+	import spark.components.HGroup;
 	import spark.components.TabBar;
 	
-	import manager.EventManager;
-	
-	public class BehaviorBar extends TabBar
+	public class BehaviorBar extends HGroup
 	{
 		private var btBar:TabBar = null;
 		private var controller:BTEditController = null;
 		private var newBtn:Button;
-		private var menu:ContextMenu;
+		
+		private var mMenu:ContextMenu = null;
+		public var mTabBar:TabBar = null;
 		
 		public function BehaviorBar(_controller:BTEditController)
 		{
 			controller = _controller;
 			
-			//btBar.setStyle("chromeColor", "#EEE8AA"); 
-			this.height = 40;
-			this.x = 120;
-			this.dataProvider = controller.getBTs();
-			this.selectedIndex = 0;
-			//btBar.addEventListener(IndexChangeEvent.CHANGE, onChangeBt);
-			this.addEventListener(MouseEvent.CLICK, onClickBt);
+			this.height = 35;
+			this.percentWidth = 100;
 			
-			menu = new ContextMenu;
+			mTabBar = new TabBar();	
+			mTabBar.dataProvider = controller.openedBehaviors;
+			mTabBar.selectedIndex = 0;
+			mTabBar.addEventListener(MouseEvent.CLICK, onClickTabItem);
+			this.addElement(mTabBar);
+			
+			var buttonGroup:HGroup = new HGroup();
+			buttonGroup.width = 400;
+			buttonGroup.horizontalAlign = "right";
+			this.addElement(buttonGroup);
+			
+			var saveButton:Button = new Button();
+			saveButton.label = "保存当前";
+			saveButton.addEventListener(MouseEvent.CLICK, onSaveClick);
+			buttonGroup.addElement(saveButton);
+			
+			var newBehaviorButton:Button = new Button();
+			newBehaviorButton.label = "新行为";
+			newBehaviorButton.addEventListener(MouseEvent.CLICK, onNewBehaviorClick);
+			buttonGroup.addElement(newBehaviorButton);
+			
+			mMenu = new ContextMenu;
+			
 			var item2:ContextMenuItem = new ContextMenuItem("重命名");
-			item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onRenameBT);
-			var item3:ContextMenuItem = new ContextMenuItem("删除");
-			item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteEnemyBT);
-			menu.addItem(item2);
-			menu.addItem(item3);
-			this.contextMenu = menu;
+			item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onRenameTab);
+			mMenu.addItem(item2);
 			
-			updateBar();
-			EventManager.getInstance().addEventListener(BehaviorEvent.BT_ADDED, function(e:Event):void{updateBar();});
-			EventManager.getInstance().addEventListener(BehaviorEvent.BT_REMOVED, function(e:Event):void{updateBar();});
-			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_NEW_BT, onCreateNewBT);
-			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_DONE, onCreateDone);
-			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_CANCEL, onCreateDone);
+			var item3:ContextMenuItem = new ContextMenuItem("关闭");
+			item3.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCloseTab);
+			mMenu.addItem(item3);
+			
+			mTabBar.contextMenu = mMenu;
+		}
+
+		private function onNewBehaviorClick(e:MouseEvent):void
+		{
+			var randUint:uint = uint(Math.random() * uint.MAX_VALUE);
+			var name:String = "新行为" + randUint.toString();
+			controller.createNewBehavior(name);
 		}
 		
-		
-		private function onCreateNewBT(e:BehaviorEvent):void
+		private function onSaveClick(e:MouseEvent):void
 		{
-			this.selectedIndex = 0;
-			this.contextMenu = null;
-			this.removeEventListener(MouseEvent.CLICK, onClickBt);
-			this.alpha = 0.5;
+			var name:String = mTabBar.selectedItem;
+			controller.saveBehavior(name);
+		}
+
+		private function onClickTabItem(e:MouseEvent):void
+		{
+			var name:String = mTabBar.selectedItem;
+			controller.openBehavior(name);
 		}
 		
-		private function onCreateDone(e:BehaviorEvent):void
+		private function onCloseTab(e:ContextMenuEvent):void
 		{
-			this.contextMenu = menu;
-			this.addEventListener(MouseEvent.CLICK, onClickBt);
-			this.alpha = 1;
+			var name:String = mTabBar.selectedItem;
+			controller.closeBehavior(name);
 		}
 		
-		public function updateBar():void
+		private function onRenameTab(e:ContextMenuEvent):void
 		{
-			if(controller.getBTs().length == 0)
+			var fromName:String = controller.selectedBehavior;
+			Utils.makeRenamePanel( function( toName:String ):void 
 			{
-				this.dataProvider = new ArrayCollection(["新建"]);
-			}
-			else if(controller.getBTs().length > 0 && this.dataProvider != controller.getBTs())
-			{
-				this.dataProvider = controller.getBTs();
-			}
-		}
-		
-		
-		private function onClickBt(e:MouseEvent):void
-		{
-			if(controller.getBTs().length > 0)
-				controller.setCurrEditBehavior(this.selectedItem);
-			else
-				EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.CREATE_NEW_BT));
-		}
-		
-		private function onDeleteEnemyBT(e:ContextMenuEvent):void
-		{
-			controller.removeBTByIndex(this.selectedIndex);
-		}
-		
-		private function onRenameBT(e:ContextMenuEvent):void
-		{
-			Utils.makeRenamePanel( function( bid:String=null ):void {
-				if( !bid ) return;
-				if( bid.length > 0 )
-				{
-					controller.renameBTbyIndex(this.selectedIndex, bid);
-					Alert.okLabel = "确定";
-				}else 
+				if( toName.length > 0 )
+					controller.renameBehavior(fromName, toName); 
+				else 
 					Alert.show("【错误】命名不能为空");
-			}, this);
+			}, controller.editPanel);
 		}
 	}
 }

@@ -241,7 +241,7 @@ package
 			return this.mLevelInstancesTable[lid].behavior[eid];
 		}
 		
-		public function updateEnemyBehaviorsById( lid:String, eid:String, bhs:Object ):void
+		public function updateEnemyBehaviorsById( lid:String, eid:String, bhs:Array ):void
 		{	
 			if( !(lid in this.mLevelInstancesTable) )
 				this.mLevelInstancesTable[lid] = {
@@ -250,6 +250,23 @@ package
 			
 			this.mLevelInstancesTable[lid].behavior[eid] = bhs;
 			this.writeToLevel( lid );
+		}
+		
+		public function findEnemiesByBehavior(lid:String, behaviorName:String ): Array
+		{
+			var list:Array = [];
+			var behaviorTable:Object = mLevelInstancesTable[lid].behavior;
+			
+			for(var x:* in behaviorTable)
+			{
+				if(behaviorTable[x])
+				{
+					if((behaviorTable[x] as Array).indexOf(behaviorName) != -1)
+						list.push(x);
+				}
+			}
+			
+			return list;
 		}
 		
 		public function getEnemyTriggersById( lid:String, eid:String ):Object
@@ -281,7 +298,8 @@ package
 			);
 		}
 		
-		public function get behaviorSet():Object { return this.mBehaviorSet; } 
+		public function get behaviorSet():Object { return this.mBehaviorSet; }
+		
 		public function getBehaviorById( bid:String ):Object
 		{
 			return this.mBehaviorSet[bid];
@@ -290,7 +308,8 @@ package
 		{
 			delete this.mBehaviorSet[bid];
 			var file:File = this.resolvePath( "saved/behavior/"+bid+".json" );
-			if( file.exists ) file.deleteFile();
+			if( file.exists ) 
+				file.deleteFile();
 		}
 		public function updateBehaviorSetById( bid:String, data:Object ):void
 		{
@@ -298,7 +317,7 @@ package
 			Utils.WriteObjectToJSON( // persistence
 				this.resolvePath( "saved/behavior/"+bid+".json" ),
 				this.mBehaviorSet[bid]
-			);	
+			);
 		}
 		
 		public function get formationSet():Object { return this.mFormationSet; }

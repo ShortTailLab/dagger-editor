@@ -76,7 +76,6 @@ package behaviorEdit
 			searchCashe = searchFrame.text;
 			EventManager.getInstance().removeEventListener(BehaviorEvent.BT_XML_APPEND, updateTree);
 			EventManager.getInstance().removeEventListener(BehaviorEvent.BT_ADDED, updateTree);
-			
 		}
 		
 		private function parse(data:Array):XML
@@ -97,15 +96,16 @@ package behaviorEdit
 			var selectedNode:XML = (e.currentTarget as Tree).selectedItem as XML;
 			if(selectedNode)
 			{
-				var label:String=selectedNode.@label;
-				EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.CREATE_NEW_BT, label));
+				var behaviorName:String=selectedNode.@label;
+				//EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.CREATE_NEW_BT, label));
+				controller.openBehavior(behaviorName);
 			}
 		}
 		
 		private function onDeleteBT(e:ContextMenuEvent):void
 		{
 			if(btTree.selectedIndex >= 0)
-				Alert.show("删除库行为会一并删除所有相关的行为，确定删除？", "tips", Alert.OK|Alert.CANCEL, this, onDeleteBtClose);
+				Alert.show("删除库行为会一并删除所有相关的行为，确定删除？", "警告", Alert.OK|Alert.CANCEL, this, onDeleteBtClose);
 			else
 				Alert.show("请先选择要删除的行为");
 		}
@@ -114,17 +114,18 @@ package behaviorEdit
 		{
 			if(e.detail == Alert.OK)
 			{
-				delete Data.getInstance().behaviorSet[btTree.selectedItem.@label];
-				
-				var electData:Array = new Array;
-				for(var b:String in Data.getInstance().behaviorSet)
-					electData.push(b);
-				electData.sort();
-				btTree.dataProvider = parse(electData);
-				
-				controller.getBTs().refresh();
-				EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.BT_REMOVED));
+				var behaviorName:String = btTree.selectedItem.@label[0];
+				controller.removeBehavior(behaviorName);
 			}
+		}
+		
+		public function refreshBehaviorData():void
+		{
+			var electData:Array = new Array;
+			for(var b:String in Data.getInstance().behaviorSet)
+				electData.push(b);
+			electData.sort();
+			btTree.dataProvider = parse(electData);
 		}
 		
 	}

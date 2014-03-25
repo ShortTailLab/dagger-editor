@@ -24,7 +24,7 @@ package behaviorEdit
 		public var currSelectBNode:BNode = null;
 		public var userPanel:UserPanel = null;
 		public var bar:BehaviorBar = null;
-		private var behaviorsPanel:BehaviorTreePanel;
+		public var behaviorsPanel:BehaviorTreePanel;
 		private var grabLayer:UIComponent = null;
 		public var editView:BTEditView;
 		
@@ -37,7 +37,7 @@ package behaviorEdit
 			this.width = 1170;
 			this.height = 800;
 			this.setStyle("backgroundColor", 0xEEE8AA);
-			
+
 			controller = new BTEditController(this, target.type);
 			
 			behaviorsPanel = new BehaviorTreePanel(controller);
@@ -48,7 +48,7 @@ package behaviorEdit
 			
 			userPanel = new UserPanel(this, controller);
 			this.addElement(userPanel);
-			
+
 			bar = new BehaviorBar(controller);
 			bar.x = 120;
 			bar.y = 0;
@@ -59,38 +59,44 @@ package behaviorEdit
 			editGroup.x = 120;
 			editGroup.width = 880;
 			editGroup.percentHeight = 100;
+			this.addElement(editGroup);
+						
+			var vGroup:VGroup = new VGroup;
+			vGroup.percentWidth = 100;
+			vGroup.percentHeight = 100;
+			editGroup.addElement(vGroup);
+			
 			var group:Group = new Group();
 			group.clipAndEnableScrolling = true;
 			group.percentWidth = 100;
 			group.percentHeight = 100;
+			vGroup.addElement(group);
+			
 			editView = new BTEditView(this);
 			group.addElement(editView);
-			var vGroup:VGroup = new VGroup;
-			vGroup.percentWidth = 100;
-			vGroup.percentHeight = 100;
-			vGroup.addElement(group);
+			
 			var hscrollbar:HScrollBar = new HScrollBar;
 			hscrollbar.percentWidth = 100;
 			hscrollbar.viewport = group;
 			vGroup.addElement(hscrollbar);
-			editGroup.addElement(vGroup);
+
 			var vscrollbar:VScrollBar = new VScrollBar();
 			vscrollbar.percentHeight = 100;
 			vscrollbar.viewport = group;
 			editGroup.addElement(vscrollbar);
-			this.addElement(editGroup);
 			
 			//this used to add the dragging node.
 			grabLayer = new UIComponent;
 			this.addElement(grabLayer);
-			
-			var defaultBT:String = controller.getBTs().length > 0 ? controller.getBTs()[0] : "";
-			controller.setCurrEditBehavior(defaultBT);
-			
+						
 			this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 			this.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			this.addEventListener(CloseEvent.CLOSE, onClose);
 			this.addEventListener(Event.ADDED_TO_STAGE, onAddedStage);
+			
+			// open unit behavior
+			controller.selectDefaultBehavior();
+			controller.openBehavior(controller.selectedBehavior);
 		}
 		
 		private function onAddedStage(e:Event):void
@@ -140,17 +146,21 @@ package behaviorEdit
 		
 		private function onClose(e:CloseEvent):void
 		{
-			controller.saveSelectItem();
+			controller.saveBehavior( controller.selectedBehavior );
+			
+			//controller.saveSelectItem();
 			editView.onRemoved();
 			PopUpManager.removePopUp(this);
 			
 			var msg:String = "";
-			for each(var bname:String in controller.getBTs())
+			for each(var bname:String in controller.openedBehaviors)
+			{
 				if(Utils.genBTreeJS(Data.getInstance().getBehaviorById(bname)) == "")
 				{
 					trace(bname);
 					msg += bname + " ";
 				}
+			}
 			if(msg.length > 0)
 			{
 				Alert.show("行为"+msg+"不合法，请检查！");
