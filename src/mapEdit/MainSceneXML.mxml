@@ -82,7 +82,7 @@
 						<s:Rect top="0" left="0" right="0" bottom="0">
 							<s:fill><s:SolidColor color="0xEEEEFF"/></s:fill>
 						</s:Rect>
-						<s:Group id="mMonsterLayer" width="360" height="0"/>
+						<s:Group id="mComponentsLayer" width="360" height="0"/>
 					</s:Group>
 				</s:VGroup>
 				<s:VGroup width="20" height="100%"/>

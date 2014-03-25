@@ -55,7 +55,7 @@ package behaviorEdit
 			btnsView.addChild(newBtn);
 			
 			
-			var icon:Component = new Entity(null, controller.editTargetType, 100, 70);
+			var icon:Component = new Entity( controller.editTargetType );
 			icon.x = 60;
 			icon.y = 110;
 			btnsView.addChild(icon);

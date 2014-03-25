@@ -17,7 +17,7 @@ package
 	
 	import behaviorEdit.BTEditPanel;
 	
-	import mapEdit.AreaTriggerComponent;
+	import mapEdit.AreaTrigger;
 	import mapEdit.Component;
 	import mapEdit.Entity;
 	
@@ -67,15 +67,16 @@ package
 			mMonsters = [];
 			
 			var self:MonsterSelector = this;
-			var triggerMat:Component = new AreaTriggerComponent;
-			triggerMat.trim(70);
+			var triggerMat:Component = new AreaTrigger;
+			triggerMat.setBaseSize( 70 );
 			this.registerEventHandler( triggerMat );
 			mMonsters.push(triggerMat);
 			
 			var enemies:Object = Data.getInstance().getEnemiesByLevelId(lid);
 			for( var item:String in enemies )
 			{
-				var entity:Component = new Entity(null, item, 80, 90);
+				var entity:Entity = new Entity( item );
+				entity.setSize(70);
 				this.registerEventHandler( entity );
 				this.mMonsters.push( entity );
 			}
