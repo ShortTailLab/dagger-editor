@@ -15,6 +15,8 @@ package
 	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
+	import mx.core.IVisualElement;
+	import mx.core.UIComponent;
 	import mx.events.FlexEvent;
 	import mx.events.ResizeEvent;
 	import mx.events.SliderEvent;
@@ -109,7 +111,8 @@ package
 				}
 			);
 			
-			this.mShowGrid.selected = Data.getInstance().conf["main.scene.show.grid"] || true;
+			this.mShowGrid.selected = Data.getInstance().conf["main.scene.show.grid"] || false;
+			this.mCoordinator.showGrid( this.mShowGrid.selected );
 			this.mShowGrid.addEventListener( Event.CHANGE, 
 				function (e:Event):void {
 					Data.getInstance().setEditorConfig(
@@ -122,7 +125,7 @@ package
 				}
 			);
 			
-			this.mRestrictGrid.selected = Data.getInstance().conf["main.scene.restrict.grid"] || true;
+			this.mRestrictGrid.selected = Data.getInstance().conf["main.scene.restrict.grid"] || false;
 			this.mRestrictGrid.addEventListener( Event.CHANGE, 
 				function (e:Event):void {
 					Data.getInstance().setEditorConfig(
@@ -391,12 +394,12 @@ package
 					{
 						var item:Component = this.creator( type );
 						
-						var gridPos:Point = this.mCoordinator.getGridPos();
-						if( !this.mRestrictGrid.selected )
-					 		gridPos = this.mCoordinator.getPos();
+						var gridPos:Point = this.mCoordinator.getPos();
+						var size:Point = this.getTipsLayerSize();
 						
-						item.x 	= p.x + gridPos.x; 
-						item.y	= p.y + gridPos.y - this.mProgressInPixel; 
+						item.x 	= p.x + gridPos.x - size.x/2; 
+						item.y	= p.y + gridPos.y - this.mProgressInPixel + size.y/2;
+						
 						if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
 							this.insertComponent( item, false );
 					}
@@ -408,7 +411,8 @@ package
 						gridPos = this.mCoordinator.getPos();
 					
 					item.x 	= gridPos.x; 
-					item.y	= gridPos.y - this.mProgressInPixel; 
+					item.y	= gridPos.y - this.mProgressInPixel;
+					
 					if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
 						this.insertComponent( item );
 				}
@@ -591,6 +595,7 @@ package
 				{
 					if( this.mComponents[i] == sm ) 
 					{
+						sm.dtor();
 						this.mComponentsLayer.removeElement( sm );
 						this.mComponents.splice(i, 1);
 						break;
@@ -643,7 +648,7 @@ package
 			if( item as AreaTrigger )
 				(item as AreaTrigger).enableEditing( this );
 			else if( item as Entity )
-				(item as Entity).setBaseSize( 55 );
+				(item as Entity).setBaseSize( 50 );
 			
 			this.mComponents.push( item );
 			this.mComponentsLayer.addElement( item );
@@ -794,6 +799,7 @@ package
 			}
 			
 			this.mSelectedTipsLayer = new Group;
+			
 			this.addElement( this.mSelectedTipsLayer );
 			this.mSelectedTipsLayer.alpha = 0.5;
 			
@@ -813,6 +819,8 @@ package
 						mat.addEventListener(MouseEvent.CLICK, function(e:*):void {
 							self.onMouseClick(e);
 						});
+						if( mat as Entity )
+							(mat as Entity).setBaseSize( 50 );
 						mSelectedTipsLayer.addElement(mat);
 					}
 				}
@@ -822,6 +830,8 @@ package
 					mat2.addEventListener(MouseEvent.CLICK, function(e:*):void {
 						self.onMouseClick(e);
 					});
+					if( mat2 as Entity )
+						(mat2 as Entity).setBaseSize( 50 );
 					mSelectedTipsLayer.addElement(mat2);
 				}
 			}
@@ -830,8 +840,15 @@ package
 		{
 			if(this.mSelectedTipsLayer)
 			{
-				this.mSelectedTipsLayer.x = this.mouseX-1;
-				this.mSelectedTipsLayer.y = this.mouseY-1;
+				if( this.mSelectFormation )
+				{
+					var size:Point = this.getTipsLayerSize();
+					this.mSelectedTipsLayer.x = this.mouseX - size.x/2;
+					this.mSelectedTipsLayer.y = this.mouseY + size.y/2;
+				} else {
+					this.mSelectedTipsLayer.x = this.mouseX;
+					this.mSelectedTipsLayer.y = this.mouseY;	
+				}
 			}
 		}
 		
@@ -842,7 +859,36 @@ package
 			if( type == AreaTrigger.TRIGGER_TYPE )
 				return new AreaTrigger( );
 			else 
-				return new Entity( type );
+			{
+				var ret:Entity =  new Entity( type, true );
+				ret.setBaseSize( 50 );
+				ret.setTextTipsSize( 50 );
+				return ret;
+			}
+		}
+		
+		private function getTipsLayerSize():Point 
+		{
+			if( this.mSelectedTipsLayer && this.mSelectedTipsLayer.numElements > 0 )
+			{
+				var min_x:Number = this.mSelectedTipsLayer.getElementAt(0).x;
+				var max_x:Number = this.mSelectedTipsLayer.getElementAt(0).x;
+				
+				var min_y:Number = this.mSelectedTipsLayer.getElementAt(0).y;
+				var max_y:Number = this.mSelectedTipsLayer.getElementAt(0).y;
+				
+				for( var i:int=0; i<this.mSelectedTipsLayer.numElements; i++ )
+				{
+					var item:IVisualElement = this.mSelectedTipsLayer.getElementAt(i);
+					min_x = Math.min( min_x, item.x);
+					max_x = Math.max( max_x, item.x);
+					min_y = Math.min( min_y, item.y);
+					max_y = Math.max( max_y, item.y);
+				}
+
+				return new Point( Math.abs( max_x - min_x ), Math.abs( max_y - min_y ) );
+			} else 
+				return new Point();
 		}
 		
 		private function getMatsData():Array

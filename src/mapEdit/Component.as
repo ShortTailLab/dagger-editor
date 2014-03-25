@@ -4,6 +4,8 @@ package mapEdit
 	import spark.core.SpriteVisualElement;
 	public class Component extends SpriteVisualElement
 	{
+		public function dtor():void{};
+		
 		public function select(value:Boolean):void {}
 		public function setBaseSize( value:Number  ):void {}
 		public function unserialize(data:Object):void {}

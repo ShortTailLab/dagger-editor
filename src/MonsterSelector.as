@@ -75,7 +75,7 @@ package
 			var enemies:Object = Data.getInstance().getEnemiesByLevelId(lid);
 			for( var item:String in enemies )
 			{
-				var entity:Entity = new Entity( item );
+				var entity:Entity = new Entity( item, true );
 				entity.setSize(70);
 				this.registerEventHandler( entity );
 				this.mMonsters.push( entity );
@@ -117,6 +117,8 @@ package
 				
 				with( item ) { x = px; y = py; }
 				with( this ) { height = item.y + 130; }
+				if( item as AreaTrigger )
+					item.y -= MonsterSelector.kGRID_HEIGHT/4;
 				
 				this.mScrollingLayer.addChild( item );
 			}
