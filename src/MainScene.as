@@ -588,7 +588,16 @@ package
 			
 			for each( var m:Component in this.mComponents )
 				if( m.type == type ) this.selectComponent( m );
-			
+				
+			if( type == AreaTrigger.TRIGGER_TYPE )
+			{
+				this.mInfoId.text = "ID:   " + String(type);
+				this.mInfoName.text = "NAME: ";
+			} else {
+				this.mInfoId.text = "ID:   " + String(type);
+				this.mInfoName.text = "NAME: " + 
+					String( Data.getInstance().getEnemyProfileById(type).monster_name );
+			}
 			if( this.mSelectedComponents.length > 1 )
 			{
 				this.mInfoXInput.text 		= "";
@@ -612,8 +621,8 @@ package
 			
 			if( this.mSelectedComponents.length > 1 )
 			{
-				this.mInfoId.text 			= "";
-				this.mInfoName.text  		= "";
+				this.mInfoId.text 			= "ID:   ";
+				this.mInfoName.text  		= "NAME: ";
 				this.mInfoXInput.text 		= "";
 				this.mInfoYInput.text 		= "";
 				this.mInfoTimeInput.text 	= "";
