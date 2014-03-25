@@ -984,6 +984,7 @@ package
 			{
 				var em:Entity = m as Entity;
 				if( !em ) continue;
+				
 				var bound:Rectangle = em.getBounds( this.mComponentsLayer );
 				if( bound.contains( local.x, local.y ) )
 				{

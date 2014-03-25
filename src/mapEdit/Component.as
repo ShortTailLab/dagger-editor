@@ -11,7 +11,7 @@ package mapEdit
 		public function unserialize(data:Object):void {}
 		public function serialize():Object { return{}; }
 		
-		private var mGlobalId:String = null;
+		protected var mGlobalId:String = null;
 		public function get globalId():String{ return this.mGlobalId; }
 		public function set globalId(v:String):void { this.mGlobalId = v; }
 		
