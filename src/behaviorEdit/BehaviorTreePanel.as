@@ -97,7 +97,6 @@ package behaviorEdit
 			if(selectedNode)
 			{
 				var behaviorName:String=selectedNode.@label;
-				//EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.CREATE_NEW_BT, label));
 				controller.openBehavior(behaviorName);
 			}
 		}
@@ -105,7 +104,13 @@ package behaviorEdit
 		private function onDeleteBT(e:ContextMenuEvent):void
 		{
 			if(btTree.selectedIndex >= 0)
-				Alert.show("删除库行为会一并删除所有相关的行为，确定删除？", "警告", Alert.OK|Alert.CANCEL, this, onDeleteBtClose);
+				Alert.show(
+					"删除库行为会一并删除所有相关的行为，确定删除？", 
+					"警告", 
+					Alert.OK|Alert.CANCEL, 
+					this, 
+					onDeleteBtClose
+				);
 			else
 				Alert.show("请先选择要删除的行为");
 		}
@@ -116,6 +121,9 @@ package behaviorEdit
 			{
 				var behaviorName:String = btTree.selectedItem.@label[0];
 				controller.removeBehavior(behaviorName);
+				
+				if(controller.openedBehaviors.length)
+					controller.openBehavior(controller.openedBehaviors[0]);
 			}
 		}
 		

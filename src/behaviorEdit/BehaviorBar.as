@@ -84,6 +84,9 @@ package behaviorEdit
 		{
 			var name:String = mTabBar.selectedItem;
 			controller.closeBehavior(name);
+			
+			if(controller.openedBehaviors.length)
+				controller.openBehavior(controller.openedBehaviors[0]);
 		}
 		
 		private function onRenameTab(e:ContextMenuEvent):void
