@@ -2,8 +2,7 @@ package behaviorEdit
 {
 	import mx.collections.ArrayCollection;
 	import mx.controls.Alert;
-	
-	import manager.EventManager;
+
 	import manager.MsgInform;
 
 	public class BTEditController
