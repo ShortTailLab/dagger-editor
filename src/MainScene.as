@@ -64,6 +64,7 @@ package
 		
 		// facilities
 		private var mAutoSaver:Timer = null;
+		private var mTipsFontSize:Number = 12;
 		
 		public function MainScene()
 		{
@@ -201,6 +202,21 @@ package
 					self.mComponentsLayer.addElement( self.mSelectFrame );
 				}
 			);
+			
+			// others 
+			this.mTipsFontSize = Number(Data.getInstance().conf["main.scene.tips.size"] || 12);
+			this.mTipsSizeInput.text = String(this.mTipsFontSize);
+			this.mTipsSizeInput.addEventListener(FlexEvent.ENTER,
+				function (e:FlexEvent):void {
+					self.mTipsFontSize = Number(self.mTipsSizeInput.text);
+					Data.getInstance().setEditorConfig("main.scene.tips.size", self.mTipsFontSize);
+					for each(var item:Component in self.mComponents )
+					{
+						if ( item as Entity )
+							(item as Entity).setTextTipsSize( self.mTipsFontSize );
+					}
+				}
+			);
 
 			this.addEventListener( MouseEvent.MOUSE_MOVE,
 				function(e:MouseEvent):void {
@@ -332,7 +348,7 @@ package
 			
 			for each( var item:Object in level )
 			{
-				var one:Component = this.creator( item.type );
+				var one:Component = this.creator( item.type, this.mTipsFontSize );
 				one.unserialize(item);
 				this.insertComponent( one, false );
 			}
@@ -392,7 +408,7 @@ package
 					var posData:Object = Data.getInstance().getFormationById( fid );
 					for each( var p:Object in posData )
 					{
-						var item:Component = this.creator( type );
+						var item:Component = this.creator( type, this.mTipsFontSize );
 						
 						var gridPos:Point = this.mCoordinator.getPos();
 						var size:Point = this.getTipsLayerSize();
@@ -405,7 +421,7 @@ package
 					}
 					this.onMonsterChange();
 				} else {
-					item 	= this.creator( type );					
+					item 	= this.creator( type, this.mTipsFontSize );					
 					gridPos = this.mCoordinator.getGridPos();
 					if( !this.mRestrictGrid.selected )
 						gridPos = this.mCoordinator.getPos();
@@ -456,7 +472,7 @@ package
 			for each( var item:Component in this.mSelectedComponents )
 			{
 				//trace( item.type +" -> "+ type);
-				var one:Component = this.creator( type );
+				var one:Component = this.creator( type, this.mTipsFontSize );
 				one.x = item.x;
 				one.y = item.y;
 				this.insertComponent( one, false );
@@ -530,6 +546,15 @@ package
 			item.contextMenu = menu;
 			
 			// update information panel
+			if( item.type == AreaTrigger.TRIGGER_TYPE )
+			{
+				this.mInfoId.text = "ID:   " + String(item.type);
+				this.mInfoName.text = "NAME: ";
+			} else {
+				this.mInfoId.text = "ID:   " + String(item.type);
+				this.mInfoName.text = "NAME: " + 
+					String( Data.getInstance().getEnemyProfileById(item.type).monster_name );
+			}
 			this.mInfoXInput.text = String(item.x*2);
 			this.mInfoYInput.text = String(-item.y*2);
 			if( item as Entity )
@@ -542,10 +567,16 @@ package
 			var row:int = index / MainScene.kSELECTED_BOARD_COLUMS;
 			var col:int = index % MainScene.kSELECTED_BOARD_COLUMS;
 			
-			var one:Component = this.creator( item.type );
-			one.setBaseSize( 40 );
+			var one:Component = this.creator( item.type, 8 );
 			one.x = 30 + col*MainScene.kSELECTED_BOARD_UNIT_WIDTH;
 			one.y = 40 + row*MainScene.kSELECTED_BOARD_UNIT_HEIGHT;
+			if( one as Entity )
+			{
+				(one as Entity).setSize(20);
+			}else{ 
+				one.y -= MainScene.kSELECTED_BOARD_UNIT_HEIGHT/2;
+				one.setBaseSize( 30 );
+			}
 			this.mSelectedBoard.addElement( one );
 			
 			this.onPaste( false );
@@ -581,6 +612,8 @@ package
 			
 			if( this.mSelectedComponents.length > 1 )
 			{
+				this.mInfoId.text 			= "";
+				this.mInfoName.text  		= "";
 				this.mInfoXInput.text 		= "";
 				this.mInfoYInput.text 		= "";
 				this.mInfoTimeInput.text 	= "";
@@ -706,7 +739,7 @@ package
 				var toMonsters:Array = [];	
 				for each( item in this.mSelectedComponents )
 				{
-					var one:Component = this.creator( item.type );
+					var one:Component = this.creator( item.type, this.mTipsFontSize );
 					one.x = item.x;
 					one.y = item.y + delta;
 					this.insertComponent( one, false );
@@ -813,7 +846,7 @@ package
 					var posData:Object = Data.getInstance().getFormationById( this.mSelectFormation );
 					for each(var p:* in posData)
 					{
-						var mat:Component = this.creator( this.mSelectType );
+						var mat:Component = this.creator( this.mSelectType, 0 );
 						mat.x = p.x;
 						mat.y = p.y;
 						mat.addEventListener(MouseEvent.CLICK, function(e:*):void {
@@ -826,7 +859,7 @@ package
 				}
 				else 
 				{
-					var mat2:Component = this.creator( this.mSelectType );
+					var mat2:Component = this.creator( this.mSelectType, 0 );
 					mat2.addEventListener(MouseEvent.CLICK, function(e:*):void {
 						self.onMouseClick(e);
 					});
@@ -854,7 +887,7 @@ package
 		
 		// ------------------------
 		// facilities
-		private function creator( type:String ):Component
+		private function creator( type:String, fontSize:Number ):Component
 		{
 			if( type == AreaTrigger.TRIGGER_TYPE )
 				return new AreaTrigger( );
@@ -862,7 +895,7 @@ package
 			{
 				var ret:Entity =  new Entity( type, true );
 				ret.setBaseSize( 50 );
-				ret.setTextTipsSize( 50 );
+				ret.setTextTipsSize( fontSize );
 				return ret;
 			}
 		}

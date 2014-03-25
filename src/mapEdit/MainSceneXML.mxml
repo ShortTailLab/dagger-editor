@@ -20,12 +20,13 @@
 							  horizontalCenter="0"
 							  verticalAlign="middle" 
 							  horizontalAlign="center">
-						<s:Panel width="100%" height="140" title="相关信息" dropShadowVisible="false">
+						<s:Panel width="100%" height="175" title="相关信息" dropShadowVisible="false">
 							<s:HGroup width="100%" height="100%" horizontalAlign="left"  verticalAlign="top">
 								<s:Group width="10" height="20"/>
 								<s:VGroup width="100%" height="100%">
 									<s:Group height="10"/>
-									
+									<s:Label id="mInfoId" fontSize="12" text="ID:   " horizontalCenter="0" />
+									<s:Label id="mInfoName" fontSize="12" text="NAME: " horizontalCenter="0" />
 									<s:HGroup >
 										<s:Label id="mInfoXLabel" fontSize="12" text="X轴坐标：" horizontalCenter="0" />
 										<s:TextInput id="mInfoXInput" width="50" restrict="0-9"/>
@@ -47,7 +48,7 @@
 						<s:Panel id="mSelectionPanel" width="100%" height="30%" title="选中对象(0) 剪贴板：关闭" dropShadowVisible="false">
 							<s:Group id="mSelectedBoard" width="100%" height="100%"/>
 						</s:Panel>
-						<s:Panel id="mRelatedInfo" width="100%" height="240" title="地图配置及信息" dropShadowVisible="false">
+						<s:Panel id="mRelatedInfo" width="100%" height="270" title="地图配置及信息" dropShadowVisible="false">
 							<s:HGroup width="100%" height="100%" horizontalAlign="left"  verticalAlign="top">
 								<s:Group width="10" height="20"/>
 								<s:VGroup width="100%" height="100%">
@@ -69,6 +70,10 @@
 									<s:Label id="mMousePos" fontSize="12" text="鼠标位置：(0, 0)"/>
 									<s:Label id="mMapLength" fontSize="12" text="地图长度：0"/>
 									<s:Label id="mTotalMonsters" fontSize="12" text="实体数量：0"/>
+									<s:HGroup >
+										<s:Label id="mTipsSizeLabel" fontSize="12" text="文字大小："/>
+										<s:TextInput id="mTipsSizeInput" width="50" restrict="0-9" />
+									</s:HGroup>
 								</s:VGroup>
 							</s:HGroup>
 						</s:Panel>
