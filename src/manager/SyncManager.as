@@ -147,7 +147,7 @@ package manager
 			var err1:String = Data.getInstance().exportLevelJS( lid, lid );
 			var stats:Object = Data.getInstance().getLevelDataForServer( lid );
 			
-			Utils.dumpObject(stats);
+			//Utils.dumpObject(stats);
 			if( err1 || !stats ) {
 				
 				if( export.exists && export.isDirectory )
@@ -238,7 +238,7 @@ package manager
 							}, 
 							function(t:String):void {
 								vf.deleteFile();
-								onComplete("[ERROR] version.json failed to upload"); 
+								onComplete("[ERROR] version.json failed to upload, "+t); 
 							}
 						);
 					}

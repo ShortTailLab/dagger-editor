@@ -15,7 +15,7 @@ package behaviorEdit
 	import spark.components.VGroup;
 	import spark.components.VScrollBar;
 	
-	import mapEdit.EntityComponent;
+	import mapEdit.Entity;
 	
 	import manager.EventManager;
 	
@@ -30,7 +30,7 @@ package behaviorEdit
 		
 		private var controller:BTEditController = null;
 		
-		public function BTEditPanel(target:EntityComponent)
+		public function BTEditPanel(target:Entity)
 		{
 			BNodeFactory.numCount = 0;
 			this.title = "行为编辑";

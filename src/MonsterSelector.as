@@ -17,9 +17,9 @@ package
 	
 	import behaviorEdit.BTEditPanel;
 	
-	import mapEdit.AreaTriggerComponent;
+	import mapEdit.AreaTrigger;
 	import mapEdit.Component;
-	import mapEdit.EntityComponent;
+	import mapEdit.Entity;
 	
 	public class MonsterSelector extends VGroup
 	{
@@ -67,15 +67,16 @@ package
 			mMonsters = [];
 			
 			var self:MonsterSelector = this;
-			var triggerMat:Component = new AreaTriggerComponent;
-			triggerMat.trim(70);
+			var triggerMat:Component = new AreaTrigger;
+			triggerMat.setBaseSize( 70 );
 			this.registerEventHandler( triggerMat );
 			mMonsters.push(triggerMat);
 			
 			var enemies:Object = Data.getInstance().getEnemiesByLevelId(lid);
 			for( var item:String in enemies )
 			{
-				var entity:Component = new EntityComponent(null, item, 80, 90);
+				var entity:Entity = new Entity( item, true );
+				entity.setSize(70);
 				this.registerEventHandler( entity );
 				this.mMonsters.push( entity );
 			}
@@ -116,6 +117,8 @@ package
 				
 				with( item ) { x = px; y = py; }
 				with( this ) { height = item.y + 130; }
+				if( item as AreaTrigger )
+					item.y -= MonsterSelector.kGRID_HEIGHT/4;
 				
 				this.mScrollingLayer.addChild( item );
 			}
@@ -154,7 +157,7 @@ package
 			var self:MonsterSelector = this;
 			item.addEventListener(MouseEvent.DOUBLE_CLICK, function(e:MouseEvent):void
 			{
-				var target:EntityComponent = e.currentTarget as EntityComponent;
+				var target:Entity = e.currentTarget as Entity;
 				if(target) MonsterSelector.OpenBehaviorEditor( target );
 			});
 			item.addEventListener(MouseEvent.CLICK, function(e:MouseEvent):void
@@ -168,7 +171,7 @@ package
 			bhButton.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, 
 				function(e:ContextMenuEvent):void
 				{
-					var target:EntityComponent = e.contextMenuOwner as EntityComponent;
+					var target:Entity = e.contextMenuOwner as Entity;
 					if(target) MonsterSelector.OpenBehaviorEditor( target );
 				}
 			);
@@ -178,7 +181,7 @@ package
 			trigger.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,
 				function(e:ContextMenuEvent):void
 				{
-					var target:EntityComponent = e.contextMenuOwner as EntityComponent;
+					var target:Entity = e.contextMenuOwner as Entity;
 					if(target) MonsterSelector.OpenTriggerEditor( target );
 				});
 			menu.addItem(trigger);
@@ -189,7 +192,7 @@ package
 		//---------------------
 		// actions
 		//---------------------
-		static private function OpenTriggerEditor(target:EntityComponent):void
+		static private function OpenTriggerEditor(target:Entity):void
 		{
 			var win:EditTriggers = new EditTriggers(target);
 			PopUpManager.addPopUp(win, MapEditor.getInstance());
@@ -198,7 +201,7 @@ package
 			win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
 		}
 		
-		static private function OpenBehaviorEditor(target:EntityComponent):void
+		static private function OpenBehaviorEditor(target:Entity):void
 		{
 			var btPanel:BTEditPanel = new BTEditPanel(target);
 			PopUpManager.addPopUp(btPanel, MapEditor.getInstance());

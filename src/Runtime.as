@@ -13,6 +13,12 @@ package
 			return gRuntimeInstance;
 		}
 		
+		// ---> scene scalor
+		private const kSceneScalor:Number = 0.5;
+		public function get sceneScalor(): Number {
+			return this.kSceneScalor;
+		}
+		
 		//
 		private var mCurrentLevelID:String = null;
 		public function get currentLevelID(): String {

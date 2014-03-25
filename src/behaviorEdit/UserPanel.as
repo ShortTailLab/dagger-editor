@@ -10,7 +10,7 @@ package behaviorEdit
 	import spark.components.TextInput;
 	
 	import mapEdit.Component;
-	import mapEdit.EntityComponent;
+	import mapEdit.Entity;
 	
 	public class UserPanel extends Panel
 	{
@@ -51,7 +51,8 @@ package behaviorEdit
 			btnsView.addChild(setBehaviorButton);
 			
 			
-			var icon:Component = new EntityComponent(null, controller.editTargetType, 100, 70);
+			var icon:Entity = new Entity( controller.editTargetType);
+			icon.setSize( 100 );
 			icon.x = 60;
 			icon.y = 110;
 			btnsView.addChild(icon);

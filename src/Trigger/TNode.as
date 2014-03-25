@@ -273,11 +273,15 @@ package Trigger
 			var dynamics = Data.getInstance().dynamicArgs;
 			if( condType in dynamics )
 				for( var key:* in dynamics[condType] )
-					if( !this.condItems.hasOwnProperty(key) || this.condItems[key] == "" ) return false;
+					if( !this.condItems.hasOwnProperty(key) || String(this.condItems[key]) == "" ) return false;
  			
 			if( retType in dynamics )
+			{
+				Utils.dumpObject( this.retItems );
 				for( var key:* in dynamics[retType] )
-					if( !this.retItems.hasOwnProperty(key) || this.retItems[key] == "" ) return false;
+					if( !this.retItems.hasOwnProperty(key) || String(this.retItems[key]) == "" ) 
+						return false;
+			}
 			
 			return true;
 		}
