@@ -11,7 +11,7 @@ package behaviorEdit
 	import spark.components.TextInput;
 	
 	import mapEdit.Component;
-	import mapEdit.EntityComponent;
+	import mapEdit.Entity;
 	
 	import manager.EventManager;
 	
@@ -55,7 +55,7 @@ package behaviorEdit
 			btnsView.addChild(newBtn);
 			
 			
-			var icon:Component = new EntityComponent(null, controller.editTargetType, 100, 70);
+			var icon:Component = new Entity(null, controller.editTargetType, 100, 70);
 			icon.x = 60;
 			icon.y = 110;
 			btnsView.addChild(icon);

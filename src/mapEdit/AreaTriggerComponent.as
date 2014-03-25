@@ -220,7 +220,7 @@ package mapEdit
 				}
 				for( var sid:String in self.mDotsOnMonster )
 				{
-					var entity:EntityComponent = self.mMainScene.getMonsterBySID( sid );
+					var entity:Entity = self.mMainScene.getMonsterBySID( sid );
 					if( !entity ) self.removeAMonster( sid );
 					else {
 						var pos:Point = self.globalToLocal(
@@ -259,7 +259,7 @@ package mapEdit
 		
 		private function tryToCaputureAMonster(globalPos:Point):void 
 		{
-			var entity:EntityComponent = this.mMainScene.getMonsterByPoint( globalPos );
+			var entity:Entity = this.mMainScene.getMonsterByPoint( globalPos );
 			if( entity ) {
 				if ( this.mDotsOnMonster.hasOwnProperty( entity.sid ) ) return;
 				if ( entity.triggerId.length > 0 ) {
@@ -284,7 +284,7 @@ package mapEdit
 		
 		private function removeAMonster( sid:String ):void 
 		{
-			var entity:EntityComponent = this.mMainScene.getMonsterBySID( sid );
+			var entity:Entity = this.mMainScene.getMonsterBySID( sid );
 			if( entity ) entity.triggerId = "";
 			if( this.mDotsOnMonster.hasOwnProperty( sid ) )
 			{

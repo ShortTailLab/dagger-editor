@@ -27,7 +27,7 @@ package
 	import mapEdit.AreaTriggerComponent;
 	import mapEdit.Component;
 	import mapEdit.Coordinator;
-	import mapEdit.EntityComponent;
+	import mapEdit.Entity;
 	import mapEdit.MainSceneXML;
 	
 	public class MainScene extends MainSceneXML
@@ -179,8 +179,8 @@ package
 					for each( var item:Component in self.mSelectedMonsters )
 					{
 						item.triggerTime = int(self.mInfoTimeInput.text);
-						if( item as EntityComponent )
-							(item as EntityComponent).showTrigger();
+						if( item as Entity )
+							(item as Entity).showTrigger();
 					}
 					self.onMonsterChange();
 				}
@@ -844,7 +844,7 @@ package
 			if( type == AreaTriggerComponent.TRIGGER_TYPE )
 				return new AreaTriggerComponent( this );
 			else 
-				return new EntityComponent( this, type, -1, 30 );
+				return new Entity( this, type, -1, 30 );
 		}
 		
 		private function getMatsData():Array
@@ -904,7 +904,7 @@ package
 			var data:Array = new Array;
 			var minX:Number = mats[0].x;
 			var minY:Number = mats[0].y;
-			for each(var m:EntityComponent in mats)
+			for each(var m:Entity in mats)
 			{
 				minX = Math.min(m.x, minX);
 				minY = Math.max(m.y, minY);
@@ -922,12 +922,12 @@ package
 			return data;
 		}
 		
-		public function getMonsterByPoint( pos:Point ):EntityComponent
+		public function getMonsterByPoint( pos:Point ):Entity
 		{
 			var local:Point = this.mMonsterLayer.globalToLocal(pos);
 			for each( var m:Component in this.mMonsters )
 			{
-				var em:EntityComponent = m as EntityComponent;
+				var em:Entity = m as Entity;
 				if( !em ) continue;
 				var bound:Rectangle = em.getBounds( this.mMonsterLayer );
 				if( bound.contains( local.x, local.y ) )
@@ -938,11 +938,11 @@ package
 			return null;
 		}
 		
-		public function getMonsterBySID( sid:String ):EntityComponent
+		public function getMonsterBySID( sid:String ):Entity
 		{
 			for each( var item:Component in this.mMonsters )
 			{
-				var em:EntityComponent = item as EntityComponent;
+				var em:Entity = item as Entity;
 				if( em && em.sid == sid ) return em; 
 			}
 			return null;
