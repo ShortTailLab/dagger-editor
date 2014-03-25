@@ -86,11 +86,13 @@ package behaviorEdit
 			Data.getInstance().updateBehaviorSetById(name, data);
 
 			openBehavior(name);
+			
+			mEditPanel.behaviorsPanel.refreshBehaviorData();
 		}
 		
 		public function openBehavior(name:String):void
 		{
-			if(name != "")
+			if(name && name != "")
 			{
 				// open tree in edit view
 				var btToOpen = Data.getInstance().getBehaviorById(name)
@@ -106,7 +108,7 @@ package behaviorEdit
 		
 		public function saveBehavior(name:String):void
 		{
-			if(name != "")
+			if(name && name != "")
 			{
 				var currBehavior:* = mEditPanel.editView.export();
 				Data.getInstance().updateBehaviorSetById(name, currBehavior);

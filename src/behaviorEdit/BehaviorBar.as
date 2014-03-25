@@ -71,7 +71,8 @@ package behaviorEdit
 		private function onSaveClick(e:MouseEvent):void
 		{
 			var name:String = mTabBar.selectedItem;
-			controller.saveBehavior(name);
+			if(name)
+				controller.saveBehavior(name);
 		}
 
 		private function onClickTabItem(e:MouseEvent):void
