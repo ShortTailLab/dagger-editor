@@ -1,154 +1,206 @@
 package behaviorEdit
 {
 	import mx.collections.ArrayCollection;
-	
-	import manager.EventManager;
+	import mx.controls.Alert;
+
 	import manager.MsgInform;
 
 	public class BTEditController
 	{
 		public var editTargetType:String = "";
-		public var isCreatingNew:Boolean = false; 
-		public var currEditBehavior:String = "";
 		
-		private var btArray:ArrayCollection;
-		private var parPanel:BTEditPanel = null;
+		private var mOpenedBehaviors: ArrayCollection;
+		private var mSelectedBehavior:String = "";
+		private var mEditPanel:BTEditPanel = null;
 		
 		public function BTEditController(par:BTEditPanel, type:String)
 		{
-			parPanel = par;
+			mEditPanel = par;
 			editTargetType = type;
 			
-			btArray = new ArrayCollection(
+			// open all behaviors related to current unit, this should only open 1 behavior
+			mOpenedBehaviors = new ArrayCollection(
 				Data.getInstance().getEnemyBehaviorsById( 
 					Runtime.getInstance().currentLevelID, editTargetType 
 				) as Array
 			);
-			
-			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_NEW_BT, onNewBT);
-			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_DONE, onCreateDone);
-			EventManager.getInstance().addEventListener(BehaviorEvent.CREATE_BT_CANCEL, onCreateCancel);
 		}
 		
-		public function getBTs():ArrayCollection
+		public function get editPanel(): BTEditPanel
 		{
-			return btArray;
+			return mEditPanel;
 		}
 		
-		public function addBT(bName:String):void
+		public function get selectedBehavior():String
 		{
-			var data:Object = parPanel.editView.export();
-			
-			if(!Data.getInstance().getBehaviorById(bName))
-				Data.getInstance().updateBehaviorSetById(bName, data);
-			
-			btArray.addItem(bName);
+			return mSelectedBehavior;
+		}
+		
+		public function get openedBehaviors():ArrayCollection
+		{
+			return mOpenedBehaviors;
+		}
+		
+		public function selectDefaultBehavior()
+		{
+			if(mOpenedBehaviors.length)
+			{
+				mSelectedBehavior = mOpenedBehaviors[0];
+				mEditPanel.bar.mTabBar.selectedItem = mSelectedBehavior;
+			}
+			else
+				mEditPanel.userPanel.behaviorLabel.text = "<空行为>";
+		}
+		
+		public function getUnitBehaviorName():String
+		{
+			var list:Array = Data.getInstance().getEnemyBehaviorsById( 
+				Runtime.getInstance().currentLevelID, editTargetType 
+			) as Array;
+			return list.length ? list[0] : "";
+		}
+		
+		public function setUnitBehavior(name:String)
+		{
+			var val = name != "" ? [name] : [];
 			Data.getInstance().updateEnemyBehaviorsById( 
-				Runtime.getInstance().currentLevelID, editTargetType, btArray.toArray() as Object 
+				Runtime.getInstance().currentLevelID, editTargetType, val 
 			);
-			
-			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_ADDED, bName);
-			EventManager.getInstance().dispatchEvent(evt);
-		}
-		
-		public function removeBTByIndex(index:int):void
-		{
-			btArray.removeItemAt(index);
-			Data.getInstance().updateEnemyBehaviorsById( 
-				Runtime.getInstance().currentLevelID, editTargetType, btArray.toArray() as Object 
-			);
-			
-			var evt:BehaviorEvent = new BehaviorEvent(BehaviorEvent.BT_REMOVED, index);
-			EventManager.getInstance().dispatchEvent(evt);
-			
-			if(btArray.length > 0)
-			{
-				var currIndex = Math.max(index-1, 0);
-				setCurrEditBehavior(btArray[currIndex]);
-			}
+			if(name)
+				mEditPanel.userPanel.behaviorLabel.text = name;
 			else
-				setCurrEditBehavior("");
-			
+				mEditPanel.userPanel.behaviorLabel.text = "<空行为>";
 		}
 		
-		public function renameBTbyIndex(index:int, bName:String):void
+		public function createNewBehavior(name:String):void
 		{
-			var prevName:String = btArray[index];
-			
-			var data = Data.getInstance().behaviorSet[prevName];
-			delete Data.getInstance().behaviorSet[prevName];
-			Data.getInstance().updateBehaviorSetById( bName, data );
-			
-			btArray.setItemAt(bName, index);
-		}
-		
-		public function saveSelectItem():void
-		{
-			if(!isCreatingNew)
+			if(Data.getInstance().getBehaviorById(name))
 			{
-				if(btArray.length > 0)
-				{
-					save(parPanel.bar.selectedItem, parPanel.editView.export());
-					MsgInform.shared().show(parPanel, "保存成功!");
-				}
-				else
-				{
-					EventManager.getInstance().dispatchEvent(new BehaviorEvent(BehaviorEvent.CREATE_NEW_BT));
-					MsgInform.shared().show(parPanel, "请先输入行为名!");
-				}
+				Alert.show("同名行为已经存在，无法创建");
+				return;
 			}
-			else
-			{
-				MsgInform.shared().show(parPanel, "请先输入行为名!");
-			}
-		}
-		
-		public function save(bName:String, data:Object):void
-		{
-			Data.getInstance().updateBehaviorSetById(bName, data);
-		}
-		
-		public function setCurrEditBehavior(bName:String):void
-		{
-			if(currEditBehavior != "" && bName != currEditBehavior)
-			{
-				save(currEditBehavior, parPanel.editView.export());
-			}
-			currEditBehavior = bName;
-			if(currEditBehavior != "")
-			{
-				parPanel.editView.init( Data.getInstance().getBehaviorById(bName) );
-				parPanel.bar.selectedItem = currEditBehavior;
-			}
-			else
-				parPanel.editView.clear();
-		}
-		
-		private function onNewBT(e:BehaviorEvent):void
-		{
-			if(e.msg != "")
-			{
-				currEditBehavior = "";
-				parPanel.editView.init( Data.getInstance().getBehaviorById(e.msg) );
-			}
-			else if(currEditBehavior != "")
-				this.setCurrEditBehavior("");
 				
-			isCreatingNew = true;
+			// create empty behavior
+			var data:Object = {};
+			Data.getInstance().updateBehaviorSetById(name, data);
+
+			openBehavior(name);
+			
+			mEditPanel.behaviorsPanel.refreshBehaviorData();
 		}
 		
-		private function onCreateDone(e:BehaviorEvent):void
+		public function openBehavior(name:String):void
 		{
-			isCreatingNew = false;
-			setCurrEditBehavior(e.msg);
+			if(name && name != "")
+			{
+				// open tree in edit view
+				var btToOpen = Data.getInstance().getBehaviorById(name)
+				mEditPanel.editView.init(btToOpen);
+							
+				// tab controller should update itself accordingly
+				if(mOpenedBehaviors.getItemIndex(name) == -1)
+					mOpenedBehaviors.addItem(name);
+			
+				mSelectedBehavior = name;
+			}
 		}
 		
-		private function onCreateCancel(e:BehaviorEvent):void
+		public function saveBehavior(name:String):void
 		{
-			isCreatingNew = false;
-			if(btArray.length > 0)
-				setCurrEditBehavior(btArray[0]);
+			if(name && name != "")
+			{
+				var currBehavior:* = mEditPanel.editView.export();
+				Data.getInstance().updateBehaviorSetById(name, currBehavior);
+				MsgInform.shared().show(mEditPanel, "保存成功: " + name);
+			}
+			else
+				MsgInform.shared().show(mEditPanel, "行为名不能为空!");
 		}
 		
+		public function closeBehavior(name:String):void
+		{
+			var index:int = mOpenedBehaviors.getItemIndex(name);
+			if(index != -1)
+			{
+				mOpenedBehaviors.removeItemAt(index);
+				mEditPanel.editView.clear();
+			}
+		}
+
+		public function removeBehavior(name:String):void
+		{	
+			// close its tab if openned
+			closeBehavior(name);
+			
+			// clear current unit's behavior if it's what's being removed
+			if(getUnitBehaviorName() == name)
+				setUnitBehavior("");
+			
+			// find all instances using the behavior and remove the references
+			var enemies:Array = Data.getInstance().findEnemiesByBehavior( 
+				Runtime.getInstance().currentLevelID,
+				name
+			);
+			
+			for(var i:int=0; i<enemies.length; i++)
+			{				
+				Data.getInstance().updateEnemyBehaviorsById( 
+					Runtime.getInstance().currentLevelID, enemies[i], [] 
+				);
+			}
+			
+			// remove it directly from data
+			Data.getInstance().eraseBehaviorById(name);
+			
+			// update tree view
+			mEditPanel.behaviorsPanel.refreshBehaviorData();
+		}
+		
+		public function renameBehavior(fromName:String, toName:String):void
+		{
+			if(fromName == toName)
+				return;
+			
+			if(fromName == "" || toName == "")
+			{
+				Alert.show("行为名不能为空.");
+				return;
+			}
+			
+			if(Data.getInstance().getBehaviorById(toName))
+			{
+				Alert.show("行为名已经存在，无法改名为 " + toName);
+				return;
+			}
+			
+			// if behavior opened, close it
+			closeBehavior(fromName);
+			
+			// save with toName first
+			var behaviorData = Data.getInstance().getBehaviorById(fromName);
+			Data.getInstance().updateBehaviorSetById(toName, behaviorData);
+			
+			setUnitBehavior(toName);
+			
+			// find all instances using the behavior
+			var enemies:Array = Data.getInstance().findEnemiesByBehavior( 
+				Runtime.getInstance().currentLevelID,
+				fromName
+			);
+			
+			// change references to using new names
+			for(var i:int=0; i<enemies.length; i++)
+			{				
+				Data.getInstance().updateEnemyBehaviorsById( 
+					Runtime.getInstance().currentLevelID, enemies[i], [toName] 
+				);
+			}
+			
+			// remove old behavior
+			removeBehavior(fromName);
+			
+			// reopen the toName behavior
+			openBehavior(toName);
+		}
 	}
 }

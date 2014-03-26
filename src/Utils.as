@@ -378,10 +378,9 @@ package
 			);
 			
 			panel.addElement(inputField);
-			panel.addElement( confirmButton );
+			panel.addElement(confirmButton);
 			
 			panel.addEventListener(CloseEvent.CLOSE, function():void {
-				onComplete(null);
 				PopUpManager.removePopUp(panel);
 			});
 			

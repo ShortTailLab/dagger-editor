@@ -21,5 +21,11 @@ package behaviorEdit
 			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
 		}
 		
+		public function removeAllChildren():void
+		{
+			while(childNodes.length > 0)
+				BNode(childNodes.pop()).removeFromView();
+			EventManager.getInstance().dispatchEvent(new BTEvent(BTEvent.TREE_CHANGE));
+		}
 	}
 }
