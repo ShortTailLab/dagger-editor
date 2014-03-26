@@ -51,19 +51,45 @@ package excel
 				loader.close();
 				
 				// do the conversion
-				var skillDict = {};
-				var keyList = grid.row(1);
+				var skillDict:Object = {};
+				var keyList:Array = grid.row(2);
 				
 				// build up json object
-				for(var i:int = 2; i<grid.height; i++)
+				for(var i:int = 3; i<grid.height; i++)
 				{
 					var valList:Array = grid.row(i);
 					var dict:Object = {}
 					
 					for(var k:int=0; k<keyList.length; k++)
-						dict[keyList[k]] = valList[k];
+					{
+						if( valList[k] == "" || keyList[k] == "" ) continue;
+						var val:* = null;
+						try{
+							val = JSON.parse(valList[k]);
+						}catch(e:Error)
+						{
+							val = valList[k];
+						}
+						dict[keyList[k]] = val;
+					}
 					
-					skillDict[dict[keyList[0]]] = dict;
+					if( !skillDict.hasOwnProperty(dict["id"]) )
+						skillDict[ dict["id"] ] = {};
+					skillDict[ dict["id"] ][ dict["level"] ] = dict;
+				}
+				
+				for( var item:String in skillDict )
+				{
+					var max:Number = -1, max_level:int = 1;
+					for( var level:String in skillDict[item] )
+					{
+						if( max < Number(level) )
+						{
+							max = Number(level);
+							max_level = int(level);
+						}
+					}
+					skillDict[item]["max_level"] = max_level;
 				}
 				
 				onComplete(skillDict);
