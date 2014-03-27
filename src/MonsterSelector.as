@@ -1,6 +1,6 @@
 package
 {
-	import BTEdit.CtrlBTEditPanel;
+	import BTEdit.BTPanel;
 	
 	import Trigger.EditTriggers;
 	
@@ -11,6 +11,10 @@ package
 	import flash.events.MouseEvent;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
+	
+	import manager.EventManager;
+	import manager.EventType;
+	import manager.GameEvent;
 	
 	import mapEdit.AreaTrigger;
 	import mapEdit.Component;
@@ -203,6 +207,8 @@ package
 			win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
 		}
 		
+		static private var selectedTarget:Entity;
+		static private var btEdit:BTPanel;
 		static private function OpenBehaviorEditor(target:Entity):void
 		{
 //			var btPanel:BTEditPanel = new BTEditPanel(target);
@@ -210,9 +216,16 @@ package
 //			PopUpManager.centerPopUp(btPanel);
 //			btPanel.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-btPanel.width/2;
 //			btPanel.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-btPanel.height/2;
-			var btEdit:CtrlBTEditPanel = new CtrlBTEditPanel(target);
+			
+			selectedTarget = target;
+			EventManager.getInstance().addEventListener(EventType.BT_EDIT_PANEL_CREATE, onBehaviorEditCreate);
+			btEdit = new BTPanel();
 			PopUpManager.addPopUp(btEdit, MapEditor.getInstance());
-			PopUpManager.centerPopUp(btEdit);
+		}
+		
+		static private function onBehaviorEditCreate(event:GameEvent):void {
+			EventManager.getInstance().removeEventListener(EventType.BT_EDIT_PANEL_CREATE, onBehaviorEditCreate);
+			btEdit.init(selectedTarget, FlexGlobals.topLevelApplication.stage.stageWidth, FlexGlobals.topLevelApplication.stage.stageHeight);
 		}
 	}
 }

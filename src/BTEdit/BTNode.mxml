@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="350" height="205" borderVisible="false" creationComplete="onCreate()"
+				   dropShadowVisible="false">
+	<fx:Script>
+		<![CDATA[
+			import spark.primitives.BitmapImage;
+			
+			private var mCreated:Boolean = false;
+			private var mData:Object;
+			private var mType:int;
+			
+			/** root node, not editable */
+			public static const TYPE_ROOT:int = 1;
+			/** sub bt from other library, not editable */
+			public static const TYPE_SUB_BT:int = 2;
+			/** function node from 6 defined types */
+			public static const TYPE_FUNC:int = 3;
+			/** editable leaf */
+			public static const TYPE_LEAF:int = 4;
+			/** detached node */
+			public static const TYPE_DETACHED:int = 5;
+			
+			private function onCreate():void {
+				this.mCreated = true;
+				if (this.mData) {
+					this.updateComponents();
+				}
+			}
+			
+			private function onPressBtn(event:Event):void {
+				
+			}
+			
+			public function setData(type:int, data:Object):void {
+				this.mType = type;
+				this.mData = data;
+				
+				if (this.mCreated) {
+					this.updateComponents();
+				}
+			}
+			
+			private function updateComponents():void {
+				if (this.mData.length < 1) return;
+				switch (this.mType) {
+					case TYPE_ROOT:
+						var loader:Loader = new Loader();
+						loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onBtnIconLoad);
+						loader.load(new URLRequest("assets/root.png"));
+						break;
+				}
+			}
+			
+			private function onBtnIconLoad(event:Event):void {
+				var bmpData:BitmapData = event.currentTarget.content.bitmapData;
+				this.mBtn.setStyle("icon", bmpData);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer id="mSubContainer" width="250" height="205" backgroundColor="#3A9CFF"
+					   dropShadowVisible="true">
+		<s:Button id="mBtn" width="50" height="50" chromeColor="#FFFFFF" click="onPressBtn(event)"
+				  cornerRadius="0" fontFamily="Arial" fontStyle="normal" fontWeight="normal"
+				  icon="assets/zhixing.png"/>
+		<s:Label id="mName" x="0" y="3" width="100%" color="#FFFFFF" fontSize="20" text="StayOnMap"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:Label id="mVar1" x="0" y="30" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:Label id="mVar2" x="0" y="60" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:TextInput id="mInput1" x="125" y="25" width="50%" textAlign="center"/>
+		<s:TextInput id="mInput2" x="125" y="55" width="50%" textAlign="center"/>
+		<s:TextInput id="mInput3" x="125" y="85" width="50%" textAlign="center"/>
+		<s:TextInput id="mInput4" x="125" y="115" width="50%" textAlign="center"/>
+		<s:TextInput id="mInput5" x="125" y="145" width="50%" textAlign="center"/>
+		<s:TextInput id="mInput6" x="125" y="175" width="50%" textAlign="center"/>
+		<s:Label id="mVar3" x="0" y="90" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:Label id="mVar4" x="0" y="120" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:Label id="mVar5" x="0" y="150" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:Label id="mVar6" x="0" y="180" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+	</s:BorderContainer>
+	<s:Button id="mNext" x="300" y="0" width="50" height="50" label="可接节点" chromeColor="#FFFFFF"
+			  cornerRadius="0" fontFamily="Arial" fontStyle="normal" fontWeight="normal"
+			  icon="assets/wenhao.png"/>
+	<mx:HRule id="mNextLine" x="250" y="25" width="50" chromeColor="#3A9CFF"/>
+</s:BorderContainer>

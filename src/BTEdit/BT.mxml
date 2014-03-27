@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Scroller xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" creationComplete="onCreate()">
+	<fx:Script>
+		<![CDATA[
+			private var mCreated:Boolean = false;
+			private var mData:Object;
+			
+			private function onCreate():void {
+				this.mCreated = true;
+				
+				if (this.mData) {
+					this.updateTree();
+				}
+			}
+			
+			public function setData(data:Object, w:Number, h:Number):void {
+//				this.width = w;
+//				this.height = h;
+				this.mData = data;
+				
+				if (this.mCreated) {
+					this.updateTree();
+				}
+			}
+			
+			private function updateTree():void {
+				var node:BTNode = new BTNode();
+				node.setData(BTNode.TYPE_ROOT, this.mData);
+				this.mContainer.addElement(node);
+				this.mContainer.width = 1000;
+				this.mContainer.height = 1000;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Group>
+		<s:Group id="mContainer" x="0" y="0" width="500" height="600">
+		</s:Group>
+	</s:Group>
+</s:Scroller>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="200" height="106" close="onPressClose(event)" creationComplete="onCreate()">
+	<fx:Script>
+		<![CDATA[
+			import manager.EventManager;
+			import manager.EventType;
+			import manager.GameEvent;
+			
+			import mx.managers.PopUpManager;
+			
+			private var mCreated:Boolean = false;
+			private var mTitle:String;
+			private var mDefault:String;
+			
+			private function onCreate():void {
+				this.title = this.mTitle;
+				this.mInput.text = this.mDefault;
+			}
+			
+			public function setTitle(title:String, defaultText:String):void {
+				this.mTitle = title;
+				this.mDefault = defaultText;
+				if (this.mCreated) {
+					this.title = this.mTitle;
+					this.mInput.text = defaultText;
+				}
+			}
+			
+			private function onPressClose(event:Event):void {
+				var data:Object = {from:this.mDefault, to:null};
+				PopUpManager.removePopUp(this);
+				EventManager.getInstance().dispatchEvent(new GameEvent(EventType.INPUT_DIALOG_CONFIRM, data));
+			}
+			
+			private function onPressOk(event:Event):void {
+				var data:Object = {from:this.mDefault, to:this.mInput.text==""?null:this.mInput.text};
+				PopUpManager.removePopUp(this);
+				EventManager.getInstance().dispatchEvent(new GameEvent(EventType.INPUT_DIALOG_CONFIRM, data));
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:TextInput id="mInput" x="20" y="13" width="80%"/>
+	<s:Button x="64" y="43" label="确定" click="onPressOk(event)"/>
+</s:TitleWindow>

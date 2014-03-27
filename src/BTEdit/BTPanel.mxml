@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="1155" height="800" creationComplete="onCreation()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import manager.EventManager;
+			import manager.EventType;
+			import manager.GameEvent;
+			
+			import mapEdit.Entity;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.Sort;
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.NavigatorContent;
+			
+			private var mTarget:Entity;
+			private var mPhoto:UIComponent;
+			private var mFilteredLibrary:ArrayCollection;
+			private var mTargetBehaviors:Array;
+			/** tab name -> tab */
+			private var mTabDict:Object;
+			private var mTabNames:Array;
+			private var mTabSerial:int = 1;
+			private var mCurrentTab:int = 0;
+			
+			private function onCreation():void {
+				this.mTabDict = new Object();
+				this.mTabNames = new Array();
+				registerContextMenu();
+				EventManager.getInstance().dispatchEvent(new GameEvent(EventType.BT_EDIT_PANEL_CREATE));
+			}
+			
+			public function init(target:Entity, w:Number, h:Number):void {
+				this.width = w;
+				this.height = h;
+				this.mTarget = target;
+				
+				this.setLibrary();
+				this.setCharacterInfo();
+				if (this.mTargetBehaviors.length > 0) {
+					var data:Array = [];
+					for (var i:int = 0; i < this.mTargetBehaviors.length; i++) {
+						data.push(Data.getInstance().getBehaviorById(this.mTargetBehaviors[i]));
+					}
+					this.addTab(this.mTargetBehaviors[0], data);
+				}
+			}
+			
+			private function setLibrary():void {
+				this.mLibrary.addEventListener(MouseEvent.CLICK, onLibraryItemSelect);
+				
+				var menu:ContextMenu = new ContextMenu;
+				var item1:ContextMenuItem = new ContextMenuItem("重命名");
+				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onLibraryItemRename);
+				menu.addItem(item1);
+				var item0:ContextMenuItem = new ContextMenuItem("删除");
+				item0.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onLibraryItemDelete);
+				menu.addItem(item0);;
+				this.mLibrary.contextMenu = menu;
+				
+				this.filterLibrary();
+			}
+			
+			private function filterLibrary(event:Event=null):void {
+				var content:String = this.mSearch.text;
+				var searchContent:RegExp = new RegExp(content, "i");
+				this.mFilteredLibrary = new ArrayCollection();
+				for(var b:String in Data.getInstance().behaviorSet)
+					if(b.search(searchContent) >= 0)
+						this.mFilteredLibrary.addItem(b);
+				this.mFilteredLibrary.sort = new Sort();
+				this.mFilteredLibrary.refresh();
+				
+				this.mLibrary.dataProvider = this.mFilteredLibrary;
+				this.mComboBox.dataProvider = this.mFilteredLibrary;
+				
+				this.mTargetBehaviors = Data.getInstance().getEnemyBehaviorsById(Runtime.getInstance().currentLevelID, this.mTarget.type) as Array;
+				if (this.mTargetBehaviors.length > 0) {
+					for (var i:int = 0; i < this.mFilteredLibrary.length; i++) {
+						if (this.mFilteredLibrary[i] == this.mTargetBehaviors[0]) {
+							this.mComboBox.selectedIndex = i;
+							return;
+						}
+					}
+				}
+				this.mComboBox.selectedIndex = -1;
+				this.mComboBox.textInput.text = "";
+			}
+			
+			private function onLibraryItemSelect(event:Event):void {
+				switchToTab(this.mFilteredLibrary[this.mLibrary.selectedIndex]);
+			}
+			
+			private function onLibraryItemDelete(event:Event):void {
+				if (this.mLibrary.selectedIndex >= 0)
+					Alert.show(
+						"删除库行为会一并删除所有相关的行为，确定删除？", 
+						"警告", 
+						Alert.OK|Alert.CANCEL, 
+						this, 
+						onDeleteClose
+					);
+				else {
+					Alert.show("请先选择要删除的行为");
+				}
+			}
+			
+			private function onDeleteClose(event:CloseEvent):void {
+				if (event.detail == Alert.OK) {
+					removeBehavior(this.mFilteredLibrary[this.mLibrary.selectedIndex]);
+				}
+			}
+			
+			private function removeBehavior(name:String):void {
+				closeTab(name);
+				
+				// find all instances using the behavior and remove the references
+				var enemies:Array = Data.getInstance().findEnemiesByBehavior(Runtime.getInstance().currentLevelID, name);
+				for (var i:int = 0; i < enemies.length; i++) {				
+					Data.getInstance().updateEnemyBehaviorsById( 
+						Runtime.getInstance().currentLevelID, enemies[i], [] 
+					);
+				}
+				
+				// remove it directly from data
+				Data.getInstance().eraseBehaviorById(name);
+				this.filterLibrary();
+			}
+			
+			private function onLibraryItemRename(event:Event):void {
+				if (this.mLibrary.selectedIndex < 0) return;
+				EventManager.getInstance().addEventListener(EventType.INPUT_DIALOG_CONFIRM, renameBehavior);
+				var input:InputDialog = new InputDialog();
+				input.setTitle("重命名行为", this.mFilteredLibrary[this.mLibrary.selectedIndex]);
+				PopUpManager.addPopUp(input, MapEditor.getInstance());
+				PopUpManager.centerPopUp(input);
+			}
+			
+			private function renameBehavior(event:GameEvent):void {
+				EventManager.getInstance().removeEventListener(EventType.INPUT_DIALOG_CONFIRM, renameBehavior);
+				if (event.data.from == event.data.to || event.data.to==null)
+					return;
+				
+				if (Data.getInstance().getBehaviorById(event.data.to)) {
+					Alert.show("行为名已经存在，无法改名为 " + event.data.to);
+					return;
+				}
+				
+				renameTab(event.data.from, event.data.to);
+				
+				// save with toName first
+				var behaviorData:Object = Data.getInstance().getBehaviorById(event.data.from);
+				Data.getInstance().updateBehaviorSetById(event.data.to, behaviorData);
+				
+				// find all instances using the behavior
+				var enemies:Array = Data.getInstance().findEnemiesByBehavior(Runtime.getInstance().currentLevelID, event.data.from);
+				
+				// change references to using new names
+				for (var i:int = 0; i < enemies.length; i++) {				
+					Data.getInstance().updateEnemyBehaviorsById( 
+						Runtime.getInstance().currentLevelID, enemies[i], [event.data.to] 
+					);
+				}
+				
+				// remove old behavior
+				removeBehavior(event.data.from);
+			}
+			
+			private function setCharacterInfo():void {
+				var profile:Object = Data.getInstance().getEnemyProfileById(this.mTarget.type);
+				var bitmapData:BitmapData = Data.getInstance().getSkinById(profile.face);
+				this.mPhoto = new UIComponent();
+				if (bitmapData) {
+					var bmp:Bitmap = new Bitmap(bitmapData);
+					bmp.x = bmp.width/2;
+					bmp.y = bmp.height/2;
+					this.mPhoto.addChild(bmp);
+				} 
+				else {
+					var tf:TextField = new TextField();
+					tf.defaultTextFormat = new TextFormat("Missing Photo", 14, 0xFF0000, true);
+					tf.x = tf.width/2;
+					tf.y = tf.height/2;
+					this.mPhoto.addChild(tf);
+				}
+				this.mPhotoContainer.addElement(this.mPhoto);
+			}
+			
+			private function onPressClose(event:Event):void {
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function onSelectBehavior(event:Event):void {
+				var val:Array = [this.mFilteredLibrary[this.mComboBox.selectedIndex]];
+				Data.getInstance().updateEnemyBehaviorsById(Runtime.getInstance().currentLevelID, this.mTarget.type, val);
+			}
+			
+			private function onPressSave(event:Event):void {
+				
+			}
+			
+			private function onPressSaveAll(event:Event):void {
+				
+			}
+			
+			private function onPressApply(event:Event):void {
+				
+			}
+			
+			private function onPressAutoLayout(event:Event):void {
+				
+			}
+			
+			private function onSearchChanged(event:Event):void {
+				this.filterLibrary();
+			}
+			
+			private function onPressNewTab(event:Event):void {
+				for (var i:int = 0; i < this.mFilteredLibrary.length; i++) {
+					if ((this.mFilteredLibrary[i] as String).indexOf("新行为") === 0) {
+						var str:String = (this.mFilteredLibrary[i] as String).substr(3);
+						var num:int = int(str);
+						if (num >= this.mTabSerial) {
+							this.mTabSerial = num+1;
+						}
+					}
+				}
+				addTab("新行为"+this.mTabSerial, []);
+				this.mTabSerial++;
+			}
+			
+			private function onPressNode1(event:Event):void {
+				
+			}
+			
+			private function onPressNode2(event:Event):void {
+				
+			}
+			
+			private function onPressNode3(event:Event):void {
+				
+			}
+			
+			private function onPressNode4(event:Event):void {
+				
+			}
+			
+			private function onPressNode5(event:Event):void {
+				
+			}
+			
+			private function onPressNode6(event:Event):void {
+				
+			}
+			
+			private function addTab(name:String, data:Object):void {
+				var tab:NavigatorContent;
+				if (this.mTabDict[name]) {
+					tab = this.mTabDict[name].tab;
+					tab.removeAllElements();
+				}
+				else {
+					tab = new NavigatorContent();
+					this.mTabNavigator.addElement(tab);
+					this.mTabNames.push(name);
+				}
+				
+				var tree:BT = new BT();
+				tree.setData(data, this.mTabNavigator.width, this.mTabNavigator.height);
+				tab.addElement(tree);
+				tab.label = name;
+				var index:int = this.mTabNames.indexOf(name);
+				this.mTabNavigator.selectedIndex = index;
+
+				this.mTabDict[name] = {tab:tab, modified:false};
+			}
+			
+			private function registerContextMenu():void {
+				var menu:ContextMenu = new ContextMenu;
+				var item:ContextMenuItem = new ContextMenuItem("关闭");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCloseTabMenu);
+				menu.addItem(item);
+				this.mTabNavigator.contextMenu = menu;
+			}
+			
+			private function onCloseTabMenu(event:Event):void {
+				if (this.mTabNavigator.selectedIndex >= 0 && this.mTabNames.length > 0) {
+					this.closeTab(this.mTabNames[this.mTabNavigator.selectedIndex]);
+				}
+			}
+			
+			private function closeTab(name:String):void {
+				if (this.mTabDict[name]) {
+					this.mTabNavigator.removeChild(this.mTabDict[name].tab);
+					this.mTabNames.splice(this.mTabNames.indexOf(name), 1);
+					delete this.mTabDict[name];
+				}
+			}
+			
+			private function renameTab(from:String, to:String):void {
+				if (this.mTabDict[from]) {
+					var index:int = this.mTabNames.indexOf(from);
+					this.mTabNames[index] = to;
+					var info:Object = this.mTabDict[from];
+					this.mTabDict[to] = info;
+					info.tab.label = to+(info.modified?"*":"");
+					this.mTabDict[from] = null;
+					delete this.mTabDict[from];
+				}
+			}
+			
+			private function switchToTab(name:String):void {
+				var index:int = this.mTabNames.indexOf(name);
+				if (index >= 0) {
+					this.mTabNavigator.selectedIndex = index;
+				}
+				else {
+					this.addTab(name, Data.getInstance().getBehaviorById(name));
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Button right="0" top="0" width="30" height="20" label="x" click="onPressClose(event)"/>
+	<s:HGroup x="0" y="0" width="100%" height="30">
+		<s:Button width="80" height="25" label="保存当前" click="onPressSave(event)"/>
+		<s:Button width="80" height="25" label="保存所有" click="onPressSaveAll(event)"/>
+		<s:Button width="100" height="25" label="使用当前行为" click="onPressApply(event)"/>
+		<s:Button width="80" height="25" label="重排行为树" click="onPressAutoLayout(event)"/>
+	</s:HGroup>
+	<s:HGroup left="0" top="30" width="100%" height="100%" gap="5">
+		<s:VGroup width="170" height="100%" gap="0">
+			<s:Panel width="100%" height="250" borderVisible="false" dropShadowVisible="false"
+					 title="角色信息">
+				<s:Group id="mPhotoContainer" x="0" y="0" width="100%" height="185">
+				</s:Group>
+				<s:ComboBox id="mComboBox" right="0" bottom="5" width="130" change="onSelectBehavior(event)"/>
+				<s:Label left="5" bottom="10" fontSize="14" text="行为"/>
+			</s:Panel>
+			<s:Panel width="100%" height="100%" borderVisible="false" dropShadowVisible="false"
+					 title="行为库">
+				<s:HGroup x="0" y="0" width="100%" height="100%" gap="0">
+					<s:VGroup width="100%" height="100%" gap="0">
+						<s:TextInput id="mSearch" width="100%" change="onSearchChanged(event)"/>
+						<s:List id="mLibrary" width="100%" height="100%"></s:List>
+					</s:VGroup>
+				</s:HGroup>
+			</s:Panel>
+		</s:VGroup>
+		<s:VGroup width="100%" height="100%" gap="5">
+			<s:HGroup width="100%" height="50" gap="20" paddingLeft="0">
+				<s:Button width="50" height="50" label="增加执行节点" chromeColor="#FFFFFF" buttonMode="true"
+						  click="onPressNode1(event)" cornerRadius="0" fontFamily="Arial"
+						  fontStyle="normal" fontWeight="normal" icon="assets/zhixing.png"/>
+				<s:Button width="50" height="50" label="增加顺序节点" chromeColor="#FFFFFF" buttonMode="true"
+						  click="onPressNode2(event)" cornerRadius="0" fontFamily="Arial"
+						  fontStyle="normal" fontWeight="normal" icon="assets/shunxu.png"/>
+				<s:Button width="50" height="50" label="增加优先节点" chromeColor="#FFFFFF" buttonMode="true"
+						  click="onPressNode3(event)" cornerRadius="0" fontFamily="Arial" 
+						  fontStyle="normal" fontWeight="normal" icon="assets/youxian.png"/>
+				<s:Button width="50" height="50" label="增加同步节点" chromeColor="#FFFFFF" buttonMode="true"
+						  click="onPressNode4(event)" cornerRadius="0" fontFamily="Arial"
+						  fontStyle="normal" fontWeight="normal" icon="assets/tongbu.png"/>
+				<s:Button width="50" height="50" label="增加条件节点" chromeColor="#FFFFFF" buttonMode="true"
+						  click="onPressNode5(event)" cornerRadius="0" fontFamily="Arial"
+						  fontStyle="normal" fontWeight="normal" icon="assets/tiaojian.png"/>
+				<s:Button width="50" height="50" label="增加循环节点" chromeColor="#FFFFFF" buttonMode="true"
+						  click="onPressNode6(event)" cornerRadius="0" fontFamily="Arial"
+						  fontStyle="normal" fontWeight="normal" icon="assets/xunhuan.png"/>
+			</s:HGroup>
+			<s:Group width="100%" height="100%">
+				<mx:TabNavigator id="mTabNavigator" x="0" y="0" width="100%" height="100%"
+								 paddingTop="0">
+				</mx:TabNavigator>
+				<s:Button right="0" top="0" width="30" label="+" click="onPressNewTab(event)"/>
+			</s:Group>
+		</s:VGroup>
+	</s:HGroup>
+</s:WindowedApplication>
