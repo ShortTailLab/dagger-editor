@@ -30,7 +30,6 @@
 			private var mTabDict:Object;
 			private var mTabNames:Array;
 			private var mTabSerial:int = 1;
-			private var mCurrentTab:int = 0;
 			
 			private function onCreation():void {
 				this.mTabDict = new Object();
@@ -97,18 +96,14 @@
 			}
 			
 			private function onLibraryItemSelect(event:Event):void {
-				switchToTab(this.mFilteredLibrary[this.mLibrary.selectedIndex]);
+				if (this.mLibrary.selectedIndex >= 0) {
+					switchToTab(this.mFilteredLibrary[this.mLibrary.selectedIndex]);
+				}
 			}
 			
 			private function onLibraryItemDelete(event:Event):void {
 				if (this.mLibrary.selectedIndex >= 0)
-					Alert.show(
-						"删除库行为会一并删除所有相关的行为，确定删除？", 
-						"警告", 
-						Alert.OK|Alert.CANCEL, 
-						this, 
-						onDeleteClose
-					);
+					Alert.show("删除库行为会一并删除所有相关的行为，确定删除？", "警告", Alert.OK|Alert.CANCEL, this, onDeleteClose);
 				else {
 					Alert.show("请先选择要删除的行为");
 				}
@@ -275,13 +270,15 @@
 				}
 				
 				var tree:BT = new BT();
-				tree.setData(data, this.mTabNavigator.width, this.mTabNavigator.height);
+				tree.setData(name, data);
 				tab.addElement(tree);
-				tab.label = name;
+				var modified:Boolean = Data.getInstance().behaviorSet[name]==null?true:false;
+				
+				tab.label = name+(modified?"*":"");
 				var index:int = this.mTabNames.indexOf(name);
 				this.mTabNavigator.selectedIndex = index;
 
-				this.mTabDict[name] = {tab:tab, modified:false};
+				this.mTabDict[name] = {tab:tab, modified:modified};
 			}
 			
 			private function registerContextMenu():void {
@@ -294,7 +291,19 @@
 			
 			private function onCloseTabMenu(event:Event):void {
 				if (this.mTabNavigator.selectedIndex >= 0 && this.mTabNames.length > 0) {
-					this.closeTab(this.mTabNames[this.mTabNavigator.selectedIndex]);
+					if (this.mTabDict[this.mTabNames[this.mTabNavigator.selectedIndex]].modified) {
+						Alert.show(this.mTabNames[this.mTabNavigator.selectedIndex]+" 有修改尚未保存，确定关闭？", "警告", Alert.OK|Alert.CANCEL, this, onConfirmClose);
+					}
+					else {
+						this.closeTab(this.mTabNames[this.mTabNavigator.selectedIndex]);
+					}
+				}
+			}
+			
+			private function onConfirmClose(event:CloseEvent):void {
+				if (event.detail == Alert.OK) {
+					var name:String = this.mTabNames[this.mTabNavigator.selectedIndex]
+					this.closeTab(name);
 				}
 			}
 			

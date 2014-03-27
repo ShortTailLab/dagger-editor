@@ -6,6 +6,7 @@
 		<![CDATA[
 			private var mCreated:Boolean = false;
 			private var mData:Object;
+			private var mName:String;
 			
 			private function onCreate():void {
 				this.mCreated = true;
@@ -15,10 +16,9 @@
 				}
 			}
 			
-			public function setData(data:Object, w:Number, h:Number):void {
-//				this.width = w;
-//				this.height = h;
+			public function setData(name:String, data:Object):void {
 				this.mData = data;
+				this.mName = name;
 				
 				if (this.mCreated) {
 					this.updateTree();
