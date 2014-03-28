@@ -12,8 +12,6 @@
 			
 			import mx.managers.PopUpManager;
 			
-			import spark.primitives.BitmapImage;
-			
 			private var mCreated:Boolean = false;
 			private var mData:Object;
 			private var mType:int;
@@ -29,7 +27,16 @@
 			/** detached node */
 			public static const TYPE_DETACHED:int = 5;
 			
+			public static const FUNC_NODE_EXEC:String = "执行";
+			public static const FUNC_NODE_SEQ:String = "顺序";
+			public static const FUNC_NODE_PRIO:String = "优先";
+			public static const FUNC_NODE_SPAWN:String = "同步";
+			public static const FUNC_NODE_COND:String = "条件";
+			public static const FUNC_NODE_LOOP:String = "循环";
+			
 			private var mChildrens:Vector.<BTNode>;
+			private var mParent:BTNode;
+			private var mCanvas:BT;
 			
 			private function onCreate():void {
 				this.mCreated = true;
@@ -38,9 +45,11 @@
 				}
 			}
 			
-			public function setData(type:int, data:Object):void {
+			public function setData(type:int, data:Object, canvas:BT, parent:BTNode=null):void {
 				this.mType = type;
 				this.mData = data;
+				this.mCanvas = canvas;
+				this.mParent = parent;
 				
 				if (this.mCreated) {
 					this.updateComponents();
@@ -48,6 +57,8 @@
 			}
 			
 			private function updateComponents():void {
+				this.mCanvas.addChild(this);
+				
 				if (this.mData.length < 1) return;
 				switch (this.mType) {
 					case TYPE_ROOT:
@@ -81,15 +92,21 @@
 			}
 			
 			private function onPressBtn(event:Event):void {
+				if (this.mType == TYPE_ROOT) return;
 				EventManager.getInstance().addEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNodeSelected);
 				var selection:BTNodeSelection = new BTNodeSelection();
 				PopUpManager.addPopUp(selection, MapEditor.getInstance());
 				PopUpManager.centerPopUp(selection);
 			}
 			
+			public function checkParentsType(type:String):Boolean {
+				return true;
+			}
+			
 			private function onNodeSelected(event:GameEvent):void {
 				EventManager.getInstance().removeEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNodeSelected);
-
+				if (!event.data) return;
+				
 			}
 		]]>
 	</fx:Script>

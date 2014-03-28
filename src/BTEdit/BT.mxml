@@ -27,10 +27,13 @@
 			
 			private function updateTree():void {
 				var node:BTNode = new BTNode();
-				node.setData(BTNode.TYPE_ROOT, this.mData);
-				this.mContainer.addElement(node);
+				node.setData(BTNode.TYPE_ROOT, this.mData, this, null);
 				this.mContainer.width = 1000;
 				this.mContainer.height = 1000;
+			}
+			
+			private function addNode(node:BTNode):void {
+				this.mContainer.addElement(node);
 			}
 		]]>
 	</fx:Script>
