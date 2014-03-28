@@ -7,6 +7,7 @@
 			private var mCreated:Boolean = false;
 			private var mData:Object;
 			private var mName:String;
+			private var mPanel:BTPanel;
 			
 			private function onCreate():void {
 				this.mCreated = true;
@@ -16,9 +17,10 @@
 				}
 			}
 			
-			public function setData(name:String, data:Object):void {
+			public function setData(name:String, data:Object, panel:BTPanel):void {
 				this.mData = data;
 				this.mName = name;
+				this.mPanel = panel;
 				
 				if (this.mCreated) {
 					this.updateTree();
@@ -27,13 +29,32 @@
 			
 			private function updateTree():void {
 				var node:BTNode = new BTNode();
-				node.setData(BTNode.TYPE_ROOT, this.mData, this, null);
-				this.mContainer.width = 1000;
-				this.mContainer.height = 1000;
+				node.setData(BTNode.TYPE_ROOT, this.mName, this.mData[0], this, null);
+				this.addNodeToCanvas(node);
+				this.mContainer.width = 2000;
+				this.mContainer.height = 2000;
 			}
 			
-			private function addNode(node:BTNode):void {
-				this.mContainer.addElement(node);
+			public function addNodeToCanvas(node:BTNode):void {
+				if (!this.mContainer.contains(node)) {
+					this.mContainer.addElement(node);
+					node.x = node.nodeDepth*300;
+					node.y = node.siblingIndex*200;
+				}
+			}
+			
+			public function removeNodeFromCanvas(node:BTNode):void {
+				if (this.mContainer.contains(node)) {
+					this.mContainer.removeElement(node);
+				}
+			}
+			
+			public function setModified(bool:Boolean):void {
+				this.mPanel.setTabModified(this.mName, bool);
+			}
+			
+			public function rename(to:String):void {
+				this.mName = to;
 			}
 		]]>
 	</fx:Script>

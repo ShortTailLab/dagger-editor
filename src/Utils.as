@@ -1,5 +1,9 @@
 package 
 {
+	import behaviorEdit.BType;
+	
+	import by.blooddy.crypto.MD5;
+	
 	import flash.display.DisplayObject;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
@@ -21,10 +25,6 @@ package
 	import spark.components.Button;
 	import spark.components.ComboBox;
 	import spark.events.IndexChangeEvent;
-	
-	import behaviorEdit.BType;
-	
-	import by.blooddy.crypto.MD5;
 
 	public class Utils
 	{
@@ -415,6 +415,10 @@ package
 			
 			if( m>0 ) return m+"m"+s+"s";
 			return s+"s";
+		}
+		
+		static public function cloneObjectData(data:Object):Object {
+			return JSON.parse(JSON.stringify(data));
 		}
 	}
 }

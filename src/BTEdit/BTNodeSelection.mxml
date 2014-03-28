@@ -2,7 +2,8 @@
 <s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
 			   xmlns:s="library://ns.adobe.com/flex/spark"
 			   xmlns:mx="library://ns.adobe.com/flex/mx"
-			   width="400" height="600" close="onPressClose(event)" creationComplete="onCreate()">
+			   width="400" height="600" close="onPressClose(event)" creationComplete="onCreate()"
+			   title="更换节点行为类型">
 	<fx:Script>
 		<![CDATA[
 			import manager.EventManager;
@@ -53,42 +54,42 @@
 			}
 			
 			private function onSelectNode(event:ListEvent):void {
-				mSelectedData = {type:1, name:this.mTab1Data[event.rowIndex]};
+				mSelectedData = {type:BTNode.TYPE_EXEC, name:this.mTab1Data[event.rowIndex]};
 				this.onPressClose();
 			}
 			
 			private function onSelectLibrary(event:IndexChangeEvent):void {
-				mSelectedData = {type:3, name:this.mTab3Data[event.newIndex]};
+				mSelectedData = {type:BTNode.TYPE_SUB_BT, name:this.mTab3Data[event.newIndex]};
 				this.onPressClose();
 			}
 			
 			private function onPressFunc1(event:MouseEvent):void {
-				mSelectedData = {type:2, name:BTNode.FUNC_NODE_EXEC};
+				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_EXEC};
 				this.onPressClose();
 			}
 			
 			private function onPressFunc2(event:MouseEvent):void {
-				mSelectedData = {type:2, name:BTNode.FUNC_NODE_SEQ};
+				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_SEQ};
 				this.onPressClose();
 			}
 
 			private function onPressFunc3(event:MouseEvent):void {
-				mSelectedData = {type:2, name:BTNode.FUNC_NODE_PRIO};
+				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_PRIO};
 				this.onPressClose();
 			}
 			
 			private function onPressFunc4(event:MouseEvent):void {
-				mSelectedData = {type:2, name:BTNode.FUNC_NODE_SPAWN};
+				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_SPAWN};
 				this.onPressClose();
 			}
 			
 			private function onPressFunc5(event:MouseEvent):void {
-				mSelectedData = {type:2, name:BTNode.FUNC_NODE_COND};
+				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_COND};
 				this.onPressClose();
 			}
 			
 			private function onPressFunc6(event:MouseEvent):void {
-				mSelectedData = {type:2, name:BTNode.FUNC_NODE_LOOP};
+				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_LOOP};
 				this.onPressClose();
 			}
 		]]>
@@ -111,17 +112,17 @@
 		<s:NavigatorContent width="100%" height="100%" label="功能节点">
 			<s:VGroup x="0" y="0" width="100%" height="100%" gap="20">
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc1(event)" buttonMode="true"
-						  icon="assets/zhixing.png"/>
+						  chromeColor="#FFFFFF" icon="assets/zhixing.png"/>
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc2(event)" buttonMode="true"
-						  icon="assets/shunxu.png"/>
+						  chromeColor="#FFFFFF" icon="assets/shunxu.png"/>
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc3(event)" buttonMode="true"
-						  icon="assets/youxian.png"/>
+						  chromeColor="#FFFFFF" icon="assets/youxian.png"/>
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc4(event)" buttonMode="true"
-						  icon="assets/tongbu.png"/>
+						  chromeColor="#FFFFFF" icon="assets/tongbu.png"/>
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc5(event)" buttonMode="true"
-						  icon="assets/tiaojian.png"/>
+						  chromeColor="#FFFFFF" icon="assets/tiaojian.png"/>
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc6(event)" buttonMode="true"
-						  icon="assets/xunhuan.png"/>
+						  chromeColor="#FFFFFF" icon="assets/xunhuan.png"/>
 			</s:VGroup>
 		</s:NavigatorContent>
 		<s:NavigatorContent width="100%" height="100%" label="行为库">

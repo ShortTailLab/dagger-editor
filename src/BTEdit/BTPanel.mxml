@@ -31,6 +31,15 @@
 			private var mTabNames:Array;
 			private var mTabSerial:int = 1;
 			
+			[Embed(source="assets/root.png")] public static const ICON_ROOT:Class;
+			[Embed(source="assets/zhixing.png")] public static const ICON_EXEC:Class;
+			[Embed(source="assets/shunxu.png")] public static const ICON_SEQ:Class;
+			[Embed(source="assets/youxian.png")] public static const ICON_PRIO:Class;
+			[Embed(source="assets/tongbu.png")] public static const ICON_SPAWN:Class;
+			[Embed(source="assets/tiaojian.png")] public static const ICON_COND:Class;
+			[Embed(source="assets/xunhuan.png")] public static const ICON_LOOP:Class;
+			[Embed(source="assets/subtree.png")] public static const ICON_SUBTREE:Class;
+			
 			private function onCreation():void {
 				this.mTabDict = new Object();
 				this.mTabNames = new Array();
@@ -50,7 +59,7 @@
 					for (var i:int = 0; i < this.mTargetBehaviors.length; i++) {
 						data.push(Data.getInstance().getBehaviorById(this.mTargetBehaviors[i]));
 					}
-					this.addTab(this.mTargetBehaviors[0], data);
+					this.addTab(this.mTargetBehaviors[0], Utils.cloneObjectData(data));
 				}
 			}
 			
@@ -229,7 +238,7 @@
 						}
 					}
 				}
-				addTab("新行为"+this.mTabSerial, []);
+				addTab("新行为"+this.mTabSerial, [{}]);
 				this.mTabSerial++;
 			}
 			
@@ -270,7 +279,7 @@
 				}
 				
 				var tree:BT = new BT();
-				tree.setData(name, data);
+				tree.setData(name, data, this);
 				tab.addElement(tree);
 				var modified:Boolean = Data.getInstance().behaviorSet[name]==null?true:false;
 				
@@ -278,13 +287,26 @@
 				var index:int = this.mTabNames.indexOf(name);
 				this.mTabNavigator.selectedIndex = index;
 
-				this.mTabDict[name] = {tab:tab, modified:modified};
+				this.mTabDict[name] = {tab:tab, modified:modified, bt:tree};
+			}
+			
+			public function setTabModified(name:String, modified:Boolean):void {
+				if (this.mTabDict[name]) {
+					this.mTabDict[name].modified = true;
+					this.mTabDict[name].tab.label = name+(modified?"*":"");
+				}
 			}
 			
 			private function registerContextMenu():void {
 				var menu:ContextMenu = new ContextMenu;
-				var item:ContextMenuItem = new ContextMenuItem("关闭");
+				var item:ContextMenuItem = new ContextMenuItem("关闭当前");
 				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCloseTabMenu);
+				menu.addItem(item);
+				item = new ContextMenuItem("关闭所有");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCloseAllTabsMenu);
+				menu.addItem(item);
+				item = new ContextMenuItem("关闭其他");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCloseOtherTabsMenu);
 				menu.addItem(item);
 				this.mTabNavigator.contextMenu = menu;
 			}
@@ -298,6 +320,14 @@
 						this.closeTab(this.mTabNames[this.mTabNavigator.selectedIndex]);
 					}
 				}
+			}
+			
+			private function onCloseAllTabsMenu(event:Event):void {
+				
+			}
+			
+			private function onCloseOtherTabsMenu(event:Event):void {
+				
 			}
 			
 			private function onConfirmClose(event:CloseEvent):void {
@@ -322,6 +352,7 @@
 					var info:Object = this.mTabDict[from];
 					this.mTabDict[to] = info;
 					info.tab.label = to+(info.modified?"*":"");
+					info.bt.rename(to);
 					this.mTabDict[from] = null;
 					delete this.mTabDict[from];
 				}
@@ -333,7 +364,7 @@
 					this.mTabNavigator.selectedIndex = index;
 				}
 				else {
-					this.addTab(name, Data.getInstance().getBehaviorById(name));
+					this.addTab(name, [ Utils.cloneObjectData(Data.getInstance().getBehaviorById(name)) ]);
 				}
 			}
 		]]>
@@ -369,22 +400,22 @@
 			<s:HGroup width="100%" height="50" gap="20" paddingLeft="0">
 				<s:Button width="50" height="50" label="增加执行节点" chromeColor="#FFFFFF" buttonMode="true"
 						  click="onPressNode1(event)" cornerRadius="0" fontFamily="Arial"
-						  fontStyle="normal" fontWeight="normal" icon="assets/zhixing.png"/>
+						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/zhixing.png')"/>
 				<s:Button width="50" height="50" label="增加顺序节点" chromeColor="#FFFFFF" buttonMode="true"
 						  click="onPressNode2(event)" cornerRadius="0" fontFamily="Arial"
-						  fontStyle="normal" fontWeight="normal" icon="assets/shunxu.png"/>
+						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/shunxu.png')"/>
 				<s:Button width="50" height="50" label="增加优先节点" chromeColor="#FFFFFF" buttonMode="true"
 						  click="onPressNode3(event)" cornerRadius="0" fontFamily="Arial" 
-						  fontStyle="normal" fontWeight="normal" icon="assets/youxian.png"/>
+						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/youxian.png')"/>
 				<s:Button width="50" height="50" label="增加同步节点" chromeColor="#FFFFFF" buttonMode="true"
 						  click="onPressNode4(event)" cornerRadius="0" fontFamily="Arial"
-						  fontStyle="normal" fontWeight="normal" icon="assets/tongbu.png"/>
+						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/tongbu.png')"/>
 				<s:Button width="50" height="50" label="增加条件节点" chromeColor="#FFFFFF" buttonMode="true"
 						  click="onPressNode5(event)" cornerRadius="0" fontFamily="Arial"
-						  fontStyle="normal" fontWeight="normal" icon="assets/tiaojian.png"/>
+						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/tiaojian.png')"/>
 				<s:Button width="50" height="50" label="增加循环节点" chromeColor="#FFFFFF" buttonMode="true"
 						  click="onPressNode6(event)" cornerRadius="0" fontFamily="Arial"
-						  fontStyle="normal" fontWeight="normal" icon="assets/xunhuan.png"/>
+						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/xunhuan.png')"/>
 			</s:HGroup>
 			<s:Group width="100%" height="100%">
 				<mx:TabNavigator id="mTabNavigator" x="0" y="0" width="100%" height="100%"
