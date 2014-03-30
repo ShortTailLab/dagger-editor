@@ -88,7 +88,8 @@
 			
 			private function onCopyNode(event:Event):void {
 				trace(JSON.stringify(this.rootNode.nodeData));
-				BTPanel.CLIPPING = this.mData;
+				BTPanel.CLIPPING = Utils.cloneObjectData(this.mData);
+				trace("clipping data "+JSON.stringify(this.mData));
 			}
 			
 			private function onDeleteNode(event:Event):void {
@@ -123,6 +124,7 @@
 						this.updateComponents();
 					}
 				}
+				this.mCanvas.setModified(true);
 			}
 			
 			private function onUnlockNode(event:Event):void {
@@ -141,41 +143,44 @@
 					root.nodeParent.updateComponents();
 					root.clearChildrens();
 					this.mCanvas.removeNodeFromCanvas(root);
+					this.mCanvas.setModified(true);
 				}
 			}
 			
 			private function onPasteNode(event:Event):void {
 				if (BTPanel.CLIPPING) {
+					var clipping:Object = Utils.cloneObjectData(BTPanel.CLIPPING);
 					if (this.isInSubBT()) {
 						if (this.type == TYPE_ROOT) {
-							this.mParent.clearChildrens();
+							this.mCanvas.setModified(true);
 							if (this.mParent.type == TYPE_ROOT) {
-								this.mParent.nodeData = BTPanel.CLIPPING;
+								this.mParent.nodeData = clipping;
+								this.mParent.clearChildrens();
 							}
 							else {
 								var index:int = this.mParent.mChildrens.indexOf(this);
-								this.mParent.nodeData.children[index] = BTPanel.CLIPPING;
+								this.mParent.nodeData.children[index] = clipping;
 							}
 							this.mParent.updateComponents();
 						}
 					}
 					else {
+						this.mCanvas.setModified(true);
 						if (!this.mParent) {
+							this.mData = clipping;
 							this.clearChildrens();
-							this.mData = BTPanel.CLIPPING;
 							this.updateComponents();
 						}
 						else {
-							this.mParent.clearChildrens();
 							if (this.mParent.type == TYPE_ROOT) {
-								this.mParent.nodeData = BTPanel.CLIPPING;
-								this.mParent.updateComponents();
+								this.mParent.nodeData = clipping;
+								this.mParent.clearChildrens();
 							}
 							else {
 								index = this.mParent.mChildrens.indexOf(this);
-								this.mParent.nodeData.children[index] = BTPanel.CLIPPING;
-								this.mParent.updateComponents();
+								this.mParent.nodeData.children[index] = clipping;
 							}
+							this.mParent.updateComponents();
 						}
 					}
 				}
@@ -183,7 +188,16 @@
 			
 			private function onPasteNodeToNext(event:Event):void {
 				if (BTPanel.CLIPPING) {
-					
+					var clipping:Object = Utils.cloneObjectData(BTPanel.CLIPPING);
+					if (this.type == TYPE_ROOT) {
+						this.mData = clipping;
+					}
+					else {
+						this.mData.children.push(clipping);
+					}
+					this.writeDataBackToParent();
+					this.mCanvas.setModified(true);
+					this.updateComponents();
 				}
 			}
 			
@@ -367,7 +381,9 @@
 						}
 						else if (this.mData.subTree) {
 							child = new BTNode();
+							this.mChildrens.push(child);
 							var subTreeData:Object = Utils.cloneObjectData(Data.getInstance().behaviorSet[this.mData.subTree]);
+							child.isSubBT = true;
 							child.setData(TYPE_ROOT, this.mData.subTree, subTreeData, this.mCanvas, this);
 							this.mCanvas.addNodeToCanvas(child);
 						}
@@ -541,7 +557,7 @@
 			public function get siblingIndex():int {
 				if (this.mParent) { 
 					var index:int = this.mParent.nodeChildrens.indexOf(this);
-					if (index == 0) {
+					if (index <= 0) {
 						return this.mParent.siblingIndex;
 					}
 					else {
