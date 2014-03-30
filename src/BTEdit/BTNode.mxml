@@ -10,6 +10,7 @@
 			import manager.EventType;
 			import manager.GameEvent;
 			
+			import mx.controls.Alert;
 			import mx.managers.PopUpManager;
 			
 			private var mCreated:Boolean = false;
@@ -60,6 +61,9 @@
 				var item:ContextMenuItem = new ContextMenuItem("复制");
 				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCopyNode);
 				menu.addItem(item);
+				item = new ContextMenuItem("粘贴");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteNode);
+				menu.addItem(item);
 				var item1:ContextMenuItem = new ContextMenuItem("删除");
 				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteNode);
 				menu.addItem(item1);
@@ -68,21 +72,119 @@
 				menu.addItem(item2);
 				this.mSubContainer.contextMenu = menu;
 				
+				menu = new ContextMenu();
+				item = new ContextMenuItem("更换");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPressNext);
+				menu.addItem(item);
+				item = new ContextMenuItem("粘贴");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteNodeToNext);
+				menu.addItem(item);
+				this.mNext.contextMenu = menu;
+				
 				if (this.mData) {
 					this.updateComponents();
 				}
 			}
 			
 			private function onCopyNode(event:Event):void {
-				
+				trace(JSON.stringify(this.rootNode.nodeData));
+				BTPanel.CLIPPING = this.mData;
 			}
 			
 			private function onDeleteNode(event:Event):void {
-				
+				if (this.isInSubBT()) {
+					var root:BTNode = this.rootSubBT;
+					if (root.nodeParent.type == TYPE_ROOT) {
+						root.nodeParent.nodeData = {type:"执行", children:[], data:null};
+					}
+					else {
+						var index:int = root.nodeParent.nodeChildrens.indexOf(root);
+						root.nodeParent.nodeData.children.splice(index, 1);
+					}
+					root.nodeParent.updateComponents();
+					root.clearChildrens();
+					this.mCanvas.removeNodeFromCanvas(root);
+				}
+				else {
+					this.clearChildrens();
+					if (this.mParent) {
+						this.mCanvas.removeNodeFromCanvas(this);
+						if (this.mParent.type == TYPE_ROOT && this.mParent.nodeChildrens.length == 1) {
+							this.mParent.nodeData = {type:"执行", children:[], data:null};
+						}
+						else {
+							index = this.mParent.nodeChildrens.indexOf(this);
+							this.mParent.nodeData.children.splice(index, 1);
+						}
+						this.mParent.updateComponents();
+					}
+					else {
+						this.mData = {type:"执行", children:[], data:null};
+						this.updateComponents();
+					}
+				}
 			}
 			
 			private function onUnlockNode(event:Event):void {
-				
+				var root:BTNode = this.rootSubBT;
+				if (!root) {
+					Alert.show("节点不在子行为上，无需解锁");
+				}
+				else {
+					if (root.nodeParent.type == TYPE_ROOT) {
+						root.nodeParent.nodeData = root.nodeData;
+					}
+					else {
+						var index:int = root.nodeParent.nodeChildrens.indexOf(root);
+						root.nodeParent.nodeData.children[index] = root.nodeData;
+					}
+					root.nodeParent.updateComponents();
+					root.clearChildrens();
+					this.mCanvas.removeNodeFromCanvas(root);
+				}
+			}
+			
+			private function onPasteNode(event:Event):void {
+				if (BTPanel.CLIPPING) {
+					if (this.isInSubBT()) {
+						if (this.type == TYPE_ROOT) {
+							this.mParent.clearChildrens();
+							if (this.mParent.type == TYPE_ROOT) {
+								this.mParent.nodeData = BTPanel.CLIPPING;
+							}
+							else {
+								var index:int = this.mParent.mChildrens.indexOf(this);
+								this.mParent.nodeData.children[index] = BTPanel.CLIPPING;
+							}
+							this.mParent.updateComponents();
+						}
+					}
+					else {
+						if (!this.mParent) {
+							this.clearChildrens();
+							this.mData = BTPanel.CLIPPING;
+							this.updateComponents();
+						}
+						else {
+							this.mParent.clearChildrens();
+							if (this.mParent.type == TYPE_ROOT) {
+								this.mParent.nodeData = BTPanel.CLIPPING;
+								this.mParent.updateComponents();
+							}
+							else {
+								index = this.mParent.mChildrens.indexOf(this);
+								this.mParent.nodeData.children[index] = BTPanel.CLIPPING;
+								this.mParent.updateComponents();
+							}
+						}
+					}
+				}
+			}
+			
+			private function onPasteNodeToNext(event:Event):void {
+				if (BTPanel.CLIPPING) {
+					
+				}
 			}
 			
 			public function setData(type:int, name:String, data:Object, canvas:BT, parent:BTNode=null):void {
@@ -97,7 +199,7 @@
 				}
 			}
 			
-			private function updateComponents():void {
+			public function updateComponents():void {
 				trace("name "+this.mName+" depth "+this.nodeDepth+" siblingIndex "+this.siblingIndex);
 				var i:int;
 				var j:int;
@@ -113,16 +215,16 @@
 							this["mInput"+i].visible = false;
 						}
 						this.mTitle.visible = false;
-						if (!this.mData.children || (!this.mData.data && this.mData.children.length == 0)) {
-							this.mNextLine.visible = true;
-							this.mNext.visible = true;
-							this.mNextLine.x = 50;
-							this.mNext.x = 100;
-						}
-						else {
+//						if (!this.mData.children || (!this.mData.data && this.mData.children.length == 0 && !this.mData.type)) {
+//							this.mNextLine.visible = true;
+//							this.mNext.visible = true;
+//							this.mNextLine.x = 50;
+//							this.mNext.x = 100;
+//						}
+//						else {
 							this.mNextLine.visible = false;
 							this.mNext.visible = false;
-						}
+//						}
 						break;
 					case TYPE_FUNC: 
 						if (this.mName == FUNC_NODE_EXEC) {
@@ -263,6 +365,12 @@
 							child.setData(TYPE_FUNC, this.mData.type, this.mData, this.mCanvas, this);
 							this.mCanvas.addNodeToCanvas(child);
 						}
+						else if (this.mData.subTree) {
+							child = new BTNode();
+							var subTreeData:Object = Utils.cloneObjectData(Data.getInstance().behaviorSet[this.mData.subTree]);
+							child.setData(TYPE_ROOT, this.mData.subTree, subTreeData, this.mCanvas, this);
+							this.mCanvas.addNodeToCanvas(child);
+						}
 						else if (this.mData.execType) {
 							// error
 						}
@@ -275,7 +383,9 @@
 								child.setData(TYPE_FUNC, data.type, data, this.mCanvas, this);
 							}
 							else if (data.subTree) {
-								child.setData(TYPE_ROOT, data.subTree, data, this.mCanvas, this);
+								subTreeData = Utils.cloneObjectData(Data.getInstance().behaviorSet[data.subTree]);
+								child.isSubBT = true;
+								child.setData(TYPE_ROOT, data.subTree, subTreeData, this.mCanvas, this);
 							}
 							else if (data.execType) {
 								// error
@@ -309,6 +419,10 @@
 				var newData:Object;
 				switch (event.data.type) {
 					case TYPE_EXEC:
+//						if (this.isSubBT) {
+							this.clearChildrens();
+							this.mData.children = [];
+//						}
 						this.isSubBT = false;
 						newData = {type:"执行", children:this.mData.children, data:{execType:event.data.name.func, parm:[]}};
 						for (var i:int = 0; i < event.data.name.args.length; i++) {
@@ -316,28 +430,40 @@
 							newData.data.parm.push(event.data.name.args[i]);
 						}
 						this.setData(TYPE_EXEC, event.data.name.func, newData, this.mCanvas, this.mParent);
-						this.writeDataBackToParent();
-						this.mCanvas.setModified(true);
 						break;
 					case TYPE_FUNC:
+						if (this.isSubBT) {
+							this.clearChildrens();
+							this.mData.children = [];
+						}
 						this.isSubBT = false;
 						newData = {type:event.data.name, data:null, children:this.mData.children};
 						this.setData(TYPE_FUNC, event.data.name, newData, this.mCanvas, this.mParent);
-						this.writeDataBackToParent();
-						this.mCanvas.setModified(true);
 						break;
 					case TYPE_SUB_BT:
 						this.isSubBT = true;
-//						newData = {subTree:event.data.name, };
-						this.setData(TYPE_ROOT, event.data.name, Data.getInstance().behaviorSet[event.data.name], this.mCanvas, this.mParent);
+						this.clearChildrens();
+						newData = Utils.cloneObjectData(Data.getInstance().behaviorSet[event.data.name]);;
+						this.setData(TYPE_ROOT, event.data.name, newData, this.mCanvas, this.mParent);
 						break;
 				}
+				this.writeDataBackToParent();
+				this.mCanvas.setModified(true);
 			}
 			
 			public function writeDataBackToParent():void {
 				if (this.mParent) {
-					if (this.mParent.type != TYPE_ROOT) {
-						var index:int = this.mParent.nodeChildrens.indexOf(this);
+					if (this.isSubBT) {
+						if (this.mParent.type == TYPE_ROOT) {
+							this.mParent.nodeData = {subTree:this.mName};
+						}
+						else {
+							var index:int = this.mParent.nodeChildrens.indexOf(this);
+							this.mParent.nodeData.children[index] = {subTree:this.mName};
+						}
+					}
+					else if (this.mParent.type != TYPE_ROOT) {
+						index = this.mParent.nodeChildrens.indexOf(this);
 						this.mParent.nodeData.children[index] = this.mData;
 						this.mParent.writeDataBackToParent();
 					}
@@ -347,7 +473,7 @@
 				}
 			}
 			
-			private function onPressNext(event:MouseEvent):void {
+			private function onPressNext(event:Event):void {
 				if (this.isInSubBT()) return;
 				
 				EventManager.getInstance().addEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNextNodeSelected);
@@ -361,17 +487,36 @@
 				if (!event.data) return;
 				
 				this.mData.children = [];
+				var newData:Object;
 				switch (event.data.type) {
 					case TYPE_EXEC:
-						this.mData.children.push(event.data.name);
+						newData = {type:"执行", children:[], data:{execType:event.data.name.func, parm:[]}};
+						for (var i:int = 0; i < event.data.name.args.length; i++) {
+							event.data.name.args[i].value = event.data.name.args[i].type;
+							newData.data.parm.push(event.data.name.args[i]);
+						}
+						if (this.type == TYPE_ROOT) {
+							this.mData = newData;
+						}
+						else {
+							this.mData.children.push(newData);
+						}
 						break;
 					case TYPE_FUNC:
-						this.mData.children.push({type:event.data.name});
+						newData = {type:event.data.name, data:null, children:[]};
+						if (this.type == TYPE_ROOT) {
+							this.mData = newData;
+						}
+						else {
+							this.mData.children.push(newData);
+						}
 						break;
 					case TYPE_SUB_BT:
-						this.mData.children.push(Data.getInstance().behaviorSet[event.data.name]);
+						this.mData.children.push({subTree:event.data.name});
 						break;
 				}
+				this.writeDataBackToParent();
+				this.mCanvas.setModified(true);
 				this.updateComponents();
 			}
 			
@@ -429,11 +574,21 @@
 				return max;
 			}
 			
-			public function get nodeRoot():BTNode {
+			public function get rootNode():BTNode {
 				if (this.mParent) {
-					return this.mParent.nodeRoot;
+					return this.mParent.rootNode;
 				}
 				return this;
+			}
+			
+			public function get rootSubBT():BTNode {
+				if (!this.mParent) {
+					return null;
+				}
+				if (this.isSubBT && this.type == TYPE_ROOT) {
+					return this;
+				}
+				return this.mParent.rootSubBT;
 			}
 			
 			public function get nodeWidth():Number {
@@ -486,7 +641,7 @@
 				 textAlign="center" verticalAlign="middle"/>
 	</s:BorderContainer>
 	<s:Button id="mNext" x="300" y="0" width="50" height="50" label="可接节点" chromeColor="#FFFFFF"
-			  click="onPressNext(event)" cornerRadius="0" fontFamily="Arial" fontStyle="normal"
+			  click="onPressNext(event)" middleClick="onPressNext(event)" cornerRadius="0" fontFamily="Arial" fontStyle="normal"
 			  fontWeight="normal" icon="assets/zhixing.png"/>
 	<mx:HRule id="mNextLine" x="250" y="25" width="50" chromeColor="#3A9CFF"/>
 </s:BorderContainer>

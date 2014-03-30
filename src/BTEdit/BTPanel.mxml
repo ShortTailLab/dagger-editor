@@ -30,6 +30,7 @@
 			private var mTabDict:Object;
 			private var mTabNames:Array;
 			private var mTabSerial:int = 1;
+			public static var CLIPPING:Object = null;
 			
 			[Embed(source="assets/root.png")] public static const ICON_ROOT:Class;
 			[Embed(source="assets/zhixing.png")] public static const ICON_EXEC:Class;
@@ -238,7 +239,7 @@
 						}
 					}
 				}
-				addTab("新行为"+this.mTabSerial, [{}]);
+				addTab("新行为"+this.mTabSerial, [{type:"执行", children:[], data:null}]);
 				this.mTabSerial++;
 			}
 			

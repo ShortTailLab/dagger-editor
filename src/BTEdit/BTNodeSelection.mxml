@@ -27,7 +27,7 @@
 				mTab1Data = new ArrayCollection();
 				var array:Array = Data.getInstance().behaviorNodes as Array;
 				for (var i:int = 0; i < array.length; i++) {
-					mTab1Data.addItem(array[i]);
+					mTab1Data.addItem(Utils.cloneObjectData(array[i]));
 				}
 				mTab1Data.sort = new Sort();
 				mTab1Data.refresh();
