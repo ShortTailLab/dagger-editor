@@ -366,6 +366,9 @@
 										if (this.mData.data.parm[i].path) {
 											this["mInput"+j].addEventListener(MouseEvent.CLICK, onInput1Click);
 										}
+										else {
+											this["mInput"+j].removeEventListener(MouseEvent.CLICK, onInput1Click);
+										}
 										(this["mInput"+j] as TextInput).editable = !this.isInSubBT();
 										j++;
 									}
@@ -429,6 +432,9 @@
 								this["mInput"+j].text = params[i].value || JSON.stringify(params[i].path);
 								if (params[i].path) {
 									this["mInput"+j].addEventListener(MouseEvent.CLICK, onInput1Click);
+								}
+								else {
+									this["mInput"+j].removeEventListener(MouseEvent.CLICK, onInput1Click);
 								}
 								(this["mInput"+j] as TextInput).editable = !this.isInSubBT();
 								j++;
