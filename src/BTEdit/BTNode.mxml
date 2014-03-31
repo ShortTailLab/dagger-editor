@@ -116,7 +116,12 @@
 					var data:Object = {type:this.mCanvas.SELECTED_NODE, data:null, children:[]};
 					if (this.type == TYPE_ROOT) {
 						if (!this.mData.children || this.mData.children.length < 1) {
-							this.mData = data;
+							if (this.mData.subTree) {
+								this.mData.children = [data];
+							}
+							else {
+								this.mData = data;
+							}
 						}
 						else {
 							this.mData.children.push(data);
@@ -133,7 +138,7 @@
 						this.clearChildrens();
 						this.writeDataBackToParent();
 					}
-					this.updateComponents();
+					this.mCanvas.updateTree(true);
 					this.mCanvas.clearSelected();
 					this.mCanvas.setModified(true);
 					this.mBtn.filters = [];
@@ -157,7 +162,7 @@
 						root.nodeParent.nodeData.children.splice(index, 1);
 					}
 					root.nodeParent.writeDataBackToParent();
-					root.nodeParent.updateComponents();
+//					root.nodeParent.updateComponents();
 					root.clearChildrens();
 					this.mCanvas.removeNodeFromCanvas(root);
 				}
@@ -173,13 +178,14 @@
 							this.mParent.nodeData.children.splice(index, 1);
 						}
 						this.mParent.writeDataBackToParent();
-						this.mParent.updateComponents();
+//						this.mParent.updateComponents();
 					}
 					else {
 						this.mData = {type:"执行", children:[], data:null};
-						this.updateComponents();
+//						this.updateComponents();
 					}
 				}
+				this.mCanvas.updateTree(true);
 				this.mCanvas.setModified(true);
 			}
 			

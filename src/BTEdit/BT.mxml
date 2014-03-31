@@ -38,13 +38,16 @@
 				}
 			}
 			
-			public function updateTree():void {
+			public function updateTree(readDataFromNode:Boolean=false):void {
 				if (this.mTreeRoot) {
 					this.mTreeRoot.clearChildrens();
 					this.removeNodeFromCanvas(this.mTreeRoot);
 				}
 				
-				if (Data.getInstance().behaviorSet[this.mName]) {
+				if (readDataFromNode) {
+					this.mData[0] = this.mTreeRoot.nodeData;
+				}
+				else if (Data.getInstance().behaviorSet[this.mName]) {
 					this.mData[0] = Utils.cloneObjectData(Data.getInstance().getBehaviorById(mName));
 				}
 				
@@ -170,7 +173,7 @@
 				}
 				else if (data.subTree) {
 					d = Data.getInstance().behaviorSet[data.subTree];
-					num += getNodesInObject(d)+1;
+					num += getNodesInObject(d);
 				}
 				return num;
 			}
