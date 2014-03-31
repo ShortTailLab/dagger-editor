@@ -2,7 +2,7 @@
 <s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
 				   xmlns:s="library://ns.adobe.com/flex/spark"
 				   xmlns:mx="library://ns.adobe.com/flex/mx"
-				   width="350" height="205" borderVisible="false" initialize="onCreate()"
+				   width="250" height="205" borderVisible="false" initialize="onCreate()"
 				   dropShadowVisible="false">
 	<fx:Script>
 		<![CDATA[
@@ -203,10 +203,9 @@
 						root.nodeParent.nodeData.children[index] = root.nodeData;
 					}
 					root.nodeParent.writeDataBackToParent();
-					root.nodeParent.updateComponents();
-					root.clearChildrens();
 					this.mCanvas.removeNodeFromCanvas(root);
 					this.mCanvas.setModified(true);
+					this.mCanvas.updateTree(true);
 				}
 			}
 			
@@ -351,14 +350,14 @@
 								if (hasNextNode && (!this.mData.children || this.mData.children.length < 1)) {
 									this.mNext.visible = true;
 									this.mNextLine.visible = true;
-									this.mNextLine.x = 250;
-									this.mNext.x = 300;
+									this.mNextLine.x = 150;
+									this.mNext.x = 200;
 								}
 								else {
 									this.mNext.visible = false;
 									this.mNextLine.visible = false;
 								}
-								this.mSubContainer.width = 250;
+								this.mSubContainer.width = 150;
 								numParams = numParams<2?2:numParams;
 								this.mSubContainer.height = 205-(7-numParams)*30;
 							}
@@ -412,14 +411,14 @@
 						if (hasNextNode && (this.mData.args || !this.mData.children || this.mData.children.length < 1)) {
 							this.mNext.visible = true;
 							this.mNextLine.visible = true;
-							this.mNextLine.x = 250;
-							this.mNext.x = 300;
+							this.mNextLine.x = 150;
+							this.mNext.x = 200;
 						}
 						else {
 							this.mNext.visible = false;
 							this.mNextLine.visible = false;
 						}
-						this.mSubContainer.width = 250;
+						this.mSubContainer.width = 150;
 						this.mSubContainer.height = 205-(7-numParams)*30;
 						break;
 				}
@@ -487,7 +486,10 @@
 			
 			private function onPressBtn(event:Event):void {
 				if (this.mType == TYPE_ROOT && !this.isInSubBT()) return;
-				if (this.mType != TYPE_ROOT && this.isInSubBT()) return;
+				if (this.mType != TYPE_ROOT && this.isInSubBT()) {
+					Alert.show("子行为已锁定，解锁后可编辑");
+					return;
+				}
 				
 				EventManager.getInstance().addEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNodeSelected);
 				var selection:BTNodeSelection = new BTNodeSelection();
@@ -537,6 +539,7 @@
 				}
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
+				this.mCanvas.updateTree(true);
 			}
 			
 			public function writeDataBackToParent():void {
@@ -714,28 +717,28 @@
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
-	<s:BorderContainer id="mSubContainer" width="250" height="205" backgroundColor="#3A9CFF" middleClick="onPressBtn(event)"
+	<s:BorderContainer id="mSubContainer" width="150" height="205" backgroundColor="#3A9CFF" middleClick="onPressBtn(event)"
 					   dropShadowVisible="true">
-		<s:Button id="mBtn" width="50" height="50" chromeColor="#FFFFFF"
+		<s:Button id="mBtn" width="50" height="50" 
 				  cornerRadius="0" fontFamily="Arial" fontStyle="normal" fontWeight="normal"
 				  icon="assets/zhixing.png"/>
-		<s:Label id="mTitle" x="0" y="3" width="100%" color="#FFFFFF" fontSize="14" text="StayOnMap"
+		<s:Label id="mTitle" x="0" y="0" width="100%" color="#FFFFFF" fontSize="14" text="StayOnMap"
 				 textAlign="center" verticalAlign="middle"/>
 		<s:Label id="mVar1" x="0" y="30" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
 		<s:Label id="mVar2" x="0" y="60" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
-		<s:TextInput id="mInput1" x="125" y="25" width="50%" change="onValueChanged(event)"
+		<s:TextInput id="mInput1" x="75" y="25" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
-		<s:TextInput id="mInput2" x="125" y="55" width="50%" change="onValueChanged(event)"
+		<s:TextInput id="mInput2" x="75" y="55" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
-		<s:TextInput id="mInput3" x="125" y="85" width="50%" change="onValueChanged(event)"
+		<s:TextInput id="mInput3" x="75" y="85" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
-		<s:TextInput id="mInput4" x="125" y="115" width="50%" change="onValueChanged(event)"
+		<s:TextInput id="mInput4" x="75" y="115" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
-		<s:TextInput id="mInput5" x="125" y="145" width="50%" change="onValueChanged(event)"
+		<s:TextInput id="mInput5" x="75" y="145" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
-		<s:TextInput id="mInput6" x="125" y="175" width="50%" change="onValueChanged(event)"
+		<s:TextInput id="mInput6" x="75" y="175" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
 		<s:Label id="mVar3" x="0" y="90" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
@@ -746,8 +749,8 @@
 		<s:Label id="mVar6" x="0" y="180" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
 	</s:BorderContainer>
-	<s:Button id="mNext" x="300" y="0" width="50" height="50" label="可接节点" chromeColor="#FFFFFF"
+	<s:Button id="mNext" x="200" y="0" width="50" height="50" label="可接节点" 
 			  click="onPressNext(event)" middleClick="onPressNext(event)" cornerRadius="0" fontFamily="Arial" fontStyle="normal"
 			  fontWeight="normal" icon="@Embed('assets/zhixing.png')"/>
-	<mx:HRule id="mNextLine" x="250" y="25" width="50" chromeColor="#3A9CFF"/>
+	<mx:HRule id="mNextLine" x="150" y="25" width="50"/>
 </s:BorderContainer>

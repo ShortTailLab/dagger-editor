@@ -529,22 +529,22 @@
 		</s:VGroup>
 		<s:VGroup width="100%" height="100%" gap="5">
 			<s:HGroup width="100%" height="50" gap="20" paddingLeft="0">
-				<s:Button width="50" height="50" label="增加执行节点" chromeColor="#FFFFFF" buttonMode="true"
+				<s:Button width="50" height="50" label="增加执行节点" buttonMode="true"
 						  click="onPressNode1(event)" cornerRadius="0" fontFamily="Arial"
 						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/zhixing.png')"/>
-				<s:Button width="50" height="50" label="增加顺序节点" chromeColor="#FFFFFF" buttonMode="true"
+				<s:Button width="50" height="50" label="增加顺序节点" buttonMode="true"
 						  click="onPressNode2(event)" cornerRadius="0" fontFamily="Arial"
 						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/shunxu.png')"/>
-				<s:Button width="50" height="50" label="增加优先节点" chromeColor="#FFFFFF" buttonMode="true"
+				<s:Button width="50" height="50" label="增加优先节点" buttonMode="true"
 						  click="onPressNode3(event)" cornerRadius="0" fontFamily="Arial" 
 						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/youxian.png')"/>
-				<s:Button width="50" height="50" label="增加同步节点" chromeColor="#FFFFFF" buttonMode="true"
+				<s:Button width="50" height="50" label="增加同步节点" buttonMode="true"
 						  click="onPressNode4(event)" cornerRadius="0" fontFamily="Arial"
 						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/tongbu.png')"/>
-				<s:Button width="50" height="50" label="增加条件节点" chromeColor="#FFFFFF" buttonMode="true"
+				<s:Button width="50" height="50" label="增加条件节点" buttonMode="true"
 						  click="onPressNode5(event)" cornerRadius="0" fontFamily="Arial"
 						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/tiaojian.png')"/>
-				<s:Button width="50" height="50" label="增加循环节点" chromeColor="#FFFFFF" buttonMode="true"
+				<s:Button width="50" height="50" label="增加循环节点" buttonMode="true"
 						  click="onPressNode6(event)" cornerRadius="0" fontFamily="Arial"
 						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/xunhuan.png')"/>
 			</s:HGroup>

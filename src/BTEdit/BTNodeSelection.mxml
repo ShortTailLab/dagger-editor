@@ -112,17 +112,17 @@
 		<s:NavigatorContent width="100%" height="100%" label="功能节点">
 			<s:VGroup x="0" y="0" width="100%" height="100%" gap="20">
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc1(event)" buttonMode="true"
-						  chromeColor="#FFFFFF" icon="@Embed('assets/zhixing.png')"/>
+						  icon="@Embed('assets/zhixing.png')"/>
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc2(event)" buttonMode="true"
-						  chromeColor="#FFFFFF" icon="@Embed('assets/shunxu.png')"/>
+						  icon="@Embed('assets/shunxu.png')"/>
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc3(event)" buttonMode="true"
-						  chromeColor="#FFFFFF" icon="@Embed('assets/youxian.png')"/>
+						  icon="@Embed('assets/youxian.png')"/>
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc4(event)" buttonMode="true"
-						  chromeColor="#FFFFFF" icon="@Embed('assets/tongbu.png')"/>
+						  icon="@Embed('assets/tongbu.png')"/>
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc5(event)" buttonMode="true"
-						  chromeColor="#FFFFFF" icon="@Embed('assets/tiaojian.png')"/>
+						  icon="@Embed('assets/tiaojian.png')"/>
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc6(event)" buttonMode="true"
-						  chromeColor="#FFFFFF" icon="@Embed('assets/xunhuan.png')"/>
+						  icon="@Embed('assets/xunhuan.png')"/>
 			</s:VGroup>
 		</s:NavigatorContent>
 		<s:NavigatorContent width="100%" height="100%" label="行为库">
