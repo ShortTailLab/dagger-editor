@@ -4,6 +4,8 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" creationComplete="onCreate()">
 	<fx:Script>
 		<![CDATA[
+			import mx.core.UIComponent;
+			
 			import spark.components.Button;
 			
 			private var mCreated:Boolean = false;
@@ -19,6 +21,7 @@
 			private var mRowHeight:Array;
 			private var mNodes:Vector.<BTNode>;
 			private var mNodesInfo:Array;
+			private var mLineSprite:Sprite;
 			
 			private function onCreate():void {
 				this.mCreated = true;
@@ -237,7 +240,35 @@
 			}
 			
 			private function drawLines():void {
-				
+				if (this.mLineSprite) {
+					this.mLineSprite.graphics.clear();
+					this.mContainer.removeElement(this.mLineSprite.parent as UIComponent);
+				}
+//				else {
+					this.mLineSprite = new Sprite();
+					var component:UIComponent = new UIComponent();
+					component.addChild(this.mLineSprite);
+					this.mContainer.addElement(component);
+//				}
+				this.mLineSprite.graphics.lineStyle(3, 0x3A9CFF);
+				for (var i:int = 0; i < this.mNodes.length; i++) {
+					if (this.mNodes[i].nodeParent) {
+						this.drawBetween2Nodes(this.mNodes[i].nodeParent, this.mNodes[i]);
+					}
+				}
+			}
+			
+			private function drawBetween2Nodes(p:BTNode, c:BTNode):void {
+				if (p.y == c.y) {
+					this.mLineSprite.graphics.moveTo(p.x+p.nodeWidth, p.y+25);
+					this.mLineSprite.graphics.lineTo(c.x, p.y+25);
+				}
+				else {
+					this.mLineSprite.graphics.moveTo(p.x+p.nodeWidth+13, p.y+25);
+					this.mLineSprite.graphics.lineTo(p.x+p.nodeWidth+13, c.y+25);
+					this.mLineSprite.graphics.moveTo(p.x+p.nodeWidth+13, c.y+25);
+					this.mLineSprite.graphics.lineTo(c.x, c.y+25);
+				}
 			}
 		]]>
 	</fx:Script>

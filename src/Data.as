@@ -696,7 +696,7 @@ package
 				if( !this.mBehaviorSet.hasOwnProperty(key) ) {
 					return "【失败】试图导出不存在的行为"+key;
 				}
-				var raw:String = Utils.genBTreeJS(this.mBehaviorSet[key]);
+				var raw:String = Utils.genBTreeJS(Utils.cloneObjectData(this.mBehaviorSet[key]));
 				export.behavior[key] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
 					""+raw+";}@@");
 			} 

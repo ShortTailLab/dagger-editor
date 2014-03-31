@@ -83,6 +83,9 @@ package
 			var result:String = "";
 			if(sourceData)
 			{
+				if (sourceData.subTree) {
+					sourceData = Utils.cloneObjectData(Data.getInstance().behaviorSet[sourceData.subTree]);
+				}
 				var children:Array = sourceData.children as Array;
 				var childrenJS:Array = new Array;
 				for each(var childData:Object in children)

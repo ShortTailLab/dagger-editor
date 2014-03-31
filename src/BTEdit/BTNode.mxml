@@ -225,7 +225,8 @@
 								this.mParent.nodeData.children[index] = clipping;
 							}
 							this.mParent.writeDataBackToParent();
-							this.mParent.updateComponents();
+//							this.mParent.updateComponents();
+							this.mCanvas.updateTree(true);
 						}
 					}
 					else {
@@ -233,7 +234,7 @@
 						if (!this.mParent) {
 							this.mData = clipping;
 							this.clearChildrens();
-							this.updateComponents();
+//							this.updateComponents();
 						}
 						else {
 							if (this.mParent.type == TYPE_ROOT) {
@@ -245,8 +246,9 @@
 								this.mParent.nodeData.children[index] = clipping;
 							}
 							this.mParent.writeDataBackToParent();
-							this.mParent.updateComponents();
+//							this.mParent.updateComponents();
 						}
+						this.mCanvas.updateTree(true);
 					}
 				}
 			}
@@ -262,7 +264,8 @@
 					}
 					this.writeDataBackToParent();
 					this.mCanvas.setModified(true);
-					this.updateComponents();
+//					this.updateComponents();
+					this.mCanvas.updateTree(true);
 				}
 			}
 			
@@ -522,6 +525,10 @@
 						this.setData(TYPE_FUNC, event.data.name, newData, this.mCanvas, this.mParent);
 						break;
 					case TYPE_SUB_BT:
+						if (event.data.name == this.rootNode.nodeName) {
+							Alert.show("不能递归嵌套行为！");
+							return;
+						}
 						this.isSubBT = true;
 						this.clearChildrens();
 						newData = Utils.cloneObjectData(Data.getInstance().behaviorSet[event.data.name]);;
@@ -598,7 +605,7 @@
 				}
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
-				this.updateComponents();
+				this.mCanvas.updateTree(true);
 			}
 			
 			private function onValueChanged(event:TextOperationEvent):void {
@@ -738,6 +745,6 @@
 	</s:BorderContainer>
 	<s:Button id="mNext" x="300" y="0" width="50" height="50" label="可接节点" chromeColor="#FFFFFF"
 			  click="onPressNext(event)" middleClick="onPressNext(event)" cornerRadius="0" fontFamily="Arial" fontStyle="normal"
-			  fontWeight="normal" icon="assets/zhixing.png"/>
+			  fontWeight="normal" icon="@Embed('assets/zhixing.png')"/>
 	<mx:HRule id="mNextLine" x="250" y="25" width="50" chromeColor="#3A9CFF"/>
 </s:BorderContainer>
