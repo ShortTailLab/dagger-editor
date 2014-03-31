@@ -303,9 +303,9 @@
 			}
 			
 			private function onPressNewTab(event:Event):void {
-				for (var i:int = 0; i < this.mFilteredLibrary.length; i++) {
-					if ((this.mFilteredLibrary[i] as String).indexOf("新行为") === 0) {
-						var str:String = (this.mFilteredLibrary[i] as String).substr(3);
+				for (var name:String in Data.getInstance().behaviorSet) {
+					if (name.indexOf("新行为") === 0) {
+						var str:String = name.substr(3);
 						var num:int = int(str);
 						if (num >= this.mTabSerial) {
 							this.mTabSerial = num+1;

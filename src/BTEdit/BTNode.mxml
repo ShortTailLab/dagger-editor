@@ -2,10 +2,12 @@
 <s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
 				   xmlns:s="library://ns.adobe.com/flex/spark"
 				   xmlns:mx="library://ns.adobe.com/flex/mx"
-				   width="250" height="205" borderVisible="false" initialize="onCreate()"
+				   width="250" height="185" borderVisible="false" initialize="onCreate()"
 				   dropShadowVisible="false">
 	<fx:Script>
 		<![CDATA[
+			import behaviorEdit.PathEditPanel;
+			
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.GameEvent;
@@ -92,6 +94,29 @@
 				if (this.mData) {
 					this.updateComponents();
 				}
+			}
+			
+			private function onInput1Click(event:Event):void {
+				if (this.isInSubBT()) return;
+				var id:String = event.currentTarget.id;
+				var index:int = int(id.charAt(id.length-1));
+				var data:Object = this.mData.data.parm[index-1];
+				var window:PathEditPanel = new PathEditPanel(name, data.path, data.type=="array_ccp_curve");
+				window.addEventListener(MsgEvent.EDIT_PATH, onPathEditPanelClose);
+				PopUpManager.addPopUp(window, this, true);
+				PopUpManager.centerPopUp(window);
+			}
+			
+			private function onPathEditPanelClose(e:MsgEvent):void {
+				for (var i:int = 1; i < 7; i++) {
+					if (this["mVar"+i].text == "path") {
+						break;
+					}
+				}
+				this["mInput"+i].text =  JSON.stringify(e.hintData);
+				this.mData.data.parm[i-1].path = e.hintData;
+				this.writeDataBackToParent();
+				this.mCanvas.setModified(true);
 			}
 			
 			private function onMouseOverNode(event:Event):void {
@@ -337,7 +362,10 @@
 										this["mVar"+j].visible = true;
 										this["mInput"+j].visible = true;
 										this["mVar"+j].text = this.mData.data.parm[i].name;
-										this["mInput"+j].text = this.mData.data.parm[i].value;
+										this["mInput"+j].text = this.mData.data.parm[i].value || JSON.stringify(this.mData.data.parm[i].path);
+										if (this.mData.data.parm[i].path) {
+											this["mInput"+j].addEventListener(MouseEvent.CLICK, onInput1Click);
+										}
 										(this["mInput"+j] as TextInput).editable = !this.isInSubBT();
 										j++;
 									}
@@ -359,7 +387,7 @@
 								}
 								this.mSubContainer.width = 150;
 								numParams = numParams<2?2:numParams;
-								this.mSubContainer.height = 205-(7-numParams)*30;
+								this.mSubContainer.height = 185-(7-numParams)*25;
 							}
 						}
 						else {
@@ -398,7 +426,10 @@
 								this["mVar"+j].visible = true;
 								this["mInput"+j].visible = true;
 								this["mVar"+j].text = params[i].name;
-								this["mInput"+j].text = params[i].value;
+								this["mInput"+j].text = params[i].value || JSON.stringify(params[i].path);
+								if (params[i].path) {
+									this["mInput"+j].addEventListener(MouseEvent.CLICK, onInput1Click);
+								}
 								(this["mInput"+j] as TextInput).editable = !this.isInSubBT();
 								j++;
 							}
@@ -419,7 +450,7 @@
 							this.mNextLine.visible = false;
 						}
 						this.mSubContainer.width = 150;
-						this.mSubContainer.height = 205-(7-numParams)*30;
+						this.mSubContainer.height = 185-(7-numParams)*25;
 						break;
 				}
 				this.updateChildrens();
@@ -512,7 +543,12 @@
 						this.isSubBT = false;
 						newData = {type:"执行", children:this.mData.children, data:{execType:event.data.name.func, parm:[]}};
 						for (var i:int = 0; i < event.data.name.args.length; i++) {
-							event.data.name.args[i].value = event.data.name.args[i].type;
+							if (event.data.name.args[i].name == "path") {
+								event.data.name.args[i].path = [];
+							}
+							else {
+								event.data.name.args[i].value = event.data.name.args[i].type;
+							}
 							newData.data.parm.push(event.data.name.args[i]);
 						}
 						this.setData(TYPE_EXEC, event.data.name.func, newData, this.mCanvas, this.mParent);
@@ -717,36 +753,37 @@
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
-	<s:BorderContainer id="mSubContainer" width="150" height="205" backgroundColor="#3A9CFF" middleClick="onPressBtn(event)"
-					   dropShadowVisible="true">
+	<s:BorderContainer id="mSubContainer" width="150" height="180" backgroundColor="#3A9CFF"
+					   borderVisible="true" dropShadowVisible="true"
+					   middleClick="onPressBtn(event)">
 		<s:Button id="mBtn" width="50" height="50" 
 				  cornerRadius="0" fontFamily="Arial" fontStyle="normal" fontWeight="normal"
 				  icon="assets/zhixing.png"/>
-		<s:Label id="mTitle" x="0" y="0" width="100%" color="#FFFFFF" fontSize="14" text="StayOnMap"
+		<s:Label id="mTitle" x="0" y="0" width="100%" color="#FFFFFF" fontSize="12" text="StayOnMap"
 				 textAlign="center" verticalAlign="middle"/>
 		<s:Label id="mVar1" x="0" y="30" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar2" x="0" y="60" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+		<s:Label id="mVar2" x="0" y="55" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
 		<s:TextInput id="mInput1" x="75" y="25" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
-		<s:TextInput id="mInput2" x="75" y="55" width="50%" change="onValueChanged(event)"
+		<s:TextInput id="mInput2" x="75" y="50" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
-		<s:TextInput id="mInput3" x="75" y="85" width="50%" change="onValueChanged(event)"
+		<s:TextInput id="mInput3" x="75" y="75" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
-		<s:TextInput id="mInput4" x="75" y="115" width="50%" change="onValueChanged(event)"
+		<s:TextInput id="mInput4" x="75" y="100" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
-		<s:TextInput id="mInput5" x="75" y="145" width="50%" change="onValueChanged(event)"
+		<s:TextInput id="mInput5" x="75" y="125" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
-		<s:TextInput id="mInput6" x="75" y="175" width="50%" change="onValueChanged(event)"
+		<s:TextInput id="mInput6" x="75" y="150" width="50%" change="onValueChanged(event)"
 					 textAlign="center"/>
-		<s:Label id="mVar3" x="0" y="90" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+		<s:Label id="mVar3" x="0" y="80" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar4" x="0" y="120" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+		<s:Label id="mVar4" x="0" y="105" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar5" x="0" y="150" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+		<s:Label id="mVar5" x="0" y="130" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar6" x="0" y="180" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+		<s:Label id="mVar6" x="0" y="155" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
 	</s:BorderContainer>
 	<s:Button id="mNext" x="200" y="0" width="50" height="50" label="可接节点" 
