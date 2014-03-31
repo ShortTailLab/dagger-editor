@@ -11,7 +11,11 @@
 			import manager.GameEvent;
 			
 			import mx.controls.Alert;
+			import mx.controls.Text;
 			import mx.managers.PopUpManager;
+			
+			import spark.events.TextOperationEvent;
+			import spark.filters.GlowFilter;
 			
 			private var mCreated:Boolean = false;
 			private var mData:Object;
@@ -81,8 +85,58 @@
 				menu.addItem(item);
 				this.mNext.contextMenu = menu;
 				
+				this.mBtn.addEventListener(MouseEvent.MOUSE_OVER, onMouseOverNode);
+				this.mBtn.addEventListener(MouseEvent.MOUSE_OUT, onMouseOutNode);
+				this.mBtn.addEventListener(MouseEvent.CLICK, onMouseClickNode);
+				
 				if (this.mData) {
 					this.updateComponents();
+				}
+			}
+			
+			private function onMouseOverNode(event:Event):void {
+				if (this.mCanvas.SELECTED_NODE && !this.isInSubBT()) {
+					var filter:spark.filters.GlowFilter = new spark.filters.GlowFilter();
+					filter.color = 0x00FF00;
+					filter.strength = 50;
+					filter.blurX = 20;
+					filter.blurY = 20;
+					this.mBtn.filters = [filter];
+				}
+			}
+			
+			private function onMouseOutNode(event:Event):void {
+				if (this.mCanvas.SELECTED_NODE && !this.isInSubBT()) {
+					this.mBtn.filters = [];
+				}
+			}
+			
+			private function onMouseClickNode(event:Event):void {
+				if (this.mCanvas.SELECTED_NODE && !this.isInSubBT()) {
+					var data:Object = {type:this.mCanvas.SELECTED_NODE, data:null, children:[]};
+					if (this.type == TYPE_ROOT) {
+						if (!this.mData.children || this.mData.children.length < 1) {
+							this.mData = data;
+						}
+						else {
+							this.mData.children.push(data);
+						}
+						this.clearChildrens();
+					}
+					else {
+						if (!this.mData.children) {
+							this.mData.children = [data];
+						}
+						else {
+							this.mData.children.push(data);
+						}
+						this.clearChildrens();
+						this.writeDataBackToParent();
+					}
+					this.updateComponents();
+					this.mCanvas.clearSelected();
+					this.mCanvas.setModified(true);
+					this.mBtn.filters = [];
 				}
 			}
 			
@@ -102,6 +156,7 @@
 						var index:int = root.nodeParent.nodeChildrens.indexOf(root);
 						root.nodeParent.nodeData.children.splice(index, 1);
 					}
+					root.nodeParent.writeDataBackToParent();
 					root.nodeParent.updateComponents();
 					root.clearChildrens();
 					this.mCanvas.removeNodeFromCanvas(root);
@@ -117,6 +172,7 @@
 							index = this.mParent.nodeChildrens.indexOf(this);
 							this.mParent.nodeData.children.splice(index, 1);
 						}
+						this.mParent.writeDataBackToParent();
 						this.mParent.updateComponents();
 					}
 					else {
@@ -140,6 +196,7 @@
 						var index:int = root.nodeParent.nodeChildrens.indexOf(root);
 						root.nodeParent.nodeData.children[index] = root.nodeData;
 					}
+					root.nodeParent.writeDataBackToParent();
 					root.nodeParent.updateComponents();
 					root.clearChildrens();
 					this.mCanvas.removeNodeFromCanvas(root);
@@ -161,6 +218,7 @@
 								var index:int = this.mParent.mChildrens.indexOf(this);
 								this.mParent.nodeData.children[index] = clipping;
 							}
+							this.mParent.writeDataBackToParent();
 							this.mParent.updateComponents();
 						}
 					}
@@ -180,6 +238,7 @@
 								index = this.mParent.mChildrens.indexOf(this);
 								this.mParent.nodeData.children[index] = clipping;
 							}
+							this.mParent.writeDataBackToParent();
 							this.mParent.updateComponents();
 						}
 					}
@@ -214,7 +273,7 @@
 			}
 			
 			public function updateComponents():void {
-				trace("name "+this.mName+" depth "+this.nodeDepth+" siblingIndex "+this.siblingIndex);
+//				trace("name "+this.mName+" depth "+this.nodeDepth+" siblingIndex "+this.siblingIndex);
 				var i:int;
 				var j:int;
 				var hasNextNode:Boolean = false;
@@ -536,6 +595,14 @@
 				this.updateComponents();
 			}
 			
+			private function onValueChanged(event:TextOperationEvent):void {
+				var id:String = event.currentTarget.id;
+				var index:int = int(id.charAt(id.length-1));
+				this.mData.data.parm[index-1].value = (event.currentTarget as TextInput).text;
+				this.writeDataBackToParent();
+				this.mCanvas.setModified(true);
+			}
+			
 			public function isInSubBT():Boolean {
 				if (this.isSubBT) return true;
 				if (this.mParent) {
@@ -625,6 +692,7 @@
 			public function set isSubBT(value:Boolean):void { this.mIsSubBT = value; }
 			public function get isDetached():Boolean { return this.mIsDetached};
 			public function set isDetached(value:Boolean):void { this.isDetached = value; }
+			
 		]]>
 	</fx:Script>
 	<fx:Declarations>
@@ -641,12 +709,18 @@
 				 textAlign="center" verticalAlign="middle"/>
 		<s:Label id="mVar2" x="0" y="60" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
-		<s:TextInput id="mInput1" x="125" y="25" width="50%" textAlign="center"/>
-		<s:TextInput id="mInput2" x="125" y="55" width="50%" textAlign="center"/>
-		<s:TextInput id="mInput3" x="125" y="85" width="50%" textAlign="center"/>
-		<s:TextInput id="mInput4" x="125" y="115" width="50%" textAlign="center"/>
-		<s:TextInput id="mInput5" x="125" y="145" width="50%" textAlign="center"/>
-		<s:TextInput id="mInput6" x="125" y="175" width="50%" textAlign="center"/>
+		<s:TextInput id="mInput1" x="125" y="25" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
+		<s:TextInput id="mInput2" x="125" y="55" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
+		<s:TextInput id="mInput3" x="125" y="85" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
+		<s:TextInput id="mInput4" x="125" y="115" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
+		<s:TextInput id="mInput5" x="125" y="145" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
+		<s:TextInput id="mInput6" x="125" y="175" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
 		<s:Label id="mVar3" x="0" y="90" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
 		<s:Label id="mVar4" x="0" y="120" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"

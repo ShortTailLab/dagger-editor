@@ -4,10 +4,21 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" creationComplete="onCreate()">
 	<fx:Script>
 		<![CDATA[
+			import spark.components.Button;
+			
 			private var mCreated:Boolean = false;
 			private var mData:Object;
 			private var mName:String;
 			private var mPanel:BTPanel;
+			private var mTreeRoot:BTNode;
+			public var SELECTED_NODE:String;
+			public var mSelectedNode:Sprite;
+			
+			private var mNumTotalNodes:int;
+			private var mColWidth:Array;
+			private var mRowHeight:Array;
+			private var mNodes:Vector.<BTNode>;
+			private var mNodesInfo:Array;
 			
 			private function onCreate():void {
 				this.mCreated = true;
@@ -27,25 +38,64 @@
 				}
 			}
 			
-			private function updateTree():void {
-				var node:BTNode = new BTNode();
-				node.setData(BTNode.TYPE_ROOT, this.mName, this.mData[0], this, null);
-				this.addNodeToCanvas(node);
-				this.mContainer.width = 2000;
-				this.mContainer.height = 2000;
+			public function updateTree():void {
+				if (this.mTreeRoot) {
+					this.mTreeRoot.clearChildrens();
+					this.removeNodeFromCanvas(this.mTreeRoot);
+				}
+				
+				if (Data.getInstance().behaviorSet[this.mName]) {
+					this.mData[0] = Utils.cloneObjectData(Data.getInstance().getBehaviorById(mName));
+				}
+				
+				this.mNumTotalNodes = this.getNodesInObject(this.mData[0])+1;
+				this.mNodes = new Vector.<BTNode>();
+				
+				this.mTreeRoot = new BTNode();
+				this.mTreeRoot.setData(BTNode.TYPE_ROOT, this.mName, this.mData[0], this, null);
+				this.addNodeToCanvas(this.mTreeRoot);
+//				this.mContainer.width = 2000;
+//				this.mContainer.height = 2000;
 			}
 			
 			public function addNodeToCanvas(node:BTNode):void {
 				if (!this.mContainer.contains(node)) {
 					this.mContainer.addElement(node);
-					node.x = node.nodeDepth*300;
-					node.y = node.siblingIndex*200;
+					this.mNodes.push(node);
+//					node.x = node.nodeDepth*300;
+//					node.y = node.siblingIndex*200;
+//					this.mContainer.width = 2000;
+//					this.mContainer.height = 2000;
+					var row:int = node.siblingIndex;
+					var col:int = node.nodeDepth;
+					if (this.mRowHeight) {
+						if (row < this.mRowHeight.length) {
+							node.x = this.mRowHeight[row];
+						}
+						else {
+							node.x = this.mRowHeight[this.mRowHeight.length-1] + (row-this.mRowHeight.length+1)*200;
+						}
+						if (col < this.mColWidth.length) {
+							node.y = this.mColWidth[col];
+						}
+						else {
+							node.y = this.mColWidth[this.mColWidth.length-1] + (col-this.mColWidth.length+1)*300;
+						}
+					}
+					else {
+						node.x = col*300;
+						node.y = row*200;
+					}
+					if (this.mNodes.length == this.mNumTotalNodes) {
+						this.autoLayout();
+					}
 				}
 			}
 			
 			public function removeNodeFromCanvas(node:BTNode):void {
 				if (this.mContainer.contains(node)) {
 					this.mContainer.removeElement(node);
+					this.mNodes.splice(this.mNodes.indexOf(node), 1);
 				}
 			}
 			
@@ -53,8 +103,138 @@
 				this.mPanel.setTabModified(this.mName, bool);
 			}
 			
+			public function setSelected(type:String):void {
+				if (this.mSelectedNode) {
+					this.mSelectedNode.parent.removeChild(this.mSelectedNode);
+				}
+				this.mSelectedNode = new Sprite();
+				this.mSelectedNode.mouseEnabled = false;
+				this.mSelectedNode.mouseChildren = false;
+				this.SELECTED_NODE = type;
+				var bitmap:Bitmap;
+				switch (type) {
+					case BTNode.FUNC_NODE_EXEC: bitmap = new BTPanel.ICON_EXEC(); break;
+					case BTNode.FUNC_NODE_SEQ: bitmap = new BTPanel.ICON_SEQ(); break;
+					case BTNode.FUNC_NODE_PRIO: bitmap = new BTPanel.ICON_PRIO(); break;
+					case BTNode.FUNC_NODE_SPAWN: bitmap = new BTPanel.ICON_SPAWN(); break;
+					case BTNode.FUNC_NODE_COND: bitmap = new BTPanel.ICON_COND(); break;
+					case BTNode.FUNC_NODE_LOOP: bitmap = new BTPanel.ICON_LOOP(); break;
+				}
+				bitmap.x = -bitmap.width/2;
+				bitmap.y = -bitmap.height/2;
+				bitmap.alpha = 0.7;
+				this.mSelectedNode.addChild(bitmap);
+				this.stage.addChild(this.mSelectedNode);
+				this.mSelectedNode.x = this.stage.mouseX;
+				this.mSelectedNode.y = this.stage.mouseY;
+				this.mSelectedNode.startDrag();
+				this.stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+			}
+			
+			private function onMouseDown(event:Event):void {
+				var p:Point = this.parent.localToGlobal(new Point(this.x, this.y));
+				if (this.stage.mouseX < p.x || this.stage.mouseY < p.y) {
+					this.stage.removeEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+					clearSelected();
+				}
+			}
+			
+			public function clearSelected():void {
+				this.SELECTED_NODE = null;
+				if (this.mSelectedNode) {
+					this.mSelectedNode.parent.removeChild(this.mSelectedNode);
+					this.mSelectedNode = null;
+				}
+			}
+			
 			public function rename(to:String):void {
 				this.mName = to;
+			}
+			
+			public function export():Object {
+				return Utils.cloneObjectData(this.mTreeRoot.nodeData);
+			}
+			
+			public function getSubTrees():Array {
+				return this.getSubTreesInObject(this.mData[0]);
+			}
+			
+			private function getNodesInObject(data:Object):int {
+				var num:int = 1;
+				if (data.type) {
+					if (data.children) {
+						for each (var d:Object in data.children) {
+							num += getNodesInObject(d);
+						}
+					}
+				}
+				else if (data.subTree) {
+					d = Data.getInstance().behaviorSet[data.subTree];
+					num += getNodesInObject(d)+1;
+				}
+				return num;
+			}
+			
+			private function getSubTreesInObject(data:Object):Array {
+				var result:Array = [];
+				if (data.subTree) {
+					result.push(data.subTree);
+				}
+				if (data.children) {
+					for each (var subData:Object in data.children) {
+						result.concat(getSubTreesInObject(subData));
+					}
+				}
+				return result;
+			}
+			
+			public function autoLayout():void {
+				this.mRowHeight = new Array();
+				this.mColWidth = new Array();
+				var i:int;
+				var rows:int = this.mTreeRoot.maxSiblings;
+				var cols:int = this.mTreeRoot.maxDepth;
+				for (i = 0; i < rows; i++) {
+					this.mRowHeight.push(0);
+				}
+				for (i = 0; i < cols; i++) {
+					this.mColWidth.push(0);
+				}
+				this.mNodesInfo = new Array();
+				for (i = 0; i < this.mNodes.length; i++) {
+					var row:int = this.mNodes[i].siblingIndex;
+					var col:int = this.mNodes[i].nodeDepth;
+					trace("name "+this.mNodes[i].nodeName+" row "+row+" col "+col+" w "+this.mNodes[i].nodeWidth+" h "+this.mNodes[i].nodeHeight);
+					this.mNodesInfo.push({r:row, c:col});
+					if (this.mNodes[i].nodeWidth > this.mColWidth[col]) {
+						this.mColWidth[col] = this.mNodes[i].nodeWidth;
+					}
+					if (this.mNodes[i].nodeHeight > this.mRowHeight[row]) {
+						this.mRowHeight[row] = this.mNodes[i].nodeHeight;
+					}
+				}
+				var gap:int = 25;
+				var w:int = 300;
+				var h:int = 200;
+				this.mRowHeight.unshift(0);
+				for (i = 1; i < this.mRowHeight.length; i++) {
+					this.mRowHeight[i] = this.mRowHeight[i-1] + (this.mRowHeight[i]==0?h:this.mRowHeight[i]) + gap;
+				}
+				this.mColWidth.unshift(0);
+				for (i = 1; i < this.mColWidth.length; i++) {
+					this.mColWidth[i] = this.mColWidth[i-1] + (this.mColWidth[i]==0?w:this.mColWidth[i]) + gap;
+				}
+				for (i = 0; i < this.mNodes.length; i++) {
+					this.mNodes[i].x = this.mColWidth[this.mNodesInfo[i].c];
+					this.mNodes[i].y = this.mRowHeight[this.mNodesInfo[i].r];
+				}
+				this.mContainer.width = this.mColWidth[this.mColWidth.length-1];
+				this.mContainer.height = this.mRowHeight[this.mRowHeight.length-1]+200;
+				this.drawLines();
+			}
+			
+			private function drawLines():void {
+				
 			}
 		]]>
 	</fx:Script>

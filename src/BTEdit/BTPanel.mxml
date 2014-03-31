@@ -18,9 +18,11 @@
 			import mx.controls.Alert;
 			import mx.core.UIComponent;
 			import mx.events.CloseEvent;
+			import mx.events.IndexChangedEvent;
 			import mx.managers.PopUpManager;
 			
 			import spark.components.NavigatorContent;
+			import spark.events.IndexChangeEvent;
 			
 			private var mTarget:Entity;
 			private var mPhoto:UIComponent;
@@ -30,16 +32,28 @@
 			private var mTabDict:Object;
 			private var mTabNames:Array;
 			private var mTabSerial:int = 1;
+			
 			public static var CLIPPING:Object = null;
 			
-			[Embed(source="assets/root.png")] public static const ICON_ROOT:Class;
-			[Embed(source="assets/zhixing.png")] public static const ICON_EXEC:Class;
-			[Embed(source="assets/shunxu.png")] public static const ICON_SEQ:Class;
-			[Embed(source="assets/youxian.png")] public static const ICON_PRIO:Class;
-			[Embed(source="assets/tongbu.png")] public static const ICON_SPAWN:Class;
-			[Embed(source="assets/tiaojian.png")] public static const ICON_COND:Class;
-			[Embed(source="assets/xunhuan.png")] public static const ICON_LOOP:Class;
-			[Embed(source="assets/subtree.png")] public static const ICON_SUBTREE:Class;
+			private var mLastAddedTab:String = null;
+			private var modifiedAndSavedFiles:Object;
+			
+			[Embed(source="assets/root.png")] 
+			public static const ICON_ROOT:Class;
+			[Embed(source="assets/zhixing.png")] 
+			public static const ICON_EXEC:Class;
+			[Embed(source="assets/shunxu.png")] 
+			public static const ICON_SEQ:Class;
+			[Embed(source="assets/youxian.png")] 
+			public static const ICON_PRIO:Class;
+			[Embed(source="assets/tongbu.png")] 
+			public static const ICON_SPAWN:Class;
+			[Embed(source="assets/tiaojian.png")] 
+			public static const ICON_COND:Class;
+			[Embed(source="assets/xunhuan.png")] 
+			public static const ICON_LOOP:Class;
+			[Embed(source="assets/subtree.png")] 
+			public static const ICON_SUBTREE:Class;
 			
 			private function onCreation():void {
 				this.mTabDict = new Object();
@@ -52,16 +66,40 @@
 				this.width = w;
 				this.height = h;
 				this.mTarget = target;
-				
+				this.modifiedAndSavedFiles = new Object();
+				this.mTabNavigator.addEventListener(IndexChangedEvent.CHANGE, onTabIndexChanged);
+					
 				this.setLibrary();
 				this.setCharacterInfo();
 				if (this.mTargetBehaviors.length > 0) {
-					var data:Array = [];
-					for (var i:int = 0; i < this.mTargetBehaviors.length; i++) {
-						data.push(Data.getInstance().getBehaviorById(this.mTargetBehaviors[i]));
-					}
-					this.addTab(this.mTargetBehaviors[0], Utils.cloneObjectData(data));
+//					var data:Array = [];
+//					for (var i:int = 0; i < this.mTargetBehaviors.length; i++) {
+//						data.push(Data.getInstance().getBehaviorById(this.mTargetBehaviors[i]));
+//					}
+					this.addTab(this.mTargetBehaviors[0], [null]);
 				}
+			}
+			
+			private function onTabIndexChanged(event:IndexChangedEvent):void {
+				if (this.mLastAddedTab == this.mTabNames[event.newIndex]) {
+					
+				}
+				else {
+					var subTrees:Array = this.mTabDict[this.mTabNames[event.newIndex]].bt.getSubTrees();
+					if (subTrees && subTrees.length > 0) {
+						var modified:Boolean = false;
+						for (var i:int = 0; i < subTrees.length; i++) {
+							if (this.modifiedAndSavedFiles[subTrees]) {
+								modified = true;
+								break;
+							}
+						}
+						if (modified) {
+							this.mTabDict[this.mTabNames[event.newIndex]].bt.updateTree();
+						}
+					}
+				}
+				this.mLastAddedTab = null;
 			}
 			
 			private function setLibrary():void {
@@ -70,6 +108,9 @@
 				var menu:ContextMenu = new ContextMenu;
 				var item1:ContextMenuItem = new ContextMenuItem("重命名");
 				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onLibraryItemRename);
+				menu.addItem(item1);
+				item1 = new ContextMenuItem("复制");
+				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onLibraryItemCopy);
 				menu.addItem(item1);
 				var item0:ContextMenuItem = new ContextMenuItem("删除");
 				item0.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onLibraryItemDelete);
@@ -113,7 +154,7 @@
 			
 			private function onLibraryItemDelete(event:Event):void {
 				if (this.mLibrary.selectedIndex >= 0)
-					Alert.show("删除库行为会一并删除所有相关的行为，确定删除？", "警告", Alert.OK|Alert.CANCEL, this, onDeleteClose);
+					Alert.show("删除库行为会一并删除所有相关的行为，确定删除 "+this.mFilteredLibrary[this.mLibrary.selectedIndex]+"？", "警告", Alert.OK|Alert.CANCEL, this, onDeleteClose);
 				else {
 					Alert.show("请先选择要删除的行为");
 				}
@@ -148,6 +189,13 @@
 				input.setTitle("重命名行为", this.mFilteredLibrary[this.mLibrary.selectedIndex]);
 				PopUpManager.addPopUp(input, MapEditor.getInstance());
 				PopUpManager.centerPopUp(input);
+			}
+			
+			private function onLibraryItemCopy(event:Event):void {
+				if (this.mLibrary.selectedIndex < 0) return;
+				var name:String = this.mFilteredLibrary[this.mLibrary.selectedIndex];
+				BTPanel.CLIPPING = Utils.cloneObjectData(Data.getInstance().behaviorSet[name]);
+				trace("clipping data "+JSON.stringify(BTPanel.CLIPPING));
 			}
 			
 			private function renameBehavior(event:GameEvent):void {
@@ -210,19 +258,44 @@
 			}
 			
 			private function onPressSave(event:Event):void {
-				
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				if (this.mTabDict[current].modified) {
+					var data:Object = this.mTabDict[current].bt.export();
+					Data.getInstance().updateBehaviorSetById(current, data);
+					setTabModified(current, false);
+					Alert.show(current+" 保存成功!");
+					this.filterLibrary();
+					this.modifiedAndSavedFiles[current] = true;
+				}
 			}
 			
 			private function onPressSaveAll(event:Event):void {
-				
+				for (var tabName:String in this.mTabDict) {
+					if (this.mTabDict[tabName].modified) {
+						var data:Object = this.mTabDict[tabName].bt.export();
+						Data.getInstance().updateBehaviorSetById(tabName, data);
+						setTabModified(tabName, false);
+						this.modifiedAndSavedFiles[tabName] = true;
+					}
+				}
+				Alert.show("保存成功!");
+				this.filterLibrary();
 			}
 			
 			private function onPressApply(event:Event):void {
-				
+				var val:Array = [this.mTabNames[this.mTabNavigator.selectedIndex]];
+				Data.getInstance().updateEnemyBehaviorsById(Runtime.getInstance().currentLevelID, this.mTarget.type, val);
+				for (var i:int = 0; i < this.mFilteredLibrary.length; i++) {
+					if (this.mFilteredLibrary[i] == val[0]) {
+						this.mComboBox.selectedIndex = i;
+						break;
+					}
+				}
 			}
 			
 			private function onPressAutoLayout(event:Event):void {
-				
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				this.mTabDict[current].bt.autoLayout();
 			}
 			
 			private function onSearchChanged(event:Event):void {
@@ -244,27 +317,33 @@
 			}
 			
 			private function onPressNode1(event:Event):void {
-				
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_EXEC);
 			}
 			
 			private function onPressNode2(event:Event):void {
-				
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_SEQ);
 			}
 			
 			private function onPressNode3(event:Event):void {
-				
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_PRIO);
 			}
 			
 			private function onPressNode4(event:Event):void {
-				
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_SPAWN);
 			}
 			
 			private function onPressNode5(event:Event):void {
-				
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_COND);
 			}
 			
 			private function onPressNode6(event:Event):void {
-				
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_LOOP);
 			}
 			
 			private function addTab(name:String, data:Object):void {
@@ -287,6 +366,7 @@
 				tab.label = name+(modified?"*":"");
 				var index:int = this.mTabNames.indexOf(name);
 				this.mTabNavigator.selectedIndex = index;
+				this.mLastAddedTab = name;
 
 				this.mTabDict[name] = {tab:tab, modified:modified, bt:tree};
 			}
@@ -324,17 +404,67 @@
 			}
 			
 			private function onCloseAllTabsMenu(event:Event):void {
-				
+				var needWarning:String = null;
+				for (var tabName:String in this.mTabDict) {
+					if (this.mTabDict[tabName].modified) {
+						needWarning = tabName;
+						break;
+					}
+				}
+				if (needWarning) {
+					Alert.show(needWarning+" 有修改尚未保存，确定关闭？", "警告", Alert.OK|Alert.CANCEL, this, onConfirmCloseAll);
+				}
+				else {
+					for (tabName in this.mTabDict) {
+						this.closeTab(tabName);
+					}
+				}
 			}
 			
 			private function onCloseOtherTabsMenu(event:Event):void {
-				
+				var needWarning:String = null;
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				for (var tabName:String in this.mTabDict) {
+					if (tabName != current && this.mTabDict[tabName].modified) {
+						needWarning = tabName;
+						break;
+					}
+				}
+				if (needWarning) {
+					Alert.show(needWarning+" 有修改尚未保存，确定关闭？", "警告", Alert.OK|Alert.CANCEL, this, onConfirmCloseOthers);
+				}
+				else {
+					for (tabName in this.mTabDict) {
+						if (tabName != current) {
+							this.closeTab(tabName);
+						}
+					}
+				}
 			}
 			
 			private function onConfirmClose(event:CloseEvent):void {
 				if (event.detail == Alert.OK) {
 					var name:String = this.mTabNames[this.mTabNavigator.selectedIndex]
 					this.closeTab(name);
+				}
+			}
+			
+			private function onConfirmCloseAll(event:CloseEvent):void {
+				if (event.detail == Alert.OK) {
+					for (var tabName:String in this.mTabDict) {
+						this.closeTab(tabName);
+					}
+				}
+			}
+			
+			private function onConfirmCloseOthers(event:CloseEvent):void {
+				if (event.detail == Alert.OK) {
+					var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+					for (var tabName:String in this.mTabDict) {
+						if (tabName != current) {
+							this.closeTab(tabName);
+						}
+					}
 				}
 			}
 			
@@ -365,7 +495,7 @@
 					this.mTabNavigator.selectedIndex = index;
 				}
 				else {
-					this.addTab(name, [ Utils.cloneObjectData(Data.getInstance().getBehaviorById(name)) ]);
+					this.addTab(name, [ null ]);
 				}
 			}
 		]]>
