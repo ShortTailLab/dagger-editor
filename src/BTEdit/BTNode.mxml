@@ -559,6 +559,9 @@
 						this.mParent.nodeData = this.mData;
 					}
 				}
+				else {
+					this.mCanvas.data[0] = this.mData;
+				}
 			}
 			
 			private function onPressNext(event:Event):void {

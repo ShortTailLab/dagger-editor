@@ -9,7 +9,7 @@
 			import spark.components.Button;
 			
 			private var mCreated:Boolean = false;
-			private var mData:Object;
+			private var mData:Array;
 			private var mName:String;
 			private var mPanel:BTPanel;
 			private var mTreeRoot:BTNode;
@@ -31,7 +31,7 @@
 				}
 			}
 			
-			public function setData(name:String, data:Object, panel:BTPanel):void {
+			public function setData(name:String, data:Array, panel:BTPanel):void {
 				this.mData = data;
 				this.mName = name;
 				this.mPanel = panel;
@@ -188,7 +188,10 @@
 				}
 				if (data.children) {
 					for each (var subData:Object in data.children) {
-						result.concat(getSubTreesInObject(subData));
+						var r:Array = getSubTreesInObject(subData);
+						for (var i:int = 0; i < r.length; i++) {
+							result.push(r[i]);
+						}
 					}
 				}
 				return result;
@@ -269,6 +272,14 @@
 					this.mLineSprite.graphics.moveTo(p.x+p.nodeWidth+13, c.y+25);
 					this.mLineSprite.graphics.lineTo(c.x, c.y+25);
 				}
+			}
+			
+			public function get data():Array {
+				return this.mData;
+			}
+			
+			public function set data(value:Array):void {
+				this.mData = value;
 			}
 		]]>
 	</fx:Script>

@@ -346,7 +346,7 @@
 				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_LOOP);
 			}
 			
-			private function addTab(name:String, data:Object):void {
+			private function addTab(name:String, data:Array):void {
 				var tab:NavigatorContent;
 				if (this.mTabDict[name]) {
 					tab = this.mTabDict[name].tab;
