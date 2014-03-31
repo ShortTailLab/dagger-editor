@@ -78,6 +78,17 @@
 //					}
 					this.addTab(this.mTargetBehaviors[0], [null]);
 				}
+				
+				this.addEventListener(KeyboardEvent.KEY_DOWN, onPressKeyboard);
+			}
+			
+			private function onPressKeyboard(event:KeyboardEvent):void {
+				if (event.ctrlKey && event.keyCode == Keyboard.S) {
+					this.onPressSave();
+				}
+				else if (event.ctrlKey && event.shiftKey && event.keyCode == Keyboard.S) {
+					this.onPressSaveAll();
+				}
 			}
 			
 			private function onTabIndexChanged(event:IndexChangedEvent):void {
@@ -257,7 +268,7 @@
 				Data.getInstance().updateEnemyBehaviorsById(Runtime.getInstance().currentLevelID, this.mTarget.type, val);
 			}
 			
-			private function onPressSave(event:Event):void {
+			private function onPressSave(event:Event=null):void {
 				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
 				if (this.mTabDict[current].modified) {
 					var data:Object = this.mTabDict[current].bt.export();
@@ -269,7 +280,7 @@
 				}
 			}
 			
-			private function onPressSaveAll(event:Event):void {
+			private function onPressSaveAll(event:Event=null):void {
 				for (var tabName:String in this.mTabDict) {
 					if (this.mTabDict[tabName].modified) {
 						var data:Object = this.mTabDict[tabName].bt.export();
