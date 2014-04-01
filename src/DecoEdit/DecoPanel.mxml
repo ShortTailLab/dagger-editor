@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" width="1155" height="800" creationComplete="onCreation()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import spark.events.IndexChangeEvent;
+
+			protected function onLibrarySelected(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:Button right="0" top="0" width="30" height="20" label="x" click="onPressClose(event)"/>
+	<s:HGroup x="0" y="0" width="100%" height="30">
+		<s:Button width="80" height="25" label="保存当前" click="onPressSave(event)"/>
+		<s:Button width="80" height="25" label="保存所有" click="onPressSaveAll(event)"/>
+		<s:Button width="80" height="25" label="预览效果" click="onPressPreview(event)"/>
+	</s:HGroup>
+	<s:HGroup left="0" top="30" width="100%" height="100%" gap="5">
+		<s:Panel width="150" height="100%" borderVisible="false" dropShadowVisible="false"
+				 title="行为库">
+			<s:HGroup x="0" y="0" width="100%" height="100%" gap="0">
+				<s:VGroup width="100%" height="100%" gap="0">
+					<s:TextInput id="mSearch" width="100%" change="onSearchChanged(event)"/>
+					<s:List id="mLibrary" width="100%" height="100%" change="onLibrarySelected(event)"></s:List>
+				</s:VGroup>
+			</s:HGroup>
+		</s:Panel>
+		<s:Group width="100%" height="100%">
+			<mx:TabNavigator width="100%" height="100%" paddingTop="0">
+			</mx:TabNavigator>
+			
+		</s:Group>
+		<s:Group width="150" height="100%">
+			<mx:TabNavigator x="0" y="0" width="100%" height="100%" paddingTop="0">
+				<s:NavigatorContent width="100%" height="100%" label="元素">
+				</s:NavigatorContent>
+				<s:NavigatorContent width="100%" height="100%" label="组合">
+				</s:NavigatorContent>
+			</mx:TabNavigator>
+			
+		</s:Group>
+	</s:HGroup>
+</s:BorderContainer>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Scroller xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			xmlns:s="library://ns.adobe.com/flex/spark" 
+			xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" creationComplete="onCreate()">
+	<fx:Script>
+		<![CDATA[
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:RadioButtonGroup id="radiogroup1"/>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Group>
+		<s:HGroup id="mContainer" x="0" y="0" width="845" height="770" gap="0">
+			<s:VGroup width="150" height="100%" gap="0">
+				<s:Panel width="100%" height="300" dropShadowVisible="false" title="地图图层">
+					<mx:Tree x="0" y="0" width="100%" height="100%" borderVisible="false"></mx:Tree>
+					
+				</s:Panel>
+				<s:Panel width="100%" height="100%" dropShadowVisible="false" title="图层属性">
+					<s:VGroup width="100%" height="100%" gap="0">
+						<s:Group width="100%" height="110">
+							<s:Label x="10" y="10" text="宽度:"/>
+							<s:Label x="10" y="35" text="高度:"/>
+							<s:Label x="10" y="60" text="速度:"/>
+							<s:Label x="10" y="85" text="层级:"/>
+							<s:TextInput x="45" y="5" width="100" text="960" textAlign="center"/>
+							<s:TextInput x="45" y="30" width="100" text="1280" textAlign="center"/>
+							<s:TextInput x="45" y="55" width="100" text="40" textAlign="center"/>
+							<s:TextInput x="45" y="80" width="100" text="0" textAlign="center"/>
+						</s:Group>
+						<mx:Tree x="0" y="128" width="100%" height="100%"></mx:Tree>
+					</s:VGroup>
+				</s:Panel>
+				
+			</s:VGroup>
+			<s:Panel width="150" height="100%" dropShadowVisible="false" title="元素属性">
+				<s:Label x="10" y="10" text="名称:"/>
+				<s:Label x="11" y="35" text="类型:"/>
+				<s:Label x="11" y="75" text="X"/>
+				<s:Label x="11" y="90" text="Y"/>
+				<s:Label x="11" y="110" text="缩放"/>
+				<s:Label x="11" y="135" text="旋转"/>
+				<s:Label x="10" y="155" text="水平翻转"/>
+				<s:Label x="46" y="10" width="100" text="灌木" textAlign="center"/>
+				<s:Label x="47" y="35" width="100" text="元素组合" textAlign="center"/>
+				<s:Label x="10" y="175" text="垂直翻转"/>
+				<s:Label x="10" y="199" text="X速度"/>
+				<s:Label x="8" y="223" text="Y速度"/>
+				<s:Label x="9" y="247" text="旋转速度"/>
+				<s:Label x="8" y="273" text="旋转速度"/>
+				<s:Label x="10" y="300" text="每屏数量"/>
+				<s:HGroup x="28" y="55" horizontalAlign="left">
+					<s:RadioButton label="固定" groupName="radiogroup1"/>
+					<s:RadioButton label="随机" groupName="radiogroup1"/>
+				</s:HGroup>
+				<s:VGroup x="28" y="200" horizontalAlign="left">
+					<s:HGroup>
+						<s:RadioButton label="abs" groupName="radiogroup1"/>
+						<s:RadioButton label="p%" groupName="radiogroup1"/>
+					</s:HGroup>
+					<s:HGroup>
+						<s:RadioButton label="┏" groupName="radiogroup1"/>
+						<s:RadioButton label="┓" groupName="radiogroup1"/>
+						<s:RadioButton label="┗" groupName="radiogroup1"/>
+						<s:RadioButton label="┛" groupName="radiogroup1"/>
+					</s:HGroup>
+				</s:VGroup>
+				<s:HGroup x="28" y="75">
+					<s:TextInput x="0" y="0" width="50"/>
+					<s:Label x="55" y="0" text="~"/>
+					<s:TextInput x="60" y="0" width="50"/>
+				</s:HGroup>
+			</s:Panel>
+			<s:Scroller width="100%" height="100%">
+				<s:Group width="100%" height="100%">
+					<s:Group width="100%" height="100%">
+					</s:Group>
+				</s:Group>
+			</s:Scroller>
+		</s:HGroup>
+	</s:Group>
+</s:Scroller>
