@@ -177,6 +177,17 @@ package
 						}
 						result += "BT.cond("+sourceData.data.cond+",";
 					}
+					else if(sourceData.type == BType.BTYPE_ONCE) {
+						result += "BT.once(";
+					}
+					else if(sourceData.type == BType.BTYPE_EVERY)
+					{
+						if(sourceData.data.interval == "" || sourceData.data.skip == "") {
+							trace("genBtTree error: interval/skip is empty.");
+							return "";
+						}
+						result += "BT.every("+sourceData.data.interval+",";
+					}
 					else
 						return "";
 					
@@ -185,6 +196,9 @@ package
 						result += childrenJS.shift();
 						if(childrenJS.length > 0)
 							result += ",";
+					}
+					if (sourceData.type == BType.BTYPE_EVERY) {
+						result += ","+sourceData.data.skip;
 					}
 					result += ")";
 				}
