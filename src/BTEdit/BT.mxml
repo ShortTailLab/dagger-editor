@@ -128,6 +128,8 @@
 					case BTNode.FUNC_NODE_SPAWN: bitmap = new BTPanel.ICON_SPAWN(); break;
 					case BTNode.FUNC_NODE_COND: bitmap = new BTPanel.ICON_COND(); break;
 					case BTNode.FUNC_NODE_LOOP: bitmap = new BTPanel.ICON_LOOP(); break;
+					case BTNode.FUNC_NODE_ONCE: bitmap = new BTPanel.ICON_ONCE(); break;
+					case BTNode.FUNC_NODE_EVERY: bitmap = new BTPanel.ICON_EVERY(); break;
 				}
 				bitmap.x = -bitmap.width/2;
 				bitmap.y = -bitmap.height/2;

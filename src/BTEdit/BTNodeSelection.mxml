@@ -92,6 +92,16 @@
 				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_LOOP};
 				this.onPressClose();
 			}
+			
+			private function onPressFunc7(event:MouseEvent):void {
+				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_ONCE};
+				this.onPressClose();
+			}
+			
+			private function onPressFunc8(event:MouseEvent):void {
+				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_EVERY};
+				this.onPressClose();
+			}
 		]]>
 	</fx:Script>
 	<fx:Declarations>
@@ -123,6 +133,10 @@
 						  icon="@Embed('assets/tiaojian.png')"/>
 				<s:Button width="50" height="50" label="按钮" click="onPressFunc6(event)" buttonMode="true"
 						  icon="@Embed('assets/xunhuan.png')"/>
+				<s:Button width="50" height="50" label="按钮" click="onPressFunc7(event)" buttonMode="true"
+						  icon="@Embed('assets/once.png')"/>
+				<s:Button width="50" height="50" label="按钮" click="onPressFunc8(event)" buttonMode="true"
+						  icon="@Embed('assets/every.png')"/>
 			</s:VGroup>
 		</s:NavigatorContent>
 		<s:NavigatorContent width="100%" height="100%" label="行为库">
