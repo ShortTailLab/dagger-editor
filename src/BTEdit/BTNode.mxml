@@ -313,6 +313,7 @@
 				var numParams:int;
 				switch (this.mType) {
 					case TYPE_ROOT:
+						this.mLoop.visible = false;
 						this.mBtn.visible = true;
 						this.mBtn.setStyle("icon", this.isSubBT?new BTPanel.ICON_SUBTREE():new BTPanel.ICON_ROOT());
 						this.mSubContainer.width = this.mSubContainer.height = 50;
@@ -334,6 +335,7 @@
 						break;
 					case TYPE_FUNC: 
 						if (this.mName == FUNC_NODE_EXEC) {
+							this.mLoop.visible = false;
 							// empty node
 							if (this.mData.args || !this.mData.data) {
 								this.mBtn.visible = true;
@@ -394,6 +396,8 @@
 							}
 						}
 						else {
+							this.mLoop.visible = (this.mName==FUNC_NODE_LOOP);
+							if (this.mData.times) this.mLoop.text = this.mData.times;
 							this.mBtn.visible = true;
 							this.mBtn.setStyle("icon", new ICON_FUNC_NODE[this.mName]());
 							this.mSubContainer.width = this.mSubContainer.height = 50;
@@ -415,6 +419,7 @@
 						}
 						break;
 					case TYPE_EXEC:
+						this.mLoop.visible = false;
 						this.mBtn.visible = false;
 						this.mTitle.visible = true;
 						this.mTitle.text = this.mName.substr(8);
@@ -566,6 +571,9 @@
 						}
 						this.isSubBT = false;
 						newData = {type:event.data.name, data:null, children:this.mData.children};
+						if (event.data.name == FUNC_NODE_LOOP) {
+							newData.times = 1;
+						}
 						this.setData(TYPE_FUNC, event.data.name, newData, this.mCanvas, this.mParent);
 						break;
 					case TYPE_SUB_BT:
@@ -658,10 +666,17 @@
 			
 			private function onValueChanged(event:TextOperationEvent):void {
 				var id:String = event.currentTarget.id;
-				var index:int = int(id.charAt(id.length-1));
-				this.mData.data.parm[index-1].value = (event.currentTarget as TextInput).text;
-				this.writeDataBackToParent();
-				this.mCanvas.setModified(true);
+				if (id == "mLoop") {
+					this.mData.times = (event.currentTarget as TextInput).text;
+					this.writeDataBackToParent();
+					this.mCanvas.setModified(true);
+				}
+				else {
+					var index:int = int(id.charAt(id.length-1));
+					this.mData.data.parm[index-1].value = (event.currentTarget as TextInput).text;
+					this.writeDataBackToParent();
+					this.mCanvas.setModified(true);
+				}
 			}
 			
 			public function isInSubBT():Boolean {
@@ -792,6 +807,8 @@
 		<s:Label id="mVar6" x="0" y="155" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
 	</s:BorderContainer>
+	<s:TextInput id="mLoop" x="5" y="52" width="40" height="18" change="onValueChanged(event)"
+				 fontSize="11" text="1" textAlign="center"/>
 	<s:Button id="mNext" x="200" y="0" width="50" height="50" label="可接节点" 
 			  click="onPressNext(event)" middleClick="onPressNext(event)" cornerRadius="0" fontFamily="Arial" fontStyle="normal"
 			  fontWeight="normal" icon="@Embed('assets/zhixing.png')"/>
