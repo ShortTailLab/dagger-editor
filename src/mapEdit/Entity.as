@@ -40,9 +40,9 @@ package mapEdit
 			
 			// --- > skin
 			this.mSkin = new Sprite;
-			var data:BitmapData = Data.getInstance().getSkinById( profile.face );
-			if( data ) {
-				var bmpd:BitmapData = data;
+			var data:Object = Data.getInstance().getSkinById( profile.face );
+			if( data != "icu" && data ) {
+				var bmpd:BitmapData = data as BitmapData;
 				var skinBmp:Bitmap = new Bitmap(bmpd);
 				with( skinBmp ) {
 					x = -width*0.5; y = -height;

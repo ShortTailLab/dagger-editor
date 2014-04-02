@@ -10,6 +10,8 @@ package manager
 			super(type, bubbles, cancelable);
 		}
 		
+		public function get data():Object { return _data; };
+		
 		private var _data:Object;
 	}
 }

@@ -1,10 +1,24 @@
 package
 {
+	import BTEdit.BTPanel;
+	
+	import Trigger.EditTriggers;
+	
+	import behaviorEdit.BTEditPanel;
+	
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
+	
+	import manager.EventManager;
+	import manager.EventType;
+	import manager.GameEvent;
+	
+	import mapEdit.AreaTrigger;
+	import mapEdit.Component;
+	import mapEdit.Entity;
 	
 	import mx.core.FlexGlobals;
 	import mx.core.UIComponent;
@@ -12,14 +26,6 @@ package
 	
 	import spark.components.TextInput;
 	import spark.components.VGroup;
-	
-	import Trigger.EditTriggers;
-	
-	import behaviorEdit.BTEditPanel;
-	
-	import mapEdit.AreaTrigger;
-	import mapEdit.Component;
-	import mapEdit.Entity;
 	
 	public class MonsterSelector extends VGroup
 	{
@@ -201,13 +207,25 @@ package
 			win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
 		}
 		
+		static private var selectedTarget:Entity;
+		static private var btEdit:BTPanel;
 		static private function OpenBehaviorEditor(target:Entity):void
 		{
-			var btPanel:BTEditPanel = new BTEditPanel(target);
-			PopUpManager.addPopUp(btPanel, MapEditor.getInstance());
-			PopUpManager.centerPopUp(btPanel);
-			btPanel.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-btPanel.width/2;
-			btPanel.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-btPanel.height/2;
+//			var btPanel:BTEditPanel = new BTEditPanel(target);
+//			PopUpManager.addPopUp(btPanel, MapEditor.getInstance());
+//			PopUpManager.centerPopUp(btPanel);
+//			btPanel.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-btPanel.width/2;
+//			btPanel.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-btPanel.height/2;
+			
+			selectedTarget = target;
+			EventManager.getInstance().addEventListener(EventType.BT_EDIT_PANEL_CREATE, onBehaviorEditCreate);
+			btEdit = new BTPanel();
+			PopUpManager.addPopUp(btEdit, MapEditor.getInstance());
+		}
+		
+		static private function onBehaviorEditCreate(event:GameEvent):void {
+			EventManager.getInstance().removeEventListener(EventType.BT_EDIT_PANEL_CREATE, onBehaviorEditCreate);
+			btEdit.init(selectedTarget, FlexGlobals.topLevelApplication.stage.stageWidth, FlexGlobals.topLevelApplication.stage.stageHeight);
 		}
 	}
 }

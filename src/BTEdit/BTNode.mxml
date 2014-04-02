@@ -1,0 +1,799 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="250" height="185" borderVisible="false" initialize="onCreate()"
+				   dropShadowVisible="false">
+	<fx:Script>
+		<![CDATA[
+			import behaviorEdit.PathEditPanel;
+			
+			import manager.EventManager;
+			import manager.EventType;
+			import manager.GameEvent;
+			
+			import mx.controls.Alert;
+			import mx.controls.Text;
+			import mx.managers.PopUpManager;
+			
+			import spark.events.TextOperationEvent;
+			import spark.filters.GlowFilter;
+			
+			private var mCreated:Boolean = false;
+			private var mData:Object;
+			private var mType:int;
+			
+			/** root node, not editable */
+			public static const TYPE_ROOT:int = 1;
+			/** function node from 6 defined types */
+			public static const TYPE_FUNC:int = 3;
+			/** editable leaf */
+			public static const TYPE_EXEC:int = 4;
+			
+			
+			/** sub bt from other library, not editable */
+			public static const TYPE_SUB_BT:int = 2;
+			/** detached node */
+			public static const TYPE_DETACHED:int = 5;
+			
+			public static const FUNC_NODE_EXEC:String = "执行";
+			public static const FUNC_NODE_SEQ:String = "顺序";
+			public static const FUNC_NODE_PRIO:String = "优先";
+			public static const FUNC_NODE_SPAWN:String = "同步";
+			public static const FUNC_NODE_COND:String = "条件";
+			public static const FUNC_NODE_LOOP:String = "循环";
+			public static const ICON_FUNC_NODE:Object = {
+				"执行":BTPanel.ICON_EXEC, 
+				"顺序":BTPanel.ICON_SEQ, 
+				"优先":BTPanel.ICON_PRIO, 
+				"同步":BTPanel.ICON_SPAWN,
+				"条件":BTPanel.ICON_COND, 
+				"循环":BTPanel.ICON_LOOP
+			};
+			
+			private var mChildrens:Vector.<BTNode>;
+			private var mParent:BTNode;
+			private var mCanvas:BT;
+			private var mName:String;
+			private var mIsSubBT:Boolean = false;
+			private var mIsDetached:Boolean = false;
+			
+			private function onCreate():void {
+				this.mCreated = true;
+				var menu:ContextMenu = new ContextMenu();
+				var item0:ContextMenuItem = new ContextMenuItem("更换");
+				item0.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPressBtn);
+				menu.addItem(item0);
+				var item:ContextMenuItem = new ContextMenuItem("复制");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCopyNode);
+				menu.addItem(item);
+				item = new ContextMenuItem("粘贴");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteNode);
+				menu.addItem(item);
+				var item1:ContextMenuItem = new ContextMenuItem("删除");
+				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteNode);
+				menu.addItem(item1);
+				var item2:ContextMenuItem = new ContextMenuItem("解锁子行为");
+				item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onUnlockNode);
+				menu.addItem(item2);
+				this.mSubContainer.contextMenu = menu;
+				
+				menu = new ContextMenu();
+				item = new ContextMenuItem("更换");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPressNext);
+				menu.addItem(item);
+				item = new ContextMenuItem("粘贴");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteNodeToNext);
+				menu.addItem(item);
+				this.mNext.contextMenu = menu;
+				
+				this.mBtn.addEventListener(MouseEvent.MOUSE_OVER, onMouseOverNode);
+				this.mBtn.addEventListener(MouseEvent.MOUSE_OUT, onMouseOutNode);
+				this.mBtn.addEventListener(MouseEvent.CLICK, onMouseClickNode);
+				
+				if (this.mData) {
+					this.updateComponents();
+				}
+			}
+			
+			private function onInput1Click(event:Event):void {
+				if (this.isInSubBT()) return;
+				var id:String = event.currentTarget.id;
+				var index:int = int(id.charAt(id.length-1));
+				var data:Object = this.mData.data.parm[index-1];
+				var window:PathEditPanel = new PathEditPanel(name, data.path, data.type=="array_ccp_curve");
+				window.addEventListener(MsgEvent.EDIT_PATH, onPathEditPanelClose);
+				PopUpManager.addPopUp(window, this, true);
+				PopUpManager.centerPopUp(window);
+			}
+			
+			private function onPathEditPanelClose(e:MsgEvent):void {
+				for (var i:int = 1; i < 7; i++) {
+					if (this["mVar"+i].text == "path") {
+						break;
+					}
+				}
+				this["mInput"+i].text =  JSON.stringify(e.hintData);
+				this.mData.data.parm[i-1].path = e.hintData;
+				this.writeDataBackToParent();
+				this.mCanvas.setModified(true);
+			}
+			
+			private function onMouseOverNode(event:Event):void {
+				if (this.mCanvas.SELECTED_NODE && !this.isInSubBT()) {
+					var filter:spark.filters.GlowFilter = new spark.filters.GlowFilter();
+					filter.color = 0x00FF00;
+					filter.strength = 50;
+					filter.blurX = 20;
+					filter.blurY = 20;
+					this.mBtn.filters = [filter];
+				}
+			}
+			
+			private function onMouseOutNode(event:Event):void {
+				if (this.mCanvas.SELECTED_NODE && !this.isInSubBT()) {
+					this.mBtn.filters = [];
+				}
+			}
+			
+			private function onMouseClickNode(event:Event):void {
+				if (this.mCanvas.SELECTED_NODE && !this.isInSubBT()) {
+					var data:Object = {type:this.mCanvas.SELECTED_NODE, data:null, children:[]};
+					if (this.type == TYPE_ROOT) {
+						if (!this.mData.children || this.mData.children.length < 1) {
+							if (this.mData.subTree) {
+								this.mData.children = [data];
+							}
+							else {
+								this.mData = data;
+							}
+						}
+						else {
+							this.mData.children.push(data);
+						}
+						this.clearChildrens();
+					}
+					else {
+						if (!this.mData.children) {
+							this.mData.children = [data];
+						}
+						else {
+							this.mData.children.push(data);
+						}
+						this.clearChildrens();
+						this.writeDataBackToParent();
+					}
+					this.mCanvas.updateTree(true);
+					this.mCanvas.clearSelected();
+					this.mCanvas.setModified(true);
+					this.mBtn.filters = [];
+				}
+			}
+			
+			private function onCopyNode(event:Event):void {
+				trace(JSON.stringify(this.rootNode.nodeData));
+				BTPanel.CLIPPING = Utils.cloneObjectData(this.mData);
+				trace("clipping data "+JSON.stringify(this.mData));
+			}
+			
+			private function onDeleteNode(event:Event):void {
+				if (this.isInSubBT()) {
+					var root:BTNode = this.rootSubBT;
+					if (root.nodeParent.type == TYPE_ROOT) {
+						root.nodeParent.nodeData = {type:"执行", children:[], data:null};
+					}
+					else {
+						var index:int = root.nodeParent.nodeChildrens.indexOf(root);
+						root.nodeParent.nodeData.children.splice(index, 1);
+					}
+					root.nodeParent.writeDataBackToParent();
+//					root.nodeParent.updateComponents();
+					root.clearChildrens();
+					this.mCanvas.removeNodeFromCanvas(root);
+				}
+				else {
+					this.clearChildrens();
+					if (this.mParent) {
+						this.mCanvas.removeNodeFromCanvas(this);
+						if (this.mParent.type == TYPE_ROOT && this.mParent.nodeChildrens.length == 1) {
+							this.mParent.nodeData = {type:"执行", children:[], data:null};
+						}
+						else {
+							index = this.mParent.nodeChildrens.indexOf(this);
+							this.mParent.nodeData.children.splice(index, 1);
+						}
+						this.mParent.writeDataBackToParent();
+//						this.mParent.updateComponents();
+					}
+					else {
+						this.mData = {type:"执行", children:[], data:null};
+//						this.updateComponents();
+					}
+				}
+				this.mCanvas.updateTree(true);
+				this.mCanvas.setModified(true);
+			}
+			
+			private function onUnlockNode(event:Event):void {
+				var root:BTNode = this.rootSubBT;
+				if (!root) {
+					Alert.show("节点不在子行为上，无需解锁");
+				}
+				else {
+					if (root.nodeParent.type == TYPE_ROOT) {
+						root.nodeParent.nodeData = root.nodeData;
+					}
+					else {
+						var index:int = root.nodeParent.nodeChildrens.indexOf(root);
+						root.nodeParent.nodeData.children[index] = root.nodeData;
+					}
+					root.nodeParent.writeDataBackToParent();
+					this.mCanvas.removeNodeFromCanvas(root);
+					this.mCanvas.setModified(true);
+					this.mCanvas.updateTree(true);
+				}
+			}
+			
+			private function onPasteNode(event:Event):void {
+				if (BTPanel.CLIPPING) {
+					var clipping:Object = Utils.cloneObjectData(BTPanel.CLIPPING);
+					if (this.isInSubBT()) {
+						if (this.type == TYPE_ROOT) {
+							this.mCanvas.setModified(true);
+							if (this.mParent.type == TYPE_ROOT) {
+								this.mParent.nodeData = clipping;
+								this.mParent.clearChildrens();
+							}
+							else {
+								var index:int = this.mParent.mChildrens.indexOf(this);
+								this.mParent.nodeData.children[index] = clipping;
+							}
+							this.mParent.writeDataBackToParent();
+//							this.mParent.updateComponents();
+							this.mCanvas.updateTree(true);
+						}
+					}
+					else {
+						this.mCanvas.setModified(true);
+						if (!this.mParent) {
+							this.mData = clipping;
+							this.clearChildrens();
+//							this.updateComponents();
+						}
+						else {
+							if (this.mParent.type == TYPE_ROOT) {
+								this.mParent.nodeData = clipping;
+								this.mParent.clearChildrens();
+							}
+							else {
+								index = this.mParent.mChildrens.indexOf(this);
+								this.mParent.nodeData.children[index] = clipping;
+							}
+							this.mParent.writeDataBackToParent();
+//							this.mParent.updateComponents();
+						}
+						this.mCanvas.updateTree(true);
+					}
+				}
+			}
+			
+			private function onPasteNodeToNext(event:Event):void {
+				if (BTPanel.CLIPPING) {
+					var clipping:Object = Utils.cloneObjectData(BTPanel.CLIPPING);
+					if (this.type == TYPE_ROOT) {
+						this.mData = clipping;
+					}
+					else {
+						this.mData.children.push(clipping);
+					}
+					this.writeDataBackToParent();
+					this.mCanvas.setModified(true);
+//					this.updateComponents();
+					this.mCanvas.updateTree(true);
+				}
+			}
+			
+			public function setData(type:int, name:String, data:Object, canvas:BT, parent:BTNode=null):void {
+				this.mType = type;
+				this.mData = data;
+				this.mCanvas = canvas;
+				this.mParent = parent;
+				this.mName = name;
+				
+				if (this.mCreated) {
+					this.updateComponents();
+				}
+			}
+			
+			public function updateComponents():void {
+//				trace("name "+this.mName+" depth "+this.nodeDepth+" siblingIndex "+this.siblingIndex);
+				var i:int;
+				var j:int;
+				var hasNextNode:Boolean = false;
+				var numParams:int;
+				switch (this.mType) {
+					case TYPE_ROOT:
+						this.mBtn.visible = true;
+						this.mBtn.setStyle("icon", this.isSubBT?new BTPanel.ICON_SUBTREE():new BTPanel.ICON_ROOT());
+						this.mSubContainer.width = this.mSubContainer.height = 50;
+						for (i = 1; i < 7; i++) {
+							this["mVar"+i].visible = false;
+							this["mInput"+i].visible = false;
+						}
+						this.mTitle.visible = false;
+//						if (!this.mData.children || (!this.mData.data && this.mData.children.length == 0 && !this.mData.type)) {
+//							this.mNextLine.visible = true;
+//							this.mNext.visible = true;
+//							this.mNextLine.x = 50;
+//							this.mNext.x = 100;
+//						}
+//						else {
+							this.mNextLine.visible = false;
+							this.mNext.visible = false;
+//						}
+						break;
+					case TYPE_FUNC: 
+						if (this.mName == FUNC_NODE_EXEC) {
+							// empty node
+							if (this.mData.args || !this.mData.data) {
+								this.mBtn.visible = true;
+								this.mBtn.setStyle("icon", new ICON_FUNC_NODE[this.mName]());
+								this.mSubContainer.width = this.mSubContainer.height = 50;
+								for (i = 1; i < 7; i++) {
+									this["mVar"+i].visible = false;
+									this["mInput"+i].visible = false;
+								}
+								this.mTitle.visible = false;
+								this.mNext.visible = false;
+								this.mNextLine.visible = false;
+							}
+							// contains children, replace it
+							else {
+								this.mBtn.visible = false;
+								this.mTitle.visible = true;
+								this.mTitle.text = this.mData.data.execType.substr(8);
+								hasNextNode = false;
+								j = 1;
+								for (i = 0; i < this.mData.data.parm.length; i++) {
+									if (this.mData.data.parm[i].type == "node") {
+										hasNextNode = true;
+									}
+									else {
+										this["mVar"+j].visible = true;
+										this["mInput"+j].visible = true;
+										this["mVar"+j].text = this.mData.data.parm[i].name;
+										this["mInput"+j].text = this.mData.data.parm[i].value || JSON.stringify(this.mData.data.parm[i].path);
+										if (this.mData.data.parm[i].path) {
+											this["mInput"+j].addEventListener(MouseEvent.CLICK, onInput1Click);
+										}
+										else {
+											this["mInput"+j].removeEventListener(MouseEvent.CLICK, onInput1Click);
+										}
+										(this["mInput"+j] as TextInput).editable = !this.isInSubBT();
+										j++;
+									}
+								}
+								numParams = j;
+								for (; j < 7; j++) {
+									this["mVar"+j].visible = false;
+									this["mInput"+j].visible = false;
+								}
+								if (hasNextNode && (!this.mData.children || this.mData.children.length < 1)) {
+									this.mNext.visible = true;
+									this.mNextLine.visible = true;
+									this.mNextLine.x = 150;
+									this.mNext.x = 200;
+								}
+								else {
+									this.mNext.visible = false;
+									this.mNextLine.visible = false;
+								}
+								this.mSubContainer.width = 150;
+								numParams = numParams<2?2:numParams;
+								this.mSubContainer.height = 185-(7-numParams)*25;
+							}
+						}
+						else {
+							this.mBtn.visible = true;
+							this.mBtn.setStyle("icon", new ICON_FUNC_NODE[this.mName]());
+							this.mSubContainer.width = this.mSubContainer.height = 50;
+							for (i = 1; i < 7; i++) {
+								this["mVar"+i].visible = false;
+								this["mInput"+i].visible = false;
+							}
+							if (this.mData.children && this.mData.children.length > 0) {
+								this.mNext.visible = false;
+								this.mNextLine.visible = false;
+							}
+							else {
+								this.mNext.visible = true;
+								this.mNextLine.visible = true;
+								this.mNextLine.x = 50;
+								this.mNext.x = 100;
+							}
+							this.mTitle.visible = false;
+						}
+						break;
+					case TYPE_EXEC:
+						this.mBtn.visible = false;
+						this.mTitle.visible = true;
+						this.mTitle.text = this.mName.substr(8);
+						hasNextNode = false;
+						j = 1;
+						var params:Object = this.mData.data.parm;
+						for (i = 0; i < params.length; i++) {
+							if (params[i].type == "node") {
+								hasNextNode = true;
+							}
+							else {
+								this["mVar"+j].visible = true;
+								this["mInput"+j].visible = true;
+								this["mVar"+j].text = params[i].name;
+								this["mInput"+j].text = params[i].value || JSON.stringify(params[i].path);
+								if (params[i].path) {
+									this["mInput"+j].addEventListener(MouseEvent.CLICK, onInput1Click);
+								}
+								else {
+									this["mInput"+j].removeEventListener(MouseEvent.CLICK, onInput1Click);
+								}
+								(this["mInput"+j] as TextInput).editable = !this.isInSubBT();
+								j++;
+							}
+						}
+						numParams = j;
+						for (; j < 7; j++) {
+							this["mVar"+j].visible = false;
+							this["mInput"+j].visible = false;
+						}
+						if (hasNextNode && (this.mData.args || !this.mData.children || this.mData.children.length < 1)) {
+							this.mNext.visible = true;
+							this.mNextLine.visible = true;
+							this.mNextLine.x = 150;
+							this.mNext.x = 200;
+						}
+						else {
+							this.mNext.visible = false;
+							this.mNextLine.visible = false;
+						}
+						this.mSubContainer.width = 150;
+						this.mSubContainer.height = 185-(7-numParams)*25;
+						break;
+				}
+				this.updateChildrens();
+			}
+			
+			public function clearChildrens():void {
+				if (this.mChildrens) {
+					for (var i:int = 0; i < this.mChildrens.length; i++) {
+						this.mChildrens[i].mCanvas.removeNodeFromCanvas(this.mChildrens[i]);
+						this.mChildrens[i].clearChildrens();
+					}
+				}
+				this.mChildrens = new Vector.<BTNode>();
+			}
+			
+			private function updateChildrens():void {
+				this.clearChildrens();
+				var child:BTNode;
+				switch (this.mType) {
+					case TYPE_ROOT:
+						if (this.mData.type) {
+							child = new BTNode();
+							this.mChildrens.push(child);
+							child.setData(TYPE_FUNC, this.mData.type, this.mData, this.mCanvas, this);
+							this.mCanvas.addNodeToCanvas(child);
+						}
+						else if (this.mData.subTree) {
+							child = new BTNode();
+							this.mChildrens.push(child);
+							var subTreeData:Object = Utils.cloneObjectData(Data.getInstance().behaviorSet[this.mData.subTree]);
+							child.isSubBT = true;
+							child.setData(TYPE_ROOT, this.mData.subTree, subTreeData, this.mCanvas, this);
+							this.mCanvas.addNodeToCanvas(child);
+						}
+						else if (this.mData.execType) {
+							// error
+						}
+						break;
+					case TYPE_FUNC:
+						for each (var data:Object in this.mData.children) {
+							child = new BTNode();
+							this.mChildrens.push(child);
+							if (data.type) {
+								child.setData(TYPE_FUNC, data.type, data, this.mCanvas, this);
+							}
+							else if (data.subTree) {
+								subTreeData = Utils.cloneObjectData(Data.getInstance().behaviorSet[data.subTree]);
+								child.isSubBT = true;
+								child.setData(TYPE_ROOT, data.subTree, subTreeData, this.mCanvas, this);
+							}
+							else if (data.execType) {
+								// error
+							}
+							this.mCanvas.addNodeToCanvas(child);
+						}
+						break;
+				}
+			}
+			
+			private function onBtnIconLoad(event:Event):void {
+				var bmpData:BitmapData = event.currentTarget.content.bitmapData;
+				this.mBtn.setStyle("icon", bmpData);
+			}
+			
+			private function onPressBtn(event:Event):void {
+				if (this.mType == TYPE_ROOT && !this.isInSubBT()) return;
+				if (this.mType != TYPE_ROOT && this.isInSubBT()) {
+					Alert.show("子行为已锁定，解锁后可编辑");
+					return;
+				}
+				
+				EventManager.getInstance().addEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNodeSelected);
+				var selection:BTNodeSelection = new BTNodeSelection();
+				PopUpManager.addPopUp(selection, MapEditor.getInstance());
+				PopUpManager.centerPopUp(selection);
+			}
+			
+			private function onNodeSelected(event:GameEvent):void {
+				EventManager.getInstance().removeEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNodeSelected);
+				if (!event.data) return;
+				
+				// change current node
+				var newData:Object;
+				switch (event.data.type) {
+					case TYPE_EXEC:
+//						if (this.isSubBT) {
+							this.clearChildrens();
+							this.mData.children = [];
+//						}
+						this.isSubBT = false;
+						newData = {type:"执行", children:this.mData.children, data:{execType:event.data.name.func, parm:[]}};
+						for (var i:int = 0; i < event.data.name.args.length; i++) {
+							if (event.data.name.args[i].name == "path") {
+								event.data.name.args[i].path = [];
+							}
+							else {
+								event.data.name.args[i].value = event.data.name.args[i].type;
+							}
+							newData.data.parm.push(event.data.name.args[i]);
+						}
+						this.setData(TYPE_EXEC, event.data.name.func, newData, this.mCanvas, this.mParent);
+						break;
+					case TYPE_FUNC:
+						if (this.isSubBT) {
+							this.clearChildrens();
+							this.mData.children = [];
+						}
+						this.isSubBT = false;
+						newData = {type:event.data.name, data:null, children:this.mData.children};
+						this.setData(TYPE_FUNC, event.data.name, newData, this.mCanvas, this.mParent);
+						break;
+					case TYPE_SUB_BT:
+						if (event.data.name == this.rootNode.nodeName) {
+							Alert.show("不能递归嵌套行为！");
+							return;
+						}
+						this.isSubBT = true;
+						this.clearChildrens();
+						newData = Utils.cloneObjectData(Data.getInstance().behaviorSet[event.data.name]);;
+						this.setData(TYPE_ROOT, event.data.name, newData, this.mCanvas, this.mParent);
+						break;
+				}
+				this.writeDataBackToParent();
+				this.mCanvas.setModified(true);
+				this.mCanvas.updateTree(true);
+			}
+			
+			public function writeDataBackToParent():void {
+				if (this.mParent) {
+					if (this.isSubBT) {
+						if (this.mParent.type == TYPE_ROOT) {
+							this.mParent.nodeData = {subTree:this.mName};
+						}
+						else {
+							var index:int = this.mParent.nodeChildrens.indexOf(this);
+							this.mParent.nodeData.children[index] = {subTree:this.mName};
+						}
+					}
+					else if (this.mParent.type != TYPE_ROOT) {
+						index = this.mParent.nodeChildrens.indexOf(this);
+						this.mParent.nodeData.children[index] = this.mData;
+						this.mParent.writeDataBackToParent();
+					}
+					else {
+						this.mParent.nodeData = this.mData;
+					}
+				}
+				else {
+					this.mCanvas.data[0] = this.mData;
+				}
+			}
+			
+			private function onPressNext(event:Event):void {
+				if (this.isInSubBT()) return;
+				
+				EventManager.getInstance().addEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNextNodeSelected);
+				var selection:BTNodeSelection = new BTNodeSelection();
+				PopUpManager.addPopUp(selection, MapEditor.getInstance());
+				PopUpManager.centerPopUp(selection);
+			}
+			
+			private function onNextNodeSelected(event:GameEvent):void {
+				EventManager.getInstance().removeEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNextNodeSelected);
+				if (!event.data) return;
+				
+				this.mData.children = [];
+				var newData:Object;
+				switch (event.data.type) {
+					case TYPE_EXEC:
+						newData = {type:"执行", children:[], data:{execType:event.data.name.func, parm:[]}};
+						for (var i:int = 0; i < event.data.name.args.length; i++) {
+							event.data.name.args[i].value = event.data.name.args[i].type;
+							newData.data.parm.push(event.data.name.args[i]);
+						}
+						if (this.type == TYPE_ROOT) {
+							this.mData = newData;
+						}
+						else {
+							this.mData.children.push(newData);
+						}
+						break;
+					case TYPE_FUNC:
+						newData = {type:event.data.name, data:null, children:[]};
+						if (this.type == TYPE_ROOT) {
+							this.mData = newData;
+						}
+						else {
+							this.mData.children.push(newData);
+						}
+						break;
+					case TYPE_SUB_BT:
+						this.mData.children.push({subTree:event.data.name});
+						break;
+				}
+				this.writeDataBackToParent();
+				this.mCanvas.setModified(true);
+				this.mCanvas.updateTree(true);
+			}
+			
+			private function onValueChanged(event:TextOperationEvent):void {
+				var id:String = event.currentTarget.id;
+				var index:int = int(id.charAt(id.length-1));
+				this.mData.data.parm[index-1].value = (event.currentTarget as TextInput).text;
+				this.writeDataBackToParent();
+				this.mCanvas.setModified(true);
+			}
+			
+			public function isInSubBT():Boolean {
+				if (this.isSubBT) return true;
+				if (this.mParent) {
+					return this.mParent.isInSubBT();
+				}
+				return false;
+			}
+			
+			public function get nodeDepth():int {
+				var depth:int = 0;
+				var p:BTNode = this.mParent;
+				while (p) {
+					depth++;
+					p = p.nodeParent;
+				}
+				return depth;
+			}
+			
+			public function get siblingIndex():int {
+				if (this.mParent) { 
+					var index:int = this.mParent.nodeChildrens.indexOf(this);
+					if (index <= 0) {
+						return this.mParent.siblingIndex;
+					}
+					else {
+						return this.mParent.nodeChildrens[index-1].maxSiblings + this.mParent.nodeChildrens[index-1].siblingIndex;
+					}
+				}
+				return 0;
+			}
+			
+			/** max depth count from current node */
+			public function get maxDepth():int {
+				if (this.mChildrens.length <= 0) return 1;
+				var max:int = 1;
+				for (var i:int = 0; i < this.mChildrens.length; i++) {
+					var depth:int = this.mChildrens[i].maxDepth;
+					if (depth > max) {
+						max = depth;
+					}
+				}
+				return max+1;
+			}
+			
+			public function get maxSiblings():int {
+				if (!this.mChildrens || this.mChildrens.length <= 0) return 1;
+				var max:int = 0;
+				for (var i:int = 0; i < this.mChildrens.length; i++) {
+					var s:int = this.mChildrens[i].maxSiblings;
+					max += s;
+				}
+				return max;
+			}
+			
+			public function get rootNode():BTNode {
+				if (this.mParent) {
+					return this.mParent.rootNode;
+				}
+				return this;
+			}
+			
+			public function get rootSubBT():BTNode {
+				if (!this.mParent) {
+					return null;
+				}
+				if (this.isSubBT && this.type == TYPE_ROOT) {
+					return this;
+				}
+				return this.mParent.rootSubBT;
+			}
+			
+			public function get nodeWidth():Number {
+				return this.mSubContainer.width;
+			}
+			
+			public function get nodeHeight():Number {
+				return this.mSubContainer.height;
+			}
+			
+			public function get type():int { return this.mType; }
+			public function get nodeParent():BTNode { return this.mParent; }
+			public function get nodeChildrens():Vector.<BTNode> { return this.mChildrens; }
+			public function get nodeName():String { return this.mName; }
+			public function get nodeData():Object { return this.mData; }
+			public function set nodeData(value:Object):void { this.mData = value; }
+			public function get isSubBT():Boolean { return this.mIsSubBT};
+			public function set isSubBT(value:Boolean):void { this.mIsSubBT = value; }
+			public function get isDetached():Boolean { return this.mIsDetached};
+			public function set isDetached(value:Boolean):void { this.isDetached = value; }
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer id="mSubContainer" width="150" height="180" backgroundColor="#3A9CFF"
+					   borderVisible="true" dropShadowVisible="true"
+					   middleClick="onPressBtn(event)">
+		<s:Button id="mBtn" width="50" height="50" 
+				  cornerRadius="0" fontFamily="Arial" fontStyle="normal" fontWeight="normal"
+				  icon="assets/zhixing.png"/>
+		<s:Label id="mTitle" x="0" y="0" width="100%" color="#FFFFFF" fontSize="12" text="StayOnMap"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:Label id="mVar1" x="0" y="30" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:Label id="mVar2" x="0" y="55" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:TextInput id="mInput1" x="75" y="25" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
+		<s:TextInput id="mInput2" x="75" y="50" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
+		<s:TextInput id="mInput3" x="75" y="75" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
+		<s:TextInput id="mInput4" x="75" y="100" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
+		<s:TextInput id="mInput5" x="75" y="125" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
+		<s:TextInput id="mInput6" x="75" y="150" width="50%" change="onValueChanged(event)"
+					 textAlign="center"/>
+		<s:Label id="mVar3" x="0" y="80" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:Label id="mVar4" x="0" y="105" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:Label id="mVar5" x="0" y="130" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+		<s:Label id="mVar6" x="0" y="155" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
+				 textAlign="center" verticalAlign="middle"/>
+	</s:BorderContainer>
+	<s:Button id="mNext" x="200" y="0" width="50" height="50" label="可接节点" 
+			  click="onPressNext(event)" middleClick="onPressNext(event)" cornerRadius="0" fontFamily="Arial" fontStyle="normal"
+			  fontWeight="normal" icon="@Embed('assets/zhixing.png')"/>
+	<mx:HRule id="mNextLine" x="150" y="25" width="50"/>
+</s:BorderContainer>
