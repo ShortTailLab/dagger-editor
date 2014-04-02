@@ -186,7 +186,7 @@ package
 							trace("genBtTree error: interval/skip is empty.");
 							return "";
 						}
-						result += "BT.every("+sourceData.data.interval+","+sourceData.data.skip+",";
+						result += "BT.every("+sourceData.data.interval+",";
 					}
 					else
 						return "";
@@ -196,6 +196,9 @@ package
 						result += childrenJS.shift();
 						if(childrenJS.length > 0)
 							result += ",";
+					}
+					if (sourceData.type == BType.BTYPE_EVERY) {
+						result += ","+sourceData.data.skip;
 					}
 					result += ")";
 				}
