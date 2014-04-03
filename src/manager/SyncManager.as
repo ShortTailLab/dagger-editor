@@ -225,7 +225,6 @@ package manager
 					
 					function uploadVersion( msg:String ):void
 					{
-						trace( msg );
 						var vf:File = Data.getInstance().resolvePath(vf_path);
 						var fstream:FileStream = new FileStream();
 						fstream.open(vf, FileMode.WRITE);
@@ -300,28 +299,25 @@ package manager
 				urlRequest.url = kOSS_ADDRESS+kOSS_BUCKET+"/"+remote_path;
 
 				var headers:Array = [];
-				var md5:String = "";
 				var extension:String = remote_path.substring(remote_path.lastIndexOf(".")+1);
 				if (extension == "js" || extension == "json") {
 					headers.push( new URLRequestHeader("Content-Encoding","gzip") );
 					var gzipEncoder:GZIPBytesEncoder = new GZIPBytesEncoder();
 					var data:ByteArray = gzipEncoder.compressToByteArray(file.data);
 					urlRequest.data = data;
-					md5 = MD5.hashBytes(data);
 				}
 				else {
-					md5 = Utils.getMD5Sum(file);
 					urlRequest.data = file.data;
 				}
 				
 				var date:Date = new Date();
 				var token:String = getToken(
-					URLRequestMethod.PUT, md5, "application/octet-stream", 
+					URLRequestMethod.PUT, "", "application/octet-stream", 
 					date, "/"+kOSS_BUCKET+"/"+remote_path
 				);
 
 				headers.push( new URLRequestHeader("Date",RFCTimeFormat.toRFC802(date)) );
-				headers.push( new URLRequestHeader("Content-Md5", md5) );
+//				headers.push( new URLRequestHeader("Content-Md5", md5) );
 				headers.push( new URLRequestHeader("Content-Type", "application/octet-stream") );
 			 	headers.push( new URLRequestHeader(
 					"Authorization", "OSS "+kOSS_KEY_ID+":"+token
@@ -340,6 +336,10 @@ package manager
 						onError( "[SECURITY-ERROR]"+e.text );
 					}
 				);
+				
+				urlLoader.addEventListener(Event.COMPLETE, function(e:Event) {
+					trace(e.currentTarget.data);
+				});
 				
 				urlLoader.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, 
 					function(e:HTTPStatusEvent):void {
@@ -360,8 +360,9 @@ package manager
 		}
 		
 		private function getToken(verb:String, md5:String, type:String, date:Date, filepath:String):String {
-			var content:String = verb+"\n"+md5+"\n"+type+"\n"+RFCTimeFormat.toRFC802(date)+"\n"+filepath;
-			
+			//var content:String = verb+"\n"+md5+"\n"+type+"\n"+RFCTimeFormat.toRFC802(date)+"\n"+filepath;
+			var content:String = verb+"\n\n"+type+"\n"+RFCTimeFormat.toRFC802(date)+"\n"+filepath;
+
 			var keyBytesArray:ByteArray = new ByteArray();
 			keyBytesArray.writeMultiByte(kOSS_KEY_SECREET, "utf-8");
 			
@@ -369,7 +370,6 @@ package manager
 			contentByteArray.writeMultiByte(content, "utf-8");
 			
 			var result:ByteArray = Crypto.getHMAC("hmac-sha1").compute(keyBytesArray, contentByteArray);
-			//trace("\nsignature content: "+content+"\n");
 			return Base64.encode(result);
 		}
 		
