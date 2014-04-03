@@ -225,6 +225,7 @@ package manager
 					
 					function uploadVersion( msg:String ):void
 					{
+						trace( msg );
 						var vf:File = Data.getInstance().resolvePath(vf_path);
 						var fstream:FileStream = new FileStream();
 						fstream.open(vf, FileMode.WRITE);
@@ -345,7 +346,12 @@ package manager
 						if( e.status == 200 )
 							onComplete( "[上传成功]: \n"+e.responseURL );
 						else 
-							onError( "[ERROR]"+e.status );
+						{
+							var msg = "[ERROR"+e.status+"]";
+							for each( var h:URLRequestHeader in e.responseHeaders)
+								msg+= "\n"+h.name+":"+h.value;
+							onError( msg );
+						}
 					}
 				);
 				urlLoader.load(urlRequest);
