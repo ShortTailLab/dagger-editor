@@ -18,6 +18,7 @@
 			import mx.managers.PopUpManager;
 			
 			import spark.components.Group;
+			import spark.components.RichEditableText;
 			import spark.events.TextOperationEvent;
 			import spark.filters.GlowFilter;
 			
@@ -77,6 +78,9 @@
 				item = new ContextMenuItem("粘贴");
 				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteNode);
 				menu.addItem(item);
+				item = new ContextMenuItem("剪切");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCutNode);
+				menu.addItem(item);
 				var item1:ContextMenuItem = new ContextMenuItem("删除");
 				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteNode);
 				menu.addItem(item1);
@@ -122,17 +126,28 @@
 			
 			public var lastMouse:Point;
 			private function onMouseDownContainer(event:Event):void {
-				if (this.mCanvas.SELECTED_NODE) return;
-				if (!this.mParent) return;
+				if (this.mCanvas.SELECTED_NODE || event.target is RichEditableText) return;
+				if (this.mCanvas.CURRENT_EDIT_NODE) {
+					this.mCanvas.CURRENT_EDIT_NODE.mSubContainer.filters = [];
+				}
+				var filter:spark.filters.GlowFilter = new spark.filters.GlowFilter();
+				filter.color = 0xFFFF00;
+				filter.strength = 50;
+				filter.blurX = 20;
+				filter.blurY = 20;
 				var node:BTNode;
 				if (this.isInSubBT()) node = this.rootSubBT;
 				else node = this;
+				node.mSubContainer.filters = [filter];
+				this.mCanvas.CURRENT_EDIT_NODE = node;
+				
+				if (!this.mParent) return;
 				this.mCanvas.DRAGGING_NODES = node.getAllChildrens();
 				this.mCanvas.DRAGGING_INFOS = [];
 				for each (var n:BTNode in this.mCanvas.DRAGGING_NODES) {
 					this.mCanvas.DRAGGING_INFOS.push({x:n.x, y:n.y, index:(n.parent as Group).getChildIndex(n)});
 					(n.parent as Group).setElementIndex(n, (n.parent as Group).numElements-1);
-					n.alpha = 0.7;
+//					n.alpha = 0.7;
 					n.mSubContainer.removeEventListener(MouseEvent.ROLL_OVER, n.onMouseOverContainer);
 					n.mSubContainer.removeEventListener(MouseEvent.ROLL_OUT, n.onMouseOutContainer);
 					n.mouseChildren = false;
@@ -144,6 +159,7 @@
 			}
 			
 			private function onMouseMoveStage(event:MouseEvent):void {
+				if (!this.stage) return;
 				var p:Point = new Point(this.stage.mouseX, this.stage.mouseY);
 				for each (var n:BTNode in this.mCanvas.DRAGGING_NODES) {
 					n.x += p.x - lastMouse.x;
@@ -158,7 +174,7 @@
 				var i:int = 0;
 				for each (var n:BTNode in this.mCanvas.DRAGGING_NODES) {
 					n.stopDrag();
-					n.alpha = 1;
+//					n.alpha = 1;
 					n.x = this.mCanvas.DRAGGING_INFOS[i].x;
 					n.y = this.mCanvas.DRAGGING_INFOS[i].y;
 					(n.parent as Group).setElementIndex(n, this.mCanvas.DRAGGING_INFOS[i].index);
@@ -306,7 +322,7 @@
 					}					
 					else if (this.mCanvas.SELECTED_NODE == FUNC_NODE_EVERY) {
 						data.interval = 0.5;
-						data.skip = 1;
+						data.skip = 0;
 					}
 					if (this.type == TYPE_ROOT) {
 						if (!this.mData.children || this.mData.children.length < 1) {
@@ -339,7 +355,7 @@
 				}
 			}
 			
-			private function onCopyNode(event:Event):void {
+			public function onCopyNode(event:Event=null):void {
 				trace(JSON.stringify(this.rootNode.nodeData));
 				BTPanel.CLIPPING = Utils.cloneObjectData(this.mData);
 				trace("clipping data "+JSON.stringify(this.mData));
@@ -403,7 +419,7 @@
 				}
 			}
 			
-			private function onPasteNode(event:Event):void {
+			public function onPasteNode(event:Event=null):void {
 				if (BTPanel.CLIPPING) {
 					var clipping:Object = Utils.cloneObjectData(BTPanel.CLIPPING);
 					if (this.isInSubBT()) {
@@ -446,6 +462,11 @@
 				}
 			}
 			
+			public function onCutNode(event:Event=null):void {
+				this.onCopyNode(event);
+				this.onDeleteNode(event);
+			}
+			
 			private function onPasteNodeToNext(event:Event):void {
 				if (BTPanel.CLIPPING) {
 					var clipping:Object = Utils.cloneObjectData(BTPanel.CLIPPING);
@@ -480,6 +501,7 @@
 				var j:int;
 				var hasNextNode:Boolean = false;
 				var numParams:int;
+				this.toolTip = "";
 				switch (this.mType) {
 					case TYPE_ROOT:
 						this.mNodeVar1.visible = false;
@@ -526,6 +548,12 @@
 							}
 							// contains children, replace it
 							else {
+								for each (var d:Object in Data.getInstance().behaviorNodes) {
+									if (d.func == this.mData.data.execType) {
+										this.toolTip = d.desc;
+										break;
+									}
+								}
 								this.mBtn.visible = false;
 								this.mTitle.visible = true;
 								this.mTitle.text = this.mData.data.execType.substr(8);
@@ -622,6 +650,12 @@
 						}
 						break;
 					case TYPE_EXEC:
+						for each (var d:Object in Data.getInstance().behaviorNodes) {
+							if (d.func == this.mData.data.execType) {
+								this.toolTip = d.desc;
+								break;
+							}
+						}
 						this.mNodeVar1.visible = false;
 						this.mNodeInput1.visible = false;
 						this.mNodeVar2.visible = false;
@@ -792,7 +826,7 @@
 						}
 						else if (event.data.name == FUNC_NODE_EVERY) {
 							newData.interval = 0.5;
-							newData.skip = 1;
+							newData.skip = 0;
 						}
 						this.setData(TYPE_FUNC, event.data.name, newData, this.mCanvas, this.mParent);
 						break;
@@ -888,7 +922,7 @@
 						}
 						else if (event.data.name == FUNC_NODE_EVERY) {
 							newData.interval = 0.5;
-							newData.skip = 1;
+							newData.skip = 0;
 						}
 						if (this.type == TYPE_ROOT) {
 							this.mData = newData;
