@@ -9,5 +9,6 @@ package manager
 		public static const BT_EDIT_PANEL_CREATE:String = "bt_edit_panel_create";
 		public static const INPUT_DIALOG_CONFIRM:String = "input_dialog_confirm";
 		public static const BT_NODE_SELECTION_COMPLETE:String = "bt_node_selection_complete";
+		public static const DECO_PANEL_CLOSE:String = "deco_panel_close";
 	}
 }

@@ -414,6 +414,9 @@
 				item = new ContextMenuItem("关闭其他");
 				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCloseOtherTabsMenu);
 				menu.addItem(item);
+				item = new ContextMenuItem("重命名当前");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onRenameTabMenu);
+				menu.addItem(item);
 				this.mTabNavigator.contextMenu = menu;
 			}
 			
@@ -491,6 +494,16 @@
 						}
 					}
 				}
+			}
+			
+			private function onRenameTabMenu(event:Event):void {
+				if (this.mTabNavigator.selectedIndex < 0) return;
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				EventManager.getInstance().addEventListener(EventType.INPUT_DIALOG_CONFIRM, renameBehavior);
+				var input:InputDialog = new InputDialog();
+				input.setTitle("重命名行为", current);
+				PopUpManager.addPopUp(input, MapEditor.getInstance());
+				PopUpManager.centerPopUp(input);
 			}
 			
 			private function closeTab(name:String):void {
