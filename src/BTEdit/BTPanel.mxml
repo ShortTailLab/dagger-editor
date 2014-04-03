@@ -54,6 +54,10 @@
 			public static const ICON_LOOP:Class;
 			[Embed(source="assets/subtree.png")] 
 			public static const ICON_SUBTREE:Class;
+			[Embed(source="assets/once.png")] 
+			public static const ICON_ONCE:Class;
+			[Embed(source="assets/every.png")] 
+			public static const ICON_EVERY:Class;
 			
 			private function onCreation():void {
 				this.mTabDict = new Object();
@@ -357,6 +361,16 @@
 				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_LOOP);
 			}
 			
+			private function onPressNode7(event:Event):void {
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_ONCE);
+			}
+			
+			private function onPressNode8(event:Event):void {
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_EVERY);
+			}
+			
 			private function addTab(name:String, data:Array):void {
 				var tab:NavigatorContent;
 				if (this.mTabDict[name]) {
@@ -558,6 +572,12 @@
 				<s:Button width="50" height="50" label="增加循环节点" buttonMode="true"
 						  click="onPressNode6(event)" cornerRadius="0" fontFamily="Arial"
 						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/xunhuan.png')"/>
+				<s:Button width="50" height="50" label="增加循环节点" buttonMode="true"
+						  click="onPressNode7(event)" cornerRadius="0" fontFamily="Arial"
+						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/once.png')"/>
+				<s:Button width="50" height="50" label="增加循环节点" buttonMode="true"
+						  click="onPressNode8(event)" cornerRadius="0" fontFamily="Arial"
+						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/every.png')"/>
 			</s:HGroup>
 			<s:Group width="100%" height="100%">
 				<mx:TabNavigator id="mTabNavigator" x="0" y="0" width="100%" height="100%"

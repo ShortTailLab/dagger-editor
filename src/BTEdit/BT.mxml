@@ -53,6 +53,9 @@
 				else if (Data.getInstance().behaviorSet[this.mName]) {
 					this.mData[0] = Utils.cloneObjectData(Data.getInstance().getBehaviorById(mName));
 				}
+				else {
+					this.mData[0] = {type:"执行", children:[], data:null};
+				}
 				
 				this.mNumTotalNodes = this.getNodesInObject(this.mData[0])+1;
 				this.mNodes = new Vector.<BTNode>();
@@ -125,6 +128,8 @@
 					case BTNode.FUNC_NODE_SPAWN: bitmap = new BTPanel.ICON_SPAWN(); break;
 					case BTNode.FUNC_NODE_COND: bitmap = new BTPanel.ICON_COND(); break;
 					case BTNode.FUNC_NODE_LOOP: bitmap = new BTPanel.ICON_LOOP(); break;
+					case BTNode.FUNC_NODE_ONCE: bitmap = new BTPanel.ICON_ONCE(); break;
+					case BTNode.FUNC_NODE_EVERY: bitmap = new BTPanel.ICON_EVERY(); break;
 				}
 				bitmap.x = -bitmap.width/2;
 				bitmap.y = -bitmap.height/2;

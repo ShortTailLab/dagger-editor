@@ -42,13 +42,18 @@
 			public static const FUNC_NODE_SPAWN:String = "同步";
 			public static const FUNC_NODE_COND:String = "条件";
 			public static const FUNC_NODE_LOOP:String = "循环";
+			public static const FUNC_NODE_ONCE:String = "once";
+			public static const FUNC_NODE_EVERY:String = "every";
+			
 			public static const ICON_FUNC_NODE:Object = {
 				"执行":BTPanel.ICON_EXEC, 
 				"顺序":BTPanel.ICON_SEQ, 
 				"优先":BTPanel.ICON_PRIO, 
 				"同步":BTPanel.ICON_SPAWN,
 				"条件":BTPanel.ICON_COND, 
-				"循环":BTPanel.ICON_LOOP
+				"循环":BTPanel.ICON_LOOP,
+				"once":BTPanel.ICON_ONCE,
+				"every":BTPanel.ICON_EVERY
 			};
 			
 			private var mChildrens:Vector.<BTNode>;
@@ -139,6 +144,13 @@
 			private function onMouseClickNode(event:Event):void {
 				if (this.mCanvas.SELECTED_NODE && !this.isInSubBT()) {
 					var data:Object = {type:this.mCanvas.SELECTED_NODE, data:null, children:[]};
+					if (this.mCanvas.SELECTED_NODE == FUNC_NODE_LOOP) {
+						data.times = 1;
+					}					
+					else if (this.mCanvas.SELECTED_NODE == FUNC_NODE_EVERY) {
+						data.interval = 0.5;
+						data.skip = 1;
+					}
 					if (this.type == TYPE_ROOT) {
 						if (!this.mData.children || this.mData.children.length < 1) {
 							if (this.mData.subTree) {
@@ -313,6 +325,10 @@
 				var numParams:int;
 				switch (this.mType) {
 					case TYPE_ROOT:
+						this.mNodeVar1.visible = false;
+						this.mNodeInput1.visible = false;
+						this.mNodeVar2.visible = false;
+						this.mNodeInput2.visible = false;
 						this.mBtn.visible = true;
 						this.mBtn.setStyle("icon", this.isSubBT?new BTPanel.ICON_SUBTREE():new BTPanel.ICON_ROOT());
 						this.mSubContainer.width = this.mSubContainer.height = 50;
@@ -334,6 +350,10 @@
 						break;
 					case TYPE_FUNC: 
 						if (this.mName == FUNC_NODE_EXEC) {
+							this.mNodeVar1.visible = false;
+							this.mNodeInput1.visible = false;
+							this.mNodeVar2.visible = false;
+							this.mNodeInput2.visible = false;
 							// empty node
 							if (this.mData.args || !this.mData.data) {
 								this.mBtn.visible = true;
@@ -394,6 +414,36 @@
 							}
 						}
 						else {
+							if (this.mName == FUNC_NODE_LOOP) {
+								this.mNodeVar1.visible = true;
+								this.mNodeVar1.text = "loop";
+								this.mNodeInput1.visible = true;
+								this.mNodeVar2.visible = false;
+								this.mNodeInput2.visible = false;
+								if (this.mData.times) {
+									this.mNodeInput1.text = this.mData.times;
+								}
+							}
+							else if (this.mName == FUNC_NODE_EVERY) {
+								this.mNodeVar1.visible = true;
+								this.mNodeVar1.text = "inteval";
+								this.mNodeInput1.visible = true;
+								if (this.mData.interval) 
+									this.mNodeInput1.text = this.mData.interval;
+								this.mNodeVar2.visible = true;
+								this.mNodeVar2.text = "skip";
+								this.mNodeInput2.visible = true;
+								if (this.mData.skip) {
+									this.mNodeInput2.text = this.mData.skip;
+								}
+							}
+							else {
+								this.mNodeVar1.visible = false;
+								this.mNodeInput1.visible = false;
+								this.mNodeVar2.visible = false;
+								this.mNodeInput2.visible = false;
+							}
+							
 							this.mBtn.visible = true;
 							this.mBtn.setStyle("icon", new ICON_FUNC_NODE[this.mName]());
 							this.mSubContainer.width = this.mSubContainer.height = 50;
@@ -415,6 +465,10 @@
 						}
 						break;
 					case TYPE_EXEC:
+						this.mNodeVar1.visible = false;
+						this.mNodeInput1.visible = false;
+						this.mNodeVar2.visible = false;
+						this.mNodeInput2.visible = false;
 						this.mBtn.visible = false;
 						this.mTitle.visible = true;
 						this.mTitle.text = this.mName.substr(8);
@@ -566,6 +620,13 @@
 						}
 						this.isSubBT = false;
 						newData = {type:event.data.name, data:null, children:this.mData.children};
+						if (event.data.name == FUNC_NODE_LOOP) {
+							newData.times = 1;
+						}
+						else if (event.data.name == FUNC_NODE_EVERY) {
+							newData.interval = 0.5;
+							newData.skip = 1;
+						}
 						this.setData(TYPE_FUNC, event.data.name, newData, this.mCanvas, this.mParent);
 						break;
 					case TYPE_SUB_BT:
@@ -640,6 +701,13 @@
 						break;
 					case TYPE_FUNC:
 						newData = {type:event.data.name, data:null, children:[]};
+						if (event.data.name == FUNC_NODE_LOOP) {
+							newData.times = 1;
+						}
+						else if (event.data.name == FUNC_NODE_EVERY) {
+							newData.interval = 0.5;
+							newData.skip = 1;
+						}
 						if (this.type == TYPE_ROOT) {
 							this.mData = newData;
 						}
@@ -658,8 +726,23 @@
 			
 			private function onValueChanged(event:TextOperationEvent):void {
 				var id:String = event.currentTarget.id;
-				var index:int = int(id.charAt(id.length-1));
-				this.mData.data.parm[index-1].value = (event.currentTarget as TextInput).text;
+				if (id == "mNodeInput1") {
+					if (this.mName == FUNC_NODE_LOOP) {
+						this.mData.times = (event.currentTarget as TextInput).text;
+					}
+					else if (this.mName == FUNC_NODE_EVERY) {
+						this.mData.interval = (event.currentTarget as TextInput).text;
+					}
+				}
+				else if (id == "mNodeInput2") {
+					if (this.mName == FUNC_NODE_EVERY) {
+						this.mData.skip = (event.currentTarget as TextInput).text;
+					}
+				}
+				else {
+					var index:int = int(id.charAt(id.length-1));
+					this.mData.data.parm[index-1].value = (event.currentTarget as TextInput).text;
+				}
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
 			}
@@ -740,6 +823,12 @@
 			}
 			
 			public function get nodeHeight():Number {
+				if (this.mName == FUNC_NODE_LOOP) {
+					return this.mSubContainer.height+20;
+				}
+				else if (this.mName == FUNC_NODE_EVERY) {
+					return this.mSubContainer.height+40;
+				}
 				return this.mSubContainer.height;
 			}
 			
@@ -792,6 +881,14 @@
 		<s:Label id="mVar6" x="0" y="155" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
 	</s:BorderContainer>
+	<s:Label id="mNodeVar1" x="-25" y="55" width="50" color="#000000" fontSize="14" text="interval:"
+			 textAlign="right" verticalAlign="middle"/>
+	<s:TextInput id="mNodeInput1" x="25" y="52" width="40" height="18" change="onValueChanged(event)"
+				 fontSize="11" text="1" textAlign="center"/>
+	<s:Label id="mNodeVar2" x="-25" y="75" width="50" color="#000000" fontSize="14" text="interval:"
+			 textAlign="right" verticalAlign="middle"/>
+	<s:TextInput id="mNodeInput2" x="25" y="72" width="40" height="18" change="onValueChanged(event)"
+				 fontSize="11" text="1" textAlign="center"/>
 	<s:Button id="mNext" x="200" y="0" width="50" height="50" label="可接节点" 
 			  click="onPressNext(event)" middleClick="onPressNext(event)" cornerRadius="0" fontFamily="Arial" fontStyle="normal"
 			  fontWeight="normal" icon="@Embed('assets/zhixing.png')"/>
