@@ -57,7 +57,10 @@ package behaviorEdit
 			var list:Array = Data.getInstance().getEnemyBehaviorsById( 
 				Runtime.getInstance().currentLevelID, editTargetType 
 			) as Array;
-			return list.length ? list[0] : "";
+			if(list)
+				return list.length ? list[0] : "";
+			else
+				return "";
 		}
 		
 		public function setUnitBehavior(name:String)
