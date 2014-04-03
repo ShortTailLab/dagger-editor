@@ -4,14 +4,72 @@
 			xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" creationComplete="onCreate()">
 	<fx:Script>
 		<![CDATA[
+			private function onCreate():void {
+				
+			}
 			
+			public function init():void {
+				
+			}
+			
+			public function update():void {
+				
+			}
+			
+			public function rename(to:String):void {
+				
+			}
+			
+			private function onValueChanged(event:Event):void {
+				
+			}
+			
+			private function onTreeCellSelected(event:Event):void {
+				
+			}
+			
+			private function onSliderChanged(event:Event):void {
+				
+			}
 		]]>
 	</fx:Script>
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
 	<s:Group>
-		<s:Group id="mContainer" x="0" y="0" width="845" height="770">
-		</s:Group>
+		<s:HGroup x="0" y="0" width="845" height="770" gap="0">
+			<s:VGroup width="150" height="100%" gap="0">
+				<s:Panel width="100%" height="300" dropShadowVisible="false" title="地图图层">
+					<mx:Tree id="mTree" x="0" y="0" width="100%" height="100%" borderVisible="false"
+							 change="onTreeCellSelected"></mx:Tree>
+					
+				</s:Panel>
+				<s:Panel width="150" height="100%" dropShadowVisible="false" title="元素属性">
+					<s:Label id="mName" x="46" y="10" width="100" text="灌木" textAlign="center"/>
+					<s:Label x="11" y="10" text="名称:"/>
+					<s:Label x="5" y="55" text="X"/>
+					<s:Label x="5" y="85" text="Y"/>
+					<s:Label x="5" y="115" text="缩放"/>
+					<s:Label x="5" y="145" text="旋转"/>
+					<s:TextInput id="mX" x="50" y="50" width="80" change="onValueChanged(event)"/>
+					<s:TextInput id="mY" x="50" y="80" width="80" change="onValueChanged(event)"/>
+					<s:TextInput id="mScale" x="50" y="110" width="80" change="onValueChanged(event)"/>
+					<s:TextInput id="mRotation" x="50" y="140" width="80" change="onValueChanged(event)"/>
+					<s:CheckBox id="mFlipX" x="30" y="174" label="水平翻转" click="onValueChanged(event)"/>
+					<s:CheckBox id="mFlipY" x="30" y="200" label="垂直翻转" click="onValueChanged(event)"/>
+				</s:Panel>
+				
+			</s:VGroup>
+			<s:Scroller width="100%" height="100%">
+				<s:Group width="100%" height="100%">
+					<s:Group id="mContainer" width="100%" height="100%">
+					</s:Group>
+					<s:VSlider id="mVSlider" x="0" y="0" height="100%" change="onSliderChanged(event)"
+							   maximum="640" minimum="-640" value="0.0"/>
+					<s:HSlider id="mHSlider" x="0" width="100%" change="onSliderChanged(event)"
+							   maximum="480" minimum="-480"/>
+				</s:Group>
+			</s:Scroller>
+		</s:HGroup>
 	</s:Group>
 </s:Scroller>

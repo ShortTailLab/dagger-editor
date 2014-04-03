@@ -1,5 +1,7 @@
 package
 {
+	import excel.ExcelReader;
+	
 	import flash.display.Bitmap;
 	import flash.display.Loader;
 	import flash.display.LoaderInfo;
@@ -17,8 +19,6 @@ package
 	import flash.utils.Dictionary;
 	
 	import mx.controls.Alert;
-	
-	import excel.ExcelReader;
 	
 	public class Data extends EventDispatcher
 	{
@@ -199,6 +199,10 @@ package
 		
 		private var mBehaviorSet:Object 		= null;
 		private var mFormationSet:Object 		= null;
+		private var mDecoSet:Object				= null;
+		private var mDecoCellSet:Object 		= null;
+		private var mDecoBgSet:Object			= null;
+		private var mDecoGroupSet:Object	= null;
 		
 		// --------------------------------------------------------------------------
 		public function getFirstLevelId():String
@@ -299,6 +303,10 @@ package
 		}
 		
 		public function get behaviorSet():Object { return this.mBehaviorSet; }
+		public function get decoSet():Object { return this.mDecoSet; }
+		public function get decoBgSet():Object { return this.mDecoBgSet; }
+		public function get decoCellSet():Object { return this.mDecoCellSet; }
+		public function get decoGroupSet():Object { return this.mDecoGroupSet; }
 		
 		public function getBehaviorById( bid:String ):Object
 		{
@@ -488,6 +496,47 @@ package
 				
 				for( var fid:String in this.mFormationSet )
 					this.updateFormationSetById( fid, this.mFormationSet[fid] );
+			}
+			
+			this.mDecoSet = {};
+			this.mDecoCellSet = {};
+			this.mDecoBgSet = {};
+			this.mDecoGroupSet = {};
+			var decoBg:File = this.resolvePath( "images/bg" );
+			var decoCell:File = this.resolvePath( "images" );
+			var decoSet:File = this.resolvePath( "saved/deco" );
+			var decoGroup:File = this.resolvePath("saved/deco/group");
+			if (decoBg.exists && decoBg.isDirectory) {
+				var list:Array = decoBg.getDirectoryListing();
+				for each (file in list) {
+					if (file.name.split(".")[1] == "png") {
+						this.mDecoBgSet[file.name.split(".")[0]] = 1;
+					}
+				}
+			}
+			if (decoCell.exists && decoCell.isDirectory) {
+				list = decoCell.getDirectoryListing();
+				for each (file in list) {
+					if (file.name.split(".")[1] == "png") {
+						this.mDecoCellSet[file.name.split(".")[0]] = 1;
+					}
+				}
+			}
+			if (decoSet.exists && decoSet.isDirectory) {
+				list = decoSet.getDirectoryListing();
+				for each (file in list) {
+					if (file.name.split(".")[1] == "json") {
+						this.mDecoSet[file.name.split(".")[0]] = Utils.LoadJSONToObject(file);
+					}
+				}
+			}
+			if (decoGroup.exists && decoGroup.isDirectory) {
+				list = decoGroup.getDirectoryListing();
+				for each (file in list) {
+					if (file.name.split(".")[1] == "json") {
+						this.mDecoGroupSet[file.name.split(".")[0]] = Utils.LoadJSONToObject(file);
+					}
+				}
 			}
 			
 			this.updateEditorData( onComplete );

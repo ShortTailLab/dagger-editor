@@ -603,13 +603,23 @@
 						this.isSubBT = false;
 						newData = {type:"执行", children:this.mData.children, data:{execType:event.data.name.func, parm:[]}};
 						for (var i:int = 0; i < event.data.name.args.length; i++) {
-							if (event.data.name.args[i].name == "path") {
-								event.data.name.args[i].path = [];
+							if (event.data.name.args[i].type == "ccp") {
+								newData.data.parm.push({type:"ccp", name:"dir x", value:"float"});
+								newData.data.parm.push({type:"ccp", name:"dir y", value:"float"});
+							}
+							else if (event.data.name.args[i].type == "ccsize") {
+								newData.data.parm.push({type:"ccsize", name:"width", value:"float"});
+								newData.data.parm.push({type:"ccsize", name:"height", value:"float"});
 							}
 							else {
-								event.data.name.args[i].value = event.data.name.args[i].type;
+								if (event.data.name.args[i].name == "path") {
+									event.data.name.args[i].path = [];
+								}
+								else {
+									event.data.name.args[i].value = event.data.name.args[i].type;
+								}
+								newData.data.parm.push(event.data.name.args[i]);
 							}
-							newData.data.parm.push(event.data.name.args[i]);
 						}
 						this.setData(TYPE_EXEC, event.data.name.func, newData, this.mCanvas, this.mParent);
 						break;
@@ -689,8 +699,23 @@
 					case TYPE_EXEC:
 						newData = {type:"执行", children:[], data:{execType:event.data.name.func, parm:[]}};
 						for (var i:int = 0; i < event.data.name.args.length; i++) {
-							event.data.name.args[i].value = event.data.name.args[i].type;
-							newData.data.parm.push(event.data.name.args[i]);
+							if (event.data.name.args[i].type == "ccp") {
+								newData.data.parm.push({type:"ccp", name:"dir x", value:"float"});
+								newData.data.parm.push({type:"ccp", name:"dir y", value:"float"});
+							}
+							else if (event.data.name.args[i].type == "ccsize") {
+								newData.data.parm.push({type:"ccsize", name:"width", value:"float"});
+								newData.data.parm.push({type:"ccsize", name:"height", value:"float"});
+							}
+							else {
+								if (event.data.name.args[i].name == "path") {
+									event.data.name.args[i].path = [];
+								}
+								else {
+									event.data.name.args[i].value = event.data.name.args[i].type;
+								}
+								newData.data.parm.push(event.data.name.args[i]);
+							}
 						}
 						if (this.type == TYPE_ROOT) {
 							this.mData = newData;

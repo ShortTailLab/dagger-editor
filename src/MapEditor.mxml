@@ -9,19 +9,25 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import mx.controls.Alert;
-			import mx.controls.Tree;
-			import mx.events.ResizeEvent;
-			
-			import spark.components.Group;
-			import spark.components.VScrollBar;
+			import DecoEdit.DecoPanel;
 			
 			import bgedit.BgEditView;
 			import bgedit.BgModel;
 			
 			import excel.SkillConfigReader;
 			
+			import manager.EventManager;
+			import manager.EventType;
 			import manager.SyncManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.Tree;
+			import mx.events.ResizeEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Group;
+			import spark.components.VScrollBar;
 			
 			// ---------------------------------------------------------
 			
@@ -82,6 +88,12 @@
 					selectedIndex = 0;
 					dataProvider = Data.getInstance().levelXML;
 				}
+				
+				var decoList:ArrayCollection = new ArrayCollection();
+				for (var deco:String in Data.getInstance().decoSet) {
+					decoList.addItem(deco);
+				}
+				this.mDeco.dataProvider = decoList;
 				
 				this.mLevelTree.mouseFocusEnabled = false;
 				this.mLevelTree.focusEnabled = false;
@@ -311,11 +323,29 @@
 			
 			public function addLog(content:String):void {
 				_log = _log+(_log==""?"":"\n")+content;
-				var logFile:File = File.desktopDirectory.resolvePath("editor/log.txt");
-				var fileStream:FileStream = new FileStream();
-				fileStream.open(logFile, FileMode.WRITE);
-				fileStream.writeUTFBytes(_log);
-				fileStream.close();
+			}
+			
+			private function onDecoSelected(event:Event):void {
+				
+			}
+			
+			private function onPressDeco(event:Event):void {
+				var deco:DecoPanel = new DecoPanel();
+				deco.init("", this.stage.stageWidth, this.stage.stageHeight);
+				EventManager.getInstance().addEventListener(EventType.DECO_PANEL_CLOSE, onDecoClose);
+				PopUpManager.addPopUp(deco, MapEditor.getInstance());
+			}
+			
+			private function onDecoClose(event:Event):void {
+				EventManager.getInstance().removeEventListener(EventType.DECO_PANEL_CLOSE, onDecoClose);
+				var decoList:ArrayCollection = new ArrayCollection();
+				for (var deco:String in Data.getInstance().decoSet) {
+					decoList.addItem(deco);
+				}
+				this.mDeco.dataProvider = decoList;
+				if (!Data.getInstance().decoSet[this.mDeco.textInput.text]) {
+					this.mDeco.textInput.text = "";
+				}
 			}
 		]]>
 	</fx:Script>
@@ -329,6 +359,9 @@
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="left">
 				<s:Button id="saveLevelBtn" label="保存关卡" click="saveLevel(event)"/>
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
+				<s:Label visible="false" text="地图装饰" color="0x777777"/>
+				<s:ComboBox visible="false" id="mDeco" width="80" change="onDecoSelected(event)"/>
+				<s:Button visible="false" label="装饰编辑" click="onPressDeco(event)"/>
 			</s:HGroup>
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
