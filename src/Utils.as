@@ -182,11 +182,11 @@ package
 					}
 					else if(sourceData.type == BType.BTYPE_EVERY)
 					{
-						if(sourceData.data.interval == "" || sourceData.data.skip == "") {
+						if(sourceData.interval == "" || sourceData.skip == "") {
 							trace("genBtTree error: interval/skip is empty.");
 							return "";
 						}
-						result += "BT.every("+sourceData.data.interval+",";
+						result += "BT.every("+sourceData.interval+",";
 					}
 					else
 						return "";
@@ -198,7 +198,7 @@ package
 							result += ",";
 					}
 					if (sourceData.type == BType.BTYPE_EVERY) {
-						result += ","+sourceData.data.skip;
+						result += ","+sourceData.skip;
 					}
 					result += ")";
 				}
