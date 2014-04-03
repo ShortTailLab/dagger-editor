@@ -48,6 +48,11 @@ package behaviorEdit
 			newBehaviorButton.addEventListener(MouseEvent.CLICK, onNewBehaviorClick);
 			buttonGroup.addElement(newBehaviorButton);
 			
+			var genBehaviorButton:Button = new Button();
+			genBehaviorButton.label = "生成代码";
+			genBehaviorButton.addEventListener(MouseEvent.CLICK, onGenBehaviorClick);
+			buttonGroup.addElement(genBehaviorButton);
+			
 			mMenu = new ContextMenu;
 			
 			var item2:ContextMenuItem = new ContextMenuItem("重命名");
@@ -73,6 +78,15 @@ package behaviorEdit
 			var name:String = mTabBar.selectedItem;
 			if(name)
 				controller.saveBehavior(name);
+		}
+		
+		private function onGenBehaviorClick(e:MouseEvent):void
+		{
+			var rawString:String = Utils.genBTreeJS(Data.getInstance().getBehaviorById(controller.selectedBehavior) );
+			var x:Object = {};
+			x.a = rawString;
+			var jsonString:String = JSON.stringify(x, null, "\t");
+			trace(jsonString);
 		}
 
 		private function onClickTabItem(e:MouseEvent):void
