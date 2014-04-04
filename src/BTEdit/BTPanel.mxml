@@ -7,6 +7,8 @@
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
+			import flash.utils.setTimeout;
+			
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.GameEvent;
@@ -89,6 +91,34 @@
 			private function onPressKeyboard(event:KeyboardEvent):void {
 				if (event.ctrlKey && event.keyCode == Keyboard.S) {
 					this.onPressSave();
+				}
+				else if (event.ctrlKey && event.keyCode == Keyboard.C) {
+					var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+					var bt:BT = this.mTabDict[current].bt;
+					if (bt.CURRENT_EDIT_NODE) {
+						bt.CURRENT_EDIT_NODE.onCopyNode();
+					}
+				}
+				else if (event.ctrlKey && event.keyCode == Keyboard.V) {
+					var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+					var bt:BT = this.mTabDict[current].bt;
+					if (bt.CURRENT_EDIT_NODE) {
+						bt.CURRENT_EDIT_NODE.onPasteNode();
+					}
+				}
+				else if (event.ctrlKey && event.keyCode == Keyboard.X) {
+					var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+					var bt:BT = this.mTabDict[current].bt;
+					if (bt.CURRENT_EDIT_NODE) {
+						bt.CURRENT_EDIT_NODE.onCutNode();
+					}
+				}
+				else if (event.keyCode == Keyboard.BACKSPACE || event.keyCode == Keyboard.DELETE) {
+					var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+					var bt:BT = this.mTabDict[current].bt;
+					if (bt.CURRENT_EDIT_NODE) {
+						bt.CURRENT_EDIT_NODE.onDeleteNode();
+					}
 				}
 				else if (event.ctrlKey && event.shiftKey && event.keyCode == Keyboard.S) {
 					this.onPressSaveAll();
@@ -278,7 +308,8 @@
 					var data:Object = this.mTabDict[current].bt.export();
 					Data.getInstance().updateBehaviorSetById(current, data);
 					setTabModified(current, false);
-					Alert.show(current+" 保存成功!");
+					var alert:Alert = Alert.show(current+" 保存成功!");
+					setTimeout(function ():void { alert.parent.removeChild(alert); }, 1000);
 					this.filterLibrary();
 					this.modifiedAndSavedFiles[current] = true;
 				}
@@ -293,7 +324,8 @@
 						this.modifiedAndSavedFiles[tabName] = true;
 					}
 				}
-				Alert.show("保存成功!");
+				var alert:Alert = Alert.show(" 保存成功!");
+				setTimeout(function ():void { alert.parent.removeChild(alert); }, 1000);
 				this.filterLibrary();
 			}
 			
@@ -414,6 +446,9 @@
 				item = new ContextMenuItem("关闭其他");
 				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCloseOtherTabsMenu);
 				menu.addItem(item);
+				item = new ContextMenuItem("重命名当前");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onRenameTabMenu);
+				menu.addItem(item);
 				this.mTabNavigator.contextMenu = menu;
 			}
 			
@@ -491,6 +526,16 @@
 						}
 					}
 				}
+			}
+			
+			private function onRenameTabMenu(event:Event):void {
+				if (this.mTabNavigator.selectedIndex < 0) return;
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				EventManager.getInstance().addEventListener(EventType.INPUT_DIALOG_CONFIRM, renameBehavior);
+				var input:InputDialog = new InputDialog();
+				input.setTitle("重命名行为", current);
+				PopUpManager.addPopUp(input, MapEditor.getInstance());
+				PopUpManager.centerPopUp(input);
 			}
 			
 			private function closeTab(name:String):void {
@@ -581,7 +626,7 @@
 			</s:HGroup>
 			<s:Group width="100%" height="100%">
 				<mx:TabNavigator id="mTabNavigator" x="0" y="0" width="100%" height="100%"
-								 paddingTop="0">
+								 paddingTop="5">
 				</mx:TabNavigator>
 				<s:Button right="0" top="0" width="30" label="+" click="onPressNewTab(event)"/>
 			</s:Group>

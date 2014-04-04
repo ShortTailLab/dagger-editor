@@ -13,7 +13,15 @@
 			private var mName:String;
 			private var mPanel:BTPanel;
 			private var mTreeRoot:BTNode;
+			
 			public var SELECTED_NODE:String;
+			
+			public var DRAGGING_NODES:Array;
+			public var TARGET_NODE:BTNode;
+			public var TARGET_TYPE:int;
+			public var DRAGGING_INFOS:Array;
+			public var CURRENT_EDIT_NODE:BTNode;
+			
 			public var mSelectedNode:Sprite;
 			
 			private var mNumTotalNodes:int;

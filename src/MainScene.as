@@ -725,7 +725,7 @@ package
 //		
 		private function onKeyDown(e:KeyboardEvent):void
 		{
-			e.stopPropagation();
+//			e.stopPropagation();
 			var code:uint = e.keyCode;
 			if( code == Keyboard.V && e.ctrlKey )
 			{
