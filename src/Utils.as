@@ -161,12 +161,12 @@ package
 						result += "BT.sel(";
 					else if(sourceData.type == BType.BTYPE_LOOP)
 					{
-						if(sourceData.data.times == "")
+						if(sourceData.times == "")
 						{
 							trace("genBtTree error: times is empty.");
 							return "";
 						}
-						result += "BT.loop("+sourceData.data.times+",";
+						result += "BT.loop("+sourceData.times+",";
 					}
 					else if(sourceData.type == BType.BTYPE_COND)
 					{
