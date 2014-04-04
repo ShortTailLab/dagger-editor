@@ -100,25 +100,25 @@
 					}
 				}
 				else if (event.ctrlKey && event.keyCode == Keyboard.V) {
-					var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
-					var bt:BT = this.mTabDict[current].bt;
+					current = this.mTabNames[this.mTabNavigator.selectedIndex];
+					bt = this.mTabDict[current].bt;
 					if (bt.CURRENT_EDIT_NODE) {
 						bt.CURRENT_EDIT_NODE.onPasteNode();
 					}
 				}
 				else if (event.ctrlKey && event.keyCode == Keyboard.X) {
-					var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
-					var bt:BT = this.mTabDict[current].bt;
+					current = this.mTabNames[this.mTabNavigator.selectedIndex];
+					bt = this.mTabDict[current].bt;
 					if (bt.CURRENT_EDIT_NODE) {
 						bt.CURRENT_EDIT_NODE.onCutNode();
 					}
 				}
 				else if (event.keyCode == Keyboard.BACKSPACE || event.keyCode == Keyboard.DELETE) {
-					var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
-					var bt:BT = this.mTabDict[current].bt;
-					if (bt.CURRENT_EDIT_NODE) {
-						bt.CURRENT_EDIT_NODE.onDeleteNode();
-					}
+//					current = this.mTabNames[this.mTabNavigator.selectedIndex];
+//					bt = this.mTabDict[current].bt;
+//					if (bt.CURRENT_EDIT_NODE) {
+//						bt.CURRENT_EDIT_NODE.onDeleteNode();
+//					}
 				}
 				else if (event.ctrlKey && event.shiftKey && event.keyCode == Keyboard.S) {
 					this.onPressSaveAll();

@@ -41,7 +41,7 @@
 			<s:VGroup width="150" height="100%" gap="0">
 				<s:Panel width="100%" height="300" dropShadowVisible="false" title="地图图层">
 					<mx:Tree id="mTree" x="0" y="0" width="100%" height="100%" borderVisible="false"
-							 change="onTreeCellSelected"></mx:Tree>
+							 change="onTreeCellSelected(event)"></mx:Tree>
 					
 				</s:Panel>
 				<s:Panel width="150" height="100%" dropShadowVisible="false" title="元素属性">
