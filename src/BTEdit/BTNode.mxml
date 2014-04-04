@@ -13,8 +13,6 @@
 			import manager.GameEvent;
 			
 			import mx.controls.Alert;
-			import mx.controls.Text;
-			import mx.core.UIComponent;
 			import mx.managers.PopUpManager;
 			
 			import spark.components.Group;
@@ -216,7 +214,6 @@
 				}
 				else if (this.mCanvas.TARGET_NODE && this.mCanvas.TARGET_TYPE == 2) {
 					this.mCanvas.TARGET_NODE.mNext.filters = [];
-					var sData:Object;
 					if (node.isSubBT) {
 						sData = {subTree:node.nodeName};
 					}
@@ -650,7 +647,7 @@
 						}
 						break;
 					case TYPE_EXEC:
-						for each (var d:Object in Data.getInstance().behaviorNodes) {
+						for each (d in Data.getInstance().behaviorNodes) {
 							if (d.func == this.mData.data.execType) {
 								this.toolTip = d.desc;
 								break;
