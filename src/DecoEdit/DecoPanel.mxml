@@ -8,33 +8,66 @@
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
+			import BTEdit.InputDialog;
+			
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.GameEvent;
 			
 			import mx.collections.ArrayCollection;
 			import mx.collections.Sort;
+			import mx.controls.Alert;
 			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
 			import mx.events.IndexChangedEvent;
 			import mx.managers.PopUpManager;
 			
 			import spark.events.IndexChangeEvent;
 			
 			private var mFilteredLibrary:ArrayCollection;
+			private var mFilteredGroups:ArrayCollection;
 			
 			private var mTabDict:Object;
 			private var mTabNames:Array;
+			private var mTabSerial:int = 1;
 			
 			private var mLastAddedTab:String;
-			private var mModifiedAndSavedFiles:Object;
+			private var mModifiedAndSavedGroups:Object;
 
 			private function onCreation():void {
 				this.mTabDict = new Object();
 				this.mTabNames = new Array();
-				this.mModifiedAndSavedFiles = new Object();
+				this.mModifiedAndSavedGroups = new Object();
 				this.mTabNavigator.addEventListener(IndexChangedEvent.CHANGE, onTabIndexChanged);
-
+				this.mSelector.addEventListener(IndexChangedEvent.CHANGE, onSelectorTabIndexChanged);
+				
+				var menu:ContextMenu = new ContextMenu;
+				var item:ContextMenuItem = new ContextMenuItem("关闭当前");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCloseTabMenu);
+				menu.addItem(item);
+				item = new ContextMenuItem("关闭所有");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCloseAllTabsMenu);
+				menu.addItem(item);
+				item = new ContextMenuItem("关闭其他");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCloseOtherTabsMenu);
+				menu.addItem(item);
+				item = new ContextMenuItem("重命名当前");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onRenameTabMenu);
+				menu.addItem(item);
+				this.mTabNavigator.contextMenu = menu;
+				
+				var cellSelector:CellSelector = new CellSelector();
+				this.mCellSelector.addElement(cellSelector);
 				this.setLibrary();
+				if (this.mFilteredLibrary.length > 0) {
+					this.addTab(this.mFilteredLibrary[0], 1);
+				}
+			}
+			
+			private function onSelectorTabIndexChanged(event:IndexChangedEvent):void {
+				if (!this.mFilteredGroups) {
+					this.setGroupList();
+				}
 			}
 			
 			private function onTabIndexChanged(event:IndexChangedEvent):void {
@@ -47,7 +80,7 @@
 					if (groups && groups.length > 0) {
 						var modified:Boolean = false;
 						for (var i:int = 0; i < groups.length; i++) {
-							if (this.mModifiedAndSavedFiles[groups]) {
+							if (this.mModifiedAndSavedGroups[groups]) {
 								modified = true;
 								break;
 							}
@@ -76,14 +109,99 @@
 				this.mLibrary.contextMenu = menu;
 				
 				this.filterLibrary();
-			} 
+			}
 			
-			private function onLibraryItemRename(event:Event):void {
+			private function setGroupList():void {
+				var menu:ContextMenu = new ContextMenu;
+				var item:ContextMenuItem = new ContextMenuItem("重命名");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onGroupItemRename);
+				menu.addItem(item);
+				var item0:ContextMenuItem = new ContextMenuItem("删除");
+				item0.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onGroupItemDelete);
+				menu.addItem(item0);
+				this.mGroupList.contextMenu = menu;
+				
+				this.filterGroups();
+			}
+			
+			private function onGroupItemRename(event:Event):void {
+				if (this.mGroupList.selectedIndex < 0) return;
+				EventManager.getInstance().addEventListener(EventType.INPUT_DIALOG_CONFIRM, renameGroup);
+				var input:InputDialog = new InputDialog();
+				input.setTitle("重命名组合", this.mFilteredGroups[this.mGroupList.selectedIndex]);
+				PopUpManager.addPopUp(input, MapEditor.getInstance());
+				PopUpManager.centerPopUp(input);
+			}
+			
+			private function renameGroup(event:GameEvent):void {
+				EventManager.getInstance().removeEventListener(EventType.INPUT_DIALOG_CONFIRM, renameDeco);
+				if (event.data.from == event.data.to || event.data.to==null) return;
+				if (Data.getInstance().decoGroupSet[event.data.to]) {
+					Alert.show("行为名已经存在，无法改名为 " + event.data.to);
+					return;
+				}
+				
+				Data.getInstance().updateDecoGroupSetById(event.data.to, Data.getInstance().decoSet[event.data.from]);
+				Data.getInstance().eraseDecoGroupSetById(event.data.from);
+				
+				renameTab(event.data.from, event.data.to);
+				this.filterGroups();
+			}
+			
+			private function onGroupItemDelete(event:Event):void {
+				if (this.mGroupList.selectedIndex < 0) return;
+				var current:String = this.mFilteredGroups[this.mGroupList.selectedIndex];
+				Alert.show("确定删除 "+current+"？", "警告", Alert.OK|Alert.CANCEL, null, onDeleteGroupConfirm);
 				
 			}
 			
-			private function onLibraryItemDelete(event:Event):void {
+			private function onDeleteGroupConfirm(event:CloseEvent):void {
+				if (event.detail == Alert.OK) {
+					var current:String = this.mFilteredGroups[this.mGroupList.selectedIndex];
+					Data.getInstance().eraseDecoGroupSetById(current);
+					this.filterGroups();
+					closeTab(current);
+				}
+			}
+			
+			private function onLibraryItemRename(event:Event):void {
+				if (this.mLibrary.selectedIndex < 0) return;
+				EventManager.getInstance().addEventListener(EventType.INPUT_DIALOG_CONFIRM, renameDeco);
+				var input:InputDialog = new InputDialog();
+				input.setTitle("重命名装饰", this.mFilteredLibrary[this.mLibrary.selectedIndex]);
+				PopUpManager.addPopUp(input, MapEditor.getInstance());
+				PopUpManager.centerPopUp(input);
+			}
+			
+			private function renameDeco(event:GameEvent):void {
+				EventManager.getInstance().removeEventListener(EventType.INPUT_DIALOG_CONFIRM, renameDeco);
+				if (event.data.from == event.data.to || event.data.to==null) return;
+				if (Data.getInstance().decoSet[event.data.to]) {
+					Alert.show("行为名已经存在，无法改名为 " + event.data.to);
+					return;
+				}
 				
+				Data.getInstance().updateDecoSetById(event.data.to, Data.getInstance().decoSet[event.data.from]);
+				Data.getInstance().eraseDecoSetById(event.data.from);
+				
+				renameTab(event.data.from, event.data.to);
+				this.filterLibrary();
+			}
+			
+			private function onLibraryItemDelete(event:Event):void {
+				if (this.mLibrary.selectedIndex < 0) return;
+				var current:String = this.mFilteredLibrary[this.mLibrary.selectedIndex];
+				Alert.show("确定删除 "+current+"？", "警告", Alert.OK|Alert.CANCEL, null, onDeleteConfirm);
+				
+			}
+			
+			private function onDeleteConfirm(event:CloseEvent):void {
+				if (event.detail == Alert.OK) {
+					var current:String = this.mFilteredLibrary[this.mLibrary.selectedIndex];
+					Data.getInstance().eraseDecoSetById(current);
+					this.filterLibrary();
+					closeTab(current);
+				}
 			}
 			
 			private function filterLibrary(event:Event=null):void {
@@ -99,17 +217,58 @@
 				this.mLibrary.dataProvider = this.mFilteredLibrary;
 			}
 			
+			private function filterGroups(event:Event=null):void {
+				this.mFilteredGroups = new ArrayCollection();
+				for (var g:String in Data.getInstance().decoGroupSet) {
+					this.mFilteredGroups.addItem(g);
+				}
+				this.mFilteredGroups.sort = new Sort();
+				this.mFilteredGroups.refresh();
+				if (this.mGroupList) this.mGroupList.dataProvider = this.mFilteredGroups;
+			}
+			
 			private function onPressClose(event:Event):void {
 				PopUpManager.removePopUp(this);
 				EventManager.getInstance().dispatchEvent(new GameEvent(EventType.DECO_PANEL_CLOSE));
 			}
 			
 			private function onPressSave(event:Event):void {
-				
+				if (this.mTabNavigator.selectedIndex < 0) return;
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				if (this.mTabDict[current].modified) {
+					if (this.mTabDict[current].type == 2) {
+						Data.getInstance().updateDecoGroupSetById(current, this.mTabDict[current].edit.export());
+						this.mModifiedAndSavedGroups[current] = true;
+					}
+					else {
+						Data.getInstance().updateDecoSetById(current, this.mTabDict[current].edit.export());
+					}
+					setTabModified(current, false);
+					var alert:Alert = Alert.show(current+" 保存成功!");
+					setTimeout(function ():void { if (alert) alert.parent.removeChild(alert); }, 1000);
+					this.filterLibrary();
+					this.filterGroups();
+				}
 			}
 			
 			private function onPressSaveAll(event:Event):void {
-				
+				for (var tabName:String in this.mTabDict) {
+					if (this.mTabDict[tabName].modified) {
+						var data:Object = this.mTabDict[tabName].edit.export();
+						if (this.mTabDict[tabName].type == 2) {
+							Data.getInstance().updateDecoGroupSetById(tabName, data);	
+							this.mModifiedAndSavedGroups[tabName] = true;
+						}
+						else {
+							Data.getInstance().updateDecoSetById(tabName, data);	
+						}
+						setTabModified(tabName, false);
+					}
+				}
+				var alert:Alert = Alert.show(" 保存成功!");
+				setTimeout(function ():void { if (alert) alert.parent.removeChild(alert); }, 1000);
+				this.filterLibrary();
+				this.filterGroups();
 			}
 			
 			private function onPressPreview(event:Event):void {
@@ -117,28 +276,37 @@
 			}
 			
 			private function onSearchChanged(event:Event):void {
-				
+				this.filterLibrary();
 			}
 
 			private function onLibrarySelected(e:IndexChangeEvent):void {
-				
+				var current:String = this.mFilteredLibrary[this.mLibrary.selectedIndex];
+				this.switchToTab(current);
+			}
+			
+			private function onGroupSelected(event:IndexChangeEvent):void {
+				var current:String = this.mFilteredGroups[this.mGroupList.selectedIndex];
+				this.switchToTab(current, 2);
 			}
 			
 			private function onPressNewTab(event:Event):void {
-//				for (var name:String in Data.getInstance().behaviorSet) {
-//					if (name.indexOf("新行为") === 0) {
-//						var str:String = name.substr(3);
-//						var num:int = int(str);
-//						if (num >= this.mTabSerial) {
-//							this.mTabSerial = num+1;
-//						}
-//					}
-//				}
-//				addTab("新行为"+this.mTabSerial, [{type:"执行", children:[], data:null}]);
-//				this.mTabSerial++;
+				var type:int = this.radiogroup1.selectedValue == "装饰"?1:2;
+				var name:String = type==1?"新装饰":"新组合";
+				var set:Object = type==1?Data.getInstance().decoSet:Data.getInstance().decoGroupSet;
+				for (var n:String in set) {
+					if (n.indexOf(name) === 0) {
+						var str:String = n.substr(3);
+						var num:int = int(str);
+						if (num >= this.mTabSerial) {
+							this.mTabSerial = num+1;
+						}
+					}
+				}
+				addTab(name+this.mTabSerial, type);
+				this.mTabSerial++;
 			}
 			
-			private function addTab(name:String, data:Object, type:int):void {
+			private function addTab(name:String, type:int):void {
 				var tab:NavigatorContent;
 				if (this.mTabDict[name]) {
 					tab = this.mTabDict[name].tab;
@@ -154,10 +322,11 @@
 				var modified:Object;
 				if (type == 1) {
 					edit = new DecoLayerEdit();
+					edit.init(name, this);
 					modified = Data.getInstance().decoSet[name]==null?true:false;
 				}
 				else {
-					edit = new DecoCellEdit();
+					edit = new DecoGroupEdit();
 					modified = Data.getInstance().decoGroupSet[name]==null?true:false;
 				}
 				tab.addElement(edit as UIComponent);
@@ -191,13 +360,13 @@
 				}
 			}
 			
-			private function switchToTab(name:String):void {
+			private function switchToTab(name:String, type:int=1):void {
 				var index:int = this.mTabNames.indexOf(name);
 				if (index >= 0) {
 					this.mTabNavigator.selectedIndex = index;
 				}
 				else {
-					this.addTab(name, {}, 1);
+					this.addTab(name, type);
 				}
 			}
 			
@@ -208,14 +377,100 @@
 				}
 			}
 			
+			private function onCloseTabMenu(event:Event):void {
+				if (this.mTabNavigator.selectedIndex >= 0 && this.mTabNames.length > 0) {
+					if (this.mTabDict[this.mTabNames[this.mTabNavigator.selectedIndex]].modified) {
+						Alert.show(this.mTabNames[this.mTabNavigator.selectedIndex]+" 有修改尚未保存，确定关闭？", "警告", Alert.OK|Alert.CANCEL, this, onConfirmClose);
+					}
+					else {
+						this.closeTab(this.mTabNames[this.mTabNavigator.selectedIndex]);
+					}
+				}
+			}
+			
+			private function onCloseAllTabsMenu(event:Event):void {
+				var needWarning:String = null;
+				for (var tabName:String in this.mTabDict) {
+					if (this.mTabDict[tabName].modified) {
+						needWarning = tabName;
+						break;
+					}
+				}
+				if (needWarning) {
+					Alert.show(needWarning+" 有修改尚未保存，确定关闭？", "警告", Alert.OK|Alert.CANCEL, this, onConfirmCloseAll);
+				}
+				else {
+					for (tabName in this.mTabDict) {
+						this.closeTab(tabName);
+					}
+				}
+			}
+			
+			private function onCloseOtherTabsMenu(event:Event):void {
+				var needWarning:String = null;
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				for (var tabName:String in this.mTabDict) {
+					if (tabName != current && this.mTabDict[tabName].modified) {
+						needWarning = tabName;
+						break;
+					}
+				}
+				if (needWarning) {
+					Alert.show(needWarning+" 有修改尚未保存，确定关闭？", "警告", Alert.OK|Alert.CANCEL, this, onConfirmCloseOthers);
+				}
+				else {
+					for (tabName in this.mTabDict) {
+						if (tabName != current) {
+							this.closeTab(tabName);
+						}
+					}
+				}
+			}
+			
+			private function onConfirmClose(event:CloseEvent):void {
+				if (event.detail == Alert.OK) {
+					var name:String = this.mTabNames[this.mTabNavigator.selectedIndex]
+					this.closeTab(name);
+				}
+			}
+			
+			private function onConfirmCloseAll(event:CloseEvent):void {
+				if (event.detail == Alert.OK) {
+					for (var tabName:String in this.mTabDict) {
+						this.closeTab(tabName);
+					}
+				}
+			}
+			
+			private function onConfirmCloseOthers(event:CloseEvent):void {
+				if (event.detail == Alert.OK) {
+					var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+					for (var tabName:String in this.mTabDict) {
+						if (tabName != current) {
+							this.closeTab(tabName);
+						}
+					}
+				}
+			}
+			
+			private function onRenameTabMenu(event:Event):void {
+				if (this.mTabNavigator.selectedIndex < 0) return;
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				EventManager.getInstance().addEventListener(EventType.INPUT_DIALOG_CONFIRM, renameDeco);
+				var input:InputDialog = new InputDialog();
+				input.setTitle("重命名行为", current);
+				PopUpManager.addPopUp(input, MapEditor.getInstance());
+				PopUpManager.centerPopUp(input);
+			}
 		]]>
 	</fx:Script>
 	
 	<s:Button right="0" top="0" width="30" height="20" label="x" click="onPressClose(event)"/>
 	<s:HGroup right="155" top="10" horizontalAlign="left">
-		<s:RadioButton label="装饰库" groupName="radiogroup1"
+		<s:Label y="10" paddingTop="3" text="新建类型:"/>
+		<s:RadioButton label="装饰" groupName="radiogroup1"
 					   selected="true"/>
-		<s:RadioButton label="组合库" groupName="radiogroup1"/>
+		<s:RadioButton label="组合" groupName="radiogroup1"/>
 	</s:HGroup>
 	<s:HGroup x="0" y="0" width="100%" height="30">
 		<s:Button width="80" height="25" label="保存当前" click="onPressSave(event)"/>
@@ -238,14 +493,12 @@
 			<s:Button right="0" top="0" width="30" label="+" click="onPressNewTab(event)"/>
 		</s:Group>
 		<s:Group width="150" height="100%">
-			<mx:TabNavigator x="0" y="0" width="100%" height="100%" paddingTop="0">
-				<s:NavigatorContent width="100%" height="100%" label="装饰元素">
-					<s:VGroup id="mCellSelector" x="0" y="0" width="100%" height="100%">
-					</s:VGroup>
+			<mx:TabNavigator id="mSelector" x="0" y="0" width="100%" height="100%" paddingTop="0">
+				<s:NavigatorContent id="mCellSelector" width="100%" height="100%" label="装饰元素">
 				</s:NavigatorContent>
 				<s:NavigatorContent width="100%" height="100%" label="装饰组合">
-					<s:VGroup id="mGroupSelector" x="0" y="0" width="100%" height="100%">
-					</s:VGroup>
+					<s:List id="mGroupList" x="0" y="0" width="100%" height="100%" change="onGroupSelected(event)">
+					</s:List>
 				</s:NavigatorContent>
 			</mx:TabNavigator>
 			

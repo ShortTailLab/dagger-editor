@@ -360,8 +360,8 @@
 				<s:Button id="saveLevelBtn" label="保存关卡" click="saveLevel(event)"/>
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
 				<s:Label visible="false" text="地图装饰" color="0x777777"/>
-				<s:ComboBox visible="false" id="mDeco" width="80" change="onDecoSelected(event)"/>
-				<s:Button visible="false" label="装饰编辑" click="onPressDeco(event)"/>
+				<s:ComboBox visible="true" id="mDeco" width="80" change="onDecoSelected(event)"/>
+				<s:Button visible="true" label="装饰编辑" click="onPressDeco(event)"/>
 			</s:HGroup>
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
