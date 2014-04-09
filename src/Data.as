@@ -242,7 +242,7 @@ package
 					data : [], behavior : {}, trigger : {}
 				};
 			
-			return this.mLevelInstancesTable[lid].behavior[eid];
+			return this.mLevelInstancesTable[lid].behavior[eid] || [];
 		}
 		
 		public function updateEnemyBehaviorsById( lid:String, eid:String, bhs:Array ):void
