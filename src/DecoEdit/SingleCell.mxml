@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:UIComponent xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import spark.filters.GlowFilter;
+			
+			private var mData:Object;
+			private var mSelected:Boolean;
+			private var mLayer:SingleLayer;
+			
+			public function setData(data:Object, layer:SingleLayer):void {
+				this.mData = data;
+				this.mLayer = layer;
+				
+				this.updateImages();
+				
+				this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+				this.addEventListener(MouseEvent.ROLL_OVER, onRollOver);
+				this.addEventListener(MouseEvent.ROLL_OUT, onRollOut);
+			}
+			
+			private function onMouseDown(event:Event):void {
+				this.setSelected(!this.mSelected);
+			}
+			
+			private function onRollOver(event:Event):void {
+				if (!this.mSelected) {
+					var filter:spark.filters.GlowFilter = new GlowFilter();
+					filter.color = 0xFFFF00;
+					filter.strength = 50;
+					filter.blurX = 5;
+					filter.blurY = 5;
+					this.filters = [filter];
+				}
+			}
+			
+			private function onRollOut(event:Event):void {
+				if (!this.mSelected) {
+					this.filters = [];
+				}
+			}
+			
+			private function updateImages():void {
+				this.removeChildren();
+				var file:File = Data.getInstance().resolvePath("images/"+this.mData.n+".png");
+				var loader:Loader = new Loader();
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoad);
+				loader.load(new URLRequest(file.url));
+			}
+			
+			private function onImageLoad(event:Event):void {
+				var bitmap:Bitmap = event.currentTarget.content
+				this.addChild(bitmap);
+				bitmap.x = -bitmap.width/2;
+				bitmap.y = -bitmap.height/2;
+				this.update();
+			}
+			
+			public function update():void {
+				var ret:Object = SingleLayer.toFlexWorld(this.mData, this.mLayer.data);
+				this.x = ret.x;
+				this.y = ret.y;
+				this.scaleX = this.scaleY = this.mData.s1;
+				if (this.mData.flipx) this.scaleX = -this.scaleX;
+				if (this.mData.flipy) this.scaleY = -this.scaleY;
+				this.rotation = this.mData.r1;
+			}
+			
+			public function setSelected(bool:Boolean):void {
+				this.mSelected = bool;
+				if (bool) {
+					var filter:spark.filters.GlowFilter = new GlowFilter();
+					filter.color = 0xFF0000;
+					filter.strength = 50;
+					filter.blurX = 5;
+					filter.blurY = 5;
+					this.filters = [filter];
+				}
+				else {
+					this.filters = [];
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+</mx:UIComponent>

@@ -309,7 +309,7 @@
 					Data.getInstance().updateBehaviorSetById(current, data);
 					setTabModified(current, false);
 					var alert:Alert = Alert.show(current+" 保存成功!");
-					setTimeout(function ():void { if (alert) alert.parent.removeChild(alert); }, 1000);
+					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
 					this.filterLibrary();
 					this.modifiedAndSavedFiles[current] = true;
 				}
@@ -325,7 +325,7 @@
 					}
 				}
 				var alert:Alert = Alert.show(" 保存成功!");
-				setTimeout(function ():void { if (alert) alert.parent.removeChild(alert); }, 1000);
+				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
 				this.filterLibrary();
 			}
 			

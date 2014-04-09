@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="onCreate()">
+	<fx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			
+			private var mData:Object;
+			private var mCurrentLayer:Object;
+			private var mCurrentCell:Object;
+			private var mBg:UIComponent;
+			/** layer data -> SingleLayer */
+			private var mData2LayerDict:Dictionary;
+			private var mCreated:Boolean = false;
+			
+			private function onCreate():void {
+				this.mCreated = true;
+				if (this.mData) {
+					this.update();
+				}
+			}
+			
+			public function init(data:Object, currentLayer:Object, currentCell:Object):void {
+				this.mData = data;
+				this.mCurrentLayer = currentLayer;
+				this.mCurrentCell = currentCell;
+				this.mBg = new UIComponent();
+				this.addElement(this.mBg);
+				this.mBg.x = 160;
+				
+				this.mData2LayerDict = new Dictionary();
+				
+				if (this.mCreated) {
+					this.update();
+				}
+			}
+			
+			private function update():void {
+				var maxWidth:Number = 1280;
+				var maxHeight:Number = 1280;
+				for each (var layer:Object in this.mData.layers) {
+					var l:SingleLayer = new SingleLayer();
+					l.setData(layer);
+					this.mData2LayerDict[layer] = l;
+					this.addElement(l);
+					
+					if (l.width > maxWidth) {
+						maxWidth = l.width;
+					}
+					if (l.height > maxHeight) {
+						maxHeight = l.height;
+					}
+				}
+				this.width = maxWidth;
+				this.height = maxHeight;
+				this.setBg();
+				this.setCurrentLayer(this.mCurrentLayer);
+				this.setCurrentCell(this.mCurrentCell);
+			}
+			
+			public function setBg():void {
+				if (!this.mData.bg) return;
+				var file:File = Data.getInstance().resolvePath("images/bg/"+this.mData.bg+".png");
+				var loader:Loader = new Loader();
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onBgLoaded);
+				loader.load(new URLRequest(file.url));
+			}
+			
+			private function onBgLoaded(event:Event):void {
+				this.mBg.removeChildren();
+				this.mBg.addChild(event.currentTarget.content);
+			}
+			
+			public function setCurrentLayer(currentLayer:Object):void {
+				this.mCurrentLayer = currentLayer;
+				var layer:SingleLayer = this.mData2LayerDict[currentLayer];
+				for each (var l:SingleLayer in this.mData2LayerDict) {
+					if (l != layer) {
+						l.setSelected(false);
+					}
+				}
+				if (!layer) return;
+				layer.setSelected(true);
+			}
+			
+			public function setCurrentCell(currentCell:Object):void {
+				this.mCurrentCell = currentCell;
+				var layer:SingleLayer = this.mData2LayerDict[this.mCurrentLayer];
+				if (layer) {
+					layer.setCurrentCell(currentCell);
+				}
+			}
+			
+			public function updateBorder():void {
+				var layer:SingleLayer = this.mData2LayerDict[this.mCurrentLayer];
+				if (layer) {
+					layer.updateBorder();
+				}
+			}
+			
+			public function updateCurrentCell():void {
+				var layer:SingleLayer = this.mData2LayerDict[this.mCurrentLayer];
+				if (layer) {
+					layer.updateCurrentCell();
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+</s:Group>

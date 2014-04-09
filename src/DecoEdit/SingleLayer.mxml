@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:UIComponent xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			
+			private var mData:Object;
+			/** cell data -> cell */
+			private var mData2CellDict:Dictionary;
+			private var mBorder:Sprite;
+			private var mCellContainer:UIComponent;
+			private var mCurrentCell:Object;
+			
+			public function setData(data:Object):void {
+				this.mData = data;
+				
+				this.mData2CellDict = new Dictionary();
+				this.mBorder = new Sprite();
+				this.addChild(this.mBorder);
+				this.mBorder.x = 160;
+				this.updateBorder();
+				this.mCellContainer = new UIComponent();
+				this.addChild(this.mCellContainer);
+				this.mCellContainer.x = 160;
+				
+				for each (var cell:Object in this.mData.cells) {
+					var c:SingleCell = new SingleCell();
+					this.mData2CellDict[cell] = c;
+					c.setData(cell, this);
+					this.mCellContainer.addChild(c);
+				}
+			}
+			
+			public function updateBorder():void {
+				this.mBorder.graphics.clear();
+				this.mBorder.graphics.lineStyle(5, 0xFF0000);
+				this.mBorder.graphics.moveTo(0, 0);
+				this.mBorder.graphics.lineTo(this.mData.w, 0);
+				this.mBorder.graphics.lineTo(this.mData.w, this.mData.h);
+				this.mBorder.graphics.lineTo(0, this.mData.h);
+				this.mBorder.graphics.lineTo(0, 0);
+			}
+			
+			public function updateCurrentCell():void {
+				var cell:SingleCell = this.mData2CellDict[this.mCurrentCell];
+				if (cell) {
+					cell.update();
+				}
+			}
+			
+			public function setSelected(bool:Boolean):void {
+				this.mBorder.visible = bool;
+			}
+			
+			public function setCurrentCell(currentCell:Object):void {
+				this.mCurrentCell = currentCell;
+				var cell:SingleCell = this.mData2CellDict[currentCell];
+				if (cell) {
+					cell.setSelected(true);
+				}
+			}
+			
+			public static function toFlexWorld(cell:Object, layer:Object):Object {
+				var ret:Object = {};
+				if (cell.xt == 1) {
+					switch (cell.xr) {
+						case 3:
+						case 1: ret.x = cell.x1; break;
+						case 4:
+						case 2: ret.x = layer.w-cell.x1; break;
+					}
+				}
+				else {
+					switch (cell.xr) {
+						case 3:
+						case 1: ret.x = cell.x1*layer.w/100; break;
+						case 4:
+						case 2: ret.x = (100-cell.x1)*layer.w/100; break;
+					}
+				}
+				if (ret.x < 0) ret.x = 0;
+				if (ret.x > layer.w) ret.x = layer.w;
+				
+				if (cell.yt == 1) {
+					switch (cell.yr) {
+						case 2:
+						case 1: ret.y = cell.y1; break;
+						case 4:
+						case 3: ret.y = layer.h - cell.y1; break;
+					}
+				}
+				else {
+					switch (cell.yr) {
+						case 2:
+						case 1: ret.y = (cell.y1)*layer.h/100; break;
+						case 4:
+						case 3: ret.y = (100-cell.y1)*layer.h/100; break;
+					}
+				}
+				if (ret.y < 0) ret.y = 0;
+				if (ret.y > layer.h) ret.y = layer.h;
+				
+				return ret;
+			}
+			
+			public static function toCocosWorld(x:Number, y:Number, cell:Object, layer:Object):Object {
+				var ret:Object = {};
+				if (cell.xt == 1) {
+					switch (cell.xr) {
+						case 3:
+						case 1: ret.x = x; break;
+						case 4:
+						case 2: ret.x = layer.w-x; break;
+					}
+					if (ret.x < 0) ret.x = 0;
+					if (ret.x > layer.w) ret.x = layer.w;
+				}
+				else {
+					switch (cell.xr) {
+						case 3:
+						case 1: ret.x = x/layer.w*100; break;
+						case 4:
+						case 2: ret.x = (layer.w-x)/layer.w*100; break;
+					}
+					if (ret.x < 0) ret.x = 0;
+					if (ret.x > 100) ret.x = 100;
+				}
+				
+				if (cell.yt == 1) {
+					switch (cell.yr) {
+						case 2:
+						case 1: ret.y = y; break;
+						case 4:
+						case 3: ret.y = layer.h - y; break;
+					}
+					if (ret.y < 0) ret.y = 0;
+					if (ret.y > layer.h) ret.y = layer.h;
+				}
+				else {
+					switch (cell.yr) {
+						case 2:
+						case 1: ret.y = (y)/layer.h*100; break;
+						case 4:
+						case 3: ret.y = (layer.h-y)/layer.h*100; break;
+					}
+					if (ret.y < 0) ret.y = 0;
+					if (ret.y > 100) ret.y = 100;
+				}
+				
+				return ret;
+			}
+			
+			public function get data():Object { return this.mData; }
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+</mx:UIComponent>

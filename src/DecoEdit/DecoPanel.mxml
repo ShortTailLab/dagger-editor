@@ -33,6 +33,7 @@
 			
 			private var mLastAddedTab:String;
 			private var mModifiedAndSavedGroups:Object;
+			public static var CTRL_KEY:Boolean = false;
 
 			private function onCreation():void {
 				this.mTabDict = new Object();
@@ -62,6 +63,19 @@
 				if (this.mFilteredLibrary.length > 0) {
 					this.addTab(this.mFilteredLibrary[0], 1);
 				}
+				
+				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+				this.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
+			}
+			
+			private function onKeyDown(event:KeyboardEvent):void {
+				CTRL_KEY = event.ctrlKey;
+//				trace("down " + CTRL_KEY);
+			}
+			
+			private function onKeyUp(event:KeyboardEvent):void {
+				CTRL_KEY = event.ctrlKey;
+//				trace("up " + CTRL_KEY);
 			}
 			
 			private function onSelectorTabIndexChanged(event:IndexChangedEvent):void {
@@ -245,7 +259,7 @@
 					}
 					setTabModified(current, false);
 					var alert:Alert = Alert.show(current+" 保存成功!");
-					setTimeout(function ():void { if (alert) alert.parent.removeChild(alert); }, 1000);
+					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
 					this.filterLibrary();
 					this.filterGroups();
 				}
@@ -266,7 +280,7 @@
 					}
 				}
 				var alert:Alert = Alert.show(" 保存成功!");
-				setTimeout(function ():void { if (alert) alert.parent.removeChild(alert); }, 1000);
+				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
 				this.filterLibrary();
 				this.filterGroups();
 			}

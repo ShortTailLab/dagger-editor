@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Scroller xmlns:fx="http://ns.adobe.com/mxml/2009" 
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 			xmlns:s="library://ns.adobe.com/flex/spark" 
 			xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" creationComplete="onCreate()">
 	<fx:Script>
@@ -8,6 +8,7 @@
 			
 			import mx.collections.ArrayCollection;
 			import mx.collections.Sort;
+			import mx.collections.SortField;
 			import mx.controls.Alert;
 			import mx.controls.Menu;
 			
@@ -21,6 +22,8 @@
 			private var CLIPPING_LAYER:Object;
 			private var CLIPPING_CELL:Object;
 			private var mCurrentLayer:Object;
+			private var mCurrentCell:Object;
+			private var mRender:DecoLayerRender;
 			
 			private function onCreate():void {
 				this.mCreated = true;
@@ -67,7 +70,7 @@
 					}
 					newIndex = max + 1;
 				}
-				this.mData.layers.push({w:960, h:1280, i:newIndex, s:40, cells:[{n:"baoxiang"}]});
+				this.mData.layers.push({w:960, h:1280, i:newIndex, s:40, cells:[]});
 				this.setLayers();
 				this.setModified(true);
 			}
@@ -157,6 +160,8 @@
 				this.setBg();
 				this.setLayers();
 				this.setLayerProperties();
+				this.setCellProperties();
+				this.setRender();
 			}
 			
 			private function setBg():void {
@@ -179,6 +184,7 @@
 			
 			private function onBgChanged(event:IndexChangeEvent):void {
 				this.mData.bg = this.mBgComboBox.dataProvider[event.newIndex];
+				this.mRender.setBg();
 				this.setModified(true);
 			}
 			
@@ -190,12 +196,13 @@
 					this.mData.layers = [];
 					this.mData.layers.push({w:960, h:1280, i:0, s:40, cells:[]});
 				}
+				(this.mData.layers as Array).sortOn("i");
 				for each (var l:Object in this.mData.layers) {
-					layers.addItem({name:l.i==0?"BattleLayer":"layer"+l.i});
+					layers.addItem({name:l.i==0?"[0]BattleLayer":"["+l.i+"]Layer"});
 				}
 				this.mLayerTree.labelField = "name";
 				this.mLayerTree.dataProvider = list;
-				setTimeout(this.expandLayerTree, 100);
+				setTimeout(this.expandLayerTree, 50);
 			}
 			
 			private function expandLayerTree():void {
@@ -204,6 +211,7 @@
 			
 			private function onLayerTreeSelected(event:Event):void {
 				this.setLayerProperties();
+				this.mRender.setCurrentLayer(this.mCurrentLayer);
 			}
 			
 			private function setLayerProperties():void {
@@ -219,17 +227,97 @@
 				
 				var list:ArrayCollection = new ArrayCollection();
 				var cells:ArrayCollection = new ArrayCollection();
-				list.addItem({name:data.i==0?"BattleLayer":"layer"+data.i, children:cells});
+				list.addItem({name:data.i==0?"[0]BattleLayer":"["+data.i+"]Layer", children:cells});
 				for each (var c:Object in data.cells) {
 					cells.addItem({name:c.n});
 				}
 				this.mCellTree.labelField = "name";
 				this.mCellTree.dataProvider = list;
-				setTimeout(this.expandCellTree, 100);
+				setTimeout(this.expandCellTree, 50);
 			}
 			
 			private function expandCellTree():void {
 				this.mCellTree.expandChildrenOf(this.mCellTree.dataProvider[0], true);
+			}
+			
+			private static const RELATIVE_POS:Object = {1:"┏", 2:"┓", 3:"┗", 4:"┛", "┏":1, "┓":2, "┗":3, "┛":4};
+			private function setCellProperties():void {
+				var index:int = this.mCellTree.selectedIndex - 1;
+				var data:Object;
+				if (index < 0) data = null;
+				else data = this.mCurrentLayer.cells[index];
+				this.mCurrentCell = data;
+				if (data) {
+					this.mCellName.text = data.n;
+					this.mCellType.text = data.g?"组合":"元素";
+					this.radiogroup1.selectedValue = data.f?"固定":"随机";
+					this.updateCellFixed();
+					this.mX1.text = data.x1;
+					this.mX2.text = data.x2;
+					this.radiogroup2.selectedValue = data.xt==1?"abs":"p%";
+					this.radiogroup3.selectedValue = RELATIVE_POS[data.xr];
+					this.mY1.text = data.y1;
+					this.mY2.text = data.y2;
+					this.radiogroup4.selectedValue = data.yt==1?"abs":"p%";
+					this.radiogroup5.selectedValue = RELATIVE_POS[data.yr];
+					this.mScale1.text = data.s1;
+					this.mScale2.text = data.s2;
+					this.mRotation1.text = data.r1;
+					this.mRotation2.text = data.r2;
+					this.mFlipX.selected = data.flipx==1;
+					this.mFlipY.selected = data.flipy==1;
+					this.mXSpeed1.text = data.xs1;
+					this.mXSpeed2.text = data.xs2;
+					this.mYSpeed1.text = data.ys1;
+					this.mYSpeed2.text = data.ys2;
+					this.mScaleSpeed1.text = data.ss1;
+					this.mScaleSpeed2.text = data.ss2;
+					this.mRotationSpeed1.text = data.rs1;
+					this.mRotationSpeed2.text = data.rs2;
+					this.mNum1.text = data.num1;
+					this.mNum2.text = data.num2;
+				}
+				else {
+					this.mCellName.text = "null";
+					this.mCellType.text = "null";
+					this.radiogroup1.selectedValue = "固定";
+					this.updateCellFixed();
+				}
+			}
+			
+			private function updateCellFixed():void {
+				var i:int;
+				if (this.radiogroup1.selectedValue == "固定") {
+					for (i = 0; i < 9; i++) {
+						this["mTilde"+i].visible = false;
+					}
+					this.mX2.visible = false;
+					this.mY2.visible = false;
+					this.mScale2.visible = false;
+					this.mRotation2.visible = false;
+					this.mXSpeed2.visible = false;
+					this.mYSpeed2.visible = false;
+					this.mScaleSpeed2.visible = false;
+					this.mRotationSpeed2.visible = false;
+					this.mNum2.visible = false;
+					this.mNum1.text = "1";
+					this.mNum1.editable = false;
+				}
+				else {
+					for (i = 0; i < 9; i++) {
+						this["mTilde"+i].visible = true;
+					}
+					this.mX2.visible = true;
+					this.mY2.visible = true;
+					this.mScale2.visible = true;
+					this.mRotation2.visible = true;
+					this.mXSpeed2.visible = true;
+					this.mYSpeed2.visible = true;
+					this.mScaleSpeed2.visible = true;
+					this.mRotationSpeed2.visible = true;
+					this.mNum2.visible = true;
+					this.mNum1.editable = true;
+				}
 			}
 			
 			public function rename(to:String):void {
@@ -237,23 +325,86 @@
 			}
 			
 			private function onValueChanged(event:Event):void {
-				
+				if (this.mCurrentCell) {
+					var ret:Object;
+					if (event.currentTarget is RadioButton) {
+						ret = SingleLayer.toFlexWorld(this.mCurrentCell, this.mCurrentLayer);
+					}
+					else {
+						this.mCurrentCell.x1 = int(this.mX1.text);
+						this.mCurrentCell.y1 = int(this.mY1.text);
+					}
+					this.mCurrentCell.x2 = int(this.mX2.text);
+					this.mCurrentCell.xt = this.radiogroup2.selectedValue=="abs"?1:0;
+					this.mCurrentCell.xr = RELATIVE_POS[this.radiogroup3.selectedValue];
+					this.mCurrentCell.y2 = int(this.mY2.text);
+					this.mCurrentCell.yt = this.radiogroup4.selectedValue=="abs"?1:0;
+					this.mCurrentCell.yr = RELATIVE_POS[this.radiogroup5.selectedValue];
+					if (event.target is RadioButton) {
+						var newPos:Object = SingleLayer.toCocosWorld(ret.x, ret.y, this.mCurrentCell, this.mCurrentLayer);
+						this.mCurrentCell.x1 = newPos.x;
+						this.mCurrentCell.y1 = newPos.y;
+						this.mX1.text = newPos.x;
+						this.mY1.text = newPos.y;
+					}
+					this.mCurrentCell.s1 = int(this.mScale1.text);
+					this.mCurrentCell.s2 = int(this.mScale2.text);
+					this.mCurrentCell.r1 = int(this.mRotation1.text);
+					this.mCurrentCell.r2 = int(this.mRotation2.text);
+					this.mCurrentCell.flipx = this.mFlipX.selected?1:0;
+					this.mCurrentCell.flipy = this.mFlipY.selected?1:0;
+					this.mCurrentCell.xs1 = int(this.mXSpeed1.text);
+					this.mCurrentCell.xs2 = int(this.mXSpeed2.text);
+					this.mCurrentCell.ys1 = int(this.mYSpeed1.text);
+					this.mCurrentCell.ys2 = int(this.mYSpeed2.text);
+					this.mCurrentCell.ss1 = int(this.mScaleSpeed1.text);
+					this.mCurrentCell.ss2 = int(this.mScaleSpeed2.text);
+					this.mCurrentCell.rs1 = int(this.mRotationSpeed1.text);
+					this.mCurrentCell.rs2 = int(this.mRotationSpeed2.text);
+					this.mCurrentCell.num1 = int(this.mNum1.text);
+					this.mCurrentCell.num2 = int(this.mNum2.text);
+					this.setModified(true);
+					this.mRender.updateCurrentCell();
+				}
 			}
 			
 			private function onLayerValueChanged(event:Event):void {
-				this.mCurrentLayer.w = this.mMapWidth.text;
-				this.mCurrentLayer.h = this.mMapHeight.text;
-				this.mCurrentLayer.s = this.mSpeed.text;
-				this.mCurrentLayer.i = this.mMapIndex.text;
+				this.mCurrentLayer.w = int(this.mMapWidth.text);
+				this.mCurrentLayer.h = int(this.mMapHeight.text);
+				this.mCurrentLayer.s = int(this.mSpeed.text);
+				var i:int = int(this.mMapIndex.text);
+				if (event.target == this.mMapIndex && i == 0) {                              
+					Alert.show("层级0为战斗层，不可摆放装饰，请输入其他值");
+					return;
+				}
+				else {
+					this.mCurrentLayer.i = int(this.mMapIndex.text);
+				}
+				if (event.target == this.mMapIndex) {
+					this.setLayers();
+					this.setLayerProperties();
+				}
+				else if (event.target == this.mMapWidth || event.target == this.mMapHeight) {
+					this.mRender.updateBorder();
+				}
 				this.setModified(true);
 			}
 			
 			private function onCellTreeSelected(event:Event):void {
-				
+				this.setCellProperties();
+				this.mRender.setCurrentCell(this.mCurrentCell);
 			}
 			
 			private function onAttrChanged(event:Event):void {
-				
+				if (this.mCurrentCell) this.mCurrentCell.f = this.radiogroup1.selectedValue=="固定"?1:0;
+				this.updateCellFixed();
+				this.setModified(true);
+			}
+			
+			private function setRender():void {
+				this.mRender = new DecoLayerRender();
+				this.mRender.init(this.mData, this.mCurrentLayer, this.mCurrentCell);
+				this.mContainer.addElement(this.mRender);
 			}
 			
 			public function export():Object {
@@ -331,7 +482,7 @@
 				</s:HGroup>
 				<s:HGroup x="26" y="91">
 					<s:TextInput id="mX1" x="0" y="0" width="50" change="onValueChanged(event)"/>
-					<s:Label x="55" y="0" text="~"/>
+					<s:Label x="55" y="0" text="~" id="mTilde0"/>
 					<s:TextInput id="mX2" x="60" y="0" width="50" change="onValueChanged(event)"/>
 				</s:HGroup>
 				<s:VGroup x="26" y="115" horizontalAlign="left">
@@ -341,17 +492,17 @@
 						<s:RadioButton label="p%" click="onValueChanged(event)" groupName="radiogroup2"/>
 					</s:HGroup>
 					<s:HGroup>
-						<s:RadioButton label="┏" click="onValueChanged(event)" groupName="radiogroup3"/>
-						<s:RadioButton label="┓" click="onValueChanged(event)" groupName="radiogroup3"/>
 						<s:RadioButton label="┗" click="onValueChanged(event)" groupName="radiogroup3"
 									   selected="true"/>
 						<s:RadioButton label="┛" click="onValueChanged(event)" groupName="radiogroup3"/>
+						<s:RadioButton visible="false" label="┏" click="onValueChanged(event)" groupName="radiogroup3"/>
+						<s:RadioButton visible="false" label="┓" click="onValueChanged(event)" groupName="radiogroup3"/>
 					</s:HGroup>
 				</s:VGroup>
 				<s:HGroup x="26" y="170">
 					<s:TextInput id="mY1" x="0" y="0" width="50" change="onValueChanged(event)"/>
-					<s:Label x="55" y="0" text="~"/>
-					<s:TextInput x="60" y="0" width="50" change="onValueChanged(event)"/>
+					<s:Label x="55" y="0" text="~" id="mTilde1"/>
+					<s:TextInput id="mY2" x="60" y="0" width="50" change="onValueChanged(event)"/>
 				</s:HGroup>
 				<s:VGroup x="26" y="195" horizontalAlign="left">
 					<s:HGroup>
@@ -361,10 +512,10 @@
 					</s:HGroup>
 					<s:HGroup>
 						<s:RadioButton label="┏" click="onValueChanged(event)" groupName="radiogroup5"/>
-						<s:RadioButton label="┓" click="onValueChanged(event)" groupName="radiogroup5"/>
 						<s:RadioButton label="┗" click="onValueChanged(event)" groupName="radiogroup5"
 									   selected="true"/>
-						<s:RadioButton label="┛" click="onValueChanged(event)" groupName="radiogroup5"/>
+						<s:RadioButton visible="false" label="┓" click="onValueChanged(event)" groupName="radiogroup5"/>
+						<s:RadioButton visible="false" label="┛" click="onValueChanged(event)" groupName="radiogroup5"/>
 					</s:HGroup>
 				</s:VGroup>
 				<mx:HRule x="0" y="81" width="100%"/>
@@ -372,41 +523,42 @@
 				<mx:HRule x="0" y="371" width="100%"/>
 				<s:HGroup x="25" y="259">
 					<s:TextInput id="mScale1" x="0" y="0" width="50" change="onValueChanged(event)"/>
-					<s:Label x="55" y="0" text="~"/>
+					<s:Label x="55" y="0" text="~" id="mTilde2"/>
 					<s:TextInput id="mScale2" x="60" y="0" width="50" change="onValueChanged(event)"/>
 				</s:HGroup>
 				<s:HGroup x="25" y="289">
 					<s:TextInput id="mRotation1" x="0" y="0" width="50" change="onValueChanged(event)"/>
-					<s:Label x="55" y="0" text="~"/>
+					<s:Label x="55" y="0" text="~" id="mTilde3"/>
 					<s:TextInput id="mRotation2" x="60" y="0" width="50" change="onValueChanged(event)"/>
 				</s:HGroup>
 				<s:CheckBox id="mFlipX" x="26" y="319" label="水平翻转" click="onValueChanged(event)"/>
 				<s:CheckBox id="mFlipY" x="26" y="345" label="垂直翻转" click="onValueChanged(event)"/>
 				<s:HGroup x="25" y="390">
 					<s:TextInput id="mXSpeed1" x="0" y="0" width="50" change="onValueChanged(event)"/>
-					<s:Label x="55" y="0" text="~"/>
+					<s:Label x="55" y="0" text="~" id="mTilde4"/>
 					<s:TextInput id="mXSpeed2" x="60" y="0" width="50" change="onValueChanged(event)"/>
 				</s:HGroup>
 				<s:HGroup x="25" y="430">
 					<s:TextInput id="mYSpeed1" x="0" y="0" width="50" change="onValueChanged(event)"/>
-					<s:Label x="55" y="0" text="~"/>
+					<s:Label x="55" y="0" text="~" id="mTilde5"/>
 					<s:TextInput id="mYSpeed2" x="60" y="0" width="50" change="onValueChanged(event)"/>
 				</s:HGroup>
 				<s:HGroup x="25" y="470">
 					<s:TextInput id="mScaleSpeed1" x="0" y="0" width="50" change="onValueChanged(event)"/>
-					<s:Label x="55" y="0" text="~"/>
+					<s:Label x="55" y="0" text="~" id="mTilde6"/>
 					<s:TextInput id="mScaleSpeed2" x="60" y="0" width="50" change="onValueChanged(event)"/>
 				</s:HGroup>
 				<s:HGroup x="25" y="510">
 					<s:TextInput id="mRotationSpeed1" x="0" y="0" width="50"
 								 change="onValueChanged(event)"/>
-					<s:Label x="55" y="0" text="~"/>
+					<s:Label x="55" y="0" text="~" id="mTilde7"/>
 					<s:TextInput id="mRotationSpeed2" x="60" y="0" width="50"
 								 change="onValueChanged(event)"/>
 				</s:HGroup>
 				<s:HGroup x="25" y="550">
 					<s:TextInput id="mNum1" x="0" y="0" width="50" change="onValueChanged(event)"/>
-					<s:Label x="55" y="0" text="~"/>
+					<s:Label x="55" y="0" text="~" id="mTilde8"/>
+					<s:TextInput id="mNum2" x="60" y="0" width="50" change="onValueChanged(event)"/>
 				</s:HGroup>
 			</s:Panel>
 			<s:Scroller width="100%" height="100%">
@@ -417,4 +569,4 @@
 			</s:Scroller>
 		</s:HGroup>
 	</s:Group>
-</s:Scroller>
+</s:Group>
