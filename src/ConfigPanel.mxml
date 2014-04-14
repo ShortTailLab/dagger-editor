@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:mapEdit="mapEdit.*"
+		  width="300" height="300" creationComplete="onCreate()">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.containers.FormItem;
+			import mx.containers.FormItemDirection;
+			import mx.controls.HRule;
+			import mx.controls.TextInput;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.CheckBox;
+			import spark.components.Form;
+			import spark.components.HGroup;
+			import spark.components.Label;
+			import spark.components.VGroup;
+			import spark.primitives.Line;
+			
+			protected var mCBComplete:Function = null;
+			protected var mCBError:Function = null;
+			protected var mKey2Group:Object = {};
+			protected var mKey2UIComponents:Object = {};
+			
+			// in 	: args 	{ group : [ [key, cnKey, type, default], ... ] }
+			// out 	: ret 	{ key : value }
+			
+			protected static const kTAG:int 	= 0;
+			protected static const kKEY:int	 	= 1;
+			protected static const kTYPE:int 	= 2;
+			protected static const kDEFAULT:int = 3;
+			protected static const kDESC:int 	= 4;
+			
+			protected var mTestDATA:Array = [
+				[ "基础数据", "isBoss",  "bool",   0,       "是否BOSS" ],
+				[ "基础数据", "size",    "ccsize", [50,50], "碰撞面积" ],
+				[ "基础数据", "health",  "float",  100,     "最大生命值" ],
+				[ "基础数据", "attack",  "float",  10,      "物理攻击力" ],
+				[ "基础数据", "magic",   "float",  10,      "魔法攻击力" ],
+				[ "基础数据", "defense", "float",  10,      "物理防御力" ],
+				[ "基础数据", "resist",  "float",  10,      "魔法防御力" ],
+				// drops
+				[ "掉落", "coins", "array_int", [], "铜币掉落" ],
+				[ "掉落", "props", "array_int", [], "道具掉落" ],
+				[ "掉落", "items", "array_int", [], "材料掉落" ]
+			];
+			
+			protected function onCreate():void  {
+				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
+				this.mRootPanel.moveArea.addEventListener(MouseEvent.MOUSE_DOWN, onMoveAreaMouseDown);
+				this.mRootPanel.moveArea.addEventListener(MouseEvent.MOUSE_UP, onMoveAreaMouseUp);
+				
+				var self:ConfigPanel = this;
+
+				// make items by group
+				{
+					var max:Number = 0;
+					
+					this.mTabNavigator.removeAllChildren();
+					this.mTabNavigator.removeAllElements();
+					
+					for each( var item:Array in this.mTestDATA ) 
+					{
+						if( !(item[kTAG] in this.mKey2Group) )
+						{
+							//trace( item[kTAG] );
+							var page:NavigatorContent = new NavigatorContent;
+							page.label = item[kTAG];
+							
+							var group:Form = new Form;
+							page.addElement( group );
+							this.mRootPanel.addElement( page );
+							
+							this.mKey2Group[item[kTAG]] = group;
+						}
+						
+						this.mKey2Group[item[kTAG]].addElement( 
+							this.createAndRegisterItem( item ) 
+						);
+					}
+					
+					//this.mRootPanel.height = max*42+45;
+				}
+			};
+			
+			public function init( onComplete:Function, onError:Function ):void
+			{
+				this.mCBComplete = onComplete;
+				this.mCBError 	 = onError;
+			}
+			
+			protected function onMoveAreaMouseDown(event:Event):void
+			{
+				this.startDrag();
+			}
+			
+			protected function onMoveAreaMouseUp(event:Event):void
+			{
+				this.stopDrag();
+			}
+			
+			protected function onKeyboardAction(event:KeyboardEvent):void
+			{	
+				trace( event.ctrlKey +" "+event.charCode);
+				if( event.ctrlKey && event.charCode == Keyboard.ENTER )
+				{
+					this.onConfirm();
+				}
+			}
+			
+			protected function onClose(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp( this );
+			}
+			
+			protected function onConfirm(event:MouseEvent=null):void
+			{
+				PopUpManager.removePopUp( this );
+				var ret:Object = {};
+				for( var key:String in this.mKey2UIComponents )
+				{
+					
+				}
+			}
+			
+			protected function createAndRegisterItem( item:Object ):UIComponent
+			{
+				this.mKey2UIComponents[item[kKEY]] = [];
+				
+				var head:FormItem = new FormItem;
+				head.direction = FormItemDirection.HORIZONTAL;
+				
+				var label:Label = new Label;
+				label.text = item[kDESC];
+				label.width = 75;
+				head.addElement( label );
+				
+				if( item.type == "float" || item.type == "int" )
+				{
+					var input:TextInput = new TextInput;
+					input.text 	= item[kDEFAULT];
+					input.width	= 75;
+	
+					if( item.type == "float" ) input.restrict = "\.\0-9\ ";
+					else if( item.type == "int" ) input.restrict = "0-9";
+					
+					head.addElement( input );
+					this.mKey2UIComponents[item.key].push(input);
+				} 
+				else if ( item.type == "bool" )
+				{
+					var check:CheckBox = new CheckBox;
+					check.selected = Boolean(item[kDEFAULT]);
+					
+					head.addElement( check );
+					this.mKey2UIComponents[item.key].push(check);
+				} 
+				else if ( item.type == "ccp" || item.type == "ccsize" ) 
+				{	
+					var x_width:TextInput = new TextInput;
+					x_width.text 	= item[kDEFAULT][0];
+					x_width.width	= 75;
+					x_width.restrict = "0-9";
+					head.addElement( x_width );
+					
+					var y_height:TextInput = new TextInput;
+					y_height.text 	= item[kDEFAULT][1];
+					y_height.width	= 75;
+					y_height.restrict = "0-9";
+					head.addElement( y_height );
+					
+					this.mKey2UIComponents[item[kKEY]].push(x_width);
+					this.mKey2UIComponents[item[kKEY]].push(y_height);
+				}
+				
+				return head;
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+		
+	<s:TitleWindow id="mRootPanel" left="0" top="0" width="500" height="350" close="onClose(event)"
+				   title="参数配置">
+
+		<mx:TabNavigator id="mTabNavigator" left="5" right="5" top="5" bottom="35">
+			<s:NavigatorContent width="100%" height="100%" label="选项卡 1">
+				<s:layout>
+					<s:ConstraintLayout/>
+				</s:layout>
+			</s:NavigatorContent>
+			<s:NavigatorContent width="100%" height="100%" label="2we">
+			</s:NavigatorContent>
+		</mx:TabNavigator>
+		
+		<s:Button id="mConfirmButton" right="5" bottom="5" height="27" label="确认修改(Ctrl+Enter)"
+				  click="onConfirm(event)" enabled="true" fontSize="13"/>
+	</s:TitleWindow>
+</s:Module>

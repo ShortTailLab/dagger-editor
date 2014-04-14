@@ -64,8 +64,18 @@
 //					self.stage.focus = self.mVIEWScene; 
 //				});
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
+				
+				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
 			}
-		
+			
+			protected function onKeyboardAction(event:KeyboardEvent):void
+			{
+				event.stopImmediatePropagation();
+				event.preventDefault();
+				
+				//trace( "OUTSIDE: "+event.ctrlKey+" : "+event.keyCode );
+			}
+			
 			private function onResize(e:ResizeEvent):void
 			{
 				//if( this.mVIEWScene)
@@ -95,95 +105,109 @@
 				}
 				this.mDeco.dataProvider = decoList;
 				
-				this.mLevelTree.mouseFocusEnabled = false;
-				this.mLevelTree.focusEnabled = false;
-			
-				{
-					this.mVIEWScene = new MainScene();	
-					this.mSceneArea.addElement( this.mVIEWScene );
-					this.mVIEWScene.init();
-					this.mVIEWScene.mouseFocusEnabled = true;
-				}
-
-				{
-					var formationPanel:Panel = new Panel();
-					with( formationPanel ) {
-						percentHeight = 40; percentWidth = 100; title = "阵型";
-					}
-					formationPanel.setStyle("dropShadowVisible", false);
-					
-					var hgroup:HGroup = new HGroup();
-					with( hgroup ) {
-						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
-					}
-					
-					var group:Group = new Group();
-					with( group ) {
-						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
-					}
-	
-					var vscrollbar:VScrollBar = new VScrollBar();
-					with( vscrollbar ) {
-						percentHeight = 100;
-					}
-					vscrollbar.viewport = group;
-					
-					this.mVIEWFormation = new FormationSelector;
-					with( this.mVIEWFormation ) { percentWidth = 100; }
+				//this.mLevelTree.mouseFocusEnabled = false;
+				//this.mLevelTree.focusEnabled = false;
 				
-					group.addElement( this.mVIEWFormation );
-					hgroup.addElement(group);
-					hgroup.addElement(vscrollbar);
-					
-					formationPanel.addElement( hgroup );
-				}	
-
 				{
-					var monsterPanel:Panel = new Panel();
-					with( monsterPanel ) {
-						percentHeight = 60; percentWidth = 100; title = "资源";
-					}
-					monsterPanel.setStyle("dropShadowVisible", false);
+					var levelMenu:ContextMenu = new ContextMenu;
 					
-					hgroup = new HGroup();
-					with( hgroup ) {
-						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
-					}
-
-					group = new Group();
-					with( group ) {
-						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
-					}
+					var makeChapter:ContextMenuItem = new ContextMenuItem("创建章节");
+					makeChapter.addEventListener( ContextMenuEvent.MENU_ITEM_SELECT,
+						function(e:ContextMenuItem):void {
+							
+						}
+					);
 					
-					vscrollbar = new VScrollBar();
-					with( vscrollbar ) {
-						percentHeight = 100;
-					}
-					vscrollbar.viewport = group;
-					
-					this.mVIEWMonster = new MonsterSelector;
-					with( this.mVIEWMonster ) {
-						percentWidth = percentHeight = 100;
-					}
-
-					group.addElement( this.mVIEWMonster );
-					hgroup.addElement( group );
-					hgroup.addElement( vscrollbar );
-					
-					monsterPanel.addElement( hgroup );
 				}
+				//this.mLevelTree.contextMenu = 
+				
+					
+//				{
+//					this.mVIEWScene = new MainScene();	
+//					this.mSceneArea.addElement( this.mVIEWScene );
+//					this.mVIEWScene.init();
+//					this.mVIEWScene.mouseFocusEnabled = true;
+//				}
+
+//				{
+//					var formationPanel:Panel = new Panel();
+//					with( formationPanel ) {
+//						percentHeight = 40; percentWidth = 100; title = "阵型";
+//					}
+//					formationPanel.setStyle("dropShadowVisible", false);
+//					
+//					var hgroup:HGroup = new HGroup();
+//					with( hgroup ) {
+//						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
+//					}
+//					
+//					var group:Group = new Group();
+//					with( group ) {
+//						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
+//					}
+//	
+//					var vscrollbar:VScrollBar = new VScrollBar();
+//					with( vscrollbar ) {
+//						percentHeight = 100;
+//					}
+//					vscrollbar.viewport = group;
+//					
+//					this.mVIEWFormation = new FormationSelector;
+//					with( this.mVIEWFormation ) { percentWidth = 100; }
+//				
+//					group.addElement( this.mVIEWFormation );
+//					hgroup.addElement(group);
+//					hgroup.addElement(vscrollbar);
+//					
+//					formationPanel.addElement( hgroup );
+//				}	
+//
+//				{
+//					var monsterPanel:Panel = new Panel();
+//					with( monsterPanel ) {
+//						percentHeight = 60; percentWidth = 100; title = "资源";
+//					}
+//					monsterPanel.setStyle("dropShadowVisible", false);
+//					
+//					hgroup = new HGroup();
+//					with( hgroup ) {
+//						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
+//					}
+//
+//					group = new Group();
+//					with( group ) {
+//						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
+//					}
+//					
+//					vscrollbar = new VScrollBar();
+//					with( vscrollbar ) {
+//						percentHeight = 100;
+//					}
+//					vscrollbar.viewport = group;
+//					
+//					this.mVIEWMonster = new MonsterSelector;
+//					with( this.mVIEWMonster ) {
+//						percentWidth = percentHeight = 100;
+//					}
+//
+//					group.addElement( this.mVIEWMonster );
+//					hgroup.addElement( group );
+//					hgroup.addElement( vscrollbar );
+//					
+//					monsterPanel.addElement( hgroup );
+//				}
 				
 				this.setCurrLevel( Data.getInstance().getFirstLevelId() );
 				
-				var leftVGroup:VGroup = new VGroup();
-				with( leftVGroup ) {
-					percentHeight = percentWidth = 100;
-					verticalAlign = "top"; horizontalAlign = "center";
-				}
-				leftVGroup.addElement(formationPanel);
-				leftVGroup.addElement(monsterPanel);
-				
-				this.mSelectorArea.addElement(leftVGroup);
+//				var leftVGroup:VGroup = new VGroup();
+//				with( leftVGroup ) {
+//					percentHeight = percentWidth = 100;
+//					verticalAlign = "top"; horizontalAlign = "center";
+//				}
+//				leftVGroup.addElement(formationPanel);
+//				leftVGroup.addElement(monsterPanel);
+//				
+//				this.mSelectorArea.addElement(leftVGroup);
 			}
 
 			public function onItemClick(event:Event):void
@@ -201,14 +225,23 @@
 			
 			private function setCurrLevel( lid:String ):void
 			{
-				this.mVIEWScene.reset( lid );
-				this.mVIEWMonster.reset( lid );
+//				this.mVIEWScene.reset( lid );
+//				this.mVIEWMonster.reset( lid );
 				Runtime.getInstance().currentLevelID = lid;
 			}
 			
 			private function saveLevel(e:Event):void
 			{
-				this.mVIEWScene.save();
+				//this.mVIEWScene.save();
+
+				var t:ConfigPanel = new ConfigPanel( );
+				t.init( function( configs:Object ):void {
+					Utils.dumpObject( configs );
+				}, function (err:String):void {
+					Alert.show( err );
+				});
+				PopUpManager.addPopUp( t, this, true );
+				PopUpManager.centerPopUp( t );
 			}
 			
 			private function sendToStaticServer(e:Event):void
@@ -375,20 +408,20 @@
 			
 		</s:HGroup>
 		
-		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
-			<s:Panel title="关卡列表" dropShadowVisible="false" width="200" height="100%">
+		<mx:HDividedBox width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
+			<s:Panel width="200" height="100%" borderVisible="true" chromeColor="#CDBCA4"
+					 dropShadowVisible="true" fontFamily="Arial" fontSize="13" fontStyle="normal"
+					 fontWeight="normal" textDecoration="none" title="关卡列表">
 				<mx:Tree id="mLevelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);" labelField="@label">
 				</mx:Tree>
 			</s:Panel>
 			
-			<s:BorderContainer id="mSceneArea" height="100%" width="100%">
+			<s:BorderContainer id="mSceneArea" width="100%" height="100%" dropShadowVisible="true">
 			</s:BorderContainer>
-		</s:HGroup>
+			
+			<s:BorderContainer id="mSelectorArea" width="200" height="100%" dropShadowVisible="false" borderVisible="false">
+			</s:BorderContainer>
+		</mx:HDividedBox>
 	</s:VGroup>
 	
-	<s:VGroup height="100%" width="280" verticalAlign="top" horizontalAlign="right" paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="5">
-		<s:BorderContainer id="mSelectorArea" height="100%" width="100%" dropShadowVisible="false" borderVisible="false">
-		</s:BorderContainer>
-	</s:VGroup>
-		
 </s:WindowedApplication>
