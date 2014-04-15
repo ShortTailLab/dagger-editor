@@ -6,6 +6,8 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.collections.ArrayList;
 			import mx.containers.FormItem;
 			import mx.containers.FormItemDirection;
 			import mx.controls.Alert;
@@ -16,6 +18,7 @@
 			import mx.managers.PopUpManager;
 			
 			import spark.components.CheckBox;
+			import spark.components.ComboBox;
 			import spark.components.Form;
 			import spark.components.HGroup;
 			import spark.components.Label;
@@ -32,19 +35,41 @@
 			
 			// in 	: args 	{ group : [ [key, cnKey, type, default], ... ] }
 			// out 	: ret 	{ key : value }
-			protected static const kTAG:int 	= 0;
-			protected static const kKEY:int	 	= 1;
-			protected static const kTYPE:int 	= 2;
-			protected static const kDEFAULT:int = 3;
-			protected static const kDESC:int 	= 4;
+			public static const kTAG:int 	= 0;
+			public static const kKEY:int	 	= 1;
+			public static const kTYPE:int 	= 2;
+			public static const kDEFAULT:int = 3;
+			public static const kDESC:int 	= 4;
+			public static const kOTHER:int 	= 5;
 			
 			protected function onCreate():void  {
 				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
-//				this.mRootPanel.moveArea.addEventListener(MouseEvent.MOUSE_DOWN, onMoveAreaMouseDown);
-//				this.mRootPanel.moveArea.addEventListener(MouseEvent.MOUSE_UP, onMoveAreaMouseUp);
+				this.refresh( this.mSource );	
+			};
+			
+			public function init( onComplete:Function, onError:Function, data:Object, isPopUp:DisplayObject = null ):void
+			{
+				this.mCBComplete = onComplete;
+				this.mCBError 	 = onError;
+				this.mSource 	 = data;
+				
+				this.mIsPopUp 	 = isPopUp;
+				if( this.mIsPopUp ) {
+					PopUpManager.addPopUp( this, this.mIsPopUp, true );
+					PopUpManager.centerPopUp( this );
+					this.stage.focus = this;
+				}
+			}
+			
+			public function refresh( data:Object ):void 
+			{
+				this.mSource = data;
 				
 				// make items by group
 				{	
+					this.mKey2Data = {};
+					this.mKey2Group = {};
+					this.mKey2UIComponents = {};
 					this.mTabNavigator.removeAllChildren();
 					this.mTabNavigator.removeAllElements();
 					
@@ -78,38 +103,18 @@
 					
 					//this.mRootPanel.height = max*52+45;
 				}
-				
-			};
-			
-			public function init( onComplete:Function, onError:Function, data:Object, isPopUp:DisplayObject = null ):void
-			{
-				this.mCBComplete = onComplete;
-				this.mCBError 	 = onError;
-				this.mSource 	 = data;
-				this.mIsPopUp 	 = isPopUp;
-				if( this.mIsPopUp ) {
-					PopUpManager.addPopUp( this, this.mIsPopUp, true );
-					PopUpManager.centerPopUp( this );
-				}
-			}
-			
-			protected function onMoveAreaMouseDown(event:Event):void
-			{
-				if( this.mIsPopUp ) this.startDrag();
-			}
-			
-			protected function onMoveAreaMouseUp(event:Event):void
-			{
-				if( this.mIsPopUp ) this.stopDrag();
 			}
 			
 			protected function onKeyboardAction(event:KeyboardEvent):void
 			{	
 				//trace( event.ctrlKey +" "+event.charCode);
 				if( !this.mIsPopUp ) return;
-				if( event.ctrlKey && event.charCode == Keyboard.ENTER )
+				if( event.charCode == Keyboard.ENTER )
 				{
 					this.onConfirm();
+				} else if ( event.charCode == Keyboard.ESCAPE )
+				{
+					this.onClose(null);
 				}
 			}
 			
@@ -155,6 +160,15 @@
 								this.mCBError( data[kTAG]+"|"+data[kDESC]+"总权重大于100，请检查" );
 								return;
 							}
+						} 
+						else if( data[kTYPE] == "combo_box" )
+						{
+							var ind:int = (item[0] as ComboBox).selectedIndex;
+							
+							if( ind < 0 || ind >= data[kOTHER][1].length )
+								ret[key] = -1;
+							else
+								ret[key] = data[kOTHER][1][ind];
 						}
 						else if( data[kTYPE] == "string" )
 						{
@@ -184,7 +198,7 @@
 				
 				var label:Label = new Label;
 				label.text = item[kDESC];
-				label.width = 75;
+				label.width = 50;
 				head.addElement( label );
 				
 				if( item[kTYPE] == "float" || item[kTYPE] == "int" )
@@ -242,6 +256,19 @@
 					head.addElement( array );
 					this.mKey2UIComponents[item[kKEY]].push( array );
 				}
+				else if ( item[kTYPE] == "combo_box" )
+				{	
+					var comboBox:ComboBox = new ComboBox;
+					comboBox.dataProvider = new ArrayList( item[kOTHER][0] );
+					trace( item[kDEFAULT] );
+					if( item[kDEFAULT] >=0 && item[kDEFAULT] < item[kOTHER][0].length )
+						comboBox.selectedIndex = item[kDEFAULT];
+					comboBox.prompt = "请选择";
+					comboBox.width = 100;
+					
+					head.addElement( comboBox );
+					this.mKey2UIComponents[item[kKEY]].push( comboBox );
+				}
 				
 				return head;
 			}
@@ -255,16 +282,16 @@
 	</fx:Declarations>
 		
 	<s:TitleWindow id="mRootPanel" left="0" top="0" width="100%" height="100%" borderVisible="true"
-				   chromeColor="#CFCFCF" close="onClose(event)" dropShadowVisible="true"
-				   fontFamily="Arial" fontSize="13" fontStyle="normal" fontWeight="normal"
-				   skinClass="spark.skins.spark.PanelSkin" textDecoration="none" title="参数配置">
+				   chromeColor="#CFCFCF" dropShadowVisible="true" fontFamily="Arial" fontSize="13"
+				   fontStyle="normal" fontWeight="normal" skinClass="spark.skins.spark.PanelSkin"
+				   textDecoration="none" title="参数配置">
 		
 		<mx:TabNavigator id="mTabNavigator" left="5" right="5" top="5" bottom="35">
 			<s:NavigatorContent width="100%" height="100%" label="选项卡 1">
 			</s:NavigatorContent>
 		</mx:TabNavigator>
 		
-		<s:Button id="mConfirmButton" right="5" bottom="5" height="27" label="确认修改(Ctrl+Enter)"
+		<s:Button id="mConfirmButton" right="5" bottom="5" height="27" label="确认修改(Enter)"
 				  click="onConfirm(event)" enabled="true" fontSize="13"/>
 	</s:TitleWindow>
 </s:Module>

@@ -156,12 +156,102 @@ package
 		
 		///////////////////////////////////////////////////////////////////////
 		////// profiles
-		private var mLevelProfiles:Object 		= null;
+		private var mChapterProfiles:Object 	= null;
 		
 		// --------------------------------------------------------------------------
-		public function makeChapter( name:String ):void
+		public function get chapters():Object { return this.mChapterProfiles; }
+		
+		public function genLevelXML():XML
 		{
+			var ret:XML = <root></root>;
+			for each( var chapter:Object in this.mChapterProfiles )
+			{
+				var node:XML = new XML("<node label='"+chapter.name+"'></node>");
+				ret.appendChild( node );
+				
+				var levels:Array = new Array;
+				for each( var l:Object in chapter.levels )
+					levels.push( l );
+				levels.sortOn("id");
+				
+				for( var i:int =0; i<levels.length; i++ )
+				{
+					var leaf:XML = <level></level>;
+					leaf.@label = levels[i].name;
+					leaf.@id 	= levels[i].id;
+					node.appendChild( leaf );
+				}
+			}
+			return ret;
+		}
+		
+		public function makeChapter( id:String, name:String ):void
+		{
+			if( id in this.mChapterProfiles )
+			{
+				Alert.show("【创建失败】重复的id");
+				return;
+			}
 			
+			mChapterProfiles[id] = {
+				id : id,
+				name : name,
+				levels : {}
+			};
+		}
+		
+		public function deleteChapter( id:String ):void
+		{
+			delete this.mChapterProfiles[id];
+		}
+		
+		public function makeLevel( chapter_id:String, id:String, name:String ):void
+		{
+			if( !(chapter_id in this.mChapterProfiles) )
+			{
+				Alert.show("【创建失败】章节id不存在");
+				return;
+			}
+			
+			for each( var chapter:Object in this.mChapterProfiles )
+			{
+				if( id in chapter.levels )
+				{
+					Alert.show("【创建失败】关卡id已存在");
+					return;
+				}
+			}
+			
+			var level:Object = {
+				chapter_id : chapter_id,
+				chapter_name : this.mChapterProfiles[chapter_id].name,
+				id : id,
+				name : name,
+				monsters : {}
+			};
+			
+			this.mChapterProfiles[chapter_id].levels[id] = level;
+		}
+		
+		public function deleteLevel( id:String ):void
+		{
+			for each( var chapter:Object in this.mChapterProfiles )
+			{
+				if( id in chapter.levels )
+				{
+					delete chapter.levels[id];
+					return;
+				}
+			}
+		}
+		
+		public function getLevelData( lid:String ):Object 
+		{
+			for each( var chapter:Object in this.mChapterProfiles )
+			{
+				if( lid in chapter.levels ) return chapter.levels[lid];
+			}
+			return null;
 		}
 		
 		///////////////////////////////////////////////////////////////////////
@@ -341,7 +431,7 @@ package
 				File.applicationStorageDirectory.resolvePath("bt_node_format.json"), false
 			) as Object || {};
 			
-			this.mLevelProfiles = {};
+			this.mChapterProfiles = {};
 			var PROFILE:File = this.resolvePath("saved/profile");
 			if( PROFILE.exists && PROFILE.isDirectory )
 			{
@@ -351,12 +441,14 @@ package
 					if( file.name.split(".")[1] != "json" )
 						continue;
 					var name:String = file.name.split(".")[0];
-					var to:Object = {}; 
-					to[name] = Utils.LoadJSONToObject( file );
-					
-					this.merge(this.mLevelProfiles, to );
+					var to:Object = Utils.LoadJSONToObject( file );
+			
+					this.mChapterProfiles[to.chapter_id][to.id] 
+						= Utils.LoadJSONToObject( file );
 				}
 			}
+			// chapter profiles
+
 			
 			this.mLevelInstancesTable = {};
 			var LEVEL:File = this.resolvePath("saved/level");
@@ -460,7 +552,6 @@ package
 		private var mEnemyProfilesTable:Object 	= null;
 		
 		private var mLevelId2Enemies:Object 	= null;
-		private var mLevelXML:XML 				= null;
 		
 		// --------------------------------------------------------------------------
 		
@@ -476,13 +567,11 @@ package
 		{
 			return this.mLevelId2Enemies[lid];
 		}
-		public function get levelXML():XML { return this.mLevelXML; }
 			
 		private function updateEditorData(onComplete:Function):void
 		{
-			this.mEnemyProfilesTable = DataParser.genMonstersTable( this.mLevelProfiles );
-			this.mLevelId2Enemies    = DataParser.genLevel2MonsterTable( this.mLevelProfiles );
-			this.mLevelXML 			 = DataParser.genLevelXML( this.mLevelProfiles );
+			this.mEnemyProfilesTable = DataParser.genMonstersTable( this.mChapterProfiles );
+			this.mLevelId2Enemies    = DataParser.genLevel2MonsterTable( this.mChapterProfiles );
 			
 			// load skins async
 			//this.mEnemySkins 	     = new Dictionary();
@@ -703,7 +792,15 @@ package
 		
 		public function getLevelDataForServer( lid:String ):Object
 		{	
-			var profile:Object = this.mLevelProfiles[lid];
+			var profile:Object = null;
+			for each( var chapter:Object in this.mChapterProfiles )
+			{
+				if( lid in chapter ) 
+				{
+					profile = chapter.levels[lid];
+					break;
+				}
+ 			}
 			if( !profile ) return null;
 	
 			if( !(lid in this.mLevelInstancesTable) ) 
