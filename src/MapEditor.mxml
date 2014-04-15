@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
-					   xmlns:s="library://ns.adobe.com/flex/spark" 
-					   xmlns:mx="library://ns.adobe.com/flex/mx" width="1155" height="800"
-					   horizontalCenter="0" creationComplete="init()">
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:ns1="*"
+					   width="1155" height="800" creationComplete="init()" horizontalCenter="0">
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
@@ -92,13 +93,6 @@
 
 			private function onDataReady(e:Event=null):void
 			{	
-				// update level tree view;
-				with( this.mLevelTree ) {
-					visible = true; 
-					selectedIndex = 0;
-					dataProvider = Data.getInstance().levelXML;
-				}
-				
 				var decoList:ArrayCollection = new ArrayCollection();
 				for (var deco:String in Data.getInstance().decoSet) {
 					decoList.addItem(deco);
@@ -209,19 +203,6 @@
 //				
 //				this.mSelectorArea.addElement(leftVGroup);
 			}
-
-			public function onItemClick(event:Event):void
-			{
-				var item:XML = this.mLevelTree.selectedItem as XML;
-				if(item.name() == "level")
-					setCurrLevel(item.@level_id);
-				else {
-					this.mLevelTree.expandItem(
-						this.mLevelTree.selectedItem, 
-						!this.mLevelTree.isItemOpen(this.mLevelTree.selectedItem)
-					);
-				}
-			}
 			
 			private function setCurrLevel( lid:String ):void
 			{
@@ -251,23 +232,21 @@
 					[ "掉落", "coins", "array_int", [], "铜币掉落" ],
 					[ "掉落", "props", "array_int", [], "道具掉落" ],
 					[ "掉落", "items", "array_int", [], "材料掉落" ]
-				]);
-				PopUpManager.addPopUp( t, this, true );
-				PopUpManager.centerPopUp( t );
+				], this);
 			}
 			
 			private function sendToStaticServer(e:Event):void
 			{
-				if(mLevelTree.selectedIndex == -1)
+				var currentLevelID:String = Runtime.getInstance().currentLevelID;
+				if( currentLevelID )
 				{
 					Alert.show("上传前请先选择关卡！");
 					return;
 				}
-		
+				
 				var mask:* = Utils.makeManualPanel("上传关卡中，请稍后…", this);
 				var export:File = Data.getInstance().resolvePath("export/");
-				SyncManager.getInstance().uploadLevelsToOSS( 
-					(this.mLevelTree.selectedItem as XML).@level_id,  
+				SyncManager.getInstance().uploadLevelsToOSS( currentLevelID,  
 					function(msg:String):void
 					{
 						Utils.releaseManualPanel( mask );
@@ -421,18 +400,16 @@
 		</s:HGroup>
 		
 		<mx:HDividedBox width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
-			<s:Panel width="200" height="100%" borderVisible="true" chromeColor="#CDBCA4"
-					 dropShadowVisible="true" fontFamily="Arial" fontSize="13" fontStyle="normal"
-					 fontWeight="normal" textDecoration="none" title="关卡列表">
-				<mx:Tree id="mLevelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);" labelField="@label">
-				</mx:Tree>
-			</s:Panel>
+			
+			<ns1:EditLevel width="200" height="100%">
+			</ns1:EditLevel>
 			
 			<s:BorderContainer id="mSceneArea" width="100%" height="100%" dropShadowVisible="true">
 			</s:BorderContainer>
 			
 			<s:BorderContainer id="mSelectorArea" width="200" height="100%" dropShadowVisible="false" borderVisible="false">
 			</s:BorderContainer>
+			
 		</mx:HDividedBox>
 	</s:VGroup>
 	

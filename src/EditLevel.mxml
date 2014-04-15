@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:ns1="*"
+		  width="200" height="100%" creationComplete="onCreate()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import DecoEdit.DecoPanel;
+			
+			import bgedit.BgEditView;
+			import bgedit.BgModel;
+			
+			import excel.SkillConfigReader;
+			
+			import manager.EventManager;
+			import manager.EventType;
+			import manager.SyncManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.Tree;
+			import mx.events.ResizeEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Group;
+			import spark.components.VScrollBar;
+			
+			// ---------------------------------------------------------
+			
+			////// entrance
+			
+			// setup during launch of app
+			private function onCreate():void
+			{
+				// update level tree view;
+				with( this.mLevelTree ) {
+					visible = true; 
+					selectedIndex = 0;
+				}
+				
+				this.mInformPanel.mRootPanel.title = "未选中任何关卡";
+			}
+
+			public function onItemClick(event:Event):void
+			{
+				var item:XML = this.mLevelTree.selectedItem as XML;
+				if(item.name() == "level")
+					setCurrLevel(item.@level_id);
+				else {
+					this.mLevelTree.expandItem(
+						this.mLevelTree.selectedItem, 
+						!this.mLevelTree.isItemOpen(this.mLevelTree.selectedItem)
+					);
+				}
+			}
+			
+			protected function setCurrLevel( lid:String ):void
+			{
+				//				this.mVIEWScene.reset( lid );
+				//				this.mVIEWMonster.reset( lid );
+				Runtime.getInstance().currentLevelID = lid;
+			}
+			
+			protected function onConfirm( evt:Event ):void 
+			{
+				
+			}
+
+		]]>
+	</fx:Script>
+	<mx:VDividedBox width="200" height="100%">
+		<s:Panel width="100%" height="100%" borderVisible="true" chromeColor="#CDBCA4"
+				 dropShadowVisible="true" fontFamily="Arial" fontSize="13" fontStyle="normal"
+				 fontWeight="normal" textDecoration="none" title="关卡列表">
+			
+			<mx:Tree id="mLevelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" itemClick="onItemClick(event);">
+			</mx:Tree>
+			
+		</s:Panel>
+		
+		<ns1:ConfigPanel id="mInformPanel" width="200" height="50%" >
+		</ns1:ConfigPanel>
+		
+	</mx:VDividedBox>
+</s:Module>
