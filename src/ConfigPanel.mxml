@@ -9,6 +9,7 @@
 		<![CDATA[
 			import mx.containers.FormItem;
 			import mx.containers.FormItemDirection;
+			import mx.controls.Alert;
 			import mx.controls.HRule;
 			import mx.controls.TextInput;
 			import mx.core.UIComponent;
@@ -26,6 +27,7 @@
 			protected var mCBError:Function = null;
 			protected var mKey2Group:Object = {};
 			protected var mKey2UIComponents:Object = {};
+			protected var mKey2Data:Object = {};
 			
 			// in 	: args 	{ group : [ [key, cnKey, type, default], ... ] }
 			// out 	: ret 	{ key : value }
@@ -36,45 +38,35 @@
 			protected static const kDEFAULT:int = 3;
 			protected static const kDESC:int 	= 4;
 			
-			protected var mTestDATA:Array = [
-				[ "基础数据", "isBoss",  "bool",   0,       "是否BOSS" ],
-				[ "基础数据", "size",    "ccsize", [50,50], "碰撞面积" ],
-				[ "基础数据", "health",  "float",  100,     "最大生命值" ],
-				[ "基础数据", "attack",  "float",  10,      "物理攻击力" ],
-				[ "基础数据", "magic",   "float",  10,      "魔法攻击力" ],
-				[ "基础数据", "defense", "float",  10,      "物理防御力" ],
-				[ "基础数据", "resist",  "float",  10,      "魔法防御力" ],
-				// drops
-				[ "掉落", "coins", "array_int", [], "铜币掉落" ],
-				[ "掉落", "props", "array_int", [], "道具掉落" ],
-				[ "掉落", "items", "array_int", [], "材料掉落" ]
-			];
-			
 			protected function onCreate():void  {
 				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
 				this.mRootPanel.moveArea.addEventListener(MouseEvent.MOUSE_DOWN, onMoveAreaMouseDown);
 				this.mRootPanel.moveArea.addEventListener(MouseEvent.MOUSE_UP, onMoveAreaMouseUp);
 				
 				var self:ConfigPanel = this;
-
+			};
+			
+			public function init( onComplete:Function, onError:Function, data:Object ):void
+			{
+				this.mCBComplete = onComplete;
+				this.mCBError 	 = onError;
+				
 				// make items by group
-				{
-					var max:Number = 0;
-					
+				{	
 					this.mTabNavigator.removeAllChildren();
 					this.mTabNavigator.removeAllElements();
 					
-					for each( var item:Array in this.mTestDATA ) 
+					var max:Number = 0;
+					for each( var item:Array in data ) 
 					{
 						if( !(item[kTAG] in this.mKey2Group) )
 						{
-							//trace( item[kTAG] );
 							var page:NavigatorContent = new NavigatorContent;
 							page.label = item[kTAG];
 							
 							var group:Form = new Form;
 							page.addElement( group );
-							this.mRootPanel.addElement( page );
+							this.mTabNavigator.addElement( page );
 							
 							this.mKey2Group[item[kTAG]] = group;
 						}
@@ -82,16 +74,18 @@
 						this.mKey2Group[item[kTAG]].addElement( 
 							this.createAndRegisterItem( item ) 
 						);
+						
+						var rule:HRule = new HRule;
+						rule.percentWidth = 100; rule.height = 1; rule.x = 75;
+						this.mKey2Group[item[kTAG]].addElement( rule );
+						
+						this.mKey2Data[item[kKEY]] = item;
+						
+						max = Math.max( max, this.mKey2Group[item[kTAG]].numElements/2 );
 					}
 					
-					//this.mRootPanel.height = max*42+45;
+					this.mRootPanel.height = max*48+45;
 				}
-			};
-			
-			public function init( onComplete:Function, onError:Function ):void
-			{
-				this.mCBComplete = onComplete;
-				this.mCBError 	 = onError;
 			}
 			
 			protected function onMoveAreaMouseDown(event:Event):void
@@ -120,16 +114,48 @@
 			
 			protected function onConfirm(event:MouseEvent=null):void
 			{
-				PopUpManager.removePopUp( this );
 				var ret:Object = {};
 				for( var key:String in this.mKey2UIComponents )
 				{
-					
+					try {
+						var item:Array = this.mKey2UIComponents[key];
+						var data:Array = this.mKey2Data[key];
+						if( data[kTYPE] == "bool" )
+						{
+							ret[key] = item[0].selected;
+						}
+						else if( data[kTYPE] == "ccp" || data[kTYPE] == "ccsize" )
+						{
+							ret[key] = [Number(item[0].text), Number(item[1].text)];
+						}
+						else if( data[kTYPE] == "array_int" ) 
+						{
+							ret[key] = JSON.parse( item[0].text ) as Array;
+							var weight:int = 0;
+							for( var i:int=1; i<ret[key].length; i+=2 )
+								weight += ret[key][i];
+							if( weight > 100 ) 
+							{
+								this.mCBError( key+"总权重大于100，请检查" );
+								return;
+							}
+						}
+						else
+						{
+							ret[key] = JSON.parse( item[0].text );
+						}
+					}catch(err:Error) {
+						this.mCBError( key+"填写错误，请检查" );
+						return;
+					}
 				}
+				this.mCBComplete( ret );
+				PopUpManager.removePopUp( this );
 			}
 			
 			protected function createAndRegisterItem( item:Object ):UIComponent
 			{
+				var self:ConfigPanel = this;
 				this.mKey2UIComponents[item[kKEY]] = [];
 				
 				var head:FormItem = new FormItem;
@@ -140,7 +166,7 @@
 				label.width = 75;
 				head.addElement( label );
 				
-				if( item.type == "float" || item.type == "int" )
+				if( item[kTYPE] == "float" || item[kTYPE] == "int" )
 				{
 					var input:TextInput = new TextInput;
 					input.text 	= item[kDEFAULT];
@@ -150,17 +176,17 @@
 					else if( item.type == "int" ) input.restrict = "0-9";
 					
 					head.addElement( input );
-					this.mKey2UIComponents[item.key].push(input);
+					this.mKey2UIComponents[item[kKEY]].push(input);
 				} 
-				else if ( item.type == "bool" )
+				else if ( item[kTYPE] == "bool" )
 				{
 					var check:CheckBox = new CheckBox;
 					check.selected = Boolean(item[kDEFAULT]);
 					
 					head.addElement( check );
-					this.mKey2UIComponents[item.key].push(check);
+					this.mKey2UIComponents[item[kKEY]].push(check);
 				} 
-				else if ( item.type == "ccp" || item.type == "ccsize" ) 
+				else if ( item[kTYPE] == "ccp" || item[kTYPE] == "ccsize" ) 
 				{	
 					var x_width:TextInput = new TextInput;
 					x_width.text 	= item[kDEFAULT][0];
@@ -177,6 +203,15 @@
 					this.mKey2UIComponents[item[kKEY]].push(x_width);
 					this.mKey2UIComponents[item[kKEY]].push(y_height);
 				}
+				else if ( item[kTYPE] == "array_int" )
+				{				
+					var array:TextInput = new TextInput;
+					array.text = String(JSON.stringify( item[kDEFAULT] ));
+					array.restrict = "\[\]\,\0-9\ ";
+					
+					head.addElement( array );
+					this.mKey2UIComponents[item[kKEY]].push( array );
+				}
 				
 				return head;
 			}
@@ -189,7 +224,7 @@
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
 		
-	<s:TitleWindow id="mRootPanel" left="0" top="0" width="500" height="350" close="onClose(event)"
+	<s:TitleWindow id="mRootPanel" left="0" top="0" width="400" height="350" close="onClose(event)"
 				   title="参数配置">
 
 		<mx:TabNavigator id="mTabNavigator" left="5" right="5" top="5" bottom="35">
