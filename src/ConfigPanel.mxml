@@ -2,8 +2,7 @@
 <s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
 		  xmlns:s="library://ns.adobe.com/flex/spark"
 		  xmlns:mx="library://ns.adobe.com/flex/mx"
-		  xmlns:mapEdit="mapEdit.*"
-		  width="200" height="300" creationComplete="onCreate()">
+		  xmlns:mapEdit="mapEdit.*" width="350" initialize="onCreate()">
 	
 	<fx:Script>
 		<![CDATA[
@@ -41,8 +40,8 @@
 			
 			protected function onCreate():void  {
 				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
-				//this.mRootPanel.moveArea.addEventListener(MouseEvent.MOUSE_DOWN, onMoveAreaMouseDown);
-				//this.mRootPanel.moveArea.addEventListener(MouseEvent.MOUSE_UP, onMoveAreaMouseUp);
+//				this.mRootPanel.moveArea.addEventListener(MouseEvent.MOUSE_DOWN, onMoveAreaMouseDown);
+//				this.mRootPanel.moveArea.addEventListener(MouseEvent.MOUSE_UP, onMoveAreaMouseUp);
 				
 				// make items by group
 				{	
@@ -77,13 +76,9 @@
 						max = Math.max( max, this.mKey2Group[item[kTAG]].numElements/2 );
 					}
 					
-					this.mRootPanel.height = max*48+45;
+					//this.mRootPanel.height = max*52+45;
 				}
 				
-				if( !this.mIsPopUp ) this.mCloseButton.visible = false;
-				else{
-					this.mCloseButton.visible = true;
-				}
 			};
 			
 			public function init( onComplete:Function, onError:Function, data:Object, isPopUp:DisplayObject = null ):void
@@ -91,10 +86,7 @@
 				this.mCBComplete = onComplete;
 				this.mCBError 	 = onError;
 				this.mSource 	 = data;
-				
 				this.mIsPopUp 	 = isPopUp;
-				
-				
 				if( this.mIsPopUp ) {
 					PopUpManager.addPopUp( this, this.mIsPopUp, true );
 					PopUpManager.centerPopUp( this );
@@ -103,17 +95,18 @@
 			
 			protected function onMoveAreaMouseDown(event:Event):void
 			{
-				this.startDrag();
+				if( this.mIsPopUp ) this.startDrag();
 			}
 			
 			protected function onMoveAreaMouseUp(event:Event):void
 			{
-				this.stopDrag();
+				if( this.mIsPopUp ) this.stopDrag();
 			}
 			
 			protected function onKeyboardAction(event:KeyboardEvent):void
 			{	
 				//trace( event.ctrlKey +" "+event.charCode);
+				if( !this.mIsPopUp ) return;
 				if( event.ctrlKey && event.charCode == Keyboard.ENTER )
 				{
 					this.onConfirm();
@@ -122,10 +115,12 @@
 			
 			protected function onClose(event:Event):void
 			{
+				if( !this.mIsPopUp ) return;
+				
 				var ret:Object = {};
 				for each ( var item:Array in this.mSource ) 
 				{
-					ret[item[kKEY]] = JSON.parse(ret[item[kDEFAULT]]);
+					ret[item[kKEY]] = item[kDEFAULT];
 				}
 				
 				this.mCBComplete( ret  );
@@ -161,7 +156,11 @@
 								return;
 							}
 						}
-						else
+						else if( data[kTYPE] == "string" )
+						{
+							ret[key] = item[0].text;
+						} 
+						else 
 						{
 							ret[key] = JSON.parse( item[0].text );
 						}
@@ -200,6 +199,15 @@
 					head.addElement( input );
 					this.mKey2UIComponents[item[kKEY]].push(input);
 				} 
+				else if ( item[kTYPE] == "string" )
+				{
+					var str_input:TextInput = new TextInput;
+					str_input.text = item[kDEFAULT];
+					str_input.width = 75;
+					
+					head.addElement( str_input );
+					this.mKey2UIComponents[item[kKEY]].push( str_input );
+				}
 				else if ( item[kTYPE] == "bool" )
 				{
 					var check:CheckBox = new CheckBox;
@@ -246,24 +254,17 @@
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
 		
-	<mx:Panel id="mRootPanel" left="0" top="0" width="100%" height="100%"
-				   title="参数配置" borderVisible="true" chromeColor="#CDBCA4"
-				   dropShadowVisible="true" fontFamily="Arial" fontSize="13" fontStyle="normal"
-				   fontWeight="normal" textDecoration="none">
-
+	<s:TitleWindow id="mRootPanel" left="0" top="0" width="100%" height="100%" borderVisible="true"
+				   chromeColor="#CFCFCF" close="onClose(event)" dropShadowVisible="true"
+				   fontFamily="Arial" fontSize="13" fontStyle="normal" fontWeight="normal"
+				   skinClass="spark.skins.spark.PanelSkin" textDecoration="none" title="参数配置">
+		
 		<mx:TabNavigator id="mTabNavigator" left="5" right="5" top="5" bottom="35">
 			<s:NavigatorContent width="100%" height="100%" label="选项卡 1">
-				<s:layout>
-					<s:ConstraintLayout/>
-				</s:layout>
-			</s:NavigatorContent>
-			<s:NavigatorContent width="100%" height="100%" label="2we">
 			</s:NavigatorContent>
 		</mx:TabNavigator>
 		
 		<s:Button id="mConfirmButton" right="5" bottom="5" height="27" label="确认修改(Ctrl+Enter)"
 				  click="onConfirm(event)" enabled="true" fontSize="13"/>
-		
-		<s:Button id="mCloseButton" right="5" top="5" width="25" height="25" label="X" click="onClose(event)"/>
-	</mx:Panel>
+	</s:TitleWindow>
 </s:Module>

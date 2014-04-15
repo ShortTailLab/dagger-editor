@@ -159,38 +159,9 @@ package
 		private var mLevelProfiles:Object 		= null;
 		
 		// --------------------------------------------------------------------------
-		public function mergeLevelProfile( file:File, onComplete:Function ):void
+		public function makeChapter( name:String ):void
 		{
-			var self:Data = this;
-			var excel_reader:ExcelReader = new ExcelReader();
-			excel_reader.parse( file, function( raw:Object, msg:String="" ):void
-			{
-				if( !raw ) onComplete(msg);
-				else {
-					
-					// merge 
-					for each( var chapter:* in raw )
-					{
-						for( var lid:String in chapter.levels )
-						{
-							self.mLevelProfiles[lid] = chapter.levels[lid];
-							self.mLevelProfiles[lid].chapter_name 	= chapter.chapter_name;
-							self.mLevelProfiles[lid].chapter_id 	= chapter.chapter_id;
-							Utils.WriteObjectToJSON( // persistence
-								self.resolvePath("saved/profile/"+lid+".json"),
-								self.mLevelProfiles[lid]
-							);
-						}
-					}
-					
-					// update
-					self.updateEditorData( function(msg:String):void
-					{
-						onComplete(msg+"\n【成功】更新关卡配置");
-					});
-					
-				}
-			});
+			
 		}
 		
 		///////////////////////////////////////////////////////////////////////
@@ -385,26 +356,7 @@ package
 					
 					this.merge(this.mLevelProfiles, to );
 				}
-			}else {
-				var old:Object = this.loadJson(
-					this.resolvePath("saved/profiles.json"), false
-				) as Object || {};
-				
-				for each( var chapter:* in old )
-				{
-					for( var lid:String in chapter.levels )
-					{
-						this.mLevelProfiles[lid] = chapter.levels[lid];
-						this.mLevelProfiles[lid].chapter_name 	= chapter.chapter_name;
-						this.mLevelProfiles[lid].chapter_id 	= chapter.chapter_id;
-						Utils.WriteObjectToJSON( // persistence
-							this.resolvePath("saved/profile/"+lid+".json"),
-							this.mLevelProfiles[lid]
-						);
-					}
-				}
 			}
-			
 			
 			this.mLevelInstancesTable = {};
 			var LEVEL:File = this.resolvePath("saved/level");
@@ -422,33 +374,6 @@ package
 					this.merge( this.mLevelInstancesTable,  to );
 				}
 				
-			} else {
-				this.mLevelInstancesTable = this.loadJson( 
-					this.resolvePath("saved/levels.json"), false 
-				) as Object || {};
-				
-				var _bhs:Object = this.loadJson(
-					this.resolvePath("saved/enemy_bh.json"), false
-				) as Object || {};
-				
-				var _tri:Object = this.loadJson(
-					this.resolvePath("saved/enemy_trigger.json"), false
-				) as Object || {};
-				
-				var l2m:Object = DataParser.genLevel2MonsterTable( this.mLevelProfiles );
-				for( var lid:String in this.mLevelInstancesTable )
-				{
-					this.mLevelInstancesTable[lid].behavior = {};
-					this.mLevelInstancesTable[lid].trigger = {};
-					
-					for( var mid:String in l2m[lid] )
-					{
-						this.mLevelInstancesTable[lid].behavior[mid] = _bhs[mid] || [];
-						this.mLevelInstancesTable[lid].trigger[mid] = _tri[mid] || [];
-					}
-					
-					this.writeToLevel( lid );
-				}
 			}
 			
 			this.mBehaviorSet = {};
@@ -466,13 +391,6 @@ package
 					
 					this.merge( this.mBehaviorSet, to );
 				}
-			} else {
-				this.mBehaviorSet = this.loadJson(
-					this.resolvePath("saved/bh_lib.json"), false
-				) as Object || {};	
-				
-				for( var bid:String in this.mBehaviorSet ) 
-					this.updateBehaviorSetById( bid, this.mBehaviorSet[bid] );
 			}
 			
 			this.mFormationSet = {};
@@ -490,13 +408,6 @@ package
 					
 					this.merge( this.mFormationSet, to );
 				}
-			} else {
-				this.mFormationSet = this.loadJson(
-					this.resolvePath("saved/formations.json"), false
-				) as Object || {};
-				
-				for( var fid:String in this.mFormationSet )
-					this.updateFormationSetById( fid, this.mFormationSet[fid] );
 			}
 			
 			this.mDecoSet = {};

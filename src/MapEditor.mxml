@@ -102,6 +102,9 @@
 				//this.mLevelTree.mouseFocusEnabled = false;
 				//this.mLevelTree.focusEnabled = false;
 				
+				//this.mEditLevel.mLevelTree.dataProvider = Data.getInstance().levelXML;
+				this.mEditLevel.refresh();
+				
 				{
 					var levelMenu:ContextMenu = new ContextMenu;
 					
@@ -313,29 +316,29 @@
 				});
 			}
 			
-			private function parseExcel(e:Event):void
-			{
-				var self:* = this;
-				var browser:File = new File(Data.getInstance().conf.profilePathCache);
-				browser.browseForOpen("请选择上传的场景文件");
-				browser.addEventListener(Event.SELECT, function (e:Event):void {
-					
-					var file:File = e.target as File;
-					Data.getInstance().setEditorConfig("profilePathCache", file.nativePath);
-					
-					var mask:* = Utils.makeManualPanel("正在上传配置文件…", self);
-					file.addEventListener(Event.COMPLETE, function(e:Event):void {
-						Data.getInstance().mergeLevelProfile( file, 
-							function(t:String):void
-							{
-								Utils.releaseManualPanel( mask );
-								Alert.show( t );
-							}
-						);
-					});
-					file.load();
-				});
-			}
+//			private function parseExcel(e:Event):void
+//			{
+//				var self:* = this;
+//				var browser:File = new File(Data.getInstance().conf.profilePathCache);
+//				browser.browseForOpen("请选择上传的场景文件");
+//				browser.addEventListener(Event.SELECT, function (e:Event):void {
+//					
+//					var file:File = e.target as File;
+//					Data.getInstance().setEditorConfig("profilePathCache", file.nativePath);
+//					
+//					var mask:* = Utils.makeManualPanel("正在上传配置文件…", self);
+//					file.addEventListener(Event.COMPLETE, function(e:Event):void {
+//						Data.getInstance().mergeLevelProfile( file, 
+//							function(t:String):void
+//							{
+//								Utils.releaseManualPanel( mask );
+//								Alert.show( t );
+//							}
+//						);
+//					});
+//					file.load();
+//				});
+//			}
 			
 			private function setPathRoot(e:Event):void 
 			{
@@ -391,17 +394,16 @@
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
 				<s:Label text="编辑器" color="0x777777"/>	
 				<s:Button id="set_project_path" label="重设路径" click="setPathRoot(event)"/>
-				<s:Label text="配置项目" color="0x777777"/>	
-				<s:Button id="parse_excel" label="场景文件" click="parseExcel(event)"/>
+				<s:Label text="配置项目" color="0x777777"/>
 				<s:Button id="config" label="JSON配置" click="uploadConfigFile(event)"/>
 				<s:Button id="configSkill" label="技能配置" click="parseSkillConfigFile(event)"/>
 			</s:HGroup>
 			
 		</s:HGroup>
 		
-		<mx:HDividedBox width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
+		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left">
 			
-			<ns1:EditLevel width="200" height="100%">
+			<ns1:EditLevel id="mEditLevel" width="200" height="100%">
 			</ns1:EditLevel>
 			
 			<s:BorderContainer id="mSceneArea" width="100%" height="100%" dropShadowVisible="true">
@@ -410,7 +412,7 @@
 			<s:BorderContainer id="mSelectorArea" width="200" height="100%" dropShadowVisible="false" borderVisible="false">
 			</s:BorderContainer>
 			
-		</mx:HDividedBox>
+		</s:HGroup>
 	</s:VGroup>
 	
 </s:WindowedApplication>
