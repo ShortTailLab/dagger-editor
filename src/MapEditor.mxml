@@ -60,6 +60,12 @@
 				BgModel.getInstance().init();
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 				
+				Runtime.getInstance().addEventListener(Runtime.CURRENT_LEVEL_CHANGE,
+					function( evt:Event ):void {
+						self.onRightClick();	//cancel everything
+					}
+				);
+				
 				//this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
 			}
 			
@@ -69,9 +75,10 @@
 				event.preventDefault();
 			}
 			
-			private function onRightClick(e:MouseEvent):void
+			private function onRightClick(e:MouseEvent=null):void
 			{
 				this.stage.focus = this.mMainScene;
+				this.mMainScene.onRightClick();
 				Runtime.getInstance().selectedComponentType = null;
 				Runtime.getInstance().selectedFormationType = null;
 			}

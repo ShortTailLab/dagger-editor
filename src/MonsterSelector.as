@@ -71,6 +71,12 @@ package
 					self.reset( Runtime.getInstance().currentLevelID );	
 				}
 			);
+			
+			Runtime.getInstance().addEventListener( Runtime.PROFLE_DATA_CHANGE,
+				function(evt:Event):void {
+					self.reset( Runtime.getInstance().currentLevelID );
+				}
+			);
 		}
 		
 		public function reset( lid:String ):void 

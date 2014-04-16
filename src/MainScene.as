@@ -14,6 +14,14 @@ package
 	import flash.ui.Keyboard;
 	import flash.utils.Timer;
 	
+	import manager.MsgInform;
+	
+	import mapEdit.AreaTrigger;
+	import mapEdit.Component;
+	import mapEdit.Coordinator;
+	import mapEdit.Entity;
+	import mapEdit.MainSceneXML;
+	
 	import mx.controls.Alert;
 	import mx.core.IVisualElement;
 	import mx.core.UIComponent;
@@ -23,14 +31,6 @@ package
 	
 	import spark.components.Group;
 	import spark.core.SpriteVisualElement;
-	
-	import manager.MsgInform;
-	
-	import mapEdit.AreaTrigger;
-	import mapEdit.Component;
-	import mapEdit.Coordinator;
-	import mapEdit.Entity;
-	import mapEdit.MainSceneXML;
 	
 	public class MainScene extends MainSceneXML
 	{
@@ -63,8 +63,10 @@ package
 		private var mFocusComponent:Component 			= null;
 		
 		// facilities
-		private var mAutoSaver:Timer = null;
-		private var mTipsFontSize:Number = 12;
+		private var mAutoSaver:Timer 		= null;
+		private var mTipsFontSize:Number 	= 12;
+		private var mPasteData:Array 		= [];
+		private var mPasteTipsLayer:Group 	= null;
 		
 		public function MainScene()
 		{
@@ -78,9 +80,15 @@ package
 		public function init():void 
 		{
 			var self:MainScene = this;
+			
 			Runtime.getInstance().addEventListener( Runtime.CURRENT_LEVEL_CHANGE, function(evt:Event):void
 			{
 				self.reset( Runtime.getInstance().currentLevelID );	
+			});
+			
+			Runtime.getInstance().addEventListener( Runtime.PROFLE_DATA_CHANGE, function(evt:Event):void
+			{
+				self.reset( Runtime.getInstance().currentLevelID );
 			});
 			
 			this.mTimeline.addEventListener( SliderEvent.CHANGE, 
@@ -449,11 +457,64 @@ package
 			this.onPaste( false );
 		}
 		
-		private function onPaste( v:Boolean ):void
+		public function onRightClick():void
+		{
+			this.onPaste( false );
+		}
+		
+		protected function onPaste( v:Boolean ):void
 		{			
+			this.mReadyToPaste = v;
 			this.mSelectionPanel.title = "选中对象("+this.mSelectedComponents.length+") 剪贴板："+
 				(this.mReadyToPaste ? "开启":"关闭");
-			this.mReadyToPaste = v;
+			
+			if( this.mPasteTipsLayer )
+			{
+				this.removeElement( this.mPasteTipsLayer );
+				this.mPasteTipsLayer = null;
+			}
+			
+			if( !v ) return;
+			this.mPasteTipsLayer = new Group;
+			
+			this.addElement( this.mPasteTipsLayer );
+			this.mPasteTipsLayer.alpha = 0.5;
+			
+			var self:MainScene = this;
+			this.mPasteData = [];
+			
+			var min_x:Number = this.mSelectedComponents[0].x;
+			var max_x:Number = this.mSelectedComponents[0].x;
+			
+			var min_y:Number = this.mSelectedComponents[0].y;
+			var max_y:Number = this.mSelectedComponents[0].y;
+			
+			for( var i:int=0; i<this.mSelectedComponents.length; i++ )
+			{
+				var one:Component = this.mSelectedComponents[i];
+				min_x = Math.min( min_x, one.x);
+				max_x = Math.max( max_x, one.x);
+				min_y = Math.min( min_y, one.y);
+				max_y = Math.max( max_y, one.y);
+			}
+			
+			for each( var item:Component in this.mSelectedComponents )
+			{
+				this.mPasteData.push({ 
+					pos: new Point(item.x-min_x-(max_x-min_x)/2, item.y-min_y-(max_y-min_y)/2),
+					type : item.type
+				});
+					
+				var mat:Component = this.creator( item.type, 0 );
+				mat.x = this.mPasteData[this.mPasteData.length-1].pos.x;
+				mat.y = this.mPasteData[this.mPasteData.length-1].pos.y;
+				mat.addEventListener(MouseEvent.CLICK, function(e:*):void {
+					self.onMouseClick(e);
+				});
+				if( mat as Entity ) (mat as Entity).setBaseSize( 50 );
+				
+				mPasteTipsLayer.addElement(mat);
+			}
 		}
 		
 		private function onChangeSelectedType( type:String ):void
@@ -642,6 +703,7 @@ package
 				}
 			}
 			
+			this.onCancelSelect();
 			this.onMonsterChange();
 		}
 		
@@ -733,37 +795,16 @@ package
 			if( code == Keyboard.V && e.ctrlKey )
 			{
 				if( !this.mReadyToPaste ) return;
-				if( this.mSelectedComponents.length <= 0 ) return;
 				
-				var top:int 	= this.mSelectedComponents[0].y; 
-				var bottom:int 	= this.mSelectedComponents[0].y; 
-				for each( var item:Component in this.mSelectedComponents )
+				//Utils.dumpObject( this.mPasteData );
+				for each( var monster:* in this.mPasteData )
 				{
-					top 	= Math.min( top, item.y );
-					bottom 	= Math.max( bottom, item.y ); 
-				}
-				
-				var delta:int = this.mComponentsLayer.mouseY - (top+bottom)/2;
-				
-				if( this.mSelectedComponents.length == 1 ) 
-					delta = this.mComponentsLayer.mouseY - top;
-				
-				var toMonsters:Array = [];	
-				for each( item in this.mSelectedComponents )
-				{
-					var one:Component = this.creator( item.type, this.mTipsFontSize );
-					one.x = item.x;
-					one.y = item.y + delta;
+					var one:Component = this.creator( monster.type, this.mTipsFontSize );
+					one.x = monster.pos.x + this.mComponentsLayer.mouseX;
+					one.y = monster.pos.y + this.mComponentsLayer.mouseY;
 					this.insertComponent( one, false );
-					toMonsters.push( one );
 				}
-				
 				this.onMonsterChange();
-				this.onCancelSelect();
-				for each( item in toMonsters ) 
-					this.selectComponent( item );	
-					
-				this.onPaste( true );
 			}
 			else if( code == Keyboard.C && e.ctrlKey )
 			{
@@ -779,7 +820,7 @@ package
 			}
 			else if( code == Keyboard.LEFT )
 			{
-				for each( item in this.mSelectedComponents )
+				for each( var item:* in this.mSelectedComponents )
 				{
 					if( this.mRestrictGrid.selected )
 						item.x -= Number(this.mGridWidthInput.text)
@@ -835,6 +876,8 @@ package
 		private var mSelectFormation:String = null;
 		private function onSelectChange(e:Event):void 
 		{
+			this.onPaste( false );
+			
 			if( (this.mSelectType != Runtime.getInstance().selectedComponentType ||
 				 this.mSelectFormation != Runtime.getInstance().selectedFormationType) 
 				&& this.mSelectedTipsLayer )
@@ -895,6 +938,14 @@ package
 					this.mSelectedTipsLayer.y = this.mouseY;	
 				}
 			}
+			
+			if( this.mPasteTipsLayer )
+			{
+				//size = this.getPasteTipsLayerSize();
+				size = new Point();
+				this.mPasteTipsLayer.x = this.mouseX - size.x/2;
+				this.mPasteTipsLayer.y = this.mouseY + size.y/2;
+			}
 		}
 		
 		// ------------------------
@@ -910,6 +961,30 @@ package
 				ret.setTextTipsSize( fontSize );
 				return ret;
 			}
+		}
+		
+		private function getSelectedComponentsSize():Point
+		{
+			if( this.mSelectedComponents && this.mSelectedComponents.length > 0 )
+			{
+				var min_x:Number = this.mSelectedComponents[0].x;
+				var max_x:Number = this.mSelectedComponents[0].x;
+				
+				var min_y:Number = this.mSelectedComponents[0].y;
+				var max_y:Number = this.mSelectedComponents[0].y;
+				
+				for( var i:int=0; i<this.mSelectedComponents.length; i++ )
+				{
+					var item:IVisualElement = this.mSelectedComponents[i];
+					min_x = Math.min( min_x, item.x);
+					max_x = Math.max( max_x, item.x);
+					min_y = Math.min( min_y, item.y);
+					max_y = Math.max( max_y, item.y);
+				}
+				
+				return new Point( Math.abs( max_x - min_x ), Math.abs( max_y - min_y ) );
+			} else 
+				return new Point();
 		}
 		
 		private function getTipsLayerSize():Point 
@@ -931,6 +1006,30 @@ package
 					max_y = Math.max( max_y, item.y);
 				}
 
+				return new Point( Math.abs( max_x - min_x ), Math.abs( max_y - min_y ) );
+			} else 
+				return new Point();
+		}
+		
+		private function getPasteTipsLayerSize():Point
+		{
+			if( this.mPasteTipsLayer && this.mPasteTipsLayer.numElements > 0 )
+			{
+				var min_x:Number = this.mPasteTipsLayer.getElementAt(0).x;
+				var max_x:Number = this.mPasteTipsLayer.getElementAt(0).x;
+				
+				var min_y:Number = this.mPasteTipsLayer.getElementAt(0).y;
+				var max_y:Number = this.mPasteTipsLayer.getElementAt(0).y;
+				
+				for( var i:int=0; i<this.mPasteTipsLayer.numElements; i++ )
+				{
+					var item:IVisualElement = this.mPasteTipsLayer.getElementAt(i);
+					min_x = Math.min( min_x, item.x);
+					max_x = Math.max( max_x, item.x);
+					min_y = Math.min( min_y, item.y);
+					max_y = Math.max( max_y, item.y);
+				}
+				
 				return new Point( Math.abs( max_x - min_x ), Math.abs( max_y - min_y ) );
 			} else 
 				return new Point();

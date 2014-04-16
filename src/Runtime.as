@@ -59,9 +59,9 @@ package
 		}
 		
 		//
-		public static const PROFILE_DATA_CHANGE:String = "runtime.profile.data.change";
+		public static const PROFLE_DATA_CHANGE:String = "runtime.profile.data.change";
 		public function onProfileDataChange():void {
-			this.dispatchEvent( new Event(Runtime.PROFILE_DATA_CHANGE) );
+			this.dispatchEvent( new Event(Runtime.PROFLE_DATA_CHANGE) );
 		}
 	}
 }
