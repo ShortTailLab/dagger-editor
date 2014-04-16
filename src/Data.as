@@ -55,7 +55,7 @@ package
 			var config:File = File.applicationStorageDirectory.resolvePath("conf.json");
 			this.mEditorConfigs = this.loadJson(config, false);
 			
-			if( !this.mEditorConfigs ) this.mEditorConfigs = { speed: 32 };
+			if( !this.mEditorConfigs ) this.mEditorConfigs = { mapSpeed: 32 };
 			if( !this.mEditorConfigs.projectPath ) {
 				var self:* = this;
 				this.setProjectPath( function(file:File):void
@@ -163,22 +163,29 @@ package
 		
 		public function genLevelXML():XML
 		{
+			var chapters:Array = [];
+			for each(var c:Object in this.mChapterProfiles )
+				chapters.push( c );
+			chapters.sortOn("id");
+			
 			var ret:XML = <root></root>;
-			for each( var chapter:Object in this.mChapterProfiles )
+			for each( var chapter:Object in chapters )
 			{
-				var node:XML = new XML("<node label='"+chapter.name+"'></node>");
+				var node:XML = <node></node>;
+				node.@id 	= chapter.id;
+				node.@label = chapter.name;
 				ret.appendChild( node );
 				
 				var levels:Array = new Array;
 				for each( var l:Object in chapter.levels )
 					levels.push( l );
-				levels.sortOn("id");
+				levels.sortOn("level_id");
 				
 				for( var i:int =0; i<levels.length; i++ )
 				{
 					var leaf:XML = <level></level>;
-					leaf.@label = levels[i].name;
-					leaf.@id 	= levels[i].id;
+					leaf.@label = levels[i].level_name;
+					leaf.@id 	= levels[i].level_id;
 					node.appendChild( leaf );
 				}
 			}
@@ -202,6 +209,12 @@ package
 		
 		public function deleteChapter( id:String ):void
 		{
+			if( !(id in this.mChapterProfiles) ) return;
+			for( var key:String in this.mChapterProfiles[id].levels )
+			{
+				var PROFILE:File = this.resolvePath("saved/profile/"+key+".json");
+				if( PROFILE.exists ) PROFILE.deleteFile();
+			}
 			delete this.mChapterProfiles[id];
 		}
 		
@@ -225,12 +238,13 @@ package
 			var level:Object = {
 				chapter_id : chapter_id,
 				chapter_name : this.mChapterProfiles[chapter_id].name,
-				id : id,
-				name : name,
+				level_id : id,
+				level_name : name,
 				monsters : {}
 			};
 			
 			this.mChapterProfiles[chapter_id].levels[id] = level;
+			this.writeToProfile( id, level );
 		}
 		
 		public function deleteLevel( id:String ):void
@@ -240,6 +254,8 @@ package
 				if( id in chapter.levels )
 				{
 					delete chapter.levels[id];
+					var PROFILE:File = this.resolvePath("saved/profile/"+id+".json");
+					if( PROFILE.exists ) PROFILE.deleteFile();
 					return;
 				}
 			}
@@ -252,6 +268,14 @@ package
 				if( lid in chapter.levels ) return chapter.levels[lid];
 			}
 			return null;
+		}
+		
+		private function writeToProfile( lid:String, data:Object ):void
+		{
+			Utils.WriteObjectToJSON( // persistence
+				this.resolvePath( "saved/profile/"+lid+".json" ),
+				data
+			);
 		}
 		
 		///////////////////////////////////////////////////////////////////////
@@ -442,8 +466,11 @@ package
 						continue;
 					var name:String = file.name.split(".")[0];
 					var to:Object = Utils.LoadJSONToObject( file );
-			
-					this.mChapterProfiles[to.chapter_id][to.id] 
+					
+					if( !(to.chapter_id in this.mChapterProfiles) )
+						this.makeChapter( to.chapter_id, to.chapter_name );
+					
+					this.mChapterProfiles[to.chapter_id].levels[to.level_id] 
 						= Utils.LoadJSONToObject( file );
 				}
 			}

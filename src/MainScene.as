@@ -71,14 +71,6 @@ package
 			with( this ) {
 				percentWidth = 100; percentHeight = 100;
 			}
-			
-			var s:* = Data.getInstance().conf.mapSpeed;
-			if( s && s>0 ) this.mMapSpeed = s;
-			
-			var w:* = Data.getInstance().conf.gridWidth;
-			if( w && w>0 ) this.mGridWidth = w;
-			
-			var h:* = Data.getInstance().conf.gridHeight;
 		}
 		
 		// ------------------------------------------------------------
@@ -86,22 +78,16 @@ package
 		public function init():void 
 		{
 			var self:MainScene = this;
+			Runtime.getInstance().addEventListener( Runtime.CURRENT_LEVEL_CHANGE, function(evt:Event):void
+			{
+				self.reset( Runtime.getInstance().currentLevelID );	
+			});
+			
 			this.mTimeline.addEventListener( SliderEvent.CHANGE, 
 				function( e:SliderEvent ): void {
 					self.setProgress( e.value * self.mMapSpeed );
 				}
 			);
-			
-			this.mCoordinator = new Coordinator( );
-			this.mAdaptiveLayer.addElement( this.mCoordinator );
-			
-			this.mMonsterMask = new SpriteVisualElement();
-			this.mAdaptiveLayer.setElementIndex( 
-				this.mComponentsLayer, this.mAdaptiveLayer.numElements-1 
-			);
-			//this.setChildIndex( this.mMonsterLayer, this.numChildren-1);
-			//this.addElement( this.mMonsterMask );
-			//this.mMonsterLayer.mask = this.mMonsterMask;
 			
 			// configs
 			this.mMapSpeedInput.text 	= String(this.mMapSpeed);
@@ -113,7 +99,6 @@ package
 			);
 			
 			this.mShowGrid.selected = Data.getInstance().conf["main.scene.show.grid"] || false;
-			this.mCoordinator.showGrid( this.mShowGrid.selected );
 			this.mShowGrid.addEventListener( Event.CHANGE, 
 				function (e:Event):void {
 					Data.getInstance().setEditorConfig(
@@ -192,17 +177,6 @@ package
 				}
 			);	
 			
-			// selection
-			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
-				function(e:MouseEvent):void {
-					if( self.mSelectFrame ) return;
-					self.mSelectFrame = new SpriteVisualElement;
-					self.mSelectFrame.x = self.mCoordinator.mouseX;
-					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
-					self.mComponentsLayer.addElement( self.mSelectFrame );
-				}
-			);
-			
 			// others 
 			this.mTipsFontSize = Number(Data.getInstance().conf["main.scene.tips.size"] || 12);
 			this.mTipsSizeInput.text = String(this.mTipsFontSize);
@@ -216,6 +190,28 @@ package
 							(item as Entity).setTextTipsSize( self.mTipsFontSize );
 					}
 				}
+			);
+			
+			//
+			this.mCoordinator = new Coordinator( );
+			this.mCoordinator.y = this.mAdaptiveLayer.height;
+			this.mCoordinator.showGrid( this.mShowGrid.selected );
+			this.mCoordinator.setMeshDensity( 
+				this.mGridWidth, this.mGridHeight, height, this.mProgressInPixel 
+			);
+			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
+				function(e:MouseEvent):void {
+					if( self.mSelectFrame ) return;
+					self.mSelectFrame = new SpriteVisualElement;
+					self.mSelectFrame.x = self.mCoordinator.mouseX;
+					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
+					self.mComponentsLayer.addElement( self.mSelectFrame );
+				}
+			);
+			
+			this.mAdaptiveLayer.addElement( this.mCoordinator );
+			this.mAdaptiveLayer.setElementIndex( 
+				this.mComponentsLayer, this.mAdaptiveLayer.numElements-1 
 			);
 
 			this.addEventListener( MouseEvent.MOUSE_MOVE,
@@ -361,11 +357,6 @@ package
 		private function onResize( e:ResizeEvent ):void
 		{
 			var height:Number = this.height - 65;
-			this.mMonsterMask.graphics.clear();
-			this.mMonsterMask.graphics.beginFill(0xffffff);
-			this.mMonsterMask.graphics.drawRect(-180, -height, 360, height);
-			this.mMonsterMask.graphics.endFill();
-			this.mMonsterMask.height 	= height;
 			this.mComponentsLayer.y 		= this.mProgressInPixel + height;
 			this.mAdaptiveLayer.height 	= height;
 			this.mCoordinator.y 		= height;

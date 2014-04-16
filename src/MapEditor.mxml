@@ -40,7 +40,6 @@
 	
 			private var mVIEWFormation:FormationSelector = null;
 			private var mVIEWMonster:MonsterSelector = null;
-			private var mVIEWScene:MainScene = null;
 			
 			private var _bgEditView:BgEditView;
 			
@@ -59,36 +58,22 @@
 				});
 
 				BgModel.getInstance().init();
-
-				this.addEventListener(ResizeEvent.RESIZE, onResize);
-//				this.addEventListener(MouseEvent.CLICK, function(e:*):void{
-//					self.stage.focus = self.mVIEWScene; 
-//				});
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 				
-				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
+				//this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
 			}
 			
 			protected function onKeyboardAction(event:KeyboardEvent):void
 			{
 				event.stopImmediatePropagation();
 				event.preventDefault();
-				
-				//trace( "OUTSIDE: "+event.ctrlKey+" : "+event.keyCode );
-			}
-			
-			private function onResize(e:ResizeEvent):void
-			{
-				//if( this.mVIEWScene)
-					//this.mVIEWScene.onResize(e);
 			}
 			
 			private function onRightClick(e:MouseEvent):void
 			{
-				this.stage.focus = this.mVIEWScene;
+				this.stage.focus = this.mMainScene;
 				Runtime.getInstance().selectedComponentType = null;
 				Runtime.getInstance().selectedFormationType = null;
-				//this.mVIEWScene.onCancelSelect();
 			}
 
 			private function onDataReady(e:Event=null):void
@@ -98,26 +83,12 @@
 					decoList.addItem(deco);
 				}
 				this.mDeco.dataProvider = decoList;
+
 				
-				//this.mLevelTree.mouseFocusEnabled = false;
-				//this.mLevelTree.focusEnabled = false;
-				
-				//this.mEditLevel.mLevelTree.dataProvider = Data.getInstance().levelXML;
 				this.mEditLevel.refresh();
 				
-				{
-					var levelMenu:ContextMenu = new ContextMenu;
-					
-					var makeChapter:ContextMenuItem = new ContextMenuItem("创建章节");
-					makeChapter.addEventListener( ContextMenuEvent.MENU_ITEM_SELECT,
-						function(e:ContextMenuItem):void {
-							
-						}
-					);
-					
-				}
-				//this.mLevelTree.contextMenu = 
-				
+				this.mMainScene.init();
+				this.mMainScene.mouseFocusEnabled = true;
 					
 //				{
 //					this.mVIEWScene = new MainScene();	
@@ -194,8 +165,6 @@
 //					monsterPanel.addElement( hgroup );
 //				}
 				
-				this.setCurrLevel( Data.getInstance().getFirstLevelId() );
-				
 //				var leftVGroup:VGroup = new VGroup();
 //				with( leftVGroup ) {
 //					percentHeight = percentWidth = 100;
@@ -205,13 +174,6 @@
 //				leftVGroup.addElement(monsterPanel);
 //				
 //				this.mSelectorArea.addElement(leftVGroup);
-			}
-			
-			private function setCurrLevel( lid:String ):void
-			{
-//				this.mVIEWScene.reset( lid );
-//				this.mVIEWMonster.reset( lid );
-				Runtime.getInstance().currentLevelID = lid;
 			}
 			
 			private function saveLevel(e:Event):void
@@ -235,7 +197,7 @@
 					[ "掉落", "coins", "array_int", [], "铜币掉落" ],
 					[ "掉落", "props", "array_int", [], "道具掉落" ],
 					[ "掉落", "items", "array_int", [], "材料掉落" ]
-				], this);
+				], false, this);
 			}
 			
 			private function sendToStaticServer(e:Event):void
@@ -407,6 +369,8 @@
 			</ns1:EditLevel>
 			
 			<s:BorderContainer id="mSceneArea" width="100%" height="100%" dropShadowVisible="true">
+				<ns1:MainScene id="mMainScene" x="0" y="0" width="100%" height="100%">
+				</ns1:MainScene>
 			</s:BorderContainer>
 			
 			<s:BorderContainer id="mSelectorArea" width="200" height="100%" dropShadowVisible="false" borderVisible="false">
