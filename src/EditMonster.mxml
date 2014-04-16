@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="250" height="100%" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import spark.components.Group;
+			import spark.components.HGroup;
+			import spark.components.Panel;
+			import spark.components.VGroup;
+			import spark.components.VScrollBar;
+			// ---------------------------------------------------------
+			
+			protected var mFormation:FormationSelector = null;
+			protected var mMonster:MonsterSelector = null;
+			
+			////// entrance
+			public function init():void
+			{
+				
+				this.mFormation = new FormationSelector;
+				this.mFormation.percentWidth = 100;
+
+				var hgroup:HGroup = new HGroup();
+				with( hgroup ) {
+					percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
+				}
+			
+				var group:Group = new Group();
+				with( group ) {
+					percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
+				}
+				
+				var vscrollbar:VScrollBar = new VScrollBar();
+				vscrollbar.percentHeight = 100;
+				vscrollbar.viewport = group;
+			
+				group.addElement( this.mFormation );
+				hgroup.addElement( group );
+				hgroup.addElement( vscrollbar );
+				
+				this.mFormationPanel.addElement( hgroup );
+
+				{
+					
+					hgroup = new HGroup();
+					with( hgroup ) {
+						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
+					}
+
+					group = new Group();
+					with( group ) {
+						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
+					}
+					
+					vscrollbar = new VScrollBar();
+					with( vscrollbar ) {
+						percentHeight = 100;
+					}
+					vscrollbar.viewport = group;
+					
+					this.mMonster = new MonsterSelector;
+					with( this.mMonster ) {
+						percentWidth = percentHeight = 100;
+					}
+
+					group.addElement( this.mMonster );
+					hgroup.addElement( group );
+					hgroup.addElement( vscrollbar );
+					
+					this.mMonsterPanel.addElement( hgroup );
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<s:BorderContainer id="mSelectorArea" x="0" y="0" width="100%" height="100%" borderVisible="false"
+					   dropShadowVisible="true">
+		<s:VGroup x="0" y="0" width="100%" height="100%">
+			<s:Panel id="mFormationPanel" width="100%" height="25%" dropShadowVisible="false" title="阵型">
+			</s:Panel>
+			<s:Panel width="100%" height="25%" dropShadowVisible="false" title="子弹">
+			</s:Panel>
+			<s:Panel id="mMonsterPanel" width="100%" height="50%" dropShadowVisible="false" title="怪物">
+			</s:Panel>
+		</s:VGroup>
+	</s:BorderContainer>
+</s:Module>

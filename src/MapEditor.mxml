@@ -89,91 +89,8 @@
 				
 				this.mMainScene.init();
 				this.mMainScene.mouseFocusEnabled = true;
-					
-//				{
-//					this.mVIEWScene = new MainScene();	
-//					this.mSceneArea.addElement( this.mVIEWScene );
-//					this.mVIEWScene.init();
-//					this.mVIEWScene.mouseFocusEnabled = true;
-//				}
-
-//				{
-//					var formationPanel:Panel = new Panel();
-//					with( formationPanel ) {
-//						percentHeight = 40; percentWidth = 100; title = "阵型";
-//					}
-//					formationPanel.setStyle("dropShadowVisible", false);
-//					
-//					var hgroup:HGroup = new HGroup();
-//					with( hgroup ) {
-//						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
-//					}
-//					
-//					var group:Group = new Group();
-//					with( group ) {
-//						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
-//					}
-//	
-//					var vscrollbar:VScrollBar = new VScrollBar();
-//					with( vscrollbar ) {
-//						percentHeight = 100;
-//					}
-//					vscrollbar.viewport = group;
-//					
-//					this.mVIEWFormation = new FormationSelector;
-//					with( this.mVIEWFormation ) { percentWidth = 100; }
-//				
-//					group.addElement( this.mVIEWFormation );
-//					hgroup.addElement(group);
-//					hgroup.addElement(vscrollbar);
-//					
-//					formationPanel.addElement( hgroup );
-//				}	
-//
-//				{
-//					var monsterPanel:Panel = new Panel();
-//					with( monsterPanel ) {
-//						percentHeight = 60; percentWidth = 100; title = "资源";
-//					}
-//					monsterPanel.setStyle("dropShadowVisible", false);
-//					
-//					hgroup = new HGroup();
-//					with( hgroup ) {
-//						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
-//					}
-//
-//					group = new Group();
-//					with( group ) {
-//						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
-//					}
-//					
-//					vscrollbar = new VScrollBar();
-//					with( vscrollbar ) {
-//						percentHeight = 100;
-//					}
-//					vscrollbar.viewport = group;
-//					
-//					this.mVIEWMonster = new MonsterSelector;
-//					with( this.mVIEWMonster ) {
-//						percentWidth = percentHeight = 100;
-//					}
-//
-//					group.addElement( this.mVIEWMonster );
-//					hgroup.addElement( group );
-//					hgroup.addElement( vscrollbar );
-//					
-//					monsterPanel.addElement( hgroup );
-//				}
 				
-//				var leftVGroup:VGroup = new VGroup();
-//				with( leftVGroup ) {
-//					percentHeight = percentWidth = 100;
-//					verticalAlign = "top"; horizontalAlign = "center";
-//				}
-//				leftVGroup.addElement(formationPanel);
-//				leftVGroup.addElement(monsterPanel);
-//				
-//				this.mSelectorArea.addElement(leftVGroup);
+				this.mEditMonster.init();
 			}
 			
 			private function saveLevel(e:Event):void
@@ -373,8 +290,10 @@
 				</ns1:MainScene>
 			</s:BorderContainer>
 			
-			<s:BorderContainer id="mSelectorArea" width="200" height="100%" dropShadowVisible="false" borderVisible="false">
-			</s:BorderContainer>
+			<s:Group id="mSelectorArea" width="250" height="100%">
+				<ns1:EditMonster id="mEditMonster" x="0" y="0" width="100%" height="100%">
+				</ns1:EditMonster>
+			</s:Group>
 			
 		</s:HGroup>
 	</s:VGroup>

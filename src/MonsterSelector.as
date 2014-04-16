@@ -65,6 +65,12 @@ package
 					}
 				}
 			);
+			
+			Runtime.getInstance().addEventListener( Runtime.CURRENT_LEVEL_CHANGE,
+				function(evt:Event):void {
+					self.reset( Runtime.getInstance().currentLevelID );	
+				}
+			);
 		}
 		
 		public function reset( lid:String ):void 

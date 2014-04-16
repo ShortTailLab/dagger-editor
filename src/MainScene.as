@@ -194,7 +194,8 @@ package
 			
 			//
 			this.mCoordinator = new Coordinator( );
-			this.mCoordinator.y = this.mAdaptiveLayer.height;
+			this.mCoordinator.y = this.mAdaptiveLayer.height-1;
+			this.mCoordinator.x = -1;
 			this.mCoordinator.showGrid( this.mShowGrid.selected );
 			this.mCoordinator.setMeshDensity( 
 				this.mGridWidth, this.mGridHeight, height, this.mProgressInPixel 
@@ -328,6 +329,7 @@ package
 				//Alert.show("【成功】保存关卡"+this.mLevelId);
 			}			
 		}
+		
 		public function reset( lid:String ):void
 		{
 			this.save();
@@ -381,8 +383,12 @@ package
 					if( item as Entity )
 						(item as Entity).triggeredTime -= (delta*2); 
 				}
-			}else
+			}
+			else
+			{
+				//trace( "delta " +e.delta );
 				this.setProgress( this.mProgressInPixel + e.delta*this.mGridHeight );
+			}
 		}
 		
 		private function onMouseClick(e:MouseEvent):void
@@ -642,7 +648,7 @@ package
 		// ------------------------------------------------------------
 		private function setProgress( progress:Number ):void
 		{
-			if( progress < 0 ) return;
+			progress = Math.max( progress, 0 );
 			this.mProgressInPixel = progress;
 			this.mComponentsLayer.y = this.mProgressInPixel + this.height - 65;
 			this.mCoordinator.setMeshDensity( 
@@ -688,6 +694,7 @@ package
 		
 			var self:MainScene = this;
 			var timer:Timer = new Timer(300, 1);
+			var clickTimer:Timer = new Timer(100, 1);
 			item.addEventListener( MouseEvent.CLICK,
 				function(e:MouseEvent) : void {
 					if( timer.running ) {
@@ -695,16 +702,21 @@ package
 						self.selectMonstersByType( item.type );
 					} else {
 						timer.start();
-
-						if( !e.shiftKey )
-							self.onCancelSelect();
-						self.selectComponent( item );
+						
+						if( clickTimer.running )
+						{
+							if( !e.shiftKey )
+								self.onCancelSelect();
+							self.selectComponent( item );
+						}
+						clickTimer.stop();
 					}
 				}
 			);
 			
 			item.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent) : void {
+					clickTimer.start();
 					self.mFocusComponent = item;
 					self.mDraggingX = self.mouseX;
 					self.mDraggingY = self.mouseY;

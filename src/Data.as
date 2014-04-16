@@ -524,7 +524,7 @@ package
 					name = file.name.split(".")[0];
 					to = {};
 					to[name] = Utils.LoadJSONToObject( file );
-					
+				
 					this.merge( this.mFormationSet, to );
 				}
 			}
