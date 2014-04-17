@@ -21,8 +21,10 @@
 			private var mCreated:Boolean = false;
 			private var CLIPPING_LAYER:Object;
 			private var CLIPPING_CELL:Object;
-			private var mCurrentLayer:Object;
-			private var mCurrentCell:Object;
+			private var mCurrentLayerData:Object;
+			private var mCurrentCellData:Object;
+			private var mCurrentLayer:SingleLayer;
+			private var mCurrentCell:SingleCell;
 			private var mRender:DecoLayerRender;
 			
 			private function onCreate():void {
@@ -116,14 +118,14 @@
 			private function onCopyCell(event:Event):void {
 				var index:int = this.mCellTree.selectedIndex-1;
 				if (index < 0) return;
-				CLIPPING_CELL = Utils.cloneObjectData(this.mCurrentLayer.cells[index]);
+				CLIPPING_CELL = Utils.cloneObjectData(this.mCurrentLayerData.cells[index]);
 				trace("copied data "+JSON.stringify(CLIPPING_CELL));
 			}
 			
 			private function onPasteCell(event:Event):void {
 				if (!CLIPPING_CELL) return;
 				var data:Object = Utils.cloneObjectData(CLIPPING_CELL);
-				this.mCurrentLayer.cells.push(data);
+				this.mCurrentLayerData.cells.push(data);
 				this.setLayerProperties();
 				this.setModified(true);
 			}
@@ -131,7 +133,7 @@
 			private function onDeleteCell(event:Event):void {
 				var index:int = this.mCellTree.selectedIndex - 1;
 				if (index < 0) return;
-				this.mCurrentLayer.cells.splice(index, 1);
+				this.mCurrentLayerData.cells.splice(index, 1);
 				this.setLayerProperties();
 				this.setModified(true);
 			}
@@ -211,14 +213,31 @@
 			
 			private function onLayerTreeSelected(event:Event):void {
 				this.setLayerProperties();
-				this.mRender.setCurrentLayer(this.mCurrentLayer);
+				for each (var l:SingleLayer in this.mRender.dict) {
+					if (l.data == this.mCurrentLayerData) {
+						this.mCurrentLayer = l;
+						l.setSelected(true);
+					}
+					else {
+						l.setSelected(false);
+					}
+				}
+				this.clearCurrentCell();
+			}
+			
+			private function clearCurrentCell():void {
+				if (this.mCurrentCell) {
+					this.mCurrentCell.setSelected(false);
+					this.mCurrentCell = null;
+					this.mCurrentCellData = null;
+				}
 			}
 			
 			private function setLayerProperties():void {
 				var index:int = this.mLayerTree.selectedIndex-1;
 				if (index < 0) index = 0;
 				var data:Object = this.mData.layers[index];
-				this.mCurrentLayer = data;
+				this.mCurrentLayerData = data;
 				this.mMapWidth.text = data.w;
 				this.mMapHeight.text = data.h;
 				this.mSpeed.text = data.s;
@@ -245,8 +264,8 @@
 				var index:int = this.mCellTree.selectedIndex - 1;
 				var data:Object;
 				if (index < 0) data = null;
-				else data = this.mCurrentLayer.cells[index];
-				this.mCurrentCell = data;
+				else data = this.mCurrentLayerData.cells[index];
+				this.mCurrentCellData = data;
 				if (data) {
 					this.mCellName.text = data.n;
 					this.mCellType.text = data.g?"组合":"元素";
@@ -325,60 +344,60 @@
 			}
 			
 			private function onValueChanged(event:Event):void {
-				if (this.mCurrentCell) {
+				if (this.mCurrentCellData) {
 					var ret:Object;
 					if (event.currentTarget is RadioButton) {
-						ret = SingleLayer.toFlexWorld(this.mCurrentCell, this.mCurrentLayer);
+						ret = SingleLayer.toFlexWorld(this.mCurrentCellData, this.mCurrentLayerData);
 					}
 					else {
-						this.mCurrentCell.x1 = int(this.mX1.text);
-						this.mCurrentCell.y1 = int(this.mY1.text);
+						this.mCurrentCellData.x1 = int(this.mX1.text);
+						this.mCurrentCellData.y1 = int(this.mY1.text);
 					}
-					this.mCurrentCell.x2 = int(this.mX2.text);
-					this.mCurrentCell.xt = this.radiogroup2.selectedValue=="abs"?1:0;
-					this.mCurrentCell.xr = RELATIVE_POS[this.radiogroup3.selectedValue];
-					this.mCurrentCell.y2 = int(this.mY2.text);
-					this.mCurrentCell.yt = this.radiogroup4.selectedValue=="abs"?1:0;
-					this.mCurrentCell.yr = RELATIVE_POS[this.radiogroup5.selectedValue];
+					this.mCurrentCellData.x2 = int(this.mX2.text);
+					this.mCurrentCellData.xt = this.radiogroup2.selectedValue=="abs"?1:0;
+					this.mCurrentCellData.xr = RELATIVE_POS[this.radiogroup3.selectedValue];
+					this.mCurrentCellData.y2 = int(this.mY2.text);
+					this.mCurrentCellData.yt = this.radiogroup4.selectedValue=="abs"?1:0;
+					this.mCurrentCellData.yr = RELATIVE_POS[this.radiogroup5.selectedValue];
 					if (event.target is RadioButton) {
-						var newPos:Object = SingleLayer.toCocosWorld(ret.x, ret.y, this.mCurrentCell, this.mCurrentLayer);
-						this.mCurrentCell.x1 = newPos.x;
-						this.mCurrentCell.y1 = newPos.y;
+						var newPos:Object = SingleLayer.toCocosWorld(ret.x, ret.y, this.mCurrentCellData, this.mCurrentLayerData);
+						this.mCurrentCellData.x1 = newPos.x;
+						this.mCurrentCellData.y1 = newPos.y;
 						this.mX1.text = newPos.x;
 						this.mY1.text = newPos.y;
 					}
-					this.mCurrentCell.s1 = int(this.mScale1.text);
-					this.mCurrentCell.s2 = int(this.mScale2.text);
-					this.mCurrentCell.r1 = int(this.mRotation1.text);
-					this.mCurrentCell.r2 = int(this.mRotation2.text);
-					this.mCurrentCell.flipx = this.mFlipX.selected?1:0;
-					this.mCurrentCell.flipy = this.mFlipY.selected?1:0;
-					this.mCurrentCell.xs1 = int(this.mXSpeed1.text);
-					this.mCurrentCell.xs2 = int(this.mXSpeed2.text);
-					this.mCurrentCell.ys1 = int(this.mYSpeed1.text);
-					this.mCurrentCell.ys2 = int(this.mYSpeed2.text);
-					this.mCurrentCell.ss1 = int(this.mScaleSpeed1.text);
-					this.mCurrentCell.ss2 = int(this.mScaleSpeed2.text);
-					this.mCurrentCell.rs1 = int(this.mRotationSpeed1.text);
-					this.mCurrentCell.rs2 = int(this.mRotationSpeed2.text);
-					this.mCurrentCell.num1 = int(this.mNum1.text);
-					this.mCurrentCell.num2 = int(this.mNum2.text);
+					this.mCurrentCellData.s1 = int(this.mScale1.text);
+					this.mCurrentCellData.s2 = int(this.mScale2.text);
+					this.mCurrentCellData.r1 = int(this.mRotation1.text);
+					this.mCurrentCellData.r2 = int(this.mRotation2.text);
+					this.mCurrentCellData.flipx = this.mFlipX.selected?1:0;
+					this.mCurrentCellData.flipy = this.mFlipY.selected?1:0;
+					this.mCurrentCellData.xs1 = int(this.mXSpeed1.text);
+					this.mCurrentCellData.xs2 = int(this.mXSpeed2.text);
+					this.mCurrentCellData.ys1 = int(this.mYSpeed1.text);
+					this.mCurrentCellData.ys2 = int(this.mYSpeed2.text);
+					this.mCurrentCellData.ss1 = int(this.mScaleSpeed1.text);
+					this.mCurrentCellData.ss2 = int(this.mScaleSpeed2.text);
+					this.mCurrentCellData.rs1 = int(this.mRotationSpeed1.text);
+					this.mCurrentCellData.rs2 = int(this.mRotationSpeed2.text);
+					this.mCurrentCellData.num1 = int(this.mNum1.text);
+					this.mCurrentCellData.num2 = int(this.mNum2.text);
 					this.setModified(true);
-					this.mRender.updateCurrentCell();
+					this.mCurrentCell.update();
 				}
 			}
 			
 			private function onLayerValueChanged(event:Event):void {
-				this.mCurrentLayer.w = int(this.mMapWidth.text);
-				this.mCurrentLayer.h = int(this.mMapHeight.text);
-				this.mCurrentLayer.s = int(this.mSpeed.text);
+				this.mCurrentLayerData.w = int(this.mMapWidth.text);
+				this.mCurrentLayerData.h = int(this.mMapHeight.text);
+				this.mCurrentLayerData.s = int(this.mSpeed.text);
 				var i:int = int(this.mMapIndex.text);
 				if (event.target == this.mMapIndex && i == 0) {                              
 					Alert.show("层级0为战斗层，不可摆放装饰，请输入其他值");
 					return;
 				}
 				else {
-					this.mCurrentLayer.i = int(this.mMapIndex.text);
+					this.mCurrentLayerData.i = int(this.mMapIndex.text);
 				}
 				if (event.target == this.mMapIndex) {
 					this.setLayers();
@@ -386,24 +405,36 @@
 				}
 				else if (event.target == this.mMapWidth || event.target == this.mMapHeight) {
 					this.mRender.updateBorder();
+					this.mCurrentLayer.updateBorder();
 				}
 				this.setModified(true);
 			}
 			
 			private function onCellTreeSelected(event:Event):void {
+				this.clearCurrentCell();
 				this.setCellProperties();
-				this.mRender.setCurrentCell(this.mCurrentCell);
+				for each (var l:SingleLayer in this.mRender.dict) {
+					for each (var c:SingleCell in l.dict) {
+						if (c.data == this.mCurrentCellData) {
+							c.setSelected(true);
+							this.mCurrentCell = c;
+						}
+						else {
+							c.setSelected(false);
+						}
+					}
+				}
 			}
 			
 			private function onAttrChanged(event:Event):void {
-				if (this.mCurrentCell) this.mCurrentCell.f = this.radiogroup1.selectedValue=="固定"?1:0;
+				if (this.mCurrentCellData) this.mCurrentCellData.f = this.radiogroup1.selectedValue=="固定"?1:0;
 				this.updateCellFixed();
 				this.setModified(true);
 			}
 			
 			private function setRender():void {
 				this.mRender = new DecoLayerRender();
-				this.mRender.init(this.mData, this.mCurrentLayer, this.mCurrentCell);
+				this.mRender.init(this.mData, this);
 				this.mContainer.addElement(this.mRender);
 			}
 			
@@ -414,6 +445,45 @@
 			public function setModified(bool:Boolean):void {
 				this.mPanel.setTabModified(this.mName, bool);
 			}
+			
+			public function setCurrent(layer:SingleLayer, cell:SingleCell):void {
+				if (this.mCurrentLayer) this.mCurrentLayer.setSelected(false);
+				this.clearCurrentCell();
+				this.mCurrentLayer = layer;
+				this.mCurrentCell = cell;
+				this.mCurrentLayer.setSelected(true);
+				var i:int = 0;
+				for each (var d:Object in this.mData.layers) {
+					if (d == this.mCurrentLayer.data) {
+						this.mLayerTree.selectedIndex = i+1;
+						break;
+					}
+					i++;
+				}
+				this.mCurrentLayerData = this.mCurrentLayer.data;
+				if (cell) {
+					i = 0;
+					for each (d in this.mCurrentLayerData.cells) {
+						if (d == this.mCurrentCell.data) {
+							this.mCellTree.selectedIndex = i+1;
+							break;
+						}
+						i++;
+					}
+				}
+				else {
+					this.mCellTree.selectedIndex = 0;
+				}
+				this.mCurrentCellData = this.mCurrentCell?this.mCurrentCell.data:null;
+				this.setLayerProperties();
+				this.setCellProperties();
+			}
+			
+			public function get currentLayer():SingleLayer { return this.mCurrentLayer; }
+			public function set currentLayer(value:SingleLayer):void { this.mCurrentLayer = value; }
+			public function get currentCell():SingleCell { return this.mCurrentCell; }
+			public function get currentLayerData():Object { return this.mCurrentLayerData; }
+			public function get currentCellData():Object { return this.mCurrentCellData; }
 		]]>
 	</fx:Script>
 	<fx:Declarations>

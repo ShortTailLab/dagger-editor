@@ -10,29 +10,37 @@
 			private var mData2CellDict:Dictionary;
 			private var mBorder:Sprite;
 			private var mCellContainer:UIComponent;
-			private var mCurrentCell:Object;
+			private var mEdit:DecoLayerEdit;
 			
-			public function setData(data:Object):void {
+			public function setData(data:Object, edit:DecoLayerEdit):void {
 				this.mData = data;
+				this.mEdit = edit;
 				
 				this.mData2CellDict = new Dictionary();
 				this.mBorder = new Sprite();
 				this.addChild(this.mBorder);
-				this.mBorder.x = 160;
-				this.updateBorder();
 				this.mCellContainer = new UIComponent();
 				this.addChild(this.mCellContainer);
-				this.mCellContainer.x = 160;
 				
 				for each (var cell:Object in this.mData.cells) {
 					var c:SingleCell = new SingleCell();
 					this.mData2CellDict[cell] = c;
-					c.setData(cell, this);
+					c.setData(cell, this, this.mEdit);
 					this.mCellContainer.addChild(c);
+				}
+				this.updateBorder();
+				if (this.data == this.mEdit.currentLayerData) {
+					this.setSelected(true);
+					this.mEdit.currentLayer = this;
+				}
+				else {
+					this.setSelected(false);
 				}
 			}
 			
 			public function updateBorder():void {
+				this.mBorder.y = this.parent.height - this.mData.h;
+				this.mCellContainer.y = this.parent.height - this.mData.h;
 				this.mBorder.graphics.clear();
 				this.mBorder.graphics.lineStyle(5, 0xFF0000);
 				this.mBorder.graphics.moveTo(0, 0);
@@ -40,25 +48,14 @@
 				this.mBorder.graphics.lineTo(this.mData.w, this.mData.h);
 				this.mBorder.graphics.lineTo(0, this.mData.h);
 				this.mBorder.graphics.lineTo(0, 0);
-			}
-			
-			public function updateCurrentCell():void {
-				var cell:SingleCell = this.mData2CellDict[this.mCurrentCell];
-				if (cell) {
-					cell.update();
+				
+				for each (var c:SingleCell in this.mData2CellDict) {
+					c.update();
 				}
 			}
 			
 			public function setSelected(bool:Boolean):void {
 				this.mBorder.visible = bool;
-			}
-			
-			public function setCurrentCell(currentCell:Object):void {
-				this.mCurrentCell = currentCell;
-				var cell:SingleCell = this.mData2CellDict[currentCell];
-				if (cell) {
-					cell.setSelected(true);
-				}
 			}
 			
 			public static function toFlexWorld(cell:Object, layer:Object):Object {
@@ -152,6 +149,7 @@
 			}
 			
 			public function get data():Object { return this.mData; }
+			public function get dict():Dictionary { return this.mData2CellDict; }
 		]]>
 	</fx:Script>
 	<fx:Declarations>

@@ -9,20 +9,51 @@
 			private var mData:Object;
 			private var mSelected:Boolean;
 			private var mLayer:SingleLayer;
+			private var mEdit:DecoLayerEdit;
 			
-			public function setData(data:Object, layer:SingleLayer):void {
+			public function setData(data:Object, layer:SingleLayer, edit:DecoLayerEdit):void {
 				this.mData = data;
 				this.mLayer = layer;
+				this.mEdit = edit;
 				
 				this.updateImages();
 				
 				this.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+				this.addEventListener(MouseEvent.CLICK, onMouseClick);
 				this.addEventListener(MouseEvent.ROLL_OVER, onRollOver);
 				this.addEventListener(MouseEvent.ROLL_OUT, onRollOut);
+				
+				this.setSelected(this.data == this.mEdit.currentCellData);
 			}
 			
-			private function onMouseDown(event:Event):void {
+			private function onMouseDown(event:MouseEvent):void {
+				if (this.mSelected) {
+					this.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+					this.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+				}
+			}
+			
+			private function onMouseMove(event:MouseEvent):void {
+				var newX:Number = this.mouseX;
+				var newY:Number = this.mouseY;
+				if (newX < 0) newX = 0;
+				if (newX > this.mLayer.data.w) newX = this.mLayer.data.w;
+				
+			}
+			
+			private function onMouseUp(event:MouseEvent):void {
+				this.stage.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+				this.stage.removeEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			}
+			
+			private function onMouseClick(event:MouseEvent):void {
 				this.setSelected(!this.mSelected);
+				if (this.mSelected) {
+					this.mEdit.setCurrent(this.mLayer, this);
+				}
+				else {
+					this.mEdit.setCurrent(this.mLayer, null);
+				}
 			}
 			
 			private function onRollOver(event:Event):void {
@@ -82,6 +113,8 @@
 					this.filters = [];
 				}
 			}
+			
+			public function get data():Object { return this.mData; }
 		]]>
 	</fx:Script>
 	<fx:Declarations>
