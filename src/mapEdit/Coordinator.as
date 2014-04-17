@@ -80,6 +80,14 @@ package mapEdit
 			{
 				this.graphics.moveTo(0, -i*mUnitHeight);
 				this.graphics.lineTo(MainScene.kSCENE_WIDTH/2, -i*mUnitHeight);
+				
+				if(i * mUnitHeight == 640)
+				{
+					this.graphics.lineStyle(2);
+					this.graphics.moveTo(0, -i*mUnitHeight);
+					this.graphics.lineTo(MainScene.kSCENE_WIDTH/2, -i*mUnitHeight);
+					this.graphics.lineStyle(1, 0, 0.3);
+				}
 			}
 			
 			for(var j:int = 0; j<this.mNumColums; j++)

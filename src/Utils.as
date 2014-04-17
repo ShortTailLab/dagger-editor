@@ -266,6 +266,8 @@ package
 			{
 				var stream:FileStream = new FileStream;
 				stream.open(file, FileMode.READ);
+				//trace( file.url );
+				//trace( stream.bytesAvailable ) ;
 				result = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
 			}
