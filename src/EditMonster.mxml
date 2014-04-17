@@ -110,17 +110,17 @@
 					
 					this.mMonsterPanel.addElement( hgroup );
 					this.mCreateMonsterButton.addEventListener( MouseEvent.CLICK, this.onCreateMonster);
+					this.mCreateTrapButton.addEventListener( MouseEvent.CLICK, this.onCreateTrap );
 				}
 			}
 			
 			public static var kCONFIGURABLE:String = "HOMEMADE";
 			
-			protected function genMonsterData( mid:String = null ):Array 
+			protected function genData( type:String, profile_type:String, id:String = null ):Array
 			{
-				var dynamic_data:Array = Data.getInstance().dynamicArgs["MonsterProfile"];
-				
+				var dynamic_data:Array = Data.getInstance().dynamicArgs[profile_type];
 				var monster:Object = Data.getInstance().getEnemyProfileById( 
-					Runtime.getInstance().currentLevelID, mid 
+					Runtime.getInstance().currentLevelID, id
 				);
 				
 				var skins:Array = [];
@@ -129,18 +129,22 @@
 				skins.sort();
 				
 				// default items
-				if( !mid || !monster ) {
-					var enemies:Object = Data.getInstance().getEnemiesByLevelId( Runtime.getInstance().currentLevelID );
-					var id:int = int(Runtime.getInstance().currentLevelID+"001");
+				if( !id || !monster ) {
+					
+					var enemies:Object = Data.getInstance().getLevelData(
+						Runtime.getInstance().currentLevelID 
+					).monsters;
+					 
+					var nextId:int = int(Runtime.getInstance().currentLevelID+"001");
 					for each ( var m:Object in enemies )
 					{
-						id = Math.max( id, m.monster_id );
+						nextId = Math.max( nextId, m.monster_id );
 					}
 					
 					var data:Array = [
-						["基础数据", "type", "MonsterType", kCONFIGURABLE, "类型" ],
-						["基础数据", "monster_id", "string", String(id+1), "怪物Id" ],
-						["基础数据", "monster_name", "string", "神秘的怪物", "怪物名" ],
+						["基础数据", "type", type, -1, "类型" ],
+						["基础数据", "monster_id", "string", String(nextId+1), "Id" ],
+						["基础数据", "monster_name", "string", "神秘的怪", "中文名字" ],
 						["基础数据", "face", "combo_box", -1, "资源前缀", [skins, skins]]
 					];
 					
@@ -155,9 +159,9 @@
 					}
 					
 					data = [
-						["基础数据", "type", "MonsterType", "HOMEMADE", "类型" ],
-						["基础数据", "monster_id", "string", monster.monster_id, "怪物Id" ],
-						["基础数据", "monster_name", "string", monster.monster_name, "怪物名" ],
+						["基础数据", "type", type, monster.type, "类型" ],
+						["基础数据", "monster_id", "string", monster.monster_id, "Id" ],
+						["基础数据", "monster_name", "string", monster.monster_name, "中文名字" ],
 						["基础数据", "face", "combo_box", monster.face, "资源前缀", [skins, skins]]
 					]; 
 					
@@ -179,74 +183,7 @@
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				}, this.genMonsterData(), false, MapEditor.getInstance());
-			}
-			
-			public function onEditMonster( lid:String, mid:String ):void
-			{
-				var level:Object = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
-				if( !level ) return ;
-				
-				var t:ConfigPanel = new ConfigPanel( );
-				t.init( function( configs:Object ):void {
-					
-					Data.getInstance().updateMonster(lid, mid, configs);
-					
-				}, function (err:String):void {
-					Alert.show( err );
-				}, this.genMonsterData( mid ), false, MapEditor.getInstance());
-			}
-			
-			protected function genBulletData( bid:String = null ):Array
-			{
-				var dynamic_data:Array = Data.getInstance().dynamicArgs["BulletProfile"];
-				
-				var monster:Object = Data.getInstance().getEnemyProfileById( 
-					Runtime.getInstance().currentLevelID, bid
-				);
-				
-				var skins:Array = [];
-				for( var key:String in Data.getInstance().skins )
-					skins.push( key );
-				skins.sort();
-				
-				// default items
-				if( !bid || !monster ) {
-					var enemies:Object = Data.getInstance().getEnemiesByLevelId( Runtime.getInstance().currentLevelID );
-					var id:int = int(Runtime.getInstance().currentLevelID+"001");
-					for each ( var m:Object in enemies )
-					{
-						id = Math.max( id, m.monster_id );
-					}
-					
-					var data:Array = [
-						["基础数据", "type", "BulletType", kCONFIGURABLE, "类型" ],
-						["基础数据", "monster_id", "string", String(id+1), "子弹Id" ],
-						["基础数据", "monster_name", "string", "神秘的子弹", "子弹名" ],
-						["基础数据", "face", "combo_box", -1, "资源前缀", [skins, skins]]
-					];
-					
-					ConfigPanel.mergeTo( dynamic_data, data );
-				} else {
-					for each( var item:Array in dynamic_data )
-					{
-						if( item[ConfigPanel.kKEY] in monster )
-						{
-							item[ConfigPanel.kDEFAULT] = monster[item[ConfigPanel.kKEY]];
-						}
-					}
-					
-					data = [
-						["基础数据", "type", "BulletType", "HOMEMADE", "类型" ],
-						["基础数据", "monster_id", "string", monster.monster_id, "子弹Id" ],
-						["基础数据", "monster_name", "string", monster.monster_name, "子弹名" ],
-						["基础数据", "face", "combo_box", monster.face, "资源前缀", [skins, skins]]
-					];
-					
-					ConfigPanel.mergeTo( dynamic_data, data );
-				}
-				
-				return data;
+				}, this.genData( "MonsterType", "MonsterProfile" ), false, MapEditor.getInstance());
 			}
 			
 			protected function onCreateBullet(evt:Event):void
@@ -261,10 +198,10 @@
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				}, this.genBulletData(), false, MapEditor.getInstance());
+				}, this.genData( "BulletType", "BulletProfile" ), false, MapEditor.getInstance());
 			}
 			
-			public function onEditBullet( lid:String, bid:String ):void
+			protected function onCreateTrap(evt:Event):void
 			{
 				var level:Object = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
 				if( !level ) return ;
@@ -272,11 +209,40 @@
 				var t:ConfigPanel = new ConfigPanel( );
 				t.init( function( configs:Object ):void {
 					
-					Data.getInstance().updateMonster(lid, bid, configs);
+					Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs.monster_id, configs );
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				}, this.genMonsterData( bid ), false, MapEditor.getInstance());
+				}, this.genData( "TrapType", "TrapProfile" ), false, MapEditor.getInstance());
+			}
+			
+			public function onEditEnemy( lid:String, id:String ):void
+			{
+				var level:Object = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
+				if( !level || !( id in level.monsters ) ) return ;
+				
+				var type:String = "", profile:String = "";
+				if( Data.getInstance().isMonster( level.monsters[id].type ) )
+				{
+					type = "MonsterType"; profile = "MonsterProfile";
+				} 
+				else if ( Data.getInstance().isTrap( level.monsters[id].type ) )
+				{
+					type = "TrapType"; profile = "TrapProfile";
+				}
+				else if ( Data.getInstance().isBullet( level.monsters[id].type ) )
+				{
+					type = "BulletType"; profile = "BulletProfile";
+				} else return;
+				
+				var t:ConfigPanel = new ConfigPanel( );
+				t.init( function( configs:Object ):void {
+					
+					Data.getInstance().updateMonster(lid, id, configs);
+					
+				}, function (err:String):void {
+					Alert.show( err );
+				},this.genData( type, profile, id ), false, MapEditor.getInstance());
 			}
 		]]>
 	</fx:Script>
@@ -296,6 +262,7 @@
 				<s:Group id="mMonsterPanel" left="5" right="5" top="5" bottom="25">
 				</s:Group>
 				<s:Button id="mCreateMonsterButton" right="5" bottom="2.5" label="创建怪物"/>
+				<s:Button id="mCreateTrapButton" right="82" bottom="2.5" label="创建陷阱"/>
 			</s:Panel>
 		</s:VGroup>
 	</s:BorderContainer>

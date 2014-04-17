@@ -32,7 +32,7 @@
 			protected var mKey2Group:Object = {};
 			protected var mKey2UIComponents:Object = {};
 			protected var mKey2Data:Object = {};
-			protected var mSource:Object = {};
+			protected var mSource:Array = [];
 			protected var mIsPopUp:DisplayObject = null;
 			protected var mIgnoreTag:Boolean = false;
 			
@@ -50,7 +50,7 @@
 				this.refresh( this.mSource );	
 			};
 			
-			public function init( onComplete:Function, onError:Function, data:Object, ignoreTag:Boolean = false, isPopUp:DisplayObject = null ):void
+			public function init( onComplete:Function, onError:Function, data:Array, ignoreTag:Boolean = false, isPopUp:DisplayObject = null ):void
 			{
 				this.mCBComplete = onComplete;
 				this.mCBError 	 = onError;
@@ -65,7 +65,47 @@
 				}
 			}
 			
-			public function refresh( data:Object ):void 
+			public function refresh_data( data:Array ):void
+			{
+				var ind = 0;
+				for each( var item:Array in data ) 
+				{
+					if( !(item[kTAG] in this.mKey2Group) )
+					{
+						var page:NavigatorContent = new NavigatorContent;
+						page.label = item[kTAG];
+						
+						var group:Form = new Form;
+						page.addElement( group );
+						this.mTabNavigator.addElement( page );
+						
+						this.mKey2Group[item[kTAG]] = group;
+					}
+					
+					this.mKey2Group[item[kTAG]].addElement( 
+						this.createAndRegisterItem( item, ind ) 
+					);
+					
+					var rule:HRule = new HRule;
+					rule.percentWidth = 100; rule.height = 1; rule.x = 75;
+					this.mKey2Group[item[kTAG]].addElement( rule );
+					
+					this.mKey2Data[item[kKEY]] = item;
+					
+					if( item[kTYPE] == "MonsterType" || 
+						item[kTYPE] == "BulletType" ||
+						item[kTYPE] == "TrapType" )
+					{
+						if( item[kDEFAULT] in Data.getInstance().dynamicArgs )
+						{
+							this.refresh_data(Data.getInstance().dynamicArgs[item[kDEFAULT]]);
+						}
+					}
+					ind ++;
+				}
+			}
+			
+			public function refresh( data:Array ):void 
 			{
 				this.mSource = data;
 				
@@ -77,35 +117,7 @@
 					this.mTabNavigator.removeAllChildren();
 					this.mTabNavigator.removeAllElements();
 					
-					var max:Number = 0;
-					for each( var item:Array in this.mSource ) 
-					{
-						if( !(item[kTAG] in this.mKey2Group) )
-						{
-							var page:NavigatorContent = new NavigatorContent;
-							page.label = item[kTAG];
-							
-							var group:Form = new Form;
-							page.addElement( group );
-							this.mTabNavigator.addElement( page );
-							
-							this.mKey2Group[item[kTAG]] = group;
-						}
-						
-						this.mKey2Group[item[kTAG]].addElement( 
-							this.createAndRegisterItem( item ) 
-						);
-						
-						var rule:HRule = new HRule;
-						rule.percentWidth = 100; rule.height = 1; rule.x = 75;
-						this.mKey2Group[item[kTAG]].addElement( rule );
-						
-						this.mKey2Data[item[kKEY]] = item;
-						
-						max = Math.max( max, this.mKey2Group[item[kTAG]].numElements/2 );
-					}
-					
-					//this.mRootPanel.height = max*52+45;
+					this.refresh_data(this.mSource);
 				}
 			}
 			
@@ -184,7 +196,7 @@
 							}else
 								ret[key] = data[kOTHER][1][ind];
 						} 
-						else if( data[kTYPE] == "MonsterType" || data[kTYPE] == "MonsterType" || data[kTYPE] == "bullet" )
+						else if( data[kTYPE] == "MonsterType" || data[kTYPE] == "MonsterType" || data[kTYPE] == "BulletType" || data[kTYPE] == "bullet" )
 						{
 							var target:DropDownList = item[0] as DropDownList;
 							ind = target.selectedIndex;
@@ -213,7 +225,7 @@
 					PopUpManager.removePopUp( this );
 			}
 			
-			protected function createAndRegisterItem( item:Object ):UIComponent
+			protected function createAndRegisterItem( item:Object, data_index:int ):UIComponent
 			{
 				if( item[kKEY] in this.mKey2UIComponents ) {
 					Alert.show("【警告】重复的字段"+item[kKEY]);
@@ -303,17 +315,27 @@
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
 				}
-				else if( item[kTYPE] == "MonsterType" || item[kTYPE] == "BulletType" )
+				else if( item[kTYPE] == "MonsterType" || item[kTYPE] == "BulletType" || item[kTYPE] == "TrapType" )
 				{
 					if( item[kTYPE] == "MonsterType" )
 					{
 						var monsterList:Array = [EditMonster.kCONFIGURABLE];
 						if( Data.getInstance().dynamicArgs.MonsterType )
-							monsterList.concat((Data.getInstance().dynamicArgs.MonsterType as Array));
-					} else {
+						{
+							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.MonsterType as Array));
+						}
+					}
+					else if( item[kTYPE] == "BulletType") 
+					{
 						monsterList = [];
 						if( Data.getInstance().dynamicArgs.BulletType )
-							monsterList.concat((Data.getInstance().dynamicArgs.BulletType as Array));
+							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.BulletType as Array));
+					}
+					else if( item[kTYPE] == "TrapType")
+					{
+						monsterList = [];
+						if( Data.getInstance().dynamicArgs.TrapType )
+							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.BulletType as Array));
 					}
 					
 					ind = -1, countor = 0;
@@ -332,23 +354,15 @@
 					comboBox.selectedIndex = ind;
 					
 					comboBox.addEventListener(Event.CHANGE, function(evt:Event):void
-					{
-						var val:String =  monsterList[comboBox.selectedIndex];
-						if( val in Data.getInstance().dynamicArgs )
-						{
-							for each( var sub_item:Array in Data.getInstance().dynamicArgs[val] )
-							this.createAndRegisterItem( sub_item );
-						}
+					{	
+						var data:Array = Utils.deepCopy(self.mSource) as Array;
+						data[data_index][kDEFAULT] = monsterList[comboBox.selectedIndex];
+						self.refresh( data );
 					});
-					
-					if( item[kDEFAULT] in Data.getInstance().dynamicArgs )
-					{
-						for each( var sub_item:Array in Data.getInstance().dynamicArgs[item[kDEFAULT]] )
-							this.createAndRegisterItem( sub_item );
-					}
 					
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
+					
 				} 
 				else if ( item[kTYPE] == "bullet" )
 				{
@@ -358,7 +372,7 @@
 					
 					var bulletList:Array = [];
 					for each( var bullet:Object in bullets )
-						bulletList.push( bullet );
+						bulletList.push( bullet.monster_id );
 					
 					ind = -1, countor = 0;
 					for each( mlk in bulletList )

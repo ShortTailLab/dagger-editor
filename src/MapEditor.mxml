@@ -108,7 +108,7 @@
 			private function sendToStaticServer(e:Event):void
 			{
 				var currentLevelID:String = Runtime.getInstance().currentLevelID;
-				if( currentLevelID )
+				if( !currentLevelID )
 				{
 					Alert.show("上传前请先选择关卡！");
 					return;

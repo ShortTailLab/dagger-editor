@@ -112,7 +112,7 @@ package
 			var itemsToShow:Array = mMonsters.filter(
 				function(a:*, index:int, arr:Array):Boolean
 				{
-					return ((a.type as String).search(text) == 0);
+					return ((a.classId as String).search(text) == 0);
 				}	
 			);
 			
@@ -172,7 +172,7 @@ package
 			var self:MonsterSelector = this;
 			item.addEventListener(MouseEvent.DOUBLE_CLICK, function(e:MouseEvent):void
 			{
-				MapEditor.getInstance().mEditMonster.onEditMonster( 
+				MapEditor.getInstance().mEditMonster.onEditEnemy( 
 					Runtime.getInstance().currentLevelID, item.classId
 				);
 				self.clearSelection();
@@ -189,7 +189,7 @@ package
 			editButton.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,
 				function(e:ContextMenuEvent):void
 				{
-					MapEditor.getInstance().mEditMonster.onEditMonster( 
+					MapEditor.getInstance().mEditMonster.onEditEnemy( 
 						Runtime.getInstance().currentLevelID, item.classId
 					);
 				}

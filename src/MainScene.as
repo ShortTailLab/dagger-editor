@@ -80,6 +80,9 @@ package
 		public function init():void 
 		{
 			var self:MainScene = this;
+			this.mMapSpeed = Data.getInstance().conf.mapSpeed || 32;
+			this.mGridHeight = Data.getInstance().conf.gridWidth;
+			this.mGridWidth = Data.getInstance().conf.gridHeight;
 			
 			Runtime.getInstance().addEventListener( Runtime.CURRENT_LEVEL_CHANGE, function(evt:Event):void
 			{
