@@ -54,18 +54,23 @@
 				
 				this.mLevelTree.dataProvider = Data.getInstance().genLevelXML();
 			}
-
+			
+			protected var mCurrentId:String = null;
+			protected var mIsChapter:Boolean = false;
 			public function onItemClick(event:Event):void
 			{
 				var item:XML = this.mLevelTree.selectedItem as XML;
 				if(item.name() == "level")
 				{
-					setCurrLevel(item.@id);
+					Runtime.getInstance().currentLevelID = item.@id;
+					this.mIsChapter = false;
 					this.mInformPanel.refresh( this.genLevelData( item.@id ) );
 				} else {
+					this.mIsChapter = true;
 					this.mInformPanel.refresh( this.genChapterData( item.@id ) );
 				}
-				this.mInformPanel.mRootPanel.title = item.@label;
+				this.mCurrentId = item.@id;
+				this.mInformPanel.mRootPanel.title = item.@id+" | "+item.@label;
 			}
 			
 			protected function genLevelData( lid:String = null ):Array
@@ -73,29 +78,27 @@
 				var ld:Object = Data.getInstance().getLevelData( lid );
 				
 				var chapter:Array = [[], []];
-				var val:int = -1, ind:int = 0;
 				for each( var item:Object in Data.getInstance().chapters )
 				{
 					chapter[0].push( item.id +"|"+ item.name );
 					chapter[1].push( item.id );
-					if( ld && item.id == ld.chapter_id ) val = ind;
-					ind ++;
 				}
 				
 				if( ld )
 				{	
 					var data:Array = [
-						[ "配置", "chapter", "combo_box", val, "所属章节", chapter ],
+						[ "配置", "chapter_id", "combo_box", ld.chapter_id, "所属章节", chapter ],
 						[ "配置", "level_id", "string", ld.level_id, "关卡id" ],
 						[ "配置", "level_name", "string", ld.level_name, "关卡名" ]
 					];
 				} else {
 
 					data = [
-						[ "配置", "chapter", "combo_box", val, "所属章节", chapter ],
+						[ "配置", "chapter_id", "combo_box", -1, "所属章节", chapter ],
 						[ "配置", "level_id", "string", "1001", "关卡id" ],
 						[ "配置", "level_name", "string", "新建关卡", "关卡名" ]
 					];
+					
 				}
 				
 				
@@ -120,9 +123,15 @@
 				
 				if( !chapter )
 				{
+					var id:int = 0;
+					for each ( var m:Object in Data.getInstance().chapters )
+					{
+						id = Math.max( id, m.id );
+					}
+					
 					return [
-						[ "配置", "chapter_id", "string", "101", "章节id" ],
-						[ "配置", "chapter_name", "string", "新建章节", "章节名" ]
+						[ "配置", "chapter_id", "string", String(id+1), "章节id" ],
+						[ "配置", "chapter_name", "string", "神秘的章节", "章节名" ]
 					];
 				} else {
 					return [
@@ -145,9 +154,7 @@
 						return ;
 					}
 					
-					//trace( configs.chapter );
-					
-					Data.getInstance().makeLevel( configs.chapter, configs.level_id, configs.level_name );
+					Data.getInstance().makeLevel( configs.chapter_id, configs.level_id, configs );
 					self.refresh();
 					
 				}, function (err:String):void { Alert.show( err ); }, this.genLevelData( ), false, this);
@@ -178,6 +185,11 @@
 			protected function onConfirm( data:Object ):void 
 			{
 				Utils.dumpObject( data );
+				if( this.mIsChapter )
+					Data.getInstance().updateChapter( this.mCurrentId, data.chapter_name );
+				else 
+					Data.getInstance().updateLevel( this.mCurrentId, data );
+				this.refresh();
 			}
 			
 			protected function onError( err:String ):void

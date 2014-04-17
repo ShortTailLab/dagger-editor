@@ -178,7 +178,7 @@
 				this.mLibrary.dataProvider = this.mFilteredLibrary;
 				this.mComboBox.dataProvider = this.mFilteredLibrary;
 				
-				this.mTargetBehaviors = Data.getInstance().getEnemyBehaviorsById(Runtime.getInstance().currentLevelID, this.mTarget.type) as Array;
+				this.mTargetBehaviors = Data.getInstance().getEnemyBehaviorsById(Runtime.getInstance().currentLevelID, this.mTarget.classId) as Array;
 				if (this.mTargetBehaviors.length > 0) {
 					for (var i:int = 0; i < this.mFilteredLibrary.length; i++) {
 						if (this.mFilteredLibrary[i] == this.mTargetBehaviors[0]) {
@@ -274,7 +274,7 @@
 			}
 			
 			private function setCharacterInfo():void {
-				var profile:Object = Data.getInstance().getEnemyProfileById(this.mTarget.type);
+				var profile:Object = Data.getInstance().getEnemyProfileById( Runtime.getInstance().currentLevelID, this.mTarget.classId);
 				var bitmapData:BitmapData = Data.getInstance().getSkinById(profile.face);
 				this.mPhoto = new UIComponent();
 				if (bitmapData) {
@@ -299,7 +299,7 @@
 			
 			private function onSelectBehavior(event:Event):void {
 				var val:Array = [this.mFilteredLibrary[this.mComboBox.selectedIndex]];
-				Data.getInstance().updateEnemyBehaviorsById(Runtime.getInstance().currentLevelID, this.mTarget.type, val);
+				Data.getInstance().updateEnemyBehaviorsById(Runtime.getInstance().currentLevelID, this.mTarget.classId, val);
 			}
 			
 			private function onPressSave(event:Event=null):void {
@@ -331,7 +331,7 @@
 			
 			private function onPressApply(event:Event):void {
 				var val:Array = [this.mTabNames[this.mTabNavigator.selectedIndex]];
-				Data.getInstance().updateEnemyBehaviorsById(Runtime.getInstance().currentLevelID, this.mTarget.type, val);
+				Data.getInstance().updateEnemyBehaviorsById(Runtime.getInstance().currentLevelID, this.mTarget.classId, val);
 				for (var i:int = 0; i < this.mFilteredLibrary.length; i++) {
 					if (this.mFilteredLibrary[i] == val[0]) {
 						this.mComboBox.selectedIndex = i;

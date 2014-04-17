@@ -102,26 +102,7 @@
 			
 			private function saveLevel(e:Event):void
 			{
-				//this.mVIEWScene.save();
-
-				var t:ConfigPanel = new ConfigPanel( );
-				t.init( function( configs:Object ):void {
-					Utils.dumpObject( configs );
-				}, function (err:String):void {
-					Alert.show( err );
-				}, [
-					[ "基础数据", "isBoss",  "bool",   0,       "是否BOSS" ],
-					[ "基础数据", "size",    "ccsize", [50,50], "碰撞面积" ],
-					[ "基础数据", "health",  "float",  100,     "最大生命值" ],
-					[ "基础数据", "attack",  "float",  10,      "物理攻击力" ],
-					[ "基础数据", "magic",   "float",  10,      "魔法攻击力" ],
-					[ "基础数据", "defense", "float",  10,      "物理防御力" ],
-					[ "基础数据", "resist",  "float",  10,      "魔法防御力" ],
-					// drops
-					[ "掉落", "coins", "array_int", [], "铜币掉落" ],
-					[ "掉落", "props", "array_int", [], "道具掉落" ],
-					[ "掉落", "items", "array_int", [], "材料掉落" ]
-				], false, this);
+				this.mMainScene.save();
 			}
 			
 			private function sendToStaticServer(e:Event):void

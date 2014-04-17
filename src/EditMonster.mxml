@@ -8,6 +8,10 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import flashx.textLayout.edit.EditingMode;
+			
+			import mx.controls.Alert;
+			
 			import spark.components.Group;
 			import spark.components.HGroup;
 			import spark.components.Panel;
@@ -16,6 +20,7 @@
 			// ---------------------------------------------------------
 			
 			protected var mFormation:FormationSelector = null;
+			protected var mBullet:BulletSelector = null;
 			protected var mMonster:MonsterSelector = null;
 			
 			////// entrance
@@ -51,6 +56,37 @@
 					with( hgroup ) {
 						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
 					}
+					
+					group = new Group();
+					with( group ) {
+						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
+					}
+					
+					vscrollbar = new VScrollBar();
+					with( vscrollbar ) {
+						percentHeight = 100;
+					}
+					vscrollbar.viewport = group;
+					
+					this.mBullet = new BulletSelector;
+					with( this.mBullet ) {
+						percentWidth = percentHeight = 100;
+					}
+					
+					group.addElement( this.mBullet );
+					hgroup.addElement( group );
+					hgroup.addElement( vscrollbar );
+					
+					this.mBulletPanel.addElement( hgroup );
+					this.mCreateBulletButton.addEventListener( MouseEvent.CLICK, this.onCreateBullet);
+				}
+				
+				{
+					
+					hgroup = new HGroup();
+					with( hgroup ) {
+						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
+					}
 
 					group = new Group();
 					with( group ) {
@@ -73,7 +109,117 @@
 					hgroup.addElement( vscrollbar );
 					
 					this.mMonsterPanel.addElement( hgroup );
+					this.mCreateMonsterButton.addEventListener( MouseEvent.CLICK, this.onCreateMonster);
 				}
+			}
+			
+			public static var kCONFIGURABLE:String = "HOMEMADE";
+			
+			protected function genMonsterData( mid:String = null ):Array 
+			{
+//				// dynacmic args
+//				var dynamic_data:Array = [
+//					[ "基础数据", "isBoss",  "bool",   0,       "是否BOSS" ],
+//					[ "基础数据", "size",    "ccsize", [50,50], "碰撞面积" ],
+//					[ "基础数据", "health",  "float",  100,     "最大生命值" ],
+//					[ "基础数据", "attack",  "float",  10,      "物理攻击力" ],
+//					[ "基础数据", "magic",   "float",  10,      "魔法攻击力" ],
+//					[ "基础数据", "defense", "float",  10,      "物理防御力" ],
+//					[ "基础数据", "resist",  "float",  10,      "魔法防御力" ],
+//					// drops
+//					[ "掉落", "coins", "array_int", [], "铜币掉落" ],
+//					[ "掉落", "props", "array_int", [], "道具掉落" ],
+//					[ "掉落", "items", "array_int", [], "材料掉落" ]
+//				];
+				
+				var dynamic_data:Array = Data.getInstance().dynamicArgs["MonsterProfile"];
+				
+				var monster:Object = Data.getInstance().getEnemyProfileById( 
+					Runtime.getInstance().currentLevelID, mid 
+				);
+				
+				var skins:Array = [];
+				for( var key:String in Data.getInstance().skins )
+					skins.push( key );
+				skins.sort();
+				
+				// default items
+				if( !mid || !monster ) {
+					var enemies:Object = Data.getInstance().getEnemiesByLevelId( Runtime.getInstance().currentLevelID );
+					var id:int = int(Runtime.getInstance().currentLevelID+"001");
+					for each ( var m:Object in enemies )
+					{
+						id = Math.max( id, m.monster_id );
+					}
+					
+					var data:Array = [
+						["基础数据", "type", "MonsterType", kCONFIGURABLE, "类型" ],
+						["基础数据", "monster_id", "string", String(id+1), "怪物Id" ],
+						["基础数据", "monster_name", "string", "神秘的怪物", "怪物名" ],
+						["基础数据", "face", "combo_box", -1, "资源前缀", [skins, skins]]
+					];
+					
+					ConfigPanel.mergeTo( dynamic_data, data );
+				} else {
+					for each( var item:Array in dynamic_data )
+					{
+						if( item[ConfigPanel.kKEY] in monster )
+						{
+							item[ConfigPanel.kDEFAULT] = monster[item[ConfigPanel.kKEY]];
+						}
+					}
+					
+					data = [
+						["基础数据", "type", "MonsterType", "HOMEMADE", "类型" ],
+						["基础数据", "monster_id", "string", monster.monster_id, "怪物Id" ],
+						["基础数据", "monster_name", "string", monster.monster_name, "怪物名" ],
+						["基础数据", "face", "combo_box", monster.face, "资源前缀", [skins, skins]]
+					]; 
+					
+					ConfigPanel.mergeTo( dynamic_data, data );
+				}
+				
+				return data;
+			}
+			
+			protected function onCreateMonster(evt:Event):void
+			{				
+				var level = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
+				if( !level ) return ;
+				
+				var t:ConfigPanel = new ConfigPanel( );
+				t.init( function( configs:Object ):void {
+		
+					Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs.monster_id, configs );
+					
+				}, function (err:String):void {
+					Alert.show( err );
+				}, this.genMonsterData(), false, MapEditor.getInstance());
+			}
+			
+			public function onEditMonster( lid:String, mid:String ):void
+			{
+				var level = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
+				if( !level ) return ;
+				
+				var t:ConfigPanel = new ConfigPanel( );
+				t.init( function( configs:Object ):void {
+					
+					Data.getInstance().updateMonster(lid, mid, configs);
+					
+				}, function (err:String):void {
+					Alert.show( err );
+				}, this.genMonsterData( mid ), false, MapEditor.getInstance());
+			}
+			
+			protected function onCreateBullet(evt:Event):void
+			{
+				
+			}
+			
+			protected function onEditBullet( lid:String, mid:String ):void
+			{
+				
 			}
 		]]>
 	</fx:Script>
@@ -84,8 +230,15 @@
 			<s:Panel id="mFormationPanel" width="100%" height="25%" dropShadowVisible="false" title="阵型">
 			</s:Panel>
 			<s:Panel width="100%" height="25%" dropShadowVisible="false" title="子弹">
+				<s:Group id="mBulletPanel" left="5" right="5" top="5" bottom="25">
+				</s:Group>
+				<s:Button id="mCreateBulletButton" right="5" bottom="2.5" label="创建子弹"/>
 			</s:Panel>
-			<s:Panel id="mMonsterPanel" width="100%" height="50%" dropShadowVisible="false" title="怪物">
+			
+			<s:Panel width="100%" height="50%" dropShadowVisible="false" title="怪物">
+				<s:Group id="mMonsterPanel" left="5" right="5" top="5" bottom="25">
+				</s:Group>
+				<s:Button id="mCreateMonsterButton" right="5" bottom="2.5" label="创建怪物"/>
 			</s:Panel>
 		</s:VGroup>
 	</s:BorderContainer>

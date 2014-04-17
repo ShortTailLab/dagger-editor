@@ -208,6 +208,7 @@ package
 			this.mCoordinator.setMeshDensity( 
 				this.mGridWidth, this.mGridHeight, height, this.mProgressInPixel 
 			);
+			this.setProgress(this.mProgressInPixel);
 			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent):void {
 					if( self.mSelectFrame ) return;
@@ -502,10 +503,10 @@ package
 			{
 				this.mPasteData.push({ 
 					pos: new Point(item.x-min_x-(max_x-min_x)/2, item.y-min_y-(max_y-min_y)/2),
-					type : item.type
+					type : item.classId
 				});
 					
-				var mat:Component = this.creator( item.type, 0 );
+				var mat:Component = this.creator( item.classId, 0 );
 				mat.x = this.mPasteData[this.mPasteData.length-1].pos.x;
 				mat.y = this.mPasteData[this.mPasteData.length-1].pos.y;
 				mat.addEventListener(MouseEvent.CLICK, function(e:*):void {
@@ -519,7 +520,7 @@ package
 		
 		private function onChangeSelectedType( type:String ):void
 		{
-			if( !Data.getInstance().getEnemyProfileById( type ) )
+			if( !Data.getInstance().getEnemyProfileById( Runtime.getInstance().currentLevelID, type ) )
 			{
 				Alert.show("【错误】无法识别的类型id，请检查后重新填写");
 				return;
@@ -564,7 +565,7 @@ package
 			var changeType:ContextMenuItem = new ContextMenuItem("更换敌人");
 			changeType.addEventListener( ContextMenuEvent.MENU_ITEM_SELECT,
 				function(e:ContextMenuEvent):void {
-					var enemies:Object = Data.getInstance().getEnemiesByLevelId(self.mLevelId);
+					var enemies:Object = Data.getInstance().getEnemiesByLevelId( self.mLevelId );
 					var data:Array = [];
 					for each( var item:* in enemies )
 					{
@@ -604,14 +605,16 @@ package
 			item.contextMenu = menu;
 			
 			// update information panel
-			if( item.type == AreaTrigger.TRIGGER_TYPE )
+			if( item.classId == AreaTrigger.TRIGGER_TYPE )
 			{
-				this.mInfoId.text = "ID:   " + String(item.type);
+				this.mInfoId.text = "ID:   " + String(item.classId);
 				this.mInfoName.text = "NAME: ";
 			} else {
-				this.mInfoId.text = "ID:   " + String(item.type);
+				this.mInfoId.text = "ID:   " + String(item.classId);
 				this.mInfoName.text = "NAME: " + 
-					String( Data.getInstance().getEnemyProfileById(item.type).monster_name );
+					String( Data.getInstance().getEnemyProfileById( 
+						Runtime.getInstance().currentLevelID, item.classId 
+					).monster_name );
 			}
 			this.mInfoXInput.text = String(item.x*2);
 			this.mInfoYInput.text = String(-item.y*2);
@@ -625,7 +628,7 @@ package
 			var row:int = index / MainScene.kSELECTED_BOARD_COLUMS;
 			var col:int = index % MainScene.kSELECTED_BOARD_COLUMS;
 			
-			var one:Component = this.creator( item.type, 8 );
+			var one:Component = this.creator( item.classId, 8 );
 			one.x = 30 + col*MainScene.kSELECTED_BOARD_UNIT_WIDTH;
 			one.y = 40 + row*MainScene.kSELECTED_BOARD_UNIT_HEIGHT;
 			if( one as Entity )
@@ -645,7 +648,7 @@ package
 			this.onCancelSelect();
 			
 			for each( var m:Component in this.mComponents )
-				if( m.type == type ) this.selectComponent( m );
+				if( m.classId == type ) this.selectComponent( m );
 				
 			if( type == AreaTrigger.TRIGGER_TYPE )
 			{
@@ -654,7 +657,9 @@ package
 			} else {
 				this.mInfoId.text = "ID:   " + String(type);
 				this.mInfoName.text = "NAME: " + 
-					String( Data.getInstance().getEnemyProfileById(type).monster_name );
+					String( Data.getInstance().getEnemyProfileById( 
+						Runtime.getInstance().currentLevelID, type
+					).monster_name );
 			}
 			if( this.mSelectedComponents.length > 1 )
 			{
@@ -761,7 +766,7 @@ package
 				function(e:MouseEvent) : void {
 					if( timer.running ) {
 						timer.stop();
-						self.selectMonstersByType( item.type );
+						self.selectMonstersByType( item.classId );
 					} else {
 						timer.start();
 						

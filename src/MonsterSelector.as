@@ -100,7 +100,7 @@ package
 			}
 			
 			mMonsters.sort(function(a:*, b:*):int{
-				return int(a.type) < int(b.type) ? -1 : 1;
+				return int(a.classId) < int(b.classId) ? -1 : 1;
 			}); 
 			
 			this.relayout( mMonsters );
@@ -140,9 +140,6 @@ package
 				
 				this.mScrollingLayer.addChild( item );
 			}
-//			var n = new AreaTriggerComponent;
-//			n.x = 50; n.y = 50;
-//			this.mScrollingLayer.addChild( new AreaTriggerComponent );
 		}
 		
 		
@@ -153,7 +150,7 @@ package
 				this.clearSelection();
 				this.mSelected = target;
 				this.mSelected.select(true);
-				Runtime.getInstance().selectedComponentType = target.type;
+				Runtime.getInstance().selectedComponentType = target.classId;
 			}
 		}
 		
@@ -175,8 +172,10 @@ package
 			var self:MonsterSelector = this;
 			item.addEventListener(MouseEvent.DOUBLE_CLICK, function(e:MouseEvent):void
 			{
-				var target:Entity = e.currentTarget as Entity;
-				if(target) MonsterSelector.OpenBehaviorEditor( target );
+				MapEditor.getInstance().mEditMonster.onEditMonster( 
+					Runtime.getInstance().currentLevelID, item.classId
+				);
+				self.clearSelection();
 			});
 			item.addEventListener(MouseEvent.CLICK, function(e:MouseEvent):void
 			{
@@ -185,10 +184,29 @@ package
 			});
 						
 			var menu:ContextMenu = new ContextMenu;
+			
+			var editButton:ContextMenuItem = new ContextMenuItem("数据");
+			editButton.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,
+				function(e:ContextMenuEvent):void
+				{
+					MapEditor.getInstance().mEditMonster.onEditMonster( 
+						Runtime.getInstance().currentLevelID, item.classId
+					);
+				}
+			);
+			menu.addItem( editButton );
+			
 			var bhButton:ContextMenuItem = new ContextMenuItem("行为");
 			bhButton.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, 
 				function(e:ContextMenuEvent):void
 				{
+					var enemy:Object = Data.getInstance().getEnemyProfileById( 
+						Runtime.getInstance().currentLevelID, item.classId
+					);
+					
+					if( !enemy || enemy.type != EditMonster.kCONFIGURABLE )
+						return;
+					
 					var target:Entity = e.contextMenuOwner as Entity;
 					if(target) MonsterSelector.OpenBehaviorEditor( target );
 				}
@@ -223,12 +241,6 @@ package
 		static private var btEdit:BTPanel;
 		static private function OpenBehaviorEditor(target:Entity):void
 		{
-//			var btPanel:BTEditPanel = new BTEditPanel(target);
-//			PopUpManager.addPopUp(btPanel, MapEditor.getInstance());
-//			PopUpManager.centerPopUp(btPanel);
-//			btPanel.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-btPanel.width/2;
-//			btPanel.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-btPanel.height/2;
-			
 			selectedTarget = target;
 			EventManager.getInstance().addEventListener(EventType.BT_EDIT_PANEL_CREATE, onBehaviorEditCreate);
 			btEdit = new BTPanel();

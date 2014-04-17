@@ -11,6 +11,7 @@
 			import mx.containers.FormItem;
 			import mx.containers.FormItemDirection;
 			import mx.controls.Alert;
+			import mx.controls.ComboBase;
 			import mx.controls.HRule;
 			import mx.controls.TextInput;
 			import mx.core.UIComponent;
@@ -19,6 +20,7 @@
 			
 			import spark.components.CheckBox;
 			import spark.components.ComboBox;
+			import spark.components.DropDownList;
 			import spark.components.Form;
 			import spark.components.HGroup;
 			import spark.components.Label;
@@ -48,7 +50,7 @@
 				this.refresh( this.mSource );	
 			};
 			
-			public function init( onComplete:Function, onError:Function, data:Object, ignoreTag = false, isPopUp:DisplayObject = null ):void
+			public function init( onComplete:Function, onError:Function, data:Object, ignoreTag:Boolean = false, isPopUp:DisplayObject = null ):void
 			{
 				this.mCBComplete = onComplete;
 				this.mCBError 	 = onError;
@@ -109,7 +111,7 @@
 			
 			protected function onKeyboardAction(event:KeyboardEvent):void
 			{	
-				trace( event.ctrlKey +" "+event.charCode);
+				//trace( event.ctrlKey +" "+event.charCode);
 				if( event.charCode == Keyboard.ENTER && this.mIsPopUp )
 				{
 					this.onConfirm();
@@ -130,7 +132,8 @@
 					ret[item[kKEY]] = item[kDEFAULT];
 				}
 				
-				this.mCBComplete( ret  );
+				//this.mCBComplete( ret  );
+				this.mCBError("用户取消了操作");
 				if( this.mIsPopUp )
 					PopUpManager.removePopUp( this );
 			}
@@ -147,8 +150,14 @@
 						{
 							ret[key] = item[0].selected;
 						}
-						else if( data[kTYPE] == "ccp" || data[kTYPE] == "ccsize" )
+						else if( data[kTYPE] == "ccp" )
 						{
+							//ret[key] = "@@cc.p("+Number(item[0].text)+", "+Number(item[1].text)+")@@";
+							ret[key] = [Number(item[0].text), Number(item[1].text)];
+						}
+						else if( data[kTYPE] == "ccsize" )
+						{
+							//ret[key] = "@@cc.size("+Number(item[0].text)+", "+Number(item[1].text)+")@@";
 							ret[key] = [Number(item[0].text), Number(item[1].text)];
 						}
 						else if( data[kTYPE] == "array_int" ) 
@@ -165,12 +174,26 @@
 						} 
 						else if( data[kTYPE] == "combo_box" )
 						{
-							var ind:int = (item[0] as ComboBox).selectedIndex;
+							var ind:int = (item[0] as DropDownList).selectedIndex;
 							
 							if( ind < 0 || ind >= data[kOTHER][1].length )
+							{
 								ret[key] = -1;
-							else
+								this.mCBError("请选择："+data[kDESC]);
+								return;
+							}else
 								ret[key] = data[kOTHER][1][ind];
+						} 
+						else if( data[kTYPE] == "MonsterType" || data[kTYPE] == "MonsterType" )
+						{
+							var target:DropDownList = item[0] as DropDownList;
+							ind = target.selectedIndex;
+							if( ind == -1 ) {
+								ret[key] = -1;
+								this.mCBError("请选择："+data[kDESC]);
+								return;
+							}
+							else ret[key] = target.selectedItem as String;
 						}
 						else if( data[kTYPE] == "string" )
 						{
@@ -181,7 +204,7 @@
 							ret[key] = JSON.parse( item[0].text );
 						}
 					}catch(err:Error) {
-						this.mCBError( data[kTAG] +"|"+data[kDESC]+"填写错误，请检查" );
+						this.mCBError( data[kTAG] +" | "+data[kDESC]+"填写错误，请检查" );
 						return;
 					}
 				}
@@ -192,6 +215,10 @@
 			
 			protected function createAndRegisterItem( item:Object ):UIComponent
 			{
+				if( item[kKEY] in this.mKey2UIComponents ) {
+					Alert.show("【警告】重复的字段"+item[kKEY]);
+				}
+				
 				var self:ConfigPanel = this;
 				this.mKey2UIComponents[item[kKEY]] = [];
 				
@@ -257,13 +284,68 @@
 				}
 				else if ( item[kTYPE] == "combo_box" )
 				{	
-					var comboBox:ComboBox = new ComboBox;
+					var comboBox:DropDownList = new DropDownList;
 					comboBox.dataProvider = new ArrayList( item[kOTHER][0] );
-					//trace( item[kDEFAULT] );
-					if( item[kDEFAULT] >=0 && item[kDEFAULT] < item[kOTHER][0].length )
-						comboBox.selectedIndex = item[kDEFAULT];
 					comboBox.prompt = "请选择";
-					comboBox.width = 85;
+					comboBox.width = 100;
+					
+					var ind:int = -1, countor:int = 0;
+					for each( var mlk:String in item[kOTHER][1] )
+					{
+						if( mlk == item[kDEFAULT] ) {
+							ind = countor;
+							break;
+						}
+						countor ++;
+					}
+					comboBox.selectedIndex = ind;
+					
+					head.addElement( comboBox );
+					this.mKey2UIComponents[item[kKEY]].push( comboBox );
+				}
+				else if( item[kTYPE] == "MonsterType" || item[kTYPE] == "BulletType" )
+				{
+					if( item[kTYPE] == "MonsterType" )
+					{
+						var monsterList:Array = [EditMonster.kCONFIGURABLE];
+						if( Data.getInstance().dynamicArgs.MonsterType )
+							monsterList.concat((Data.getInstance().dynamicArgs.MonsterType as Array));
+					} else {
+						monsterList = [];
+						if( Data.getInstance().dynamicArgs.BulletType )
+							monsterList.concat((Data.getInstance().dynamicArgs.BulletType as Array));
+					}
+					
+					ind = -1, countor = 0;
+					for each( mlk in monsterList )
+					{
+						if( mlk == item[kDEFAULT] ) {
+							ind = countor;
+							break;
+						}
+						countor ++;
+					}
+					
+					comboBox = new DropDownList;
+					comboBox.dataProvider = new ArrayList( monsterList );
+					comboBox.prompt = "请选择";
+					comboBox.selectedIndex = ind;
+					
+					comboBox.addEventListener(Event.CHANGE, function(evt:Event):void
+					{
+						var val:String =  monsterList[comboBox.selectedIndex];
+						if( val in Data.getInstance().dynamicArgs )
+						{
+							for each( var sub_item:Array in Data.getInstance().dynamicArgs[val] )
+							this.createAndRegisterItem( sub_item );
+						}
+					});
+					
+					if( item[kDEFAULT] in Data.getInstance().dynamicArgs )
+					{
+						for each( var sub_item:Array in Data.getInstance().dynamicArgs[item[kDEFAULT]] )
+							this.createAndRegisterItem( sub_item );
+					}
 					
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
@@ -272,6 +354,26 @@
 				return head;
 			}
 			
+			public static function mergeTo(from:Array, to:Array, rewrite:Boolean = false):void
+			{
+				if( !from ) return;
+				for each( var item:Array in from )
+				{
+					var inside:Boolean = false;
+					for each( var i2:Array in to )
+					{
+						if( i2[kKEY] == item[kKEY] )
+						{
+							inside = true;
+							break;
+						}
+					}
+					if( inside && !rewrite )
+						continue;
+					
+					to.push( item );
+				}
+			}
 			
 		]]>
 	</fx:Script>

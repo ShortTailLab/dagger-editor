@@ -28,7 +28,7 @@ package mapEdit
 		
 		public function AreaTrigger()
 		{
-			this.mType = AreaTrigger.TRIGGER_TYPE;
+			this.mClassId = AreaTrigger.TRIGGER_TYPE;
 			
 			this.height = this.width = 100;
 			this.x = this.y = 0;
