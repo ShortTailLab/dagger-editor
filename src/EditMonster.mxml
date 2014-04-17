@@ -117,21 +117,6 @@
 			
 			protected function genMonsterData( mid:String = null ):Array 
 			{
-//				// dynacmic args
-//				var dynamic_data:Array = [
-//					[ "基础数据", "isBoss",  "bool",   0,       "是否BOSS" ],
-//					[ "基础数据", "size",    "ccsize", [50,50], "碰撞面积" ],
-//					[ "基础数据", "health",  "float",  100,     "最大生命值" ],
-//					[ "基础数据", "attack",  "float",  10,      "物理攻击力" ],
-//					[ "基础数据", "magic",   "float",  10,      "魔法攻击力" ],
-//					[ "基础数据", "defense", "float",  10,      "物理防御力" ],
-//					[ "基础数据", "resist",  "float",  10,      "魔法防御力" ],
-//					// drops
-//					[ "掉落", "coins", "array_int", [], "铜币掉落" ],
-//					[ "掉落", "props", "array_int", [], "道具掉落" ],
-//					[ "掉落", "items", "array_int", [], "材料掉落" ]
-//				];
-				
 				var dynamic_data:Array = Data.getInstance().dynamicArgs["MonsterProfile"];
 				
 				var monster:Object = Data.getInstance().getEnemyProfileById( 
@@ -184,7 +169,7 @@
 			
 			protected function onCreateMonster(evt:Event):void
 			{				
-				var level = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
+				var level:Object = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
 				if( !level ) return ;
 				
 				var t:ConfigPanel = new ConfigPanel( );
@@ -199,7 +184,7 @@
 			
 			public function onEditMonster( lid:String, mid:String ):void
 			{
-				var level = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
+				var level:Object = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
 				if( !level ) return ;
 				
 				var t:ConfigPanel = new ConfigPanel( );
@@ -212,14 +197,86 @@
 				}, this.genMonsterData( mid ), false, MapEditor.getInstance());
 			}
 			
-			protected function onCreateBullet(evt:Event):void
+			protected function genBulletData( bid:String = null ):Array
 			{
+				var dynamic_data:Array = Data.getInstance().dynamicArgs["BulletProfile"];
 				
+				var monster:Object = Data.getInstance().getEnemyProfileById( 
+					Runtime.getInstance().currentLevelID, bid
+				);
+				
+				var skins:Array = [];
+				for( var key:String in Data.getInstance().skins )
+					skins.push( key );
+				skins.sort();
+				
+				// default items
+				if( !bid || !monster ) {
+					var enemies:Object = Data.getInstance().getEnemiesByLevelId( Runtime.getInstance().currentLevelID );
+					var id:int = int(Runtime.getInstance().currentLevelID+"001");
+					for each ( var m:Object in enemies )
+					{
+						id = Math.max( id, m.monster_id );
+					}
+					
+					var data:Array = [
+						["基础数据", "type", "BulletType", kCONFIGURABLE, "类型" ],
+						["基础数据", "monster_id", "string", String(id+1), "子弹Id" ],
+						["基础数据", "monster_name", "string", "神秘的子弹", "子弹名" ],
+						["基础数据", "face", "combo_box", -1, "资源前缀", [skins, skins]]
+					];
+					
+					ConfigPanel.mergeTo( dynamic_data, data );
+				} else {
+					for each( var item:Array in dynamic_data )
+					{
+						if( item[ConfigPanel.kKEY] in monster )
+						{
+							item[ConfigPanel.kDEFAULT] = monster[item[ConfigPanel.kKEY]];
+						}
+					}
+					
+					data = [
+						["基础数据", "type", "BulletType", "HOMEMADE", "类型" ],
+						["基础数据", "monster_id", "string", monster.monster_id, "子弹Id" ],
+						["基础数据", "monster_name", "string", monster.monster_name, "子弹名" ],
+						["基础数据", "face", "combo_box", monster.face, "资源前缀", [skins, skins]]
+					];
+					
+					ConfigPanel.mergeTo( dynamic_data, data );
+				}
+				
+				return data;
 			}
 			
-			protected function onEditBullet( lid:String, mid:String ):void
+			protected function onCreateBullet(evt:Event):void
 			{
+				var level:Object = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
+				if( !level ) return ;
 				
+				var t:ConfigPanel = new ConfigPanel( );
+				t.init( function( configs:Object ):void {
+					
+					Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs.monster_id, configs );
+					
+				}, function (err:String):void {
+					Alert.show( err );
+				}, this.genBulletData(), false, MapEditor.getInstance());
+			}
+			
+			public function onEditBullet( lid:String, bid:String ):void
+			{
+				var level:Object = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
+				if( !level ) return ;
+				
+				var t:ConfigPanel = new ConfigPanel( );
+				t.init( function( configs:Object ):void {
+					
+					Data.getInstance().updateMonster(lid, bid, configs);
+					
+				}, function (err:String):void {
+					Alert.show( err );
+				}, this.genMonsterData( bid ), false, MapEditor.getInstance());
 			}
 		]]>
 	</fx:Script>

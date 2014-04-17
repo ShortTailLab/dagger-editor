@@ -135,7 +135,7 @@ package
 			var self:BulletSelector = this;
 			item.addEventListener(MouseEvent.DOUBLE_CLICK, function(e:MouseEvent):void
 			{
-				MapEditor.getInstance().mEditMonster.onEditMonster( 
+				MapEditor.getInstance().mEditMonster.onEditBullet( 
 					Runtime.getInstance().currentLevelID, item.classId
 				);
 			});

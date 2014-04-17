@@ -184,7 +184,7 @@
 							}else
 								ret[key] = data[kOTHER][1][ind];
 						} 
-						else if( data[kTYPE] == "MonsterType" || data[kTYPE] == "MonsterType" )
+						else if( data[kTYPE] == "MonsterType" || data[kTYPE] == "MonsterType" || data[kTYPE] == "bullet" )
 						{
 							var target:DropDownList = item[0] as DropDownList;
 							ind = target.selectedIndex;
@@ -346,6 +346,35 @@
 						for each( var sub_item:Array in Data.getInstance().dynamicArgs[item[kDEFAULT]] )
 							this.createAndRegisterItem( sub_item );
 					}
+					
+					head.addElement( comboBox );
+					this.mKey2UIComponents[item[kKEY]].push( comboBox );
+				} 
+				else if ( item[kTYPE] == "bullet" )
+				{
+					var bullets:Object = Data.getInstance().getBulletsByLevelId( 
+						Runtime.getInstance().currentLevelID
+					);
+					
+					var bulletList:Array = [];
+					for each( var bullet:Object in bullets )
+						bulletList.push( bullet );
+					
+					ind = -1, countor = 0;
+					for each( mlk in bulletList )
+					{
+						if( mlk == item[kDEFAULT] ) {
+							ind = countor;
+							break;
+						}
+						countor ++;
+					}
+					bulletList.sort();
+					
+					comboBox = new DropDownList;
+					comboBox.dataProvider = new ArrayList( bulletList );
+					comboBox.prompt = "请选择";
+					comboBox.selectedIndex = ind;
 					
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
