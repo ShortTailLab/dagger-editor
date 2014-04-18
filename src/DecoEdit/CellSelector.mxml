@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Scroller xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			xmlns:s="library://ns.adobe.com/flex/spark" 
+			xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" creationComplete="onCreation()">
+	<fx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			
+			import spark.components.Label;
+			import spark.filters.GlowFilter;
+			
+			/** unit -> name */
+			private var mUnitDict:Dictionary;
+			/** name -> unit */
+			private var mNameDict:Dictionary;
+			private var mLoadDict:Dictionary;
+			static public var SELECTED_IMAGE:Sprite;
+			static public var SELECTED_CELL:String;
+			
+			private function onCreation():void {
+				this.mUnitDict = new Dictionary();
+				this.mNameDict = new Dictionary();
+				this.mLoadDict = new Dictionary();
+				for (var s:String in Data.getInstance().decoCellSet) {
+					var file:File = Data.getInstance().resolvePath("images/"+s+".png");
+					if (file.exists) {
+						var unit:UIComponent = new UIComponent();
+						this.mContainer.addElement(unit);
+						this.mNameDict[s] = unit;
+						this.mUnitDict[unit] = s;
+						
+						var loader:Loader = new Loader();
+						loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadComplete);
+						this.mLoadDict[loader] = {name:s, unit:unit};
+						loader.load(new URLRequest(file.url));
+					}
+				}
+			}
+			
+			private function onLoadComplete(event:Event):void {
+				var name:String = this.mLoadDict[event.currentTarget.loader].name;
+				var unit:UIComponent = this.mLoadDict[event.currentTarget.loader].unit;
+				var bitmap:Bitmap = event.currentTarget.content;
+				unit.addChild(bitmap);
+				bitmap.x = 75-bitmap.width/2;
+				var label:TextField = new TextField();
+				label.text = name;
+				unit.addChild(label);
+				label.y = bitmap.height;
+				label.x = 75-label.width/2;
+				label.selectable = false;
+				unit.height = bitmap.height + 30;
+				unit.buttonMode = true;
+				unit.addEventListener(MouseEvent.ROLL_OVER, onRollOverUnit);
+				unit.addEventListener(MouseEvent.ROLL_OUT, onRollOutUnit);
+				unit.addEventListener(MouseEvent.MOUSE_DOWN, onDownUnit);
+				delete this.mLoadDict[event.currentTarget.loader];
+			}
+			
+			private function onRollOverUnit(event:MouseEvent):void {
+				var filter:GlowFilter = new GlowFilter();
+				filter.color = 0xFFFF00;
+				filter.strength = 50;
+				filter.blurX = 20;
+				filter.blurY = 20;
+				(event.currentTarget as UIComponent).filters = [filter];
+			}
+			
+			private function onRollOutUnit(event:MouseEvent):void {
+				(event.currentTarget as UIComponent).filters = [];
+			}
+			
+			private function onDownUnit(event:MouseEvent):void {
+				var loader:Loader = new Loader();
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onSelectedLoadComplete);
+				var name:String = this.mUnitDict[event.currentTarget];
+				SELECTED_CELL = this.mUnitDict[event.currentTarget];
+				loader.load(new URLRequest(Data.getInstance().resolvePath("images/"+name+".png").url));
+			}
+			
+			private function onSelectedLoadComplete(event:Event):void {
+				if (SELECTED_IMAGE) {
+					SELECTED_IMAGE.removeChildren();
+				}
+				else {
+					SELECTED_IMAGE = new Sprite();
+					this.stage.addChild(SELECTED_IMAGE);
+					SELECTED_IMAGE.mouseChildren = false;
+					SELECTED_IMAGE.mouseEnabled = false;
+				}
+				var bitmap:Bitmap = event.currentTarget.content;
+				SELECTED_IMAGE.addChild(bitmap);
+				bitmap.x = -bitmap.width/2;
+				bitmap.y = -bitmap.height/2;
+				SELECTED_IMAGE.startDrag();
+				SELECTED_IMAGE.x = this.stage.mouseX;
+				SELECTED_IMAGE.y = this.stage.mouseY;
+				this.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			}
+			
+			private function onMouseUp(event:Event):void {
+				this.stage.removeEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+				CellSelector.clearSelected();
+			}
+			
+			public static function clearSelected():void {
+				if (SELECTED_IMAGE) {
+					SELECTED_IMAGE.parent.removeChild(SELECTED_IMAGE);
+				}
+				SELECTED_CELL = null;
+				SELECTED_IMAGE = null;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Group x="0" y="0" width="100%" height="100%">
+		<s:VGroup id="mContainer" x="0" y="0" width="100%" height="100%">
+		</s:VGroup>
+	</s:Group>
+</s:Scroller>

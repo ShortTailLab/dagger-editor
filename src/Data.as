@@ -304,9 +304,36 @@ package
 		
 		public function get behaviorSet():Object { return this.mBehaviorSet; }
 		public function get decoSet():Object { return this.mDecoSet; }
+		public function get decoGroupSet():Object { return this.mDecoGroupSet; }
 		public function get decoBgSet():Object { return this.mDecoBgSet; }
 		public function get decoCellSet():Object { return this.mDecoCellSet; }
-		public function get decoGroupSet():Object { return this.mDecoGroupSet; }
+		
+		public function eraseDecoSetById(id:String):void {
+			delete this.mDecoSet[id];
+			var file:File = this.resolvePath( "saved/deco/"+id+".json" );
+			if( file.exists ) 
+				file.deleteFile();
+		}
+		public function updateDecoSetById(id:String, data:Object):void {
+			this.mDecoSet[id] = data;
+			Utils.WriteObjectToJSON( // persistence
+				this.resolvePath( "saved/deco/"+id+".json" ),
+				this.mDecoSet[id]
+			);
+		}
+		public function eraseDecoGroupSetById(id:String):void {
+			delete this.mDecoGroupSet[id];
+			var file:File = this.resolvePath( "saved/deco/group/"+id+".json" );
+			if( file.exists ) 
+				file.deleteFile();
+		}
+		public function updateDecoGroupSetById(id:String, data:Object):void {
+			this.mDecoGroupSet[id] = data;
+			Utils.WriteObjectToJSON( // persistence
+				this.resolvePath( "saved/deco/group/"+id+".json" ),
+				this.mDecoGroupSet[id]
+			);
+		}
 		
 		public function getBehaviorById( bid:String ):Object
 		{

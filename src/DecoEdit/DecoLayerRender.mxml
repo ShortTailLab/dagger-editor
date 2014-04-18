@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="onCreate()">
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			
+			private var mData:Object;
+			private var mEdit:DecoLayerEdit;
+			private var mBg:UIComponent;
+			/** layer data -> SingleLayer */
+			private var mData2LayerDict:Dictionary;
+			private var mCreated:Boolean = false;
+			
+			private function onCreate():void {
+				this.mCreated = true;
+				
+				var menu:ContextMenu = new ContextMenu();
+				var item:ContextMenuItem = new ContextMenuItem("粘贴元素");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteCell);
+				menu.addItem(item);
+				this.contextMenu = menu;
+				
+				this.addEventListener(MouseEvent.MOUSE_UP, onMouseClick);
+				
+				if (this.mData) {
+					this.update();
+				}
+			}
+			
+			private function onMouseClick(event:MouseEvent):void {
+				if (CellSelector.SELECTED_CELL) {
+					if (this.mEdit.currentLayer.data.i == 0) {
+						Alert.show("不能往战斗层添加元素！");
+						return;
+					}
+					var offsetY:Number = this.height - this.mEdit.currentLayer.data.h;
+					var p:Point = new Point(this.mouseX, this.mouseY-offsetY);
+					if (p.x < 0) p.x = 0;
+					if (p.x > this.mEdit.currentLayer.data.w) p.x = this.mEdit.currentLayer.data.w;
+					if (p.y < 0) p.y = 0;
+					if (p.y > this.mEdit.currentLayer.data.h) p.y = this.mEdit.currentLayer.data.h;
+					p.y = this.mEdit.currentLayer.data.h - p.y;
+					var max:Number = 0;
+					for each (var c:SingleCell in this.mEdit.currentLayer.dict) {
+						if (c.data.i > max) {
+							max = c.data.i;
+						}
+					}
+					var newData:Object = {
+						"yt": 1,
+						"num2": 1,
+						"flipx": 0,
+						"num1": 1,
+						"r2": 0,
+						"xs1": 0,
+						"yr": 3,
+						"r1": 0,
+						"xr": 3,
+						"ys1": 0,
+						"xs2": 0,
+						"flipy": 0,
+						"s1": 1,
+						"rs1": 0,
+						"y2": p.y,
+						"y1": p.y,
+						"xt": 1,
+						"ys2": 0,
+						"s2": 1,
+						"i": max+1,
+						"x1": p.x,
+						"f": 1,
+						"ss1": 0,
+						"ss2": 0,
+						"rs2": 0,
+						"n": CellSelector.SELECTED_CELL,
+						"x2": p.x
+					}
+					this.mEdit.addCellToCurrentLayer(newData);
+				}
+			}
+			
+			private function onPasteCell(event:Event):void {
+				this.mEdit.onPasteCell(event);
+			}
+			
+			public function init(data:Object, edit:DecoLayerEdit):void {
+				this.mData = data;
+				this.mEdit = edit;
+				this.mBg = new UIComponent();
+				this.addElement(this.mBg);
+				
+				this.mData2LayerDict = new Dictionary();
+				
+				if (this.mCreated) {
+					this.update();
+				}
+			}
+			
+			private function update():void {
+				var maxWidth:Number = 960;
+				var maxHeight:Number = 1280;
+				for each (var layer:Object in this.mData.layers) {
+					if (layer.w > maxWidth) {
+						maxWidth = layer.w;
+					}
+					if (layer.h > maxHeight) {
+						maxHeight = layer.h;
+					}
+				}
+				this.width = maxWidth;
+				this.height = maxHeight;
+				for each (layer in this.mData.layers) {
+					var l:SingleLayer = new SingleLayer();
+					this.addElement(l);
+					l.setData(layer, this.mEdit);
+					this.mData2LayerDict[layer] = l;
+				}
+				this.setBg();
+			}
+			
+			public function setBg():void {
+				if (!this.mData.bg) return;
+				var file:File = Data.getInstance().resolvePath("images/bg/"+this.mData.bg+".png");
+				var loader:Loader = new Loader();
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onBgLoaded);
+				loader.load(new URLRequest(file.url));
+			}
+			
+			private function onBgLoaded(event:Event):void {
+				this.mBg.removeChildren();
+				this.mBg.addChild(event.currentTarget.content);
+			}
+			
+			public function updateBorder():void {
+				var maxWidth:Number = 960;
+				var maxHeight:Number = 1280;
+				for each (var l:Object in this.mData.layers) {
+					if (l.w > maxWidth) {
+						maxWidth = l.w;
+					}
+					if (l.h > maxHeight) {
+						maxHeight = l.h;
+					}
+				}
+				this.width = maxWidth;
+				this.height = maxHeight;
+			}
+			
+			public function addLayer(data:Object):void {
+				var l:SingleLayer = new SingleLayer();
+				this.addElement(l);
+				l.setData(data, this.mEdit);
+				this.mData2LayerDict[data] = l;
+				this.sortLayers();
+			}
+			
+			public function deleteLayer(data:Object):void {
+				var l:SingleLayer = this.mData2LayerDict[data];
+				if (l) {
+					this.removeElement(l);
+					delete this.mData2LayerDict[data];
+				}
+			}
+			
+			public function sortLayers():void {
+				var layers:Array = new Array();
+				for each (var l:SingleLayer in this.mData2LayerDict) {
+					layers.push(l);
+				}
+				layers.sort(sortByLayerIndex);
+				for (var i:int = 0; i < layers.length; i++) {
+					this.setElementIndex(layers[i], i+1);
+				}
+			}
+			
+			private function sortByLayerIndex(a:SingleLayer, b:SingleLayer):int {
+				return a.data.i - b.data.i;
+			}
+			
+			public function get dict():Dictionary { return this.mData2LayerDict; }
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+</s:Group>
