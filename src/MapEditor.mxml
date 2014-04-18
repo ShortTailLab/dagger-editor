@@ -331,7 +331,7 @@
 			
 			private function onPressDeco(event:Event):void {
 				var deco:DecoPanel = new DecoPanel();
-				deco.init("", this.stage.stageWidth, this.stage.stageHeight);
+				deco.init(this.mDeco.textInput.text, this.stage.stageWidth, this.stage.stageHeight);
 				EventManager.getInstance().addEventListener(EventType.DECO_PANEL_CLOSE, onDecoClose);
 				PopUpManager.addPopUp(deco, MapEditor.getInstance());
 			}

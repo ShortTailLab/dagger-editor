@@ -550,6 +550,22 @@
 				this.setCellProperties();
 			}
 			
+			private var mPreviewer:Previewer;
+			public function startPreview():void {
+				this.mPreviewer = new Previewer();
+				this.mPreviewer.setData(Utils.cloneObjectData(this.mData), this.mContainer.parent.width, this.mContainer.parent.height);
+				this.mRender.visible = false;
+				this.mContainer.addElement(this.mPreviewer);
+				this.mPreviewer.y = this.mContainer.parent.height;
+			}
+			
+			public function stopPreview():void {
+				this.mPreviewer.destroy();
+				this.mContainer.removeElement(this.mPreviewer);
+				this.mPreviewer = null;
+				this.mRender.visible = true;
+			}
+			
 			public function get currentLayer():SingleLayer { return this.mCurrentLayer; }
 			public function set currentLayer(value:SingleLayer):void { this.mCurrentLayer = value; }
 			public function get currentCell():SingleCell { return this.mCurrentCell; }
@@ -617,9 +633,9 @@
 				<s:Label x="0" y="510" width="30" text="旋转速度"/>
 				<s:Label x="0" y="550" width="30" text="每屏数量"/>
 				<s:HGroup x="49" y="55" horizontalAlign="left">
-					<s:RadioButton label="固定" click="onAttrChanged(event)" groupName="radiogroup1"
+					<s:RadioButton label="固定" click="onAttrChanged(event)" groupName="radiogroup1" toolTip="元素的属性为固定的"
 								   selected="true"/>
-					<s:RadioButton label="随机" click="onAttrChanged(event)" groupName="radiogroup1"/>
+					<s:RadioButton label="随机" click="onAttrChanged(event)" groupName="radiogroup1" toolTip="元素属性为随机的"/>
 				</s:HGroup>
 				<s:HGroup x="26" y="91">
 					<s:TextInput id="mX1" x="0" y="0" width="50" change="onValueChanged(event)"/>
@@ -628,14 +644,14 @@
 				</s:HGroup>
 				<s:VGroup x="26" y="115" horizontalAlign="left">
 					<s:HGroup>
-						<s:RadioButton label="abs" click="onValueChanged(event)" groupName="radiogroup2"
+						<s:RadioButton label="abs" click="onValueChanged(event)" groupName="radiogroup2" toolTip="位置为绝对值"
 									   selected="true"/>
-						<s:RadioButton label="p%" click="onValueChanged(event)" groupName="radiogroup2"/>
+						<s:RadioButton label="p%" click="onValueChanged(event)" groupName="radiogroup2" toolTip="位置为相对屏幕宽度百分比"/>
 					</s:HGroup>
 					<s:HGroup>
-						<s:RadioButton label="┗" click="onValueChanged(event)" groupName="radiogroup3"
+						<s:RadioButton label="┗" click="onValueChanged(event)" groupName="radiogroup3" toolTip="位置相对于屏幕左边界"
 									   selected="true"/>
-						<s:RadioButton label="┛" click="onValueChanged(event)" groupName="radiogroup3"/>
+						<s:RadioButton label="┛" click="onValueChanged(event)" groupName="radiogroup3" toolTip="位置相对于屏幕右边界"/>
 						<s:RadioButton visible="false" label="┏" click="onValueChanged(event)" groupName="radiogroup3"/>
 						<s:RadioButton visible="false" label="┓" click="onValueChanged(event)" groupName="radiogroup3"/>
 					</s:HGroup>
@@ -647,13 +663,13 @@
 				</s:HGroup>
 				<s:VGroup x="26" y="195" horizontalAlign="left">
 					<s:HGroup>
-						<s:RadioButton label="abs" click="onValueChanged(event)" groupName="radiogroup4"
+						<s:RadioButton label="abs" click="onValueChanged(event)" groupName="radiogroup4" toolTip="位置为绝对值"
 									   selected="true"/>
-						<s:RadioButton label="p%" click="onValueChanged(event)" groupName="radiogroup4"/>
+						<s:RadioButton label="p%" click="onValueChanged(event)" groupName="radiogroup4" toolTip="位置为相对屏幕宽度百分比"/>
 					</s:HGroup>
 					<s:HGroup>
-						<s:RadioButton label="┏" click="onValueChanged(event)" groupName="radiogroup5"/>
-						<s:RadioButton label="┗" click="onValueChanged(event)" groupName="radiogroup5"
+						<s:RadioButton label="┏" click="onValueChanged(event)" groupName="radiogroup5" toolTip="位置相对于屏幕上边界"/>
+						<s:RadioButton label="┗" click="onValueChanged(event)" groupName="radiogroup5" toolTip="位置相对于屏幕下边界"
 									   selected="true"/>
 						<s:RadioButton visible="false" label="┓" click="onValueChanged(event)" groupName="radiogroup5"/>
 						<s:RadioButton visible="false" label="┛" click="onValueChanged(event)" groupName="radiogroup5"/>

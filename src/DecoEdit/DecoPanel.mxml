@@ -34,6 +34,7 @@
 			private var mLastAddedTab:String;
 			private var mModifiedAndSavedGroups:Object;
 			public static var CTRL_KEY:Boolean = false;
+			private var mDefaultTabName:String;
 
 			private function onCreation():void {
 				this.mTabDict = new Object();
@@ -61,7 +62,7 @@
 				this.mCellSelector.addElement(cellSelector);
 				this.setLibrary();
 				if (this.mFilteredLibrary.length > 0) {
-					this.addTab(this.mFilteredLibrary[0], 1);
+					this.addTab(this.mDefaultTabName==""?this.mFilteredLibrary[0]:this.mDefaultTabName, 1);
 				}
 				
 				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
@@ -110,6 +111,7 @@
 			public function init(name:String, w:Number, h:Number):void {
 				this.width = w;
 				this.height = h;
+				this.mDefaultTabName = name;
 			}
 			
 			private function setLibrary():void {
@@ -286,7 +288,23 @@
 			}
 			
 			private function onPressPreview(event:Event):void {
-				
+				if (this.mTabNavigator.selectedIndex < 0) return;
+				if (this.mPreviewBtn.content == "预览效果") {
+					this.mPreviewBtn.content = "取消预览";
+					var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+					var info:Object = this.mTabDict[current];
+					if (info.type == 1) {
+						(info.edit as DecoLayerEdit).startPreview();
+					}
+				}
+				else {
+					this.mPreviewBtn.content = "预览效果";
+					var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+					var info:Object = this.mTabDict[current];
+					if (info.type == 1) {
+						(info.edit as DecoLayerEdit).stopPreview();
+					}
+				}
 			}
 			
 			private function onSearchChanged(event:Event):void {
@@ -489,7 +507,7 @@
 	<s:HGroup x="0" y="0" width="100%" height="30">
 		<s:Button width="80" height="25" label="保存当前" click="onPressSave(event)"/>
 		<s:Button width="80" height="25" label="保存所有" click="onPressSaveAll(event)"/>
-		<s:Button width="80" height="25" label="预览效果" click="onPressPreview(event)"/>
+		<s:Button id="mPreviewBtn" width="80" height="25" label="预览效果" click="onPressPreview(event)"/>
 	</s:HGroup>
 	<s:HGroup left="0" top="30" width="100%" height="100%" gap="5">
 		<s:Panel width="150" height="100%" borderVisible="false" dropShadowVisible="false"

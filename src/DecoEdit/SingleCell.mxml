@@ -186,7 +186,7 @@
 			}
 			
 			private function onImageLoad(event:Event):void {
-				var bitmap:Bitmap = event.currentTarget.content
+				var bitmap:Bitmap = event.currentTarget.content;
 				this.addChild(bitmap);
 				bitmap.x = -bitmap.width/2;
 				bitmap.y = -bitmap.height/2;
