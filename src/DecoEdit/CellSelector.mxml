@@ -95,6 +95,12 @@
 				SELECTED_IMAGE.startDrag();
 				SELECTED_IMAGE.x = this.stage.mouseX;
 				SELECTED_IMAGE.y = this.stage.mouseY;
+				this.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			}
+			
+			private function onMouseUp(event:Event):void {
+				this.stage.removeEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+				CellSelector.clearSelected();
 			}
 			
 			public static function clearSelected():void {

@@ -23,22 +23,125 @@
 				this.addEventListener(MouseEvent.ROLL_OVER, onRollOver);
 				this.addEventListener(MouseEvent.ROLL_OUT, onRollOut);
 				
+				var menu:ContextMenu = new ContextMenu();
+				var item:ContextMenuItem = new ContextMenuItem("复制");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCopyCell);
+				menu.addItem(item);
+				item = new ContextMenuItem("删除");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteCell);
+				menu.addItem(item);
+				item = new ContextMenuItem("置顶");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onMoveTopCell);
+				menu.addItem(item);
+				item = new ContextMenuItem("上移一层");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onMoveUpCell);
+				menu.addItem(item);
+				item = new ContextMenuItem("下移一层");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onMoveDownCell);
+				menu.addItem(item);
+				item = new ContextMenuItem("置底");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onMoveBottomCell);
+				menu.addItem(item);
+				this.contextMenu = menu;
+				
 				this.setSelected(this.data == this.mEdit.currentCellData);
 			}
 			
+			private function onCopyCell(event:Event):void {
+				this.mEdit.onCopyCell(this.mData);
+			}
+			
+			private function onDeleteCell(event:Event):void {
+				this.mEdit.deleteCell(this, this.mLayer);
+			}
+			
+			private function onMoveTopCell(event:Event):void {
+				var max:Number = this.data.i;
+				for each (var c:SingleCell in this.mLayer.dict) {
+					if (c != this && c.data.i > max) {
+						max = c.data.i;
+					}
+				}
+				if (max != this.data.i) {
+					this.data.i = max+1;
+					this.mLayer.sortCells();
+				}
+			}
+			
+			private function onMoveUpCell(event:Event):void {
+				var cells:Array = new Array();
+				for each (var c:SingleCell in this.mLayer.dict) {
+					cells.push(c);
+				}
+				cells.sort(this.mLayer.sortByCellIndex);
+				var index:int = cells.indexOf(this);
+				if (index != cells.length-1) {
+					if (index == cells.length-2) {
+						this.mData.i = cells[cells.length-1].data.i+1;
+					}
+					else {
+						this.mData.i = (cells[index+1].data.i+cells[index+2].data.i)/2;
+					}
+				}
+				this.mLayer.sortCells();
+			}
+			
+			private function onMoveDownCell(event:Event):void {
+				var cells:Array = new Array();
+				for each (var c:SingleCell in this.mLayer.dict) {
+					cells.push(c);
+				}
+				cells.sort(this.mLayer.sortByCellIndex);
+				var index:int = cells.indexOf(this);
+				if (index != 0) {
+					if (index == 1) {
+						this.mData.i = cells[0].data.i-1;
+					}
+					else {
+						this.mData.i = (cells[index-1].data.i+cells[index-2].data.i)/2;
+					}
+				}
+				this.mLayer.sortCells();
+			}
+			
+			private function onMoveBottomCell(event:Event):void {
+				var min:Number = this.data.i;
+				for each (var c:SingleCell in this.mLayer.dict) {
+					if (c != this && c.data.i < min) {
+						min = c.data.i;
+					}
+				}
+				if (min != this.data.i) {
+					this.data.i = min-1;
+					this.mLayer.sortCells();
+				}
+			}
+			
+			private var lastMouse:Point;
 			private function onMouseDown(event:MouseEvent):void {
 				if (this.mSelected) {
 					this.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 					this.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+					lastMouse = new Point(this.stage.mouseX, this.stage.mouseY);
 				}
 			}
 			
 			private function onMouseMove(event:MouseEvent):void {
-				var newX:Number = this.mouseX;
-				var newY:Number = this.mouseY;
+				var newX:Number = this.x + this.stage.mouseX - lastMouse.x;
+				var newY:Number = this.y + this.stage.mouseY - lastMouse.y;
 				if (newX < 0) newX = 0;
 				if (newX > this.mLayer.data.w) newX = this.mLayer.data.w;
-				
+				if (newY < 0) newY = 0;
+				if (newY > this.mLayer.data.h) newY = this.mLayer.data.h;
+				this.x = newX;
+				this.y = newY;
+				var newPos:Object = SingleLayer.toCocosWorld(this.x, this.y, this.mData, this.mLayer.data);
+				this.mData.x1 = newPos.x;
+				this.mData.y1 = newPos.y;
+				this.mEdit.updateCurrentCell();
+				this.mEdit.setModified(true);
+				lastMouse.x = this.stage.mouseX;
+				lastMouse.y = this.stage.mouseY;
 			}
 			
 			private function onMouseUp(event:MouseEvent):void {
@@ -47,6 +150,7 @@
 			}
 			
 			private function onMouseClick(event:MouseEvent):void {
+				if (this.mSelected) return;
 				this.setSelected(!this.mSelected);
 				if (this.mSelected) {
 					this.mEdit.setCurrent(this.mLayer, this);

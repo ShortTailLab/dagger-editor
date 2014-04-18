@@ -29,6 +29,7 @@
 					this.mCellContainer.addChild(c);
 				}
 				this.updateBorder();
+				this.sortCells();
 				if (this.data == this.mEdit.currentLayerData) {
 					this.setSelected(true);
 					this.mEdit.currentLayer = this;
@@ -56,6 +57,44 @@
 			
 			public function setSelected(bool:Boolean):void {
 				this.mBorder.visible = bool;
+			}
+			
+			public function addCell(data:Object):void {
+				var max:Number = 0;
+				for each (var cell:Object in this.mData.cells) {
+					if (max < cell.i) {
+						max = cell.i;
+					}
+				}
+				data.i = max + 1;
+				var c:SingleCell = new SingleCell();
+				this.mData2CellDict[data] = c;
+				c.setData(data, this, this.mEdit);
+				this.mCellContainer.addChild(c);
+				this.sortCells();
+			}
+			
+			public function deleteCell(data:Object):void {
+				var c:SingleCell = this.mData2CellDict[data];
+				if (c) {
+					this.mCellContainer.removeChild(c);
+					delete this.mData2CellDict[data];
+				}
+			}
+			
+			public function sortCells():void {
+				var cells:Array = new Array();
+				for each (var c:SingleCell in this.mData2CellDict) {
+					cells.push(c);
+				}
+				cells.sort(sortByCellIndex);
+				for (var i:int = 0; i < cells.length; i++) {
+					this.mCellContainer.setChildIndex(cells[i], i);
+				}
+			}
+			
+			public function sortByCellIndex(a:SingleCell, b:SingleCell):Number {
+				return a.data.i - b.data.i;
 			}
 			
 			public static function toFlexWorld(cell:Object, layer:Object):Object {
