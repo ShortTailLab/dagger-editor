@@ -6,25 +6,34 @@ package
 		public function DataParser() {}
 		
 		// ---
-		static public function genMonstersTable( profiles:Object ):Object
+		static public function genMonstersTable( chapters:Object ):Object
 		{
 			var ret:Object = {};
-			for( var lid:String in profiles )
+			
+			for each( var chapter:Object in chapters )
 			{
-				for( var mid:String in profiles[lid].monsters )
+				var profiles:Object = chapter.levels;
+				for( var lid:String in profiles )
 				{
-					ret[mid] = profiles[lid].monsters[mid];
+					for( var mid:String in profiles[lid].monsters )
+					{
+						ret[mid] = profiles[lid].monsters[mid];
+					}
 				}
 			}
 			return ret; 
 		}
 		
-		static public function genLevel2MonsterTable( profiles:Object ):Object
+		static public function genLevel2MonsterTable( chapters:Object ):Object
 		{
 			var ret:Object = {};
-			for( var lid:String in profiles )
+			for each( var chapter:Object in chapters )
 			{
-				ret[lid] = profiles[lid].monsters;
+				var profiles:Object = chapter.levels;
+				for( var lid:String in profiles )
+				{
+					ret[lid] = profiles[lid].monsters;
+				}
 			}
 			return ret;
 		}

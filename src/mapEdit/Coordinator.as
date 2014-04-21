@@ -26,16 +26,15 @@ package mapEdit
 		
 		public function setMeshDensity( unitWidth:int, unitHeight:int, height:Number, base:Number ):void
 		{
-			
 			this.mUnitWidth 	= unitWidth;
 			this.mUnitHeight 	= unitHeight;
-			
+				
 			this.mNumRows 		= int(height / unitHeight);
 			this.mNumColums 	= int( MainScene.kSCENE_WIDTH / unitWidth );
 			this.mNumColums    /= 2;
 			this.mUnitWidth 	= MainScene.kSCENE_WIDTH/2 / this.mNumColums;
 			
-			this.mTickInterval 	= height / (this.mNumRows/5);
+			this.mTickInterval 	= 80;
 			
 			this.removeChildren();
 			

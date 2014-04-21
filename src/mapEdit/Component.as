@@ -7,6 +7,7 @@ package mapEdit
 		public function dtor():void{};
 		
 		public function select(value:Boolean):void {}
+		public function setSize( value:Number ):void {}
 		public function setBaseSize( value:Number  ):void {}
 		public function unserialize(data:Object):void {}
 		public function serialize():Object { return{}; }
@@ -15,7 +16,10 @@ package mapEdit
 		public function get globalId():String{ return this.mGlobalId; }
 		public function set globalId(v:String):void { this.mGlobalId = v; }
 		
-		protected var mType:String = null;
-		public function get type():String { return this.mType; }
+		protected var mClassId:String = null;
+		public function get classId():String { return this.mClassId; }
+		
+//		protected var mSubType:String = null;
+//		public function get type():String { return this.mSubType; }
 	}
 }

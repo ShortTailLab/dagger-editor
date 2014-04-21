@@ -35,8 +35,10 @@ package mapEdit
 			// clean up
 			this.removeChildren();
 			
-			this.mType = type;
-			var profile:* = Data.getInstance().getEnemyProfileById( type );
+			this.mClassId = type;
+			var profile:* = Data.getInstance().getEnemyProfileById( 
+				Runtime.getInstance().currentLevelID, type 
+			);
 			
 			// --- > skin
 			this.mSkin = new Sprite;
@@ -75,7 +77,7 @@ package mapEdit
 	
 		override public function unserialize(data:Object):void
 		{
-			if( this.mType != data.type )
+			if( this.mClassId != data.type )
 				throw new Error("bad args");
 			this.mGlobalId	= data.id;
 			this.x 			= data.x * Runtime.getInstance().sceneScalor;
@@ -96,7 +98,7 @@ package mapEdit
 		{
 			var obj:Object = new Object;
 			obj.id 		= this.globalId;
-			obj.type 	= this.mType;
+			obj.type 	= this.mClassId;
 			obj.x 		= Number( this.x / Runtime.getInstance().sceneScalor );
 			obj.y 		= Number( -this.y / Runtime.getInstance().sceneScalor );
 			
@@ -145,7 +147,7 @@ package mapEdit
 		{
 			if(this.mTriggeredTime >= 0 && !this.mShadowTips)
 			{
-				this.mShadowTips = new Entity( this.mType, false );
+				this.mShadowTips = new Entity( this.mClassId, false );
 				this.mShadowTips.setBaseSize( 50 );
 				this.mShadowTips.alpha = 0.5;
 				this.mShadowTips.x = 0;
@@ -182,7 +184,7 @@ package mapEdit
 			this.mSkin.scaleX = this.mSkin.scaleY = scale*this.mProfileScalor;
 		}
 		
-		public function setSize( value:Number ):void
+		override public function setSize( value:Number ):void
 		{
 			var scale:Number = Math.min( 
 				value/this.mSkin.width, 

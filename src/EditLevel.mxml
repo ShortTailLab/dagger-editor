@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:ns1="*"
+		  width="200" height="100%" creationComplete="onCreate()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import DecoEdit.DecoPanel;
+			
+			import bgedit.BgEditView;
+			import bgedit.BgModel;
+			
+			import excel.SkillConfigReader;
+			
+			import manager.EventManager;
+			import manager.EventType;
+			import manager.SyncManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.Tree;
+			import mx.events.ResizeEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Group;
+			import spark.components.VScrollBar;
+			
+			// ---------------------------------------------------------
+			
+			////// entrance
+			
+			// setup during launch of app
+			private function onCreate():void
+			{
+				// update level tree view;
+				this.mInformPanel.mRootPanel.title = "未选中任何关卡";
+				this.mInformPanel.mConfirmButton.label = "修改";
+				this.mInformPanel.mConfirmButton.width = 50;
+				this.mInformPanel.init( this.onConfirm, this.onError, [], true );
+				
+				var erase:Button = new Button;
+				erase.left = 5; erase.bottom = 5; erase.height = 25; erase.width = 50;
+				erase.label = "删除";
+				this.mInformPanel.mRootPanel.addElement( erase );
+				
+				this.mMakeChapter.addEventListener(MouseEvent.CLICK, this.onMakeChapter);
+				this.mMakeLevel.addEventListener(MouseEvent.CLICK, this.onMakeLevel);
+			}
+			
+			public function refresh():void
+			{
+				with( this.mLevelTree ) {
+					visible = true; 
+					selectedIndex = 0;
+				}
+				
+				this.mLevelTree.dataProvider = Data.getInstance().genLevelXML();
+			}
+			
+			protected var mCurrentId:String = null;
+			protected var mIsChapter:Boolean = false;
+			public function onItemClick(event:Event):void
+			{
+				var item:XML = this.mLevelTree.selectedItem as XML;
+				if(item.name() == "level")
+				{
+					Runtime.getInstance().currentLevelID = item.@id;
+					this.mIsChapter = false;
+					this.mInformPanel.refresh( this.genLevelData( item.@id ) );
+				} else {
+					this.mIsChapter = true;
+					this.mInformPanel.refresh( this.genChapterData( item.@id ) );
+				}
+				this.mCurrentId = item.@id;
+				this.mInformPanel.mRootPanel.title = item.@id+" | "+item.@label;
+			}
+			
+			protected function genLevelData( lid:String = null ):Array
+			{
+				var ld:Object = Data.getInstance().getLevelProfileById( lid );
+				
+				var chapter:Array = [[], []];
+				for each( var item:Object in Data.getInstance().chapters )
+				{
+					chapter[0].push( item.id +"|"+ item.name );
+					chapter[1].push( item.id );
+				}
+				
+				if( ld )
+				{	
+					var data:Array = [
+						[ "配置", "chapter_id", "combo_box", ld.chapter_id, "所属章节", chapter ],
+						[ "配置", "level_id", "string", ld.level_id, "关卡id" ],
+						[ "配置", "level_name", "string", ld.level_name, "关卡名" ]
+					];
+				} else {
+					
+
+					var nextId:int = int(Runtime.getInstance().currentLevelID);
+					for each ( var c:Object in Data.getInstance().chapters )
+					{
+						for each ( var level:Object in c.levels )
+							nextId = Math.max( nextId, int(level.level_id) );
+					}
+					
+					
+					data = [
+						[ "配置", "chapter_id", "combo_box", -1, "所属章节", chapter ],
+						[ "配置", "level_id", "string", String(nextId+1), "关卡id" ],
+						[ "配置", "level_name", "string", "关卡"+String(nextId+1), "关卡名" ]
+					];
+				}
+				
+				
+				if( "Level" in Data.getInstance().dynamicArgs )
+				{
+					//					for each( var arr:Array in Data.getInstance().dynamicArgs )
+					//					{
+					//						if( arr[ConfigPanel.kKEY] != "level_id" && 
+					//							arr[ConfigPanel.kKEY] != "level_name" )
+					//						{
+					//							data.push( arr );
+					//						}
+					//					}
+				}
+				
+				return data;
+			}
+			
+			protected function genChapterData( cid:String = null ):Array
+			{
+				var chapter:Object = Data.getInstance().chapters[cid];
+				
+				if( !chapter )
+				{
+					var nextId:int = 0;
+					for each ( var m:Object in Data.getInstance().chapters )
+					{
+						nextId = Math.max( nextId, int(m.id) );
+					}
+					
+					return [
+						[ "配置", "chapter_id", "string", String(nextId+1), "章节id" ],
+						[ "配置", "chapter_name", "string", "章节"+String(nextId+1), "章节名" ]
+					];
+				} else {
+					return [
+						[ "配置", "chapter_id", "string", chapter.id, "章节id" ],
+						[ "配置", "chapter_name", "string", chapter.name, "章节名" ]
+					];
+				}
+			}
+			
+			protected function onMakeLevel( evt:Event ):void
+			{
+				var self:EditLevel = this;
+				
+				var t:ConfigPanel = new ConfigPanel( );
+				t.init( function( configs:Object ):void {
+					
+					if( configs.chapter == -1 )
+					{
+						Alert.show("【创建失败】请选择所属章节");
+						return ;
+					}
+					
+					Data.getInstance().makeLevel( configs.chapter_id, configs.level_id, configs );
+					self.refresh();
+					
+				}, function (err:String):void { Alert.show( err ); }, this.genLevelData( ), false, this);
+				
+				t.mRootPanel.title = "新建关卡";
+			}
+			
+			protected function onMakeChapter( evt:Event ): void
+			{
+				var self:EditLevel = this;
+				var t:ConfigPanel = new ConfigPanel( );
+				t.init( function( configs:Object ):void {
+					
+					Data.getInstance().makeChapter( 
+						configs.chapter_id, configs.chapter_name 
+					);
+					self.refresh();
+					
+				}, function (err:String):void { Alert.show( err ); }, this.genChapterData( ), false, this);
+				t.mRootPanel.title = "新建章节";
+			}
+			
+			protected function setCurrLevel( lid:String ):void
+			{
+				Runtime.getInstance().currentLevelID = lid;
+			}
+			
+			protected function onConfirm( data:Object ):void 
+			{
+				Utils.dumpObject( data );
+				if( this.mIsChapter )
+					Data.getInstance().updateChapter( this.mCurrentId, data.chapter_name );
+				else 
+					Data.getInstance().updateLevel( this.mCurrentId, data );
+				this.refresh();
+			}
+			
+			protected function onError( err:String ):void
+			{
+				Alert.show( err );
+			}
+
+		]]>
+	</fx:Script>
+	<mx:VDividedBox width="100%" height="100%">
+		
+		<s:Panel width="100%" height="100%" borderVisible="true" chromeColor="#CFCFCF"
+				 dropShadowVisible="true" fontFamily="Arial" fontSize="13" fontStyle="normal"
+				 fontWeight="normal" textDecoration="none" title="关卡列表">
+			<s:Group id="mLevelContent" left="0" right="0" top="0" bottom="35">
+				<mx:Tree id="mLevelTree" visible="false" showRoot="false" width="100%" height="100%" borderVisible="false" 
+						 itemClick="onItemClick(event)" labelField="@label">
+				</mx:Tree>
+			</s:Group>
+			<s:Button id="mMakeLevel" right="5" bottom="5" label="新建关卡"/>
+			<s:Button id="mMakeChapter" left="5" bottom="5" label="新建章节"/>
+		</s:Panel>
+
+		
+		<ns1:ConfigPanel id="mInformPanel" width="100%" height="50%" >
+			<ns1:layout>
+				<s:BasicLayout/>
+			</ns1:layout>
+		</ns1:ConfigPanel>
+		
+	</mx:VDividedBox>
+</s:Module>
