@@ -978,32 +978,36 @@ package
 				};
 			}
 			
+			var monsters:Object = Data.getInstance().getMonstersByLevelId( lid );
+			var bullets:Object = Data.getInstance().getBulletsByLevelId( lid );
+			var traps:Object = Data.getInstance().getTrapsByLevelId( lid );
+			
 			export.actor = new Object; 
 			var bhs:Object = {};
-			for( var key:String in profile.monsters )
+			for( var index:String in profile.monsters )
 			{
-				var monster:Object = profile.monsters[key];
+				var monster:Object = profile.monsters[index];
 				if( !this.isMonster( monster.type ) )
 					continue;
 				
-				export.actor[key] = Utils.deepCopy(monster); 
-				export.actor[key].triggers = this.mLevelInstancesTable[lid].trigger[key] || [];
+				export.actor[index] = Utils.deepCopy(monster); 
+				export.actor[index].triggers = this.mLevelInstancesTable[lid].trigger[index] || [];
 				
 				if( monster.type == EditMonster.kCONFIGURABLE && 
-					(	!this.mLevelInstancesTable[lid].behavior.hasOwnProperty(key) ||
-						this.mLevelInstancesTable[lid].behavior[key].length == 0 ) )
+					(	!this.mLevelInstancesTable[lid].behavior.hasOwnProperty(index) ||
+						this.mLevelInstancesTable[lid].behavior[index].length == 0 ) )
 				{
-					return "【失败】自定义怪物"+key+"未被设置行为";
+					return "【失败】自定义怪物"+index+"未被设置行为";
 				}
 				
 				if( monster.type == EditMonster.kCONFIGURABLE )
 				{
-					this.mLevelInstancesTable[lid].behavior[key].forEach(
+					this.mLevelInstancesTable[lid].behavior[index].forEach(
 						function(item:*, ...args):void {
 							bhs[item] = true;
 						}, 
 						null);
-					export.actor[key].behaviors = this.mLevelInstancesTable[lid].behavior[key];
+					export.actor[index].behaviors = this.mLevelInstancesTable[lid].behavior[index];
 				}
 				
 				if( "MonsterProfile" in Data.getInstance().dynamicArgs )
@@ -1011,16 +1015,29 @@ package
 					var monster_profile:Object = Data.getInstance().dynamicArgs.MonsterProfile || {};
 					for each( item in monster_profile )
 					{
-						var item_key:String = item[ConfigPanel.kKEY];
-						if( !(item_key in export.actor[key]) )
-							return "【失败】怪物"+key+"的属性"+item_key+"未被设置";
+						var ikey:String = item[ConfigPanel.kKEY];
+						var itype:String = item[ConfigPanel.kTYPE];
 						
-						if( item[ConfigPanel.kTYPE] == "ccp" )
+						if( !(ikey in export.actor[index]) )
+							return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
+						
+						if( itype == "ccp" )
 						{
-							export.actor[key][item_key] = "@@cc.p("+monster[item_key][0]+", "+monster[item_key][1]+")@@";
-						} else if (item[ConfigPanel.kTYPE] == "ccsize" )
+							export.actor[index][ikey] = "@@cc.p("+monster[ikey][0]+", "+monster[ikey][1]+")@@";
+						} 
+						else if ( itype == "ccsize" )
 						{
-							export.actor[key][item_key] = "@@cc.size("+monster[item_key][0]+", "+monster[item_key][1]+")@@";
+							export.actor[index][ikey] = "@@cc.size("+monster[ikey][0]+", "+monster[ikey][1]+")@@";
+						} 
+						else if ( itype == "bullet" )
+						{
+							if( !(export.actor[index][ikey] in bullets) )
+								return "【失败】子弹  "+export.actor[index][ikey]+"  是无效的";
+						}
+						else if ( itype == "actor" )
+						{
+							if( !(export.actor[index][ikey] in monsters) )
+								return "【失败】怪物  "+export.actor[index][ikey]+"  是无效的";
 						}
 					}
 				}
@@ -1031,50 +1048,62 @@ package
 					monster_profile = Data.getInstance().dynamicArgs[monster.type];
 					for each( item in monster_profile )
 					{
-						item_key = item[ConfigPanel.kKEY];
-						if( !(item_key in export.actor[key]) )
-							return "【失败】怪物"+key+"的属性"+item_key+"未被设置";
+						ikey = item[ConfigPanel.kKEY];
+						itype = item[ConfigPanel.kTYPE];
+						if( !(ikey in export.actor[index]) )
+							return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
 						
-						if( item[ConfigPanel.kTYPE] == "ccp" )
+						if( itype == "ccp" )
 						{
-							export.actor[key][item_key] = "@@cc.p("+monster[item_key][0]+", "+monster[item_key][1]+")@@";
-						} else if (item[ConfigPanel.kTYPE] == "ccsize" )
+							export.actor[index][ikey] = "@@cc.p("+monster[ikey][0]+", "+monster[ikey][1]+")@@";
+						} 
+						else if ( itype == "ccsize" )
 						{
-							export.actor[key][item_key] = "@@cc.size("+monster[item_key][0]+", "+monster[item_key][1]+")@@";
+							export.actor[index][ikey] = "@@cc.size("+monster[ikey][0]+", "+monster[ikey][1]+")@@";
+						}
+						else if ( itype == "bullet" )
+						{
+							if( !(export.actor[index][ikey] in bullets) )
+								return "【失败】"+index+"中配置的子弹  ["+export.actor[index][ikey]+"] 是无效的";
+						}
+						else if ( itype == "actor" )
+						{
+							if( !(export.actor[index][ikey] in monsters) )
+								return "【失败】"+index+"中配置的生成怪物  ["+export.actor[index][ikey]+"] 是无效的";
 						}
 					}
 				}
 			}
 
 			export.behavior = new Object;
-			for( key in bhs )
+			for( index in bhs )
 			{
-				if( !this.mBehaviorSet.hasOwnProperty(key) ) {
-					return "【失败】试图导出不存在的行为"+key;
+				if( !this.mBehaviorSet.hasOwnProperty(index) ) {
+					return "【失败】试图导出不存在的行为"+index;
 				}
-				var raw:String = Utils.genBTreeJS(Utils.cloneObjectData(this.mBehaviorSet[key]));
-				export.behavior[key] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
+				var raw:String = Utils.genBTreeJS(Utils.cloneObjectData(this.mBehaviorSet[index]));
+				export.behavior[index] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
 					""+raw+";}@@");
 			} 
 			
 			// export bullet
 			export.bullet = new Object;
-			for( key in profile.monsters ) 
+			for( index in profile.monsters ) 
 			{
 			
-				if( this.isBullet( profile.monsters[key].type ) )
+				if( this.isBullet( profile.monsters[index].type ) )
 				{
-					export.bullet[key] = profile.monsters[key];
+					export.bullet[index] = profile.monsters[index];
 				}
 			}
 			
 			// export trap
 			export.trap = new Object;
-			for( key in profile.monsters )
+			for( index in profile.monsters )
 			{
-				if( this.isTrap( profile.monsters[key].type )  )
+				if( this.isTrap( profile.monsters[index].type )  )
 				{
-					export.trap[key] = profile.monsters[key];
+					export.trap[index] = profile.monsters[index];
 				}
 			}
 			

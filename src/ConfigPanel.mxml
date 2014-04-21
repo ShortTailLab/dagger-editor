@@ -33,6 +33,7 @@
 			protected var mKey2Group:Object = {};
 			protected var mKey2UIComponents:Object = {};
 			protected var mKey2Data:Object = {};
+			protected var mKey2Index:Object = {};
 			protected var mSource:Array = [];
 			protected var mIsPopUp:DisplayObject = null;
 			protected var mIgnoreTag:Boolean = false;
@@ -45,6 +46,7 @@
 			public static const kDEFAULT:int = 3;
 			public static const kDESC:int 	= 4;
 			public static const kOTHER:int 	= 5;
+			public static const kMAX:int 	= 6;
 			
 			protected function onCreate():void  {
 				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
@@ -122,12 +124,18 @@
 			public function refresh( data:Array ):void 
 			{
 				this.mSource = Utils.deepCopy( data ) as Array;
+				for each( var item:Array in this.mSource )
+				{
+					while( item.length <= kMAX )
+						item.push( "wc" );
+				}
 				
 				// make items by group
 				{	
 					this.mKey2Data = {};
 					this.mKey2Group = {};
 					this.mKey2UIComponents = {};
+					this.mKey2Index = {};
 					this.mTabNavigator.removeAllChildren();
 					this.mTabNavigator.removeAllElements();
 					
@@ -214,25 +222,33 @@
 						} 
 						else if( data[kTYPE] == "MonsterType" || 
 								 data[kTYPE] == "MonsterType" || 
-								 data[kTYPE] == "BulletType" || 
-								 data[kTYPE] == "bullet" || data[kTYPE] == "actor" )
+								 data[kTYPE] == "BulletType" )
 						{
 							var target:DropDownList = item[0] as DropDownList;
 							ind = target.selectedIndex;
 							if( ind == -1 ) {
-								ret[key] = -1;
 								this.mCBError("请选择："+data[kDESC]);
 								return;
 							}
 							else ret[key] = target.selectedItem as String;
 						}
+						else if ( data[kTYPE] == "bullet" || data[kTYPE] == "actor" )
+						{
+							target = item[0] as DropDownList;
+							ind = target.selectedIndex;
+							if( ind == -1 ) {
+								this.mCBError("请选择："+data[kDESC]);
+								return;
+							} else {
+								ret[key] = this.mSource[ this.mKey2Index[key] ][kOTHER][1][ind]; 
+							}
+						}
 						else if( data[kTYPE] == "string" )
 						{
 							ret[key] = item[0].text;
 						} 
-						else 
+						else  
 						{
-							trace(key +" -> " +item[0].text); 
 							ret[key] = JSON.parse( item[0].text );
 						}
 					}catch(err:Error) {
@@ -255,6 +271,7 @@
 				
 				var self:ConfigPanel = this;
 				this.mKey2UIComponents[item[kKEY]] = [];
+				this.mKey2Index[item[kKEY]] = data_index;
 				
 				var head:FormItem = new FormItem;
 				head.label = item[kDESC];
