@@ -9,11 +9,21 @@
 	</s:layout>
 	<fx:Script>
 		<![CDATA[
+			import BTEdit.BTPanel;
+			
+			import Trigger.EditTriggers;
+			
+			import manager.EventManager;
+			import manager.EventType;
+			import manager.GameEvent;
+			
 			import mapEdit.AreaTrigger;
 			import mapEdit.Component;
 			import mapEdit.Entity;
 			
 			import mx.collections.ArrayCollection;
+			import mx.core.FlexGlobals;
+			import mx.managers.PopUpManager;
 			
 			import spark.events.IndexChangeEvent;
 			import spark.events.ListEvent;
@@ -22,8 +32,6 @@
 			protected var mBulletData:Array 	= [];
 			protected var mMonsterData:Array 	= [];
 			protected var mTrapData:Array 		= [];
-			
-			protected var mCurrentLevelId:String= null;
 			
 			public function init():void
 			{
@@ -55,13 +63,74 @@
 				this.mRadioGroup.addEventListener(Event.CHANGE, function(evt:Event):void
 				{
 					self.refreshList();
-					this.mMonsterList.selectedIndex = 0;
-					this.refreshDetails();
+				
+					Runtime.getInstance().selectedComponentType = null;
+					self.mMonsterList.selectedIndex = -1;
+					self.refreshDetails();
 				});
 				
 				this.mMonsterList.addEventListener(IndexChangeEvent.CHANGE, this.onIndexChange);				
 				this.mMonsterList.labelField = "name";
-
+				
+				this.mEditData.addEventListener(MouseEvent.CLICK, 
+					function(evt:MouseEvent):void
+					{
+						MapEditor.getInstance().mEditMonster.onEditEnemy( 
+							Runtime.getInstance().currentLevelID, 
+							self.mSelectedLabel.text
+						);
+					}
+				);
+				
+				this.mEditBehavior.addEventListener(MouseEvent.CLICK, 
+					function(evt:MouseEvent):void
+					{
+						var enemy:Object = Data.getInstance().getEnemyProfileById( 
+							Runtime.getInstance().currentLevelID, 
+							self.mSelectedLabel.text
+						);
+						
+						if( !enemy || enemy.type != EditMonster.kCONFIGURABLE )
+							return;
+						
+						if(self.mSelection) 
+							MonsterList.OpenBehaviorEditor( self.mSelection as Entity );
+					}
+				);
+				
+				this.mEditTrigger.addEventListener(MouseEvent.CLICK, 
+					function(evt:MouseEvent):void
+					{
+						if(self.mSelection) 
+							MonsterList.OpenTriggerEditor( self.mSelection as Entity );
+					}
+				);
+				
+				this.mEraseSelf.addEventListener(MouseEvent.CLICK,
+					function(evt:MouseEvent):void
+					{
+						var enemy:Object = Data.getInstance().getEnemyProfileById( 
+							Runtime.getInstance().currentLevelID, 
+							self.mSelectedLabel.text
+						);
+						
+						if( !enemy ) return;
+						
+						if(self.mSelection)
+						{
+							Data.getInstance().eraseMonster(
+								Runtime.getInstance().currentLevelID,
+								self.mSelectedLabel.text
+							);
+						}
+					}
+				);
+				
+				this.mEditData.enabled 		= false;
+				this.mEditBehavior.enabled 	= false;
+				this.mEditTrigger.enabled 	= false;
+				this.mEraseSelf.enabled 	= false;
+				
 			}
 			
 			protected var mSelection:Component = null;
@@ -69,16 +138,11 @@
 			{
 				var id:String = this.mMonsterList.selectedItem.id; 
 				
-				var target:* = Data.getInstance().getEnemyProfileById( this.mCurrentLevelId, id );
-				if( id == "AreaTrigger" || 
-					Data.getInstance().isMonster(target.type) || 
-					Data.getInstance().isTrap(target.type) )
-				{
-					Runtime.getInstance().selectedComponentType = id;
-				} else {
-					Runtime.getInstance().selectedComponentType = null;
-				}
+				var target:* = Data.getInstance().getEnemyProfileById( 
+					Runtime.getInstance().currentLevelID, id 
+				);
 				
+				Runtime.getInstance().selectedComponentType = id;
 				this.refreshDetails();
 			}
 			
@@ -89,7 +153,7 @@
 			
 			protected function refreshList( ):void
 			{
-				var data:Array = [ {id: AreaTrigger.TRIGGER_TYPE, name:"区域触发器" } ];
+				var data:Array = [];
 				if( this.mRadioMonster.selected ) 	data = data.concat(this.mMonsterData);
 				if( this.mRadioTrap.selected ) 		data = data.concat(this.mTrapData);
 				if( this.mRadioBullet.selected ) 	data = data.concat(this.mBulletData);
@@ -106,26 +170,50 @@
 			
 			protected function refreshDetails( ):void
 			{
-				if( this.mSelection ) this.mDetailGroup.removeElement( this.mSelection );	
+				if( this.mSelection ) this.mDetailsContent.removeElement( this.mSelection );	
 				this.mSelection = null;
+				this.mSelectedLabel.text = "";
 				
+				this.mEditData.enabled 		= false;
+				this.mEditBehavior.enabled 	= false;
+				this.mEditTrigger.enabled 	= false;
+				this.mEraseSelf.enabled 	= false;
+				
+				if( this.mMonsterList.selectedIndex == -1 ) return;	
 				var id:String = this.mMonsterList.selectedItem.id;
+				this.mSelectedLabel.text = id;
+				
 				if( id == "AreaTrigger" )
 				{
 					this.mSelection = new AreaTrigger;
-					this.mSelection.setBaseSize( 50  ); 
+					this.mSelection.y = 65;
+					this.mSelection.x = 47;
 				} else {
-					this.mSelection = new Entity( id, true );
-					this.mSelection.setBaseSize( 50 );
+					this.mSelection = new Entity( id, false );
+					this.mSelection.y = 100;
+					this.mSelection.x = 47;
+					
+					var profile:* = Data.getInstance().getEnemyProfileById(
+						Runtime.getInstance().currentLevelID, id 
+					);
+					
+					if( !Data.getInstance().isTrap( profile.type ) )
+						this.mEditData.enabled = true;
+					
+					if( Data.getInstance().isMonster( profile.type ) )
+						this.mEditTrigger.enabled = true;
+					
+					if( profile.type == EditMonster.kCONFIGURABLE )
+						this.mEditBehavior.enabled = true;
 				}
+				this.mEraseSelf.enabled = true;
 				
-				this.mDetailGroup.addElement( this.mSelection );
+				this.mSelection.setSize( 70 );
+				this.mDetailsContent.addElement( this.mSelection );
 			}
 
 			public function reset( lid:String ):void
-			{				
-				this.mCurrentLevelId = lid;
-				
+			{	
 				var monsters:Object	= Data.getInstance().getMonstersByLevelId( lid );
 				var bullets:Object 	= Data.getInstance().getBulletsByLevelId( lid );
 				var traps:Object  	= Data.getInstance().getTrapsByLevelId( lid );
@@ -140,7 +228,7 @@
 					this.mMonsterData.push( 
 						{
 							id 		: item.monster_id,
-							name 	: "[怪物"+item.monster_id+"]:  "+item.monster_name
+							name 	: "["+item.monster_id+"]:  "+item.monster_name
 						}
 					);
 				}
@@ -150,24 +238,54 @@
 					this.mBulletData.push( 
 						{
 							id 		: item.monster_id,
-							name 	: "[子弹"+item.monster_id+"]:  "+item.monster_name
+							name 	: "["+item.monster_id+"]:  "+item.monster_name
 						}
 					);
 				}
 				
+				this.mTrapData.push( {id: AreaTrigger.TRIGGER_TYPE, name:"区域触发器" } );
 				for each( item in traps )
 				{
 					this.mTrapData.push( 
 						{
 							id 		: item.monster_id,
-							name 	: "[陷阱"+item.monster_id+"]:  "+item.monster_name
+							name 	: "["+item.monster_id+"]:  "+item.monster_name
 						}
 					); 
 				}
 				
 				this.refreshList();
-				this.mMonsterList.selectedIndex = 0;
+				
+				this.mMonsterList.selectedIndex = -1;
 				this.refreshDetails();
+			}
+			
+			
+			//---------------------
+			// actions
+			//---------------------
+			static private function OpenTriggerEditor(target:Entity):void
+			{
+				var win:EditTriggers = new EditTriggers(target);
+				PopUpManager.addPopUp(win, MapEditor.getInstance());
+				PopUpManager.centerPopUp(win);
+				win.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-win.width/2;
+				win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
+			}
+			
+			static private var selectedTarget:Entity;
+			static private var btEdit:BTPanel;
+			static private function OpenBehaviorEditor(target:Entity):void
+			{
+				selectedTarget = target;
+				EventManager.getInstance().addEventListener(EventType.BT_EDIT_PANEL_CREATE, onBehaviorEditCreate);
+				btEdit = new BTPanel();
+				PopUpManager.addPopUp(btEdit, MapEditor.getInstance());
+			}
+			
+			static private function onBehaviorEditCreate(event:GameEvent):void {
+				EventManager.getInstance().removeEventListener(EventType.BT_EDIT_PANEL_CREATE, onBehaviorEditCreate);
+				btEdit.init(selectedTarget, FlexGlobals.topLevelApplication.stage.stageWidth, FlexGlobals.topLevelApplication.stage.stageHeight);
 			}
 			
 		]]>
@@ -176,7 +294,7 @@
 		<s:RadioButtonGroup id="mRadioGroup"/>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
-	<s:List id="mMonsterList" x="0" top="60" bottom="150" width="100%" borderVisible="false">
+	<s:List id="mMonsterList" x="0" top="60" bottom="125" width="100%" borderVisible="false">
 	</s:List>
 	<s:TextInput id="mSearchBox" left="5" right="5" top="5" height="25" borderColor="#C3C3C3"
 				 borderVisible="true" prompt="请输入搜索内容"/>
@@ -188,7 +306,16 @@
 		<s:RadioButton id="mRadioTrap" width="33%" height="25" label="陷阱" enabled="true"
 					   groupName="mRadioGroup"/>
 	</s:HGroup>
-	<s:HGroup id="mDetailGroup" left="0" right="0" bottom="0" height="150">
-	</s:HGroup>
+	<s:BorderContainer id="mDetailsContent" left="5" right="5" bottom="5" height="115"
+					   backgroundColor="#EDE8E8" borderColor="#C8C8C8">
+		<s:VGroup left="100" right="5" top="5" bottom="5">
+			<s:Button id="mEditData" label="编辑数据"/>
+			<s:Button id="mEditBehavior" label="修改行为"/>
+			<s:Button id="mEditTrigger" label="触发事件"/>
+			<s:Button id="mEraseSelf" label="删除对象"/>
+		</s:VGroup>
+		<s:Label id="mSelectedLabel" left="20" top="5" height="15" fontSize="13" fontWeight="bold"
+				 textAlign="center" verticalAlign="middle"/>
+	</s:BorderContainer>
 	
 </s:Module>

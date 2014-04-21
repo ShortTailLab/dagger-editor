@@ -184,7 +184,7 @@ package mapEdit
 			this.mSkin.scaleX = this.mSkin.scaleY = scale*this.mProfileScalor;
 		}
 		
-		public function setSize( value:Number ):void
+		override public function setSize( value:Number ):void
 		{
 			var scale:Number = Math.min( 
 				value/this.mSkin.width, 

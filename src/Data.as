@@ -270,7 +270,7 @@ package
 		
 		public function updateLevel( id:String, data:Object ):void
 		{
-			var level:Object = this.getLevelData( id );
+			var level:Object = this.getLevelProfileById( id );
 			if( !level ) return;
 			
 			if( "level_id" in data )
@@ -321,7 +321,7 @@ package
 		
 		public function makeMonster( level_id:String, id:String, data:Object):void
 		{
-			var level:Object = this.getLevelData( level_id );
+			var level:Object = this.getLevelProfileById( level_id );
 			if( !level ) {
 				Alert.show("【创建失败】关卡id不存在 ");
 				return;
@@ -349,7 +349,7 @@ package
 		
 		public function updateMonster( level_id:String, id:String, data:Object):void
 		{
-			var level:Object = this.getLevelData( level_id );
+			var level:Object = this.getLevelProfileById( level_id );
 			if( !level ) {
 				Alert.show("【创建失败】关卡id不存在 ");
 				return;
@@ -379,7 +379,35 @@ package
 			Runtime.getInstance().onProfileDataChange();
 		}
 		
-		public function getLevelData( lid:String ):Object 
+		public function eraseMonster( level_id:String, id:String ):void
+		{
+			var profile:Object = this.getLevelProfileById( level_id );
+			if( !profile ) {
+				Alert.show("【创建失败】关卡id不存在 ");
+				return;
+			}
+			
+			if( !(id in profile.monsters) || !id )
+			{
+				Alert.show("【创建失败】怪物不存在");
+				return;
+			}
+			
+			// clean up
+			var data:Array = this.getLevelDataById( level_id ) as Array;
+			for( var ind:int=data.length-1; ind>=0; ind -- )
+			{
+				if( data[ind].type == id )
+					data.splice( ind, 1 );
+			}
+			this.updateLevelDataById( level_id, data );
+			
+			delete profile.monsters[id];
+			this.writeToProfile( level_id, profile );
+			Runtime.getInstance().onProfileDataChange();
+		}
+		
+		public function getLevelProfileById( lid:String ):Object 
 		{
 			for each( var chapter:Object in this.mChapterProfiles )
 			{
@@ -705,7 +733,7 @@ package
 		public function getEnemyProfileById( lid:String, mid:String ):Object
 		{
 			if( !lid || !mid ) return null;
-			var profile:Object = this.getLevelData( lid );
+			var profile:Object = this.getLevelProfileById( lid );
 			if( !profile ) return null;
 			return profile.monsters[mid];
 		}
@@ -743,7 +771,7 @@ package
 	
 		public function getTrapsByLevelId( lid:String ):Object 
 		{
-			var level:Object = this.getLevelData( lid );
+			var level:Object = this.getLevelProfileById( lid );
 			if( !level ) return null;
 			
 			var ret:Object = {};
@@ -759,7 +787,7 @@ package
 		
 		public function getEnemiesByLevelId( lid:String ):Object
 		{
-			var level:Object = this.getLevelData( lid );
+			var level:Object = this.getLevelProfileById( lid );
 			if( !level ) return null;
 			
 			var ret:Object = {};
@@ -775,7 +803,7 @@ package
 		
 		public function getMonstersByLevelId( lid:String ):Object 
 		{
-			var level:Object = this.getLevelData( lid );
+			var level:Object = this.getLevelProfileById( lid );
 			if( !level ) return null;
 			
 			var ret:Object = {};
@@ -791,7 +819,7 @@ package
 		
 		public function getBulletsByLevelId( lid:String ):Object
 		{
-			var level:Object = this.getLevelData( lid );
+			var level:Object = this.getLevelProfileById( lid );
 			if( !level ) return null;
 			
 			var ret:Object = {};
@@ -863,7 +891,7 @@ package
 			// [TODO] add args checking for behaviors
 			for( var lid:String in this.mLevelInstancesTable )
 			{
-				var profile:Object = this.getLevelData( lid );
+				var profile:Object = this.getLevelProfileById( lid );
 				if( !profile ) continue;
 				
 				var data:Array = this.mLevelInstancesTable[lid].data || [];
@@ -911,7 +939,7 @@ package
 		
 		public function exportLevelJS(lid:String, suffix:String):String
 		{	
-			var profile:Object = this.getLevelData( lid );
+			var profile:Object = this.getLevelProfileById( lid );
 			if( !(lid in this.mLevelInstancesTable ) || !profile  ) return "【失败】无相关地图数据存在";
 			
 			var export:Object = new Object;
@@ -1071,7 +1099,7 @@ package
 		
 		public function getLevelDataForServer( lid:String ):Object
 		{	
-			var profile = this.getLevelData( lid );
+			var profile = this.getLevelProfileById( lid );
 			if( !profile ) return null;
 	
 			if( !(lid in this.mLevelInstancesTable) ) 

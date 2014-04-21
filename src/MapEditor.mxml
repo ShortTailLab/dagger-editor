@@ -62,6 +62,12 @@
 					}
 				);
 				
+				Runtime.getInstance().addEventListener(Runtime.PROFLE_DATA_CHANGE,
+					function( evt:Event ):void {
+						self.onRightClick();	
+					}
+				);
+				
 				this.statusText.showTruncationTip = true;
 				this.statusText.setStyle("color",0x5555FF);
 				this.statusText.setStyle("fontSize", 15);

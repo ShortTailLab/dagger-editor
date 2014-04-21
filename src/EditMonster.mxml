@@ -95,7 +95,7 @@
 				// default items
 				if( !id || !monster ) {
 					
-					var enemies:Object = Data.getInstance().getLevelData(
+					var enemies:Object = Data.getInstance().getLevelProfileById(
 						Runtime.getInstance().currentLevelID 
 					).monsters;
 					 
@@ -138,7 +138,7 @@
 			
 			protected function onCreateMonster(evt:Event):void
 			{				
-				var level:Object = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
+				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
 				if( !level ) return ;
 				
 				var t:ConfigPanel = new ConfigPanel( );
@@ -153,7 +153,7 @@
 			
 			protected function onCreateBullet(evt:Event):void
 			{
-				var level:Object = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
+				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
 				if( !level ) return ;
 				
 				var t:ConfigPanel = new ConfigPanel( );
@@ -168,7 +168,7 @@
 			
 			protected function onCreateTrap(evt:Event):void
 			{
-				var level:Object = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
+				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
 				if( !level ) return ;
 				
 				var t:ConfigPanel = new ConfigPanel( );
@@ -183,7 +183,7 @@
 			
 			public function onEditEnemy( lid:String, id:String ):void
 			{
-				var level:Object = Data.getInstance().getLevelData( Runtime.getInstance().currentLevelID );
+				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
 				if( !level || !( id in level.monsters ) ) return ;
 				
 				var type:String = "", profile:String = "";

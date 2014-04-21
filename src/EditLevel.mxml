@@ -81,7 +81,7 @@
 			
 			protected function genLevelData( lid:String = null ):Array
 			{
-				var ld:Object = Data.getInstance().getLevelData( lid );
+				var ld:Object = Data.getInstance().getLevelProfileById( lid );
 				
 				var chapter:Array = [[], []];
 				for each( var item:Object in Data.getInstance().chapters )
