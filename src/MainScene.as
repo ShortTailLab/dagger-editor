@@ -772,7 +772,8 @@ package
 			var profile:Object = Data.getInstance().getEnemyProfileById( 
 				Runtime.getInstance().currentLevelID, item.classId
 			);
-			if( !profile || Data.getInstance().isBullet( profile.type ) ) {
+			if( (!profile || Data.getInstance().isBullet( profile.type )) && 
+				item.classId != AreaTrigger.TRIGGER_TYPE ) {
 				MapEditor.getInstance().writeToStatusBar("【错误】不可将子弹类型放置入场景中");
 				return;
 			}

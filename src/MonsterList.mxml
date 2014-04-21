@@ -179,7 +179,7 @@
 				this.mEditData.enabled 		= false;
 				this.mEditBehavior.enabled 	= false;
 				this.mEditTrigger.enabled 	= false;
-				this.mEraseSelf.enabled 	= false;
+				this.mEraseSelf.enabled 	= true;
 				
 				if( this.mMonsterList.selectedIndex == -1 ) return;	
 				var id:String = this.mMonsterList.selectedItem.id;
@@ -207,8 +207,10 @@
 					
 					if( profile.type == EditMonster.kCONFIGURABLE )
 						this.mEditBehavior.enabled = true;
+					
+					if( profile.type == AreaTrigger.TRIGGER_TYPE )
+						this.mEraseSelf.enabled = false;
 				}
-				this.mEraseSelf.enabled = true;
 				
 				this.mSelection.setSize( 70 );
 				this.mDetailsContent.addElement( this.mSelection );
