@@ -8,7 +8,7 @@
 				
 			}
 			
-			public function init():void {
+			public function init(data:Object):void {
 				
 			}
 			
@@ -31,13 +31,17 @@
 			private function onSliderChanged(event:Event):void {
 				
 			}
+			
+			public function export():Object {
+				return {};
+			}
 		]]>
 	</fx:Script>
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
-	<s:Group>
-		<s:HGroup x="0" y="0" width="845" height="770" gap="0">
+	<s:Group width="100%" height="100%">
+		<s:HGroup x="0" y="0" width="100%" height="100%" gap="0">
 			<s:VGroup width="150" height="100%" gap="0">
 				<s:Panel width="100%" height="300" dropShadowVisible="false" title="地图图层">
 					<mx:Tree id="mTree" x="0" y="0" width="100%" height="100%" borderVisible="false"

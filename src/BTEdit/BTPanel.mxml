@@ -309,7 +309,7 @@
 					Data.getInstance().updateBehaviorSetById(current, data);
 					setTabModified(current, false);
 					var alert:Alert = Alert.show(current+" 保存成功!");
-					setTimeout(function ():void { alert.parent.removeChild(alert); }, 1000);
+					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
 					this.filterLibrary();
 					this.modifiedAndSavedFiles[current] = true;
 				}
@@ -325,7 +325,7 @@
 					}
 				}
 				var alert:Alert = Alert.show(" 保存成功!");
-				setTimeout(function ():void { alert.parent.removeChild(alert); }, 1000);
+				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
 				this.filterLibrary();
 			}
 			
@@ -617,10 +617,10 @@
 				<s:Button width="50" height="50" label="增加循环节点" buttonMode="true"
 						  click="onPressNode6(event)" cornerRadius="0" fontFamily="Arial"
 						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/xunhuan.png')"/>
-				<s:Button width="50" height="50" label="增加循环节点" buttonMode="true"
+				<s:Button width="50" height="50" label="增加once节点" buttonMode="true"
 						  click="onPressNode7(event)" cornerRadius="0" fontFamily="Arial"
 						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/once.png')"/>
-				<s:Button width="50" height="50" label="增加循环节点" buttonMode="true"
+				<s:Button width="50" height="50" label="增加every节点" buttonMode="true"
 						  click="onPressNode8(event)" cornerRadius="0" fontFamily="Arial"
 						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/every.png')"/>
 			</s:HGroup>
