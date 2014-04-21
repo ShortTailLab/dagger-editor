@@ -25,6 +25,7 @@
 			import spark.components.HGroup;
 			import spark.components.Label;
 			import spark.components.VGroup;
+			import spark.components.supportClasses.TextBase;
 			import spark.primitives.Line;
 			
 			protected var mCBComplete:Function = null;
@@ -67,7 +68,7 @@
 			
 			public function refresh_data( data:Array ):void
 			{
-				var ind = 0;
+				var ind:int = 0;
 				for each( var item:Array in data ) 
 				{
 					if( !(item[kTAG] in this.mKey2Group) )
@@ -98,7 +99,20 @@
 					{
 						if( item[kDEFAULT] in Data.getInstance().dynamicArgs )
 						{
-							this.refresh_data(Data.getInstance().dynamicArgs[item[kDEFAULT]]);
+							var sub_data:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[item[kDEFAULT]] ) as Array;
+							var monster:Object = Data.getInstance().getEnemyProfileById( 
+								Runtime.getInstance().currentLevelID, item[kOTHER]
+							) || {};
+							
+							for each( var sub:Array in sub_data )
+							{
+								if( sub[kKEY] in monster )
+								{
+									sub[kDEFAULT] = monster[sub[kKEY]];
+								}
+							}
+							
+							this.refresh_data( sub_data );
 						}
 					}
 					ind ++;
@@ -145,7 +159,9 @@
 				}
 				
 				//this.mCBComplete( ret  );
-				this.mCBError("用户取消了操作");
+				//this.mCBError("用户取消了操作");
+				MapEditor.getInstance().writeToStatusBar( "用户取消了配置【"+this.mRootPanel.title+"】的操作！" );
+				
 				if( this.mIsPopUp )
 					PopUpManager.removePopUp( this );
 			}
@@ -221,6 +237,8 @@
 					}
 				}
 				this.mCBComplete( ret );
+				
+				MapEditor.getInstance().writeToStatusBar( "用户完成对【"+this.mRootPanel.title+"】的配置！" );
 				if( this.mIsPopUp )
 					PopUpManager.removePopUp( this );
 			}
@@ -358,6 +376,7 @@
 						var data:Array = Utils.deepCopy(self.mSource) as Array;
 						data[data_index][kDEFAULT] = monsterList[comboBox.selectedIndex];
 						self.refresh( data );
+						self.stage.focus = self;
 					});
 					
 					head.addElement( comboBox );
@@ -435,7 +454,7 @@
 			</s:NavigatorContent>
 		</mx:TabNavigator>
 		
-		<s:Button id="mConfirmButton" right="5" bottom="5" height="27" label="确认修改(Enter)"
+		<s:Button id="mConfirmButton" right="5" bottom="5" height="25" label="确认修改(Enter)"
 				  click="onConfirm(event)" enabled="true" fontSize="13"/>
 	</s:TitleWindow>
 </s:Module>

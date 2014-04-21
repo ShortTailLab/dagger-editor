@@ -337,9 +337,8 @@ package
 				Data.getInstance().updateLevelDataById( 
 					this.mLevelId, this.getMatsData()
 				);
-				MsgInform.shared().show(this.mRelatedInfo, "保存关卡"+this.mLevelId);
-				//Alert.show("【成功】保存关卡"+this.mLevelId);
-			}			
+				MapEditor.getInstance().writeToStatusBar( "保存关卡【"+this.mLevelId+"】成功!" );
+			}
 		}
 		
 		public function reset( lid:String ):void
@@ -468,6 +467,9 @@ package
 		
 		protected function onPaste( v:Boolean ):void
 		{			
+			if( !this.mReadyToPaste && v )
+				MapEditor.getInstance().writeToStatusBar("开启剪贴板");
+			
 			this.mReadyToPaste = v;
 			this.mSelectionPanel.title = "选中对象("+this.mSelectedComponents.length+") 剪贴板："+
 				(this.mReadyToPaste ? "开启":"关闭");
@@ -641,6 +643,15 @@ package
 				one.y -= MainScene.kSELECTED_BOARD_UNIT_HEIGHT/2;
 				one.setBaseSize( 30 );
 			}
+			
+			// jump to position by click
+			var progress:Number = -item.y;
+			one.addEventListener(MouseEvent.CLICK, function(evt:MouseEvent):void
+			{
+				MapEditor.getInstance().writeToStatusBar("跳转至 PROGRESS:"+progress*2);
+				self.setProgress( progress );
+			});
+			
 			this.mSelectedBoard.addElement( one );
 			
 			this.onPaste( false );
@@ -697,12 +708,16 @@ package
 		
 		private function onDeleteSelectedMonsters() :void
 		{
+			var types:Object = {};
 			for( var i:int=this.mComponents.length-1; i>=0; i-- )
 			{
 				for each( var sm:Component in this.mSelectedComponents )
 				{
 					if( this.mComponents[i] == sm ) 
 					{
+						if( !(sm.classId in types) ) types[sm.classId] = 0;
+						types[sm.classId] ++; 
+						
 						sm.dtor();
 						this.mComponentsLayer.removeElement( sm );
 						this.mComponents.splice(i, 1);
@@ -710,6 +725,14 @@ package
 					}
 				}
 			}
+			
+			var str:String = "删除怪物  -> {";
+			for( var key:String in types )
+			{
+				str = str + " "+key+"("+types[key]+") ";
+			}
+			str += " } ";
+			MapEditor.getInstance().writeToStatusBar( str );
 			
 			this.onCancelSelect();
 			this.onMonsterChange();
@@ -793,6 +816,7 @@ package
 				}
 			);
 			
+			MapEditor.getInstance().writeToStatusBar( "在("+item.x+", "+item.y+")处添加怪物"+item.classId );
 			if( save ) this.onMonsterChange();
 		}
 //		
@@ -804,9 +828,10 @@ package
 			{
 				if( !this.mReadyToPaste ) return;
 				
+				MapEditor.getInstance().writeToStatusBar("黏贴");
 				//Utils.dumpObject( this.mPasteData );
 				for each( var monster:* in this.mPasteData )
-				{
+				{  
 					var one:Component = this.creator( monster.type, this.mTipsFontSize );
 					one.x = monster.pos.x + this.mComponentsLayer.mouseX;
 					one.y = monster.pos.y + this.mComponentsLayer.mouseY;

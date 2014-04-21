@@ -275,14 +275,7 @@ package
 			
 			if( "level_id" in data )
 			{
-				for each( var chapter:Object in this.mChapterProfiles )
-				{
-					if( id in chapter.levels && chapter.levels[id] != level )
-					{
-						Alert.show("【创建失败】关卡id已存在");
-						return;
-					}
-				}
+				delete data["level_id"];
 			}
 			
 			if( "chapter_id" in data )
@@ -305,12 +298,6 @@ package
 				level[key] = data[key];
 			}
 			this.writeToProfile( id, level );
-			
-			if( Runtime.getInstance().currentLevelID == id && 
-				"level_id" in data) 
-			{
-				Runtime.getInstance().currentLevelID = data.level_id;
-			}
 		}
 		
 		public function deleteLevel( id:String ):void
@@ -753,6 +740,22 @@ package
 			
 			return false;
 		}
+	
+		public function getTrapsByLevelId( lid:String ):Object 
+		{
+			var level:Object = this.getLevelData( lid );
+			if( !level ) return null;
+			
+			var ret:Object = {};
+			for each( var monster:Object in level.monsters )
+			{
+				if( this.isTrap(monster.type) )
+				{
+					ret[monster.monster_id] = monster;
+				}
+			}
+			return ret;
+		}
 		
 		public function getEnemiesByLevelId( lid:String ):Object
 		{
@@ -762,7 +765,23 @@ package
 			var ret:Object = {};
 			for each( var monster:Object in level.monsters )
 			{
-				if( this.isMonster(monster.type)|| this.isTrap(monster.type) )
+				if( this.isMonster(monster.type) )
+				{
+					ret[monster.monster_id] = monster;
+				}
+			}
+			return ret;
+		}
+		
+		public function getMonstersByLevelId( lid:String ):Object 
+		{
+			var level:Object = this.getLevelData( lid );
+			if( !level ) return null;
+			
+			var ret:Object = {};
+			for each( var monster:Object in level.monsters )
+			{
+				if( this.isMonster(monster.type) )
 				{
 					ret[monster.monster_id] = monster;
 				}
@@ -775,7 +794,6 @@ package
 			var level:Object = this.getLevelData( lid );
 			if( !level ) return null;
 			
-			//Utils.dumpObject( this.mDynamicArgs.BulletType );
 			var ret:Object = {};
 			for each( var bullet:Object in level.monsters )
 			{

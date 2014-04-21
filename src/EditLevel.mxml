@@ -39,7 +39,13 @@
 				// update level tree view;
 				this.mInformPanel.mRootPanel.title = "未选中任何关卡";
 				this.mInformPanel.mConfirmButton.label = "修改";
+				this.mInformPanel.mConfirmButton.width = 50;
 				this.mInformPanel.init( this.onConfirm, this.onError, [], true );
+				
+				var erase:Button = new Button;
+				erase.left = 5; erase.bottom = 5; erase.height = 25; erase.width = 50;
+				erase.label = "删除";
+				this.mInformPanel.mRootPanel.addElement( erase );
 				
 				this.mMakeChapter.addEventListener(MouseEvent.CLICK, this.onMakeChapter);
 				this.mMakeLevel.addEventListener(MouseEvent.CLICK, this.onMakeLevel);

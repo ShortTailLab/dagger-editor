@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:mapEdit="mapEdit.*"
+		  width="200" height="100%">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import mapEdit.AreaTrigger;
+			import mapEdit.Component;
+			import mapEdit.Entity;
+			
+			import mx.collections.ArrayCollection;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.events.ListEvent;
+			
+			// id + name
+			protected var mBulletData:Array 	= [];
+			protected var mMonsterData:Array 	= [];
+			protected var mTrapData:Array 		= [];
+			
+			protected var mCurrentLevelId:String= null;
+			
+			public function init():void
+			{
+				var self:MonsterList = this;
+				Runtime.getInstance().addEventListener( Runtime.SELECT_DATA_CHANGE,
+					function(e:Event):void {
+						if( !Runtime.getInstance().selectedComponentType )
+						{
+							self.mMonsterList.selectedIndex = -1;
+						}
+					}
+				);
+				
+				Runtime.getInstance().addEventListener( Runtime.CURRENT_LEVEL_CHANGE,
+					function(evt:Event):void {
+						self.reset( Runtime.getInstance().currentLevelID );	
+					}
+				);
+				
+				Runtime.getInstance().addEventListener( Runtime.PROFLE_DATA_CHANGE,
+					function(evt:Event):void {
+						self.reset( Runtime.getInstance().currentLevelID );
+					}
+				);
+				
+				this.mSearchBox.addEventListener(Event.CHANGE, this.onSearching );
+				
+				this.mRadioGroup.selectedValue = this.mRadioMonster;
+				this.mRadioGroup.addEventListener(Event.CHANGE, function(evt:Event):void
+				{
+					self.refreshList();
+					this.mMonsterList.selectedIndex = 0;
+					this.refreshDetails();
+				});
+				
+				this.mMonsterList.addEventListener(IndexChangeEvent.CHANGE, this.onIndexChange);				
+				this.mMonsterList.labelField = "name";
+
+			}
+			
+			protected var mSelection:Component = null;
+			protected function onIndexChange(evt:Event=null):void
+			{
+				var id:String = this.mMonsterList.selectedItem.id; 
+				
+				var target:* = Data.getInstance().getEnemyProfileById( this.mCurrentLevelId, id );
+				if( id == "AreaTrigger" || 
+					Data.getInstance().isMonster(target.type) || 
+					Data.getInstance().isTrap(target.type) )
+				{
+					Runtime.getInstance().selectedComponentType = id;
+				} else {
+					Runtime.getInstance().selectedComponentType = null;
+				}
+				
+				this.refreshDetails();
+			}
+			
+			protected function onSearching(evt:Event):void
+			{
+				this.refreshList();
+			}
+			
+			protected function refreshList( ):void
+			{
+				var data:Array = [ {id: AreaTrigger.TRIGGER_TYPE, name:"区域触发器" } ];
+				if( this.mRadioMonster.selected ) 	data = data.concat(this.mMonsterData);
+				if( this.mRadioTrap.selected ) 		data = data.concat(this.mTrapData);
+				if( this.mRadioBullet.selected ) 	data = data.concat(this.mBulletData);
+				
+				var pattern:String = this.mSearchBox.text;
+				data = data.filter( function( a:*, ind:int, arr:Array ):Boolean
+				{
+					if( a.id == "AreaTrigger" ) return true;
+					return (a.id as String).match(pattern) || (a.name as String).match(pattern);
+				} );
+				
+				this.mMonsterList.dataProvider = new ArrayCollection( data );
+			}
+			
+			protected function refreshDetails( ):void
+			{
+				if( this.mSelection ) this.mDetailGroup.removeElement( this.mSelection );	
+				this.mSelection = null;
+				
+				var id:String = this.mMonsterList.selectedItem.id;
+				if( id == "AreaTrigger" )
+				{
+					this.mSelection = new AreaTrigger;
+					this.mSelection.setBaseSize( 50  ); 
+				} else {
+					this.mSelection = new Entity( id, true );
+					this.mSelection.setBaseSize( 50 );
+				}
+				
+				this.mDetailGroup.addElement( this.mSelection );
+			}
+
+			public function reset( lid:String ):void
+			{				
+				this.mCurrentLevelId = lid;
+				
+				var monsters:Object	= Data.getInstance().getMonstersByLevelId( lid );
+				var bullets:Object 	= Data.getInstance().getBulletsByLevelId( lid );
+				var traps:Object  	= Data.getInstance().getTrapsByLevelId( lid );
+				
+				this.mMonsterData 	= [];
+				this.mBulletData 	= [];
+				this.mTrapData 		= [];
+				
+				var item:Object = {};
+				for each( item in monsters )
+				{
+					this.mMonsterData.push( 
+						{
+							id 		: item.monster_id,
+							name 	: "[怪物"+item.monster_id+"]:  "+item.monster_name
+						}
+					);
+				}
+				
+				for each( item in bullets )
+				{
+					this.mBulletData.push( 
+						{
+							id 		: item.monster_id,
+							name 	: "[子弹"+item.monster_id+"]:  "+item.monster_name
+						}
+					);
+				}
+				
+				for each( item in traps )
+				{
+					this.mTrapData.push( 
+						{
+							id 		: item.monster_id,
+							name 	: "[陷阱"+item.monster_id+"]:  "+item.monster_name
+						}
+					); 
+				}
+				
+				this.refreshList();
+				this.mMonsterList.selectedIndex = 0;
+				this.refreshDetails();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:RadioButtonGroup id="mRadioGroup"/>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:List id="mMonsterList" x="0" top="60" bottom="150" width="100%" borderVisible="false">
+	</s:List>
+	<s:TextInput id="mSearchBox" left="5" right="5" top="5" height="25" borderColor="#C3C3C3"
+				 borderVisible="true" prompt="请输入搜索内容"/>
+	<s:HGroup left="5" right="5" top="35" height="25">
+		<s:RadioButton id="mRadioMonster" width="33%" height="25" label="怪物" enabled="true"
+					   groupName="mRadioGroup" selected="true"/>
+		<s:RadioButton id="mRadioBullet" width="33%" height="25" label="子弹" enabled="true"
+					   groupName="mRadioGroup"/>
+		<s:RadioButton id="mRadioTrap" width="33%" height="25" label="陷阱" enabled="true"
+					   groupName="mRadioGroup"/>
+	</s:HGroup>
+	<s:HGroup id="mDetailGroup" left="0" right="0" bottom="0" height="150">
+	</s:HGroup>
+	
+</s:Module>

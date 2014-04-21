@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009" 
-		  xmlns:s="library://ns.adobe.com/flex/spark" 
-		  xmlns:mx="library://ns.adobe.com/flex/mx" width="250" height="100%" >
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:ns1="*"
+		  width="200" height="100%">
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
@@ -21,96 +23,58 @@
 			
 			protected var mFormation:FormationSelector = null;
 			protected var mBullet:BulletSelector = null;
-			protected var mMonster:MonsterSelector = null;
 			
 			////// entrance
 			public function init():void
 			{
 				
-				this.mFormation = new FormationSelector;
-				this.mFormation.percentWidth = 100;
-
-				var hgroup:HGroup = new HGroup();
-				with( hgroup ) {
-					percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
-				}
-			
-				var group:Group = new Group();
-				with( group ) {
-					percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
-				}
-				
-				var vscrollbar:VScrollBar = new VScrollBar();
-				vscrollbar.percentHeight = 100;
-				vscrollbar.viewport = group;
-			
-				group.addElement( this.mFormation );
-				hgroup.addElement( group );
-				hgroup.addElement( vscrollbar );
-				
-				this.mFormationPanel.addElement( hgroup );
-
-				{
-					
-					hgroup = new HGroup();
-					with( hgroup ) {
-						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
-					}
-					
-					group = new Group();
-					with( group ) {
-						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
-					}
-					
-					vscrollbar = new VScrollBar();
-					with( vscrollbar ) {
-						percentHeight = 100;
-					}
-					vscrollbar.viewport = group;
-					
-					this.mBullet = new BulletSelector;
-					with( this.mBullet ) {
-						percentWidth = percentHeight = 100;
-					}
-					
-					group.addElement( this.mBullet );
-					hgroup.addElement( group );
-					hgroup.addElement( vscrollbar );
-					
-					this.mBulletPanel.addElement( hgroup );
-					this.mCreateBulletButton.addEventListener( MouseEvent.CLICK, this.onCreateBullet);
-				}
+//				this.mFormation = new FormationSelector;
+//				this.mFormation.percentWidth = 100;
+//
+//				var hgroup:HGroup = new HGroup();
+//				with( hgroup ) {
+//					percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
+//				}
+//			
+//				var group:Group = new Group();
+//				with( group ) {
+//					percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
+//				}
+//				
+//				var vscrollbar:VScrollBar = new VScrollBar();
+//				vscrollbar.percentHeight = 100;
+//				vscrollbar.viewport = group;
+//			
+//				group.addElement( this.mFormation );
+//				hgroup.addElement( group );
+//				hgroup.addElement( vscrollbar );
+//				
+//				this.mFormationPanel.addElement( hgroup );
 				
 				{
+					this.mMonsterPanel.init();
 					
-					hgroup = new HGroup();
-					with( hgroup ) {
-						percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
-					}
-
-					group = new Group();
-					with( group ) {
-						percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
-					}
+					var menu:ContextMenu = new ContextMenu;
 					
-					vscrollbar = new VScrollBar();
-					with( vscrollbar ) {
-						percentHeight = 100;
-					}
-					vscrollbar.viewport = group;
+					var createMonster:ContextMenuItem = new ContextMenuItem("创建怪物");
+					createMonster.addEventListener(
+						ContextMenuEvent.MENU_ITEM_SELECT, this.onCreateMonster
+					);
+					menu.addItem( createMonster );
 					
-					this.mMonster = new MonsterSelector;
-					with( this.mMonster ) {
-						percentWidth = percentHeight = 100;
-					}
-
-					group.addElement( this.mMonster );
-					hgroup.addElement( group );
-					hgroup.addElement( vscrollbar );
+					var createTrap:ContextMenuItem = new ContextMenuItem("创建陷阱");
+					createTrap.addEventListener(
+						ContextMenuEvent.MENU_ITEM_SELECT, this.onCreateTrap
+					);
+					menu.addItem( createTrap );
 					
-					this.mMonsterPanel.addElement( hgroup );
-					this.mCreateMonsterButton.addEventListener( MouseEvent.CLICK, this.onCreateMonster);
-					this.mCreateTrapButton.addEventListener( MouseEvent.CLICK, this.onCreateTrap );
+					var createBullet:ContextMenuItem = new ContextMenuItem("创建子弹");
+					createBullet.addEventListener(
+						ContextMenuEvent.MENU_ITEM_SELECT, this.onCreateBullet
+					);
+					menu.addItem( createBullet );
+					
+					this.mMonsterGroup.contextMenu = menu;
 				}
 			}
 			
@@ -118,7 +82,7 @@
 			
 			protected function genData( type:String, profile_type:String, id:String = null ):Array
 			{
-				var dynamic_data:Array = Data.getInstance().dynamicArgs[profile_type];
+				var dynamic_data:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[profile_type] ) as Array;
 				var monster:Object = Data.getInstance().getEnemyProfileById( 
 					Runtime.getInstance().currentLevelID, id
 				);
@@ -150,6 +114,7 @@
 					
 					ConfigPanel.mergeTo( dynamic_data, data );
 				} else {
+					
 					for each( var item:Array in dynamic_data )
 					{
 						if( item[ConfigPanel.kKEY] in monster )
@@ -159,7 +124,7 @@
 					}
 					
 					data = [
-						["基础数据", "type", type, monster.type, "类型" ],
+						["基础数据", "type", type, monster.type, "类型", monster.monster_id ],
 						["基础数据", "monster_id", "string", monster.monster_id, "Id" ],
 						["基础数据", "monster_name", "string", monster.monster_name, "中文名字" ],
 						["基础数据", "face", "combo_box", monster.face, "资源前缀", [skins, skins]]
@@ -243,6 +208,7 @@
 				}, function (err:String):void {
 					Alert.show( err );
 				},this.genData( type, profile, id ), false, MapEditor.getInstance());
+				t.mRootPanel.title = profile;
 			}
 		]]>
 	</fx:Script>
@@ -250,19 +216,12 @@
 	<s:BorderContainer id="mSelectorArea" x="0" y="0" width="100%" height="100%" borderVisible="false"
 					   dropShadowVisible="true">
 		<s:VGroup x="0" y="0" width="100%" height="100%">
-			<s:Panel id="mFormationPanel" width="100%" height="25%" dropShadowVisible="false" title="阵型">
-			</s:Panel>
-			<s:Panel width="100%" height="25%" dropShadowVisible="false" title="子弹">
-				<s:Group id="mBulletPanel" left="5" right="5" top="5" bottom="25">
-				</s:Group>
-				<s:Button id="mCreateBulletButton" right="5" bottom="2.5" label="创建子弹"/>
+			<s:Panel id="mFormationPanel" width="100%" height="30%" dropShadowVisible="false" title="阵型">
 			</s:Panel>
 			
-			<s:Panel width="100%" height="50%" dropShadowVisible="false" title="怪物">
-				<s:Group id="mMonsterPanel" left="5" right="5" top="5" bottom="25">
-				</s:Group>
-				<s:Button id="mCreateMonsterButton" right="5" bottom="2.5" label="创建怪物"/>
-				<s:Button id="mCreateTrapButton" right="82" bottom="2.5" label="创建陷阱"/>
+			<s:Panel id="mMonsterGroup" width="100%" height="70%" dropShadowVisible="false" title="怪物">
+				<ns1:MonsterList id="mMonsterPanel" left="5" right="5" top="5" bottom="5">
+				</ns1:MonsterList>
 			</s:Panel>
 		</s:VGroup>
 	</s:BorderContainer>

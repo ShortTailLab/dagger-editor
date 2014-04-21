@@ -37,12 +37,8 @@
 			public 	static function getInstance():MapEditor { return gMapEditorInstance; }
 
 			private var _log:String = "";
-	
-			private var mVIEWFormation:FormationSelector = null;
-			private var mVIEWMonster:MonsterSelector = null;
 			
-			private var _bgEditView:BgEditView;
-			
+			protected var mStatusTimer:Timer = null;
 			// setup during launch of app
 			private function init():void
 			{
@@ -66,7 +62,25 @@
 					}
 				);
 				
-				//this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
+				this.statusText.showTruncationTip = true;
+				this.statusText.setStyle("color",0x5555FF);
+				this.statusText.setStyle("fontSize", 15);
+				this.statusText.setStyle("fontWeight", "bold" );
+				
+				this.mStatusTimer = new Timer( 50 );
+				this.mStatusTimer.addEventListener(TimerEvent.TIMER, function(evt:TimerEvent):void
+				{
+					if( self.statusText.alpha > 0.5 ) 
+						self.statusText.alpha -= 0.025;
+					else self.statusText.alpha -= 0.05;
+				});
+				this.mStatusTimer.start();
+			}
+			
+			public function writeToStatusBar(str:String):void
+			{
+				this.statusText.text = str;
+				this.statusText.alpha = 1;
 			}
 			
 			protected function onKeyboardAction(event:KeyboardEvent):void
@@ -278,7 +292,7 @@
 				</ns1:MainScene>
 			</s:BorderContainer>
 			
-			<s:Group id="mSelectorArea" width="250" height="100%">
+			<s:Group id="mSelectorArea" width="200" height="100%">
 				<ns1:EditMonster id="mEditMonster" x="0" y="0" width="100%" height="100%">
 				</ns1:EditMonster>
 			</s:Group>

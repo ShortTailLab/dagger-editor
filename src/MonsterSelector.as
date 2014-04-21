@@ -90,7 +90,7 @@ package
 			this.registerEventHandler( triggerMat );
 			mMonsters.push(triggerMat);
 			
-			var enemies:Object = Data.getInstance().getEnemiesByLevelId(lid);
+			var enemies:Object = Data.getInstance().getMonstersByLevelId(lid);
 			for( var item:String in enemies )
 			{
 				var entity:Entity = new Entity( item, true );
