@@ -98,13 +98,21 @@
 						[ "配置", "level_name", "string", ld.level_name, "关卡名" ]
 					];
 				} else {
+					
 
+					var nextId:int = int(Runtime.getInstance().currentLevelID);
+					for each ( var c:Object in Data.getInstance().chapters )
+					{
+						for each ( var level:Object in c.levels )
+							nextId = Math.max( nextId, int(level.level_id) );
+					}
+					
+					
 					data = [
 						[ "配置", "chapter_id", "combo_box", -1, "所属章节", chapter ],
-						[ "配置", "level_id", "string", "1001", "关卡id" ],
-						[ "配置", "level_name", "string", "新建关卡", "关卡名" ]
+						[ "配置", "level_id", "string", String(nextId+1), "关卡id" ],
+						[ "配置", "level_name", "string", "关卡"+String(nextId+1), "关卡名" ]
 					];
-					
 				}
 				
 				
@@ -129,15 +137,15 @@
 				
 				if( !chapter )
 				{
-					var id:int = 0;
+					var nextId:int = 0;
 					for each ( var m:Object in Data.getInstance().chapters )
 					{
-						id = Math.max( id, m.id );
+						nextId = Math.max( nextId, int(m.id) );
 					}
 					
 					return [
-						[ "配置", "chapter_id", "string", String(id+1), "章节id" ],
-						[ "配置", "chapter_name", "string", "神秘的章节", "章节名" ]
+						[ "配置", "chapter_id", "string", String(nextId+1), "章节id" ],
+						[ "配置", "chapter_name", "string", "章节"+String(nextId+1), "章节名" ]
 					];
 				} else {
 					return [

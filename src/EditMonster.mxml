@@ -22,60 +22,33 @@
 			// ---------------------------------------------------------
 			
 			protected var mFormation:FormationSelector = null;
-			protected var mBullet:BulletSelector = null;
 			
 			////// entrance
 			public function init():void
 			{
+				this.mMonsterPanel.init();
 				
-//				this.mFormation = new FormationSelector;
-//				this.mFormation.percentWidth = 100;
-//
-//				var hgroup:HGroup = new HGroup();
-//				with( hgroup ) {
-//					percentWidth = 100; percentHeight = 100; horizontalAlign = "left";
-//				}
-//			
-//				var group:Group = new Group();
-//				with( group ) {
-//					percentWidth = 100; percentHeight = 100; clipAndEnableScrolling = true;
-//				}
-//				
-//				var vscrollbar:VScrollBar = new VScrollBar();
-//				vscrollbar.percentHeight = 100;
-//				vscrollbar.viewport = group;
-//			
-//				group.addElement( this.mFormation );
-//				hgroup.addElement( group );
-//				hgroup.addElement( vscrollbar );
-//				
-//				this.mFormationPanel.addElement( hgroup );
+				var menu:ContextMenu = new ContextMenu;
 				
-				{
-					this.mMonsterPanel.init();
-					
-					var menu:ContextMenu = new ContextMenu;
-					
-					var createMonster:ContextMenuItem = new ContextMenuItem("创建怪物");
-					createMonster.addEventListener(
-						ContextMenuEvent.MENU_ITEM_SELECT, this.onCreateMonster
-					);
-					menu.addItem( createMonster );
-					
-					var createTrap:ContextMenuItem = new ContextMenuItem("创建陷阱");
-					createTrap.addEventListener(
-						ContextMenuEvent.MENU_ITEM_SELECT, this.onCreateTrap
-					);
-					menu.addItem( createTrap );
-					
-					var createBullet:ContextMenuItem = new ContextMenuItem("创建子弹");
-					createBullet.addEventListener(
-						ContextMenuEvent.MENU_ITEM_SELECT, this.onCreateBullet
-					);
-					menu.addItem( createBullet );
-					
-					this.mMonsterGroup.contextMenu = menu;
-				}
+				var createMonster:ContextMenuItem = new ContextMenuItem("创建怪物");
+				createMonster.addEventListener(
+					ContextMenuEvent.MENU_ITEM_SELECT, this.onCreateMonster
+				);
+				menu.addItem( createMonster );
+				
+				var createTrap:ContextMenuItem = new ContextMenuItem("创建陷阱");
+				createTrap.addEventListener(
+					ContextMenuEvent.MENU_ITEM_SELECT, this.onCreateTrap
+				);
+				menu.addItem( createTrap );
+				
+				var createBullet:ContextMenuItem = new ContextMenuItem("创建子弹");
+				createBullet.addEventListener(
+					ContextMenuEvent.MENU_ITEM_SELECT, this.onCreateBullet
+				);
+				menu.addItem( createBullet );
+				
+				this.mMonsterGroup.contextMenu = menu;
 			}
 			
 			public static var kCONFIGURABLE:String = "HOMEMADE";
@@ -99,7 +72,7 @@
 						Runtime.getInstance().currentLevelID 
 					).monsters;
 					 
-					var nextId:int = int(Runtime.getInstance().currentLevelID+"001");
+					var nextId:int = int(Runtime.getInstance().currentLevelID+"000");
 					for each ( var m:Object in enemies )
 					{
 						nextId = Math.max( nextId, m.monster_id );
@@ -108,7 +81,7 @@
 					var data:Array = [
 						["基础数据", "type", type, -1, "类型" ],
 						["基础数据", "monster_id", "string", String(nextId+1), "Id" ],
-						["基础数据", "monster_name", "string", "神秘的怪", "中文名字" ],
+						["基础数据", "monster_name", "string", "实体"+String(nextId+1), "中文名字" ],
 						["基础数据", "face", "combo_box", -1, "资源前缀", [skins, skins]]
 					];
 					

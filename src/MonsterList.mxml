@@ -165,6 +165,8 @@
 					return (a.id as String).match(pattern) || (a.name as String).match(pattern);
 				} );
 				
+				data.sortOn("id");
+				
 				this.mMonsterList.dataProvider = new ArrayCollection( data );
 			}
 			

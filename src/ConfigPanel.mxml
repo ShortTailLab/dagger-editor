@@ -121,7 +121,7 @@
 			
 			public function refresh( data:Array ):void 
 			{
-				this.mSource = data;
+				this.mSource = Utils.deepCopy( data ) as Array;
 				
 				// make items by group
 				{	
@@ -212,7 +212,10 @@
 							}else
 								ret[key] = data[kOTHER][1][ind];
 						} 
-						else if( data[kTYPE] == "MonsterType" || data[kTYPE] == "MonsterType" || data[kTYPE] == "BulletType" || data[kTYPE] == "bullet" )
+						else if( data[kTYPE] == "MonsterType" || 
+								 data[kTYPE] == "MonsterType" || 
+								 data[kTYPE] == "BulletType" || 
+								 data[kTYPE] == "bullet" || data[kTYPE] == "actor" )
 						{
 							var target:DropDownList = item[0] as DropDownList;
 							ind = target.selectedIndex;
@@ -229,6 +232,7 @@
 						} 
 						else 
 						{
+							trace(key +" -> " +item[0].text); 
 							ret[key] = JSON.parse( item[0].text );
 						}
 					}catch(err:Error) {
@@ -383,18 +387,36 @@
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
 					
 				} 
-				else if ( item[kTYPE] == "bullet" )
+				else if ( item[kTYPE] == "bullet" || item[kTYPE] == "actor" )
 				{
-					var bullets:Object = Data.getInstance().getBulletsByLevelId( 
-						Runtime.getInstance().currentLevelID
-					);
+					var sources:Object = {};
+					if( item[kTYPE] == "bullet" )
+						sources = Data.getInstance().getBulletsByLevelId( 
+							Runtime.getInstance().currentLevelID
+						);
+					else if( item[kTYPE] == "actor" )
+						sources = Data.getInstance().getMonstersByLevelId(
+							Runtime.getInstance().currentLevelID
+						);
+
+					var sorted:Array = [];
+					for each( var one:Object in sources )
+						sorted.push( one );
+					sorted.sortOn("monster_id");
 					
-					var bulletList:Array = [];
-					for each( var bullet:Object in bullets )
-						bulletList.push( bullet.monster_id );
+					var itemList:Array = [ [], [] ];
+					for each( one in sorted )
+					{
+						itemList[0].push( one.monster_id +"|"+ one.monster_name );
+						itemList[1].push( one.monster_id );
+					}
+					
+					comboBox = new DropDownList;
+					comboBox.dataProvider = new ArrayList( itemList[0] );
+					comboBox.prompt = "请选择";
 					
 					ind = -1, countor = 0;
-					for each( mlk in bulletList )
+					for each( mlk in itemList[1] )
 					{
 						if( mlk == item[kDEFAULT] ) {
 							ind = countor;
@@ -402,15 +424,11 @@
 						}
 						countor ++;
 					}
-					bulletList.sort();
-					
-					comboBox = new DropDownList;
-					comboBox.dataProvider = new ArrayList( bulletList );
-					comboBox.prompt = "请选择";
 					comboBox.selectedIndex = ind;
 					
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
+					this.mSource[data_index][kOTHER] = itemList;
 				}
 				
 				return head;
