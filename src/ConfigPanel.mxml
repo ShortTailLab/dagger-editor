@@ -189,12 +189,12 @@
 						else if( data[kTYPE] == "ccp" )
 						{
 							//ret[key] = "@@cc.p("+Number(item[0].text)+", "+Number(item[1].text)+")@@";
-							ret[key] = [Number(item[0].text), Number(item[1].text)];
+							ret[key] = [JSON.parse(item[0].text), JSON.parse(item[1].text)];
 						}
 						else if( data[kTYPE] == "ccsize" )
 						{
 							//ret[key] = "@@cc.size("+Number(item[0].text)+", "+Number(item[1].text)+")@@";
-							ret[key] = [Number(item[0].text), Number(item[1].text)];
+							ret[key] = [JSON.parse(item[0].text), JSON.parse(item[1].text)];
 						}
 						else if( data[kTYPE] == "array_int" ) 
 						{
@@ -283,8 +283,8 @@
 					input.text 	= item[kDEFAULT];
 					input.width	= 75;
 	
-					if( item.type == "float" ) input.restrict = "\.\0-9\ ";
-					else if( item.type == "int" ) input.restrict = "0-9";
+					if( item.type == "float" ) input.restrict = "\.\0-9\\-";
+					else if( item.type == "int" ) input.restrict = "\0-9\\-";
 					
 					head.addElement( input );
 					this.mKey2UIComponents[item[kKEY]].push(input);
@@ -312,13 +312,13 @@
 					var x_width:TextInput = new TextInput;
 					x_width.text 	= item[kDEFAULT][0];
 					x_width.width	= 75;
-					x_width.restrict = "0-9";
+					x_width.restrict = "\0-9\.\\-";
 					head.addElement( x_width );
 					
 					var y_height:TextInput = new TextInput;
 					y_height.text 	= item[kDEFAULT][1];
 					y_height.width	= 75;
-					y_height.restrict = "0-9";
+					y_height.restrict = "\0-9\.\\-";
 					head.addElement( y_height );
 					
 					this.mKey2UIComponents[item[kKEY]].push(x_width);
@@ -328,7 +328,7 @@
 				{				
 					var array:TextInput = new TextInput;
 					array.text = String(JSON.stringify( item[kDEFAULT] ));
-					array.restrict = "\[\]\,\0-9\ ";
+					array.restrict = "\[\]\,\0-9\\- ";
 					
 					head.addElement( array );
 					this.mKey2UIComponents[item[kKEY]].push( array );

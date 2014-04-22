@@ -978,6 +978,33 @@ package
 				};
 			}
 			
+			function adjust( type:String, item:Object ):Array {
+				if( itype == "ccp" )
+				{
+					return [true, "@@cc.p("+item[0]+", "+item[1]+")@@"];
+				} 
+				else if ( itype == "ccsize" )
+				{
+					return [true, "@@cc.size("+item[0]+", "+item[1]+")@@"];
+				} 
+				else if ( itype == "bullet" )
+				{
+					if( !(export.actor[index][ikey] in bullets) )
+						return [false, "【失败】子弹  "+export.actor[index][ikey]+"  是无效的"];
+					else 
+						return [true, null];
+				}
+				else if ( itype == "actor" )
+				{
+					if( !(export.actor[index][ikey] in monsters) )
+						return [false, "【失败】怪物  "+export.actor[index][ikey]+"  是无效的"];
+					else 
+						return [true, null];
+				}
+				
+				return [true, null];
+			}
+			
 			var monsters:Object = Data.getInstance().getMonstersByLevelId( lid );
 			var bullets:Object = Data.getInstance().getBulletsByLevelId( lid );
 			var traps:Object = Data.getInstance().getTrapsByLevelId( lid );
@@ -1021,24 +1048,9 @@ package
 						if( !(ikey in export.actor[index]) )
 							return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
 						
-						if( itype == "ccp" )
-						{
-							export.actor[index][ikey] = "@@cc.p("+monster[ikey][0]+", "+monster[ikey][1]+")@@";
-						} 
-						else if ( itype == "ccsize" )
-						{
-							export.actor[index][ikey] = "@@cc.size("+monster[ikey][0]+", "+monster[ikey][1]+")@@";
-						} 
-						else if ( itype == "bullet" )
-						{
-							if( !(export.actor[index][ikey] in bullets) )
-								return "【失败】子弹  "+export.actor[index][ikey]+"  是无效的";
-						}
-						else if ( itype == "actor" )
-						{
-							if( !(export.actor[index][ikey] in monsters) )
-								return "【失败】怪物  "+export.actor[index][ikey]+"  是无效的";
-						}
+						var adj:Array = adjust( itype, monster[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.actor[index][ikey]+"  是无效的";
+						if( adj[1] ) export.actor[index][ikey] = adj[1];
 					}
 				}
 				
@@ -1053,24 +1065,9 @@ package
 						if( !(ikey in export.actor[index]) )
 							return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
 						
-						if( itype == "ccp" )
-						{
-							export.actor[index][ikey] = "@@cc.p("+monster[ikey][0]+", "+monster[ikey][1]+")@@";
-						} 
-						else if ( itype == "ccsize" )
-						{
-							export.actor[index][ikey] = "@@cc.size("+monster[ikey][0]+", "+monster[ikey][1]+")@@";
-						}
-						else if ( itype == "bullet" )
-						{
-							if( !(export.actor[index][ikey] in bullets) )
-								return "【失败】"+index+"中配置的子弹  ["+export.actor[index][ikey]+"] 是无效的";
-						}
-						else if ( itype == "actor" )
-						{
-							if( !(export.actor[index][ikey] in monsters) )
-								return "【失败】"+index+"中配置的生成怪物  ["+export.actor[index][ikey]+"] 是无效的";
-						}
+						adj = adjust( itype, monster[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.actor[index][ikey]+"  是无效的";
+						if( adj[1] ) export.actor[index][ikey] = adj[1];
 					}
 				}
 			}
@@ -1090,10 +1087,43 @@ package
 			export.bullet = new Object;
 			for( index in profile.monsters ) 
 			{
-			
-				if( this.isBullet( profile.monsters[index].type ) )
+				var bullet:Object = profile.monsters[index]; 
+				if( !this.isBullet( bullet.type ) ) continue;
+				bullet = Utils.deepCopy( bullet );
+				
+				export.bullet[index] = bullet;
+				if( "BulletProfile" in Data.getInstance().dynamicArgs )
 				{
-					export.bullet[index] = profile.monsters[index];
+					var bullet_profile:Object = Data.getInstance().dynamicArgs.BulletProfile || {};
+					for each( item in bullet_profile )
+					{
+						ikey = item[ConfigPanel.kKEY];
+						itype = item[ConfigPanel.kTYPE];
+						
+						if( !(ikey in export.bullet[index]) )
+							return "【失败】子弹"+index+"的属性"+ikey+"未被设置";
+						
+						adj = adjust( itype, bullet[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.bullet[index][ikey]+"  是无效的";
+						if( adj[1] ) export.bullet[index][ikey] = adj[1];
+					}
+				}
+				
+				if( bullet.type in Data.getInstance().dynamicArgs )
+				{
+					bullet_profile = Data.getInstance().dynamicArgs[bullet.type] || {};
+					for each( item in bullet_profile )
+					{
+						ikey = item[ConfigPanel.kKEY];
+						itype = item[ConfigPanel.kTYPE];
+						
+						if( !(ikey in export.bullet[index]) )
+							return "【失败】子弹"+index+"的属性"+ikey+"未被设置";
+						
+						adj = adjust( itype, bullet[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.bullet[index][ikey]+"  是无效的";
+						if( adj[1] ) export.bullet[index][ikey] = adj[1];
+					}
 				}
 			}
 			
@@ -1101,9 +1131,45 @@ package
 			export.trap = new Object;
 			for( index in profile.monsters )
 			{
-				if( this.isTrap( profile.monsters[index].type )  )
+				if( !this.isTrap( profile.monsters[index].type )  ) continue;
+				
+				var trap:Object = profile.monsters[index];
+				export.trap[index] = profile.monsters[index];
+				trap = Utils.deepCopy( trap );
+					
+				export.trap[index] = trap;
+				if( "TrapProfile" in Data.getInstance().dynamicArgs )
 				{
-					export.trap[index] = profile.monsters[index];
+					var trap_profile:Object = Data.getInstance().dynamicArgs.TrapProfile || {};
+					for each( item in trap_profile )
+					{
+						ikey = item[ConfigPanel.kKEY];
+						itype = item[ConfigPanel.kTYPE];
+						
+						if( !(ikey in export.trap[index]) )
+							return "【失败】陷阱"+index+"的属性"+ikey+"未被设置";
+						
+						adj = adjust( itype, trap[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.trap[index][ikey]+"  是无效的";
+						if( adj[1] ) export.trap[index][ikey] = adj[1];
+					}
+				}
+				
+				if( trap.type in Data.getInstance().dynamicArgs )
+				{
+					trap_profile = Data.getInstance().dynamicArgs[trap.type] || {};
+					for each( item in trap_profile )
+					{
+						ikey = item[ConfigPanel.kKEY];
+						itype = item[ConfigPanel.kTYPE];
+						
+						if( !(ikey in export.trap[index]) )
+							return "【失败】陷阱"+index+"的属性"+ikey+"未被设置";
+						
+						adj = adjust( itype, trap[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.trap[index][ikey]+"  是无效的";
+						if( adj[1] ) export.bullet[index][ikey] = adj[1];
+					}
 				}
 			}
 			
