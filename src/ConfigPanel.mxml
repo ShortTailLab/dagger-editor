@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:mapEdit="mapEdit.*" width="350" initialize="onCreate()">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.collections.ArrayList;
+			import mx.containers.FormItem;
+			import mx.containers.FormItemDirection;
+			import mx.controls.Alert;
+			import mx.controls.ComboBase;
+			import mx.controls.HRule;
+			import mx.controls.TextInput;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.CheckBox;
+			import spark.components.ComboBox;
+			import spark.components.DropDownList;
+			import spark.components.Form;
+			import spark.components.HGroup;
+			import spark.components.Label;
+			import spark.components.VGroup;
+			import spark.components.supportClasses.TextBase;
+			import spark.primitives.Line;
+			
+			protected var mCBComplete:Function = null;
+			protected var mCBError:Function = null;
+			protected var mKey2Group:Object = {};
+			protected var mKey2UIComponents:Object = {};
+			protected var mKey2Data:Object = {};
+			protected var mKey2Index:Object = {};
+			protected var mSource:Array = [];
+			protected var mIsPopUp:DisplayObject = null;
+			protected var mIgnoreTag:Boolean = false;
+			
+			// in 	: args 	{ group : [ [key, cnKey, type, default], ... ] }
+			// out 	: ret 	{ key : value }
+			public static const kTAG:int 	= 0;
+			public static const kKEY:int	 	= 1;
+			public static const kTYPE:int 	= 2;
+			public static const kDEFAULT:int = 3;
+			public static const kDESC:int 	= 4;
+			public static const kOTHER:int 	= 5;
+			public static const kMAX:int 	= 6;
+			
+			protected function onCreate():void  {
+				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
+				this.refresh( this.mSource );	
+			};
+			
+			public function init( onComplete:Function, onError:Function, data:Array, ignoreTag:Boolean = false, isPopUp:DisplayObject = null ):void
+			{
+				this.mCBComplete = onComplete;
+				this.mCBError 	 = onError;
+				this.mSource 	 = data;
+				
+				this.mIgnoreTag  = ignoreTag;
+				this.mIsPopUp 	 = isPopUp;
+				if( this.mIsPopUp ) {
+					PopUpManager.addPopUp( this, this.mIsPopUp, true );
+					PopUpManager.centerPopUp( this );
+					this.stage.focus = this;
+				}
+			}
+			
+			public function refresh_data( data:Array ):void
+			{
+				var ind:int = 0;
+				for each( var item:Array in data ) 
+				{
+					if( !(item[kTAG] in this.mKey2Group) )
+					{
+						var page:NavigatorContent = new NavigatorContent;
+						page.label = item[kTAG];
+						
+						var group:Form = new Form;
+						page.addElement( group );
+						this.mTabNavigator.addElement( page );
+						
+						this.mKey2Group[item[kTAG]] = group;
+					}
+					
+					this.mKey2Group[item[kTAG]].addElement( 
+						this.createAndRegisterItem( item, ind ) 
+					);
+					
+					var rule:HRule = new HRule;
+					rule.percentWidth = 100; rule.height = 1; rule.x = 75;
+					this.mKey2Group[item[kTAG]].addElement( rule );
+					
+					this.mKey2Data[item[kKEY]] = item;
+					
+					if( item[kTYPE] == "MonsterType" || 
+						item[kTYPE] == "BulletType" ||
+						item[kTYPE] == "TrapType" )
+					{
+						if( item[kDEFAULT] in Data.getInstance().dynamicArgs )
+						{
+							var sub_data:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[item[kDEFAULT]] ) as Array;
+							var monster:Object = Data.getInstance().getEnemyProfileById( 
+								Runtime.getInstance().currentLevelID, item[kOTHER]
+							) || {};
+							
+							for each( var sub:Array in sub_data )
+							{
+								if( sub[kKEY] in monster )
+								{
+									sub[kDEFAULT] = monster[sub[kKEY]];
+								}
+							}
+							
+							this.refresh_data( sub_data );
+						}
+					}
+					ind ++;
+				}
+			}
+			
+			public function refresh( data:Array ):void 
+			{
+				this.mSource = Utils.deepCopy( data ) as Array;
+				for each( var item:Array in this.mSource )
+				{
+					while( item.length <= kMAX )
+						item.push( "wc" );
+				}
+				
+				// make items by group
+				{	
+					this.mKey2Data = {};
+					this.mKey2Group = {};
+					this.mKey2UIComponents = {};
+					this.mKey2Index = {};
+					this.mTabNavigator.removeAllChildren();
+					this.mTabNavigator.removeAllElements();
+					
+					this.refresh_data(this.mSource);
+				}
+			}
+			
+			protected function onKeyboardAction(event:KeyboardEvent):void
+			{	
+				//trace( event.ctrlKey +" "+event.charCode);
+				if( event.charCode == Keyboard.ENTER && this.mIsPopUp )
+				{
+					this.onConfirm();
+				} 
+				else if ( event.charCode == Keyboard.ESCAPE && this.mIsPopUp )
+				{
+					this.onClose(null);
+				}
+			}
+			
+			protected function onClose(event:Event):void
+			{
+				if( !this.mIsPopUp ) return;
+				
+				var ret:Object = {};
+				for each ( var item:Array in this.mSource ) 
+				{
+					ret[item[kKEY]] = item[kDEFAULT];
+				}
+				
+				//this.mCBComplete( ret  );
+				//this.mCBError("用户取消了操作");
+				MapEditor.getInstance().writeToStatusBar( "用户取消了配置【"+this.mRootPanel.title+"】的操作！" );
+				
+				if( this.mIsPopUp )
+					PopUpManager.removePopUp( this );
+			}
+			
+			protected function onConfirm(event:MouseEvent=null):void
+			{
+				var ret:Object = {};
+				for( var key:String in this.mKey2UIComponents )
+				{
+					try {
+						var item:Array = this.mKey2UIComponents[key];
+						var data:Array = this.mKey2Data[key];
+						if( data[kTYPE] == "bool" )
+						{
+							ret[key] = item[0].selected;
+						}
+						else if( data[kTYPE] == "ccp" )
+						{
+							//ret[key] = "@@cc.p("+Number(item[0].text)+", "+Number(item[1].text)+")@@";
+							ret[key] = [JSON.parse(item[0].text), JSON.parse(item[1].text)];
+						}
+						else if( data[kTYPE] == "ccsize" )
+						{
+							//ret[key] = "@@cc.size("+Number(item[0].text)+", "+Number(item[1].text)+")@@";
+							ret[key] = [JSON.parse(item[0].text), JSON.parse(item[1].text)];
+						}
+						else if( data[kTYPE] == "array_int" ) 
+						{
+							ret[key] = JSON.parse( item[0].text ) as Array;
+							var weight:int = 0;
+							for( var i:int=1; i<ret[key].length; i+=2 )
+								weight += ret[key][i];
+							if( weight > 100 ) 
+							{
+								this.mCBError( data[kTAG]+"|"+data[kDESC]+"总权重大于100，请检查" );
+								return;
+							}
+						} 
+						else if( data[kTYPE] == "combo_box" )
+						{
+							var ind:int = (item[0] as DropDownList).selectedIndex;
+							
+							if( ind < 0 || ind >= data[kOTHER][1].length )
+							{
+								ret[key] = -1;
+								this.mCBError("请选择："+data[kDESC]);
+								return;
+							}else
+								ret[key] = data[kOTHER][1][ind];
+						} 
+						else if( data[kTYPE] == "MonsterType" || 
+								 data[kTYPE] == "MonsterType" || 
+								 data[kTYPE] == "BulletType" )
+						{
+							var target:DropDownList = item[0] as DropDownList;
+							ind = target.selectedIndex;
+							if( ind == -1 ) {
+								this.mCBError("请选择："+data[kDESC]);
+								return;
+							}
+							else ret[key] = target.selectedItem as String;
+						}
+						else if ( data[kTYPE] == "bullet" || data[kTYPE] == "actor" )
+						{
+							target = item[0] as DropDownList;
+							ind = target.selectedIndex;
+							if( ind == -1 ) {
+								this.mCBError("请选择："+data[kDESC]);
+								return;
+							} else {
+								ret[key] = this.mSource[ this.mKey2Index[key] ][kOTHER][1][ind]; 
+							}
+						}
+						else if( data[kTYPE] == "string" )
+						{
+							ret[key] = item[0].text;
+						} 
+						else  
+						{
+							ret[key] = JSON.parse( item[0].text );
+						}
+					}catch(err:Error) {
+						this.mCBError( data[kTAG] +" | "+data[kDESC]+"填写错误，请检查" );
+						return;
+					}
+				}
+				this.mCBComplete( ret );
+				
+				MapEditor.getInstance().writeToStatusBar( "用户完成对【"+this.mRootPanel.title+"】的配置！" );
+				if( this.mIsPopUp )
+					PopUpManager.removePopUp( this );
+			}
+			
+			protected function createAndRegisterItem( item:Object, data_index:int ):UIComponent
+			{
+				if( item[kKEY] in this.mKey2UIComponents ) {
+					Alert.show("【警告】重复的字段"+item[kKEY]);
+				}
+				
+				var self:ConfigPanel = this;
+				this.mKey2UIComponents[item[kKEY]] = [];
+				this.mKey2Index[item[kKEY]] = data_index;
+				
+				var head:FormItem = new FormItem;
+				head.label = item[kDESC];
+				head.direction = FormItemDirection.HORIZONTAL;
+				
+				if( item[kTYPE] == "float" || item[kTYPE] == "int" )
+				{
+					var input:TextInput = new TextInput;
+					input.text 	= item[kDEFAULT];
+					input.width	= 75;
+	
+					if( item.type == "float" ) input.restrict = "\.\0-9\\-";
+					else if( item.type == "int" ) input.restrict = "\0-9\\-";
+					
+					head.addElement( input );
+					this.mKey2UIComponents[item[kKEY]].push(input);
+				} 
+				else if ( item[kTYPE] == "string" )
+				{
+					var str_input:TextInput = new TextInput;
+					str_input.text = item[kDEFAULT];
+					str_input.width = 75;
+					str_input.editable = true;
+					
+					head.addElement( str_input );
+					this.mKey2UIComponents[item[kKEY]].push( str_input );
+				}
+				else if ( item[kTYPE] == "bool" )
+				{
+					var check:CheckBox = new CheckBox;
+					check.selected = Boolean(item[kDEFAULT]);
+					
+					head.addElement( check );
+					this.mKey2UIComponents[item[kKEY]].push(check);
+				} 
+				else if ( item[kTYPE] == "ccp" || item[kTYPE] == "ccsize" ) 
+				{	
+					var x_width:TextInput = new TextInput;
+					x_width.text 	= item[kDEFAULT][0];
+					x_width.width	= 75;
+					x_width.restrict = "\0-9\.\\-";
+					head.addElement( x_width );
+					
+					var y_height:TextInput = new TextInput;
+					y_height.text 	= item[kDEFAULT][1];
+					y_height.width	= 75;
+					y_height.restrict = "\0-9\.\\-";
+					head.addElement( y_height );
+					
+					this.mKey2UIComponents[item[kKEY]].push(x_width);
+					this.mKey2UIComponents[item[kKEY]].push(y_height);
+				}
+				else if ( item[kTYPE] == "array_int" )
+				{				
+					var array:TextInput = new TextInput;
+					array.text = String(JSON.stringify( item[kDEFAULT] ));
+					array.restrict = "\[\]\,\0-9\\- ";
+					
+					head.addElement( array );
+					this.mKey2UIComponents[item[kKEY]].push( array );
+				}
+				else if ( item[kTYPE] == "combo_box" )
+				{	
+					var comboBox:DropDownList = new DropDownList;
+					comboBox.dataProvider = new ArrayList( item[kOTHER][0] );
+					comboBox.prompt = "请选择";
+					comboBox.width = 100;
+					
+					var ind:int = -1, countor:int = 0;
+					for each( var mlk:String in item[kOTHER][1] )
+					{
+						if( mlk == item[kDEFAULT] ) {
+							ind = countor;
+							break;
+						}
+						countor ++;
+					}
+					comboBox.selectedIndex = ind;
+					
+					head.addElement( comboBox );
+					this.mKey2UIComponents[item[kKEY]].push( comboBox );
+				}
+				else if( item[kTYPE] == "MonsterType" || item[kTYPE] == "BulletType" || item[kTYPE] == "TrapType" )
+				{
+					if( item[kTYPE] == "MonsterType" )
+					{
+						var monsterList:Array = [EditMonster.kCONFIGURABLE];
+						if( Data.getInstance().dynamicArgs.MonsterType )
+						{
+							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.MonsterType as Array));
+						}
+					}
+					else if( item[kTYPE] == "BulletType") 
+					{
+						monsterList = [];
+						if( Data.getInstance().dynamicArgs.BulletType )
+							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.BulletType as Array));
+					}
+					else if( item[kTYPE] == "TrapType")
+					{
+						monsterList = [];
+						if( Data.getInstance().dynamicArgs.TrapType )
+							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.BulletType as Array));
+					}
+					
+					ind = -1, countor = 0;
+					for each( mlk in monsterList )
+					{
+						if( mlk == item[kDEFAULT] ) {
+							ind = countor;
+							break;
+						}
+						countor ++;
+					}
+					
+					comboBox = new DropDownList;
+					comboBox.dataProvider = new ArrayList( monsterList );
+					comboBox.prompt = "请选择";
+					comboBox.selectedIndex = ind;
+					
+					comboBox.addEventListener(Event.CHANGE, function(evt:Event):void
+					{	
+						var data:Array = Utils.deepCopy(self.mSource) as Array;
+						data[data_index][kDEFAULT] = monsterList[comboBox.selectedIndex];
+						self.refresh( data );
+						self.stage.focus = self;
+					});
+					
+					head.addElement( comboBox );
+					this.mKey2UIComponents[item[kKEY]].push( comboBox );
+					
+				} 
+				else if ( item[kTYPE] == "bullet" || item[kTYPE] == "actor" )
+				{
+					var sources:Object = {};
+					if( item[kTYPE] == "bullet" )
+						sources = Data.getInstance().getBulletsByLevelId( 
+							Runtime.getInstance().currentLevelID
+						);
+					else if( item[kTYPE] == "actor" )
+						sources = Data.getInstance().getMonstersByLevelId(
+							Runtime.getInstance().currentLevelID
+						);
+
+					var sorted:Array = [];
+					for each( var one:Object in sources )
+						sorted.push( one );
+					sorted.sortOn("monster_id");
+					
+					var itemList:Array = [ [], [] ];
+					for each( one in sorted )
+					{
+						itemList[0].push( one.monster_id +"|"+ one.monster_name );
+						itemList[1].push( one.monster_id );
+					}
+					
+					comboBox = new DropDownList;
+					comboBox.dataProvider = new ArrayList( itemList[0] );
+					comboBox.prompt = "请选择";
+					
+					ind = -1, countor = 0;
+					for each( mlk in itemList[1] )
+					{
+						if( mlk == item[kDEFAULT] ) {
+							ind = countor;
+							break;
+						}
+						countor ++;
+					}
+					comboBox.selectedIndex = ind;
+					
+					head.addElement( comboBox );
+					this.mKey2UIComponents[item[kKEY]].push( comboBox );
+					this.mSource[data_index][kOTHER] = itemList;
+				}
+				
+				return head;
+			}
+			
+			public static function mergeTo(from:Array, to:Array, rewrite:Boolean = false):void
+			{
+				if( !from ) return;
+				for each( var item:Array in from )
+				{
+					var inside:Boolean = false;
+					for each( var i2:Array in to )
+					{
+						if( i2[kKEY] == item[kKEY] )
+						{
+							inside = true;
+							break;
+						}
+					}
+					if( inside && !rewrite )
+						continue;
+					
+					to.push( item );
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+		
+	<s:TitleWindow id="mRootPanel" left="0" top="0" width="100%" height="100%" borderVisible="true"
+				   chromeColor="#CFCFCF" dropShadowVisible="true" fontFamily="Arial" fontSize="13"
+				   fontStyle="normal" fontWeight="normal" skinClass="spark.skins.spark.PanelSkin"
+				   textDecoration="none" title="参数配置">
+		
+		<mx:TabNavigator id="mTabNavigator" left="5" right="5" top="5" bottom="35">
+			<s:NavigatorContent width="100%" height="100%" label="选项卡 1">
+			</s:NavigatorContent>
+		</mx:TabNavigator>
+		
+		<s:Button id="mConfirmButton" right="5" bottom="5" height="25" label="确认修改(Enter)"
+				  click="onConfirm(event)" enabled="true" fontSize="13"/>
+	</s:TitleWindow>
+</s:Module>

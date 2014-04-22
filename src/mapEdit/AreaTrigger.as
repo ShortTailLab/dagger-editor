@@ -28,7 +28,7 @@ package mapEdit
 		
 		public function AreaTrigger()
 		{
-			this.mType = AreaTrigger.TRIGGER_TYPE;
+			this.mClassId = AreaTrigger.TRIGGER_TYPE;
 			
 			this.height = this.width = 100;
 			this.x = this.y = 0;
@@ -328,6 +328,15 @@ package mapEdit
 		override public function setBaseSize( value:Number ):void
 		{
 			var scale:Number = value/this.width;
+			this.scaleX = this.scaleY = scale;
+		}
+		
+		override public function setSize( value:Number ):void
+		{
+			var scale:Number = Math.min( 
+				value/this.width, 
+				value/this.height 
+			);
 			this.scaleX = this.scaleY = scale;
 		}
 		

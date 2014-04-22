@@ -20,12 +20,14 @@ package
 		}
 		
 		//
+		public static const CURRENT_LEVEL_CHANGE:String = "runtime.current.level.change";
 		private var mCurrentLevelID:String = null;
 		public function get currentLevelID(): String {
 			return this.mCurrentLevelID;
 		}
 		public function set currentLevelID(v:String):void {
 			this.mCurrentLevelID = v;
+			this.dispatchEvent( new Event(Runtime.CURRENT_LEVEL_CHANGE) );
 		}
 		
 		//
@@ -57,9 +59,9 @@ package
 		}
 		
 		//
-		public static const PROFILE_DATA_CHANGE:String = "runtime.profile.data.change";
+		public static const PROFLE_DATA_CHANGE:String = "runtime.profile.data.change";
 		public function onProfileDataChange():void {
-			this.dispatchEvent( new Event(Runtime.PROFILE_DATA_CHANGE) );
+			this.dispatchEvent( new Event(Runtime.PROFLE_DATA_CHANGE) );
 		}
 	}
 }

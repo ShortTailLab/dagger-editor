@@ -14,6 +14,14 @@ package
 	import flash.ui.Keyboard;
 	import flash.utils.Timer;
 	
+	import manager.MsgInform;
+	
+	import mapEdit.AreaTrigger;
+	import mapEdit.Component;
+	import mapEdit.Coordinator;
+	import mapEdit.Entity;
+	import mapEdit.MainSceneXML;
+	
 	import mx.controls.Alert;
 	import mx.core.IVisualElement;
 	import mx.core.UIComponent;
@@ -23,14 +31,6 @@ package
 	
 	import spark.components.Group;
 	import spark.core.SpriteVisualElement;
-	
-	import manager.MsgInform;
-	
-	import mapEdit.AreaTrigger;
-	import mapEdit.Component;
-	import mapEdit.Coordinator;
-	import mapEdit.Entity;
-	import mapEdit.MainSceneXML;
 	
 	public class MainScene extends MainSceneXML
 	{
@@ -63,22 +63,16 @@ package
 		private var mFocusComponent:Component 			= null;
 		
 		// facilities
-		private var mAutoSaver:Timer = null;
-		private var mTipsFontSize:Number = 12;
+		private var mAutoSaver:Timer 		= null;
+		private var mTipsFontSize:Number 	= 12;
+		private var mPasteData:Array 		= [];
+		private var mPasteTipsLayer:Group 	= null;
 		
 		public function MainScene()
 		{
 			with( this ) {
 				percentWidth = 100; percentHeight = 100;
 			}
-			
-			var s:* = Data.getInstance().conf.mapSpeed;
-			if( s && s>0 ) this.mMapSpeed = s;
-			
-			var w:* = Data.getInstance().conf.gridWidth;
-			if( w && w>0 ) this.mGridWidth = w;
-			
-			var h:* = Data.getInstance().conf.gridHeight;
 		}
 		
 		// ------------------------------------------------------------
@@ -86,22 +80,25 @@ package
 		public function init():void 
 		{
 			var self:MainScene = this;
+			this.mMapSpeed = Data.getInstance().conf.mapSpeed || 32;
+			this.mGridHeight = Data.getInstance().conf.gridWidth;
+			this.mGridWidth = Data.getInstance().conf.gridHeight;
+			
+			Runtime.getInstance().addEventListener( Runtime.CURRENT_LEVEL_CHANGE, function(evt:Event):void
+			{
+				self.reset( Runtime.getInstance().currentLevelID );	
+			});
+			
+			Runtime.getInstance().addEventListener( Runtime.PROFLE_DATA_CHANGE, function(evt:Event):void
+			{
+				self.reset( Runtime.getInstance().currentLevelID );
+			});
+			
 			this.mTimeline.addEventListener( SliderEvent.CHANGE, 
 				function( e:SliderEvent ): void {
 					self.setProgress( e.value * self.mMapSpeed );
 				}
 			);
-			
-			this.mCoordinator = new Coordinator( );
-			this.mAdaptiveLayer.addElement( this.mCoordinator );
-			
-			this.mMonsterMask = new SpriteVisualElement();
-			this.mAdaptiveLayer.setElementIndex( 
-				this.mComponentsLayer, this.mAdaptiveLayer.numElements-1 
-			);
-			//this.setChildIndex( this.mMonsterLayer, this.numChildren-1);
-			//this.addElement( this.mMonsterMask );
-			//this.mMonsterLayer.mask = this.mMonsterMask;
 			
 			// configs
 			this.mMapSpeedInput.text 	= String(this.mMapSpeed);
@@ -113,7 +110,6 @@ package
 			);
 			
 			this.mShowGrid.selected = Data.getInstance().conf["main.scene.show.grid"] || false;
-			this.mCoordinator.showGrid( this.mShowGrid.selected );
 			this.mShowGrid.addEventListener( Event.CHANGE, 
 				function (e:Event):void {
 					Data.getInstance().setEditorConfig(
@@ -192,17 +188,6 @@ package
 				}
 			);	
 			
-			// selection
-			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
-				function(e:MouseEvent):void {
-					if( self.mSelectFrame ) return;
-					self.mSelectFrame = new SpriteVisualElement;
-					self.mSelectFrame.x = self.mCoordinator.mouseX;
-					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
-					self.mComponentsLayer.addElement( self.mSelectFrame );
-				}
-			);
-			
 			// others 
 			this.mTipsFontSize = Number(Data.getInstance().conf["main.scene.tips.size"] || 12);
 			this.mTipsSizeInput.text = String(this.mTipsFontSize);
@@ -216,6 +201,30 @@ package
 							(item as Entity).setTextTipsSize( self.mTipsFontSize );
 					}
 				}
+			);
+			
+			//
+			this.mCoordinator = new Coordinator( );
+			this.mCoordinator.y = this.mAdaptiveLayer.height-1;
+			this.mCoordinator.x = -1;
+			this.mCoordinator.showGrid( this.mShowGrid.selected );
+			this.mCoordinator.setMeshDensity( 
+				this.mGridWidth, this.mGridHeight, height, this.mProgressInPixel 
+			);
+			this.setProgress(this.mProgressInPixel);
+			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
+				function(e:MouseEvent):void {
+					if( self.mSelectFrame ) return;
+					self.mSelectFrame = new SpriteVisualElement;
+					self.mSelectFrame.x = self.mCoordinator.mouseX;
+					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
+					self.mComponentsLayer.addElement( self.mSelectFrame );
+				}
+			);
+			
+			this.mAdaptiveLayer.addElement( this.mCoordinator );
+			this.mAdaptiveLayer.setElementIndex( 
+				this.mComponentsLayer, this.mAdaptiveLayer.numElements-1 
 			);
 
 			this.addEventListener( MouseEvent.MOUSE_MOVE,
@@ -328,10 +337,10 @@ package
 				Data.getInstance().updateLevelDataById( 
 					this.mLevelId, this.getMatsData()
 				);
-				MsgInform.shared().show(this.mRelatedInfo, "保存关卡"+this.mLevelId);
-				//Alert.show("【成功】保存关卡"+this.mLevelId);
-			}			
+				MapEditor.getInstance().writeToStatusBar( "保存关卡【"+this.mLevelId+"】成功!" );
+			}
 		}
+		
 		public function reset( lid:String ):void
 		{
 			this.save();
@@ -349,6 +358,8 @@ package
 			for each( var item:Object in level )
 			{
 				var one:Component = this.creator( item.type, this.mTipsFontSize );
+				if( !one ) continue;
+				
 				one.unserialize(item);
 				this.insertComponent( one, false );
 			}
@@ -361,11 +372,6 @@ package
 		private function onResize( e:ResizeEvent ):void
 		{
 			var height:Number = this.height - 65;
-			this.mMonsterMask.graphics.clear();
-			this.mMonsterMask.graphics.beginFill(0xffffff);
-			this.mMonsterMask.graphics.drawRect(-180, -height, 360, height);
-			this.mMonsterMask.graphics.endFill();
-			this.mMonsterMask.height 	= height;
 			this.mComponentsLayer.y 		= this.mProgressInPixel + height;
 			this.mAdaptiveLayer.height 	= height;
 			this.mCoordinator.y 		= height;
@@ -390,8 +396,12 @@ package
 					if( item as Entity )
 						(item as Entity).triggeredTime -= (delta*2); 
 				}
-			}else
+			}
+			else
+			{
+				//trace( "delta " +e.delta );
 				this.setProgress( this.mProgressInPixel + e.delta*this.mGridHeight );
+			}
 		}
 		
 		private function onMouseClick(e:MouseEvent):void
@@ -399,39 +409,21 @@ package
 			this.onCancelSelect();
 			
 			var type:String = Runtime.getInstance().selectedComponentType;
-			var fid:String = Runtime.getInstance().selectedFormationType;
 			
 			if( type )
 			{
-				if( fid )
-				{
-					var posData:Object = Data.getInstance().getFormationById( fid );
-					for each( var p:Object in posData )
-					{
-						var item:Component = this.creator( type, this.mTipsFontSize );
-						
-						var gridPos:Point = this.mCoordinator.getPos();
-						var size:Point = this.getTipsLayerSize();
-						
-						item.x 	= p.x + gridPos.x - size.x/2; 
-						item.y	= p.y + gridPos.y - this.mProgressInPixel + size.y/2;
-						
-						if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
-							this.insertComponent( item, false );
-					}
-					this.onMonsterChange();
-				} else {
-					item 	= this.creator( type, this.mTipsFontSize );					
-					gridPos = this.mCoordinator.getGridPos();
-					if( !this.mRestrictGrid.selected )
-						gridPos = this.mCoordinator.getPos();
+				var item:Component 	= this.creator( type, this.mTipsFontSize );		
+				if( !item ) return;
 					
-					item.x 	= gridPos.x; 
-					item.y	= gridPos.y - this.mProgressInPixel;
+				var gridPos:Point 	= this.mCoordinator.getGridPos();
+				if( !this.mRestrictGrid.selected )
+					gridPos = this.mCoordinator.getPos();
 					
-					if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
-						this.insertComponent( item );
-				}
+				item.x 	= gridPos.x; 
+				item.y	= gridPos.y - this.mProgressInPixel + 15;
+				
+				if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
+					this.insertComponent( item );
 			}
 		}
 		
@@ -448,20 +440,78 @@ package
 			
 			this.mSelectedComponents = [];
 			this.mSelectedBoard.removeAllElements();
+			this.mSelectedBoardTip = null;
 			
 			this.onPaste( false );
 		}
 		
-		private function onPaste( v:Boolean ):void
+		public function onRightClick():void
+		{
+			this.onCancelSelect();
+			this.onPaste( false );
+		}
+		
+		protected function onPaste( v:Boolean ):void
 		{			
+			if( !this.mReadyToPaste && v )
+				MapEditor.getInstance().writeToStatusBar("开启剪贴板");
+			
+			this.mReadyToPaste = v;
 			this.mSelectionPanel.title = "选中对象("+this.mSelectedComponents.length+") 剪贴板："+
 				(this.mReadyToPaste ? "开启":"关闭");
-			this.mReadyToPaste = v;
+			
+			if( this.mPasteTipsLayer )
+			{
+				this.removeElement( this.mPasteTipsLayer );
+				this.mPasteTipsLayer = null;
+			}
+			
+			if( !v ) return;
+			this.mPasteTipsLayer = new Group;
+			
+			this.addElement( this.mPasteTipsLayer );
+			this.mPasteTipsLayer.alpha = 0.5;
+			
+			var self:MainScene = this;
+			this.mPasteData = [];
+			
+			var min_x:Number = this.mSelectedComponents[0].x;
+			var max_x:Number = this.mSelectedComponents[0].x;
+			
+			var min_y:Number = this.mSelectedComponents[0].y;
+			var max_y:Number = this.mSelectedComponents[0].y;
+			
+			for( var i:int=0; i<this.mSelectedComponents.length; i++ )
+			{
+				var one:Component = this.mSelectedComponents[i];
+				min_x = Math.min( min_x, one.x);
+				max_x = Math.max( max_x, one.x);
+				min_y = Math.min( min_y, one.y);
+				max_y = Math.max( max_y, one.y);
+			}
+			
+			for each( var item:Component in this.mSelectedComponents )
+			{
+				this.mPasteData.push({ 
+					pos: new Point(item.x-min_x-(max_x-min_x)/2, item.y-min_y-(max_y-min_y)/2),
+					type : item.classId
+				});
+					
+				var mat:Component = this.creator( item.classId, 0 );
+				mat.x = this.mPasteData[this.mPasteData.length-1].pos.x;
+				mat.y = this.mPasteData[this.mPasteData.length-1].pos.y;
+				mat.addEventListener(MouseEvent.CLICK, function(e:*):void {
+					self.onMouseClick(e);
+				});
+				if( mat as Entity ) (mat as Entity).setBaseSize( 50 );
+				
+				mPasteTipsLayer.addElement(mat);
+			}
 		}
 		
 		private function onChangeSelectedType( type:String ):void
 		{
-			if( !Data.getInstance().getEnemyProfileById( type ) )
+			if( !Data.getInstance().getEnemyProfileById( Runtime.getInstance().currentLevelID, type ) )
 			{
 				Alert.show("【错误】无法识别的类型id，请检查后重新填写");
 				return;
@@ -487,6 +537,7 @@ package
 		private static const kSELECTED_BOARD_UNIT_WIDTH:int 	= 50;
 		private static const kSELECTED_BOARD_UNIT_HEIGHT:int 	= 50;
 		private static const kSELECTED_BOARD_COLUMS:int 		= 3;
+		private var mSelectedBoardTip:Component 				= null;
 		private function selectComponent( item:Component ):void
 		{
 			if( this.mSelectedComponents.hasOwnProperty(item.globalId) ) return;
@@ -506,7 +557,7 @@ package
 			var changeType:ContextMenuItem = new ContextMenuItem("更换敌人");
 			changeType.addEventListener( ContextMenuEvent.MENU_ITEM_SELECT,
 				function(e:ContextMenuEvent):void {
-					var enemies:Object = Data.getInstance().getEnemiesByLevelId(self.mLevelId);
+					var enemies:Object = Data.getInstance().getEnemiesByLevelId( self.mLevelId );
 					var data:Array = [];
 					for each( var item:* in enemies )
 					{
@@ -546,14 +597,16 @@ package
 			item.contextMenu = menu;
 			
 			// update information panel
-			if( item.type == AreaTrigger.TRIGGER_TYPE )
+			if( item.classId == AreaTrigger.TRIGGER_TYPE )
 			{
-				this.mInfoId.text = "ID:   " + String(item.type);
+				this.mInfoId.text = "ID:   " + String(item.classId);
 				this.mInfoName.text = "NAME: ";
 			} else {
-				this.mInfoId.text = "ID:   " + String(item.type);
+				this.mInfoId.text = "ID:   " + String(item.classId);
 				this.mInfoName.text = "NAME: " + 
-					String( Data.getInstance().getEnemyProfileById(item.type).monster_name );
+					String( Data.getInstance().getEnemyProfileById( 
+						Runtime.getInstance().currentLevelID, item.classId 
+					).monster_name );
 			}
 			this.mInfoXInput.text = String(item.x*2);
 			this.mInfoYInput.text = String(-item.y*2);
@@ -567,7 +620,7 @@ package
 			var row:int = index / MainScene.kSELECTED_BOARD_COLUMS;
 			var col:int = index % MainScene.kSELECTED_BOARD_COLUMS;
 			
-			var one:Component = this.creator( item.type, 8 );
+			var one:Component = this.creator( item.classId, 8 );
 			one.x = 30 + col*MainScene.kSELECTED_BOARD_UNIT_WIDTH;
 			one.y = 40 + row*MainScene.kSELECTED_BOARD_UNIT_HEIGHT;
 			if( one as Entity )
@@ -577,6 +630,23 @@ package
 				one.y -= MainScene.kSELECTED_BOARD_UNIT_HEIGHT/2;
 				one.setBaseSize( 30 );
 			}
+			
+			// jump to position by click
+			var progress:Number = -item.y;
+			one.addEventListener(MouseEvent.CLICK, function(evt:MouseEvent):void
+			{
+				if( self.mSelectedBoardTip ) 
+				{
+					self.mSelectedBoardTip.select(false);
+					self.mSelectedBoardTip = null;
+				}
+				
+				one.select( true );
+				self.mSelectedBoardTip = one;
+				
+				MapEditor.getInstance().writeToStatusBar("跳转至 PROGRESS:"+progress*2);
+				self.setProgress( progress );
+			});
 			this.mSelectedBoard.addElement( one );
 			
 			this.onPaste( false );
@@ -587,7 +657,7 @@ package
 			this.onCancelSelect();
 			
 			for each( var m:Component in this.mComponents )
-				if( m.type == type ) this.selectComponent( m );
+				if( m.classId == type ) this.selectComponent( m );
 				
 			if( type == AreaTrigger.TRIGGER_TYPE )
 			{
@@ -596,7 +666,9 @@ package
 			} else {
 				this.mInfoId.text = "ID:   " + String(type);
 				this.mInfoName.text = "NAME: " + 
-					String( Data.getInstance().getEnemyProfileById(type).monster_name );
+					String( Data.getInstance().getEnemyProfileById( 
+						Runtime.getInstance().currentLevelID, type
+					).monster_name );
 			}
 			if( this.mSelectedComponents.length > 1 )
 			{
@@ -631,12 +703,16 @@ package
 		
 		private function onDeleteSelectedMonsters() :void
 		{
+			var types:Object = {};
 			for( var i:int=this.mComponents.length-1; i>=0; i-- )
 			{
 				for each( var sm:Component in this.mSelectedComponents )
 				{
 					if( this.mComponents[i] == sm ) 
 					{
+						if( !(sm.classId in types) ) types[sm.classId] = 0;
+						types[sm.classId] ++; 
+						
 						sm.dtor();
 						this.mComponentsLayer.removeElement( sm );
 						this.mComponents.splice(i, 1);
@@ -645,13 +721,22 @@ package
 				}
 			}
 			
+			var str:String = "删除怪物  -> {";
+			for( var key:String in types )
+			{
+				str = str + " "+key+"("+types[key]+") ";
+			}
+			str += " } ";
+			MapEditor.getInstance().writeToStatusBar( str );
+			
+			this.onCancelSelect();
 			this.onMonsterChange();
 		}
 		
 		// ------------------------------------------------------------
 		private function setProgress( progress:Number ):void
 		{
-			if( progress < 0 ) return;
+			progress = Math.max( progress, 0 );
 			this.mProgressInPixel = progress;
 			this.mComponentsLayer.y = this.mProgressInPixel + this.height - 65;
 			this.mCoordinator.setMeshDensity( 
@@ -684,6 +769,15 @@ package
 		private static var gComponentCountor:int = 0;
 		private function insertComponent( item:Component, save:Boolean = true ):void
 		{	
+			var profile:Object = Data.getInstance().getEnemyProfileById( 
+				Runtime.getInstance().currentLevelID, item.classId
+			);
+			if( (!profile || Data.getInstance().isBullet( profile.type )) && 
+				item.classId != AreaTrigger.TRIGGER_TYPE ) {
+				MapEditor.getInstance().writeToStatusBar("【错误】不可将子弹类型放置入场景中");
+				return;
+			}
+			
 			if( item.globalId == "" || !item.globalId )
 				item.globalId = new Date().time+String( gComponentCountor++ );
 			
@@ -697,29 +791,36 @@ package
 		
 			var self:MainScene = this;
 			var timer:Timer = new Timer(300, 1);
+			var clickTimer:Timer = new Timer(100, 1);
 			item.addEventListener( MouseEvent.CLICK,
 				function(e:MouseEvent) : void {
 					if( timer.running ) {
 						timer.stop();
-						self.selectMonstersByType( item.type );
+						self.selectMonstersByType( item.classId );
 					} else {
 						timer.start();
-
-						if( !e.shiftKey )
-							self.onCancelSelect();
-						self.selectComponent( item );
+						
+						if( clickTimer.running )
+						{
+							if( !e.shiftKey )
+								self.onCancelSelect();
+							self.selectComponent( item );
+						}
+						clickTimer.stop();
 					}
 				}
 			);
 			
 			item.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent) : void {
+					clickTimer.start();
 					self.mFocusComponent = item;
 					self.mDraggingX = self.mouseX;
 					self.mDraggingY = self.mouseY;
 				}
 			);
 			
+			MapEditor.getInstance().writeToStatusBar( "在("+item.x+", "+item.y+")处添加怪物"+item.classId );
 			if( save ) this.onMonsterChange();
 		}
 //		
@@ -730,37 +831,17 @@ package
 			if( code == Keyboard.V && e.ctrlKey )
 			{
 				if( !this.mReadyToPaste ) return;
-				if( this.mSelectedComponents.length <= 0 ) return;
 				
-				var top:int 	= this.mSelectedComponents[0].y; 
-				var bottom:int 	= this.mSelectedComponents[0].y; 
-				for each( var item:Component in this.mSelectedComponents )
-				{
-					top 	= Math.min( top, item.y );
-					bottom 	= Math.max( bottom, item.y ); 
-				}
-				
-				var delta:int = this.mComponentsLayer.mouseY - (top+bottom)/2;
-				
-				if( this.mSelectedComponents.length == 1 ) 
-					delta = this.mComponentsLayer.mouseY - top;
-				
-				var toMonsters:Array = [];	
-				for each( item in this.mSelectedComponents )
-				{
-					var one:Component = this.creator( item.type, this.mTipsFontSize );
-					one.x = item.x;
-					one.y = item.y + delta;
+				MapEditor.getInstance().writeToStatusBar("黏贴");
+				//Utils.dumpObject( this.mPasteData );
+				for each( var monster:* in this.mPasteData )
+				{  
+					var one:Component = this.creator( monster.type, this.mTipsFontSize );
+					one.x = monster.pos.x + this.mComponentsLayer.mouseX;
+					one.y = monster.pos.y + this.mComponentsLayer.mouseY;
 					this.insertComponent( one, false );
-					toMonsters.push( one );
 				}
-				
 				this.onMonsterChange();
-				this.onCancelSelect();
-				for each( item in toMonsters ) 
-					this.selectComponent( item );	
-					
-				this.onPaste( true );
 			}
 			else if( code == Keyboard.C && e.ctrlKey )
 			{
@@ -776,7 +857,7 @@ package
 			}
 			else if( code == Keyboard.LEFT )
 			{
-				for each( item in this.mSelectedComponents )
+				for each( var item:* in this.mSelectedComponents )
 				{
 					if( this.mRestrictGrid.selected )
 						item.x -= Number(this.mGridWidthInput.text)
@@ -829,11 +910,11 @@ package
 		}
 		
 		private var mSelectType:String 		= null;
-		private var mSelectFormation:String = null;
 		private function onSelectChange(e:Event):void 
 		{
-			if( (this.mSelectType != Runtime.getInstance().selectedComponentType ||
-				 this.mSelectFormation != Runtime.getInstance().selectedFormationType) 
+			this.onPaste( false );
+			
+			if( this.mSelectType != Runtime.getInstance().selectedComponentType
 				&& this.mSelectedTipsLayer )
 			{
 				this.removeElement( this.mSelectedTipsLayer );
@@ -847,66 +928,74 @@ package
 			
 			var self:MainScene = this;
 			this.mSelectType = Runtime.getInstance().selectedComponentType;
-			this.mSelectFormation = Runtime.getInstance().selectedFormationType;
 			if( this.mSelectType ) 
 			{
-				if( this.mSelectFormation )
-				{
-					var posData:Object = Data.getInstance().getFormationById( this.mSelectFormation );
-					for each(var p:* in posData)
-					{
-						var mat:Component = this.creator( this.mSelectType, 0 );
-						mat.x = p.x;
-						mat.y = p.y;
-						mat.addEventListener(MouseEvent.CLICK, function(e:*):void {
-							self.onMouseClick(e);
-						});
-						if( mat as Entity )
-							(mat as Entity).setBaseSize( 50 );
-						mSelectedTipsLayer.addElement(mat);
-					}
-				}
-				else 
-				{
-					var mat2:Component = this.creator( this.mSelectType, 0 );
-					mat2.addEventListener(MouseEvent.CLICK, function(e:*):void {
-						self.onMouseClick(e);
-					});
-					if( mat2 as Entity )
-						(mat2 as Entity).setBaseSize( 50 );
-					mSelectedTipsLayer.addElement(mat2);
-				}
+				var mat2:Component = this.creator( this.mSelectType, 0 );
+				mat2.addEventListener(MouseEvent.CLICK, function(e:*):void {
+					self.onMouseClick(e);
+				});
+				if( mat2 as Entity )
+					(mat2 as Entity).setBaseSize( 50 );
+				mSelectedTipsLayer.addElement(mat2);
 			}
 		}
 		private function updateMouseTips():void
 		{
 			if(this.mSelectedTipsLayer)
 			{
-				if( this.mSelectFormation )
-				{
-					var size:Point = this.getTipsLayerSize();
-					this.mSelectedTipsLayer.x = this.mouseX - size.x/2;
-					this.mSelectedTipsLayer.y = this.mouseY + size.y/2;
-				} else {
-					this.mSelectedTipsLayer.x = this.mouseX;
-					this.mSelectedTipsLayer.y = this.mouseY;	
-				}
+				this.mSelectedTipsLayer.x = this.mouseX;
+				this.mSelectedTipsLayer.y = this.mouseY;	
+			}
+			
+			if( this.mPasteTipsLayer )
+			{
+				var size:Point = new Point();
+				this.mPasteTipsLayer.x = this.mouseX - size.x/2;
+				this.mPasteTipsLayer.y = this.mouseY + size.y/2;
 			}
 		}
 		
 		// ------------------------
 		// facilities
 		private function creator( type:String, fontSize:Number ):Component
-		{
+		{	
 			if( type == AreaTrigger.TRIGGER_TYPE )
 				return new AreaTrigger( );
 			else 
 			{
+				if( !Data.getInstance().getEnemyProfileById( 
+					Runtime.getInstance().currentLevelID, type
+				) ) return null;
+				
 				var ret:Entity =  new Entity( type, true );
 				ret.setBaseSize( 50 );
 				ret.setTextTipsSize( fontSize );
 				return ret;
 			}
+		}
+		
+		private function getSelectedComponentsSize():Point
+		{
+			if( this.mSelectedComponents && this.mSelectedComponents.length > 0 )
+			{
+				var min_x:Number = this.mSelectedComponents[0].x;
+				var max_x:Number = this.mSelectedComponents[0].x;
+				
+				var min_y:Number = this.mSelectedComponents[0].y;
+				var max_y:Number = this.mSelectedComponents[0].y;
+				
+				for( var i:int=0; i<this.mSelectedComponents.length; i++ )
+				{
+					var item:IVisualElement = this.mSelectedComponents[i];
+					min_x = Math.min( min_x, item.x);
+					max_x = Math.max( max_x, item.x);
+					min_y = Math.min( min_y, item.y);
+					max_y = Math.max( max_y, item.y);
+				}
+				
+				return new Point( Math.abs( max_x - min_x ), Math.abs( max_y - min_y ) );
+			} else 
+				return new Point();
 		}
 		
 		private function getTipsLayerSize():Point 
@@ -928,6 +1017,30 @@ package
 					max_y = Math.max( max_y, item.y);
 				}
 
+				return new Point( Math.abs( max_x - min_x ), Math.abs( max_y - min_y ) );
+			} else 
+				return new Point();
+		}
+		
+		private function getPasteTipsLayerSize():Point
+		{
+			if( this.mPasteTipsLayer && this.mPasteTipsLayer.numElements > 0 )
+			{
+				var min_x:Number = this.mPasteTipsLayer.getElementAt(0).x;
+				var max_x:Number = this.mPasteTipsLayer.getElementAt(0).x;
+				
+				var min_y:Number = this.mPasteTipsLayer.getElementAt(0).y;
+				var max_y:Number = this.mPasteTipsLayer.getElementAt(0).y;
+				
+				for( var i:int=0; i<this.mPasteTipsLayer.numElements; i++ )
+				{
+					var item:IVisualElement = this.mPasteTipsLayer.getElementAt(i);
+					min_x = Math.min( min_x, item.x);
+					max_x = Math.max( max_x, item.x);
+					min_y = Math.min( min_y, item.y);
+					max_y = Math.max( max_y, item.y);
+				}
+				
 				return new Point( Math.abs( max_x - min_x ), Math.abs( max_y - min_y ) );
 			} else 
 				return new Point();

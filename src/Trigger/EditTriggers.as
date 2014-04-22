@@ -44,7 +44,7 @@ package Trigger
 			EventManager.getInstance().addEventListener(TriggerEvent.REMOVE_TRIGGER, onRemoveNode);
 			
 			var triggers = Data.getInstance().getEnemyTriggersById( 
-				Runtime.getInstance().currentLevelID, host.type 
+				Runtime.getInstance().currentLevelID, host.classId 
 			);
 			if( triggers )
 			{
@@ -70,7 +70,7 @@ package Trigger
 				triggers.push(e.serialize());
 			}
 			Data.getInstance().updateEnemyTriggersById(
-				Runtime.getInstance().currentLevelID, host.type, triggers
+				Runtime.getInstance().currentLevelID, host.classId, triggers
 			);
 		} 
 		

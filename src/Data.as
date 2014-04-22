@@ -55,7 +55,7 @@ package
 			var config:File = File.applicationStorageDirectory.resolvePath("conf.json");
 			this.mEditorConfigs = this.loadJson(config, false);
 			
-			if( !this.mEditorConfigs ) this.mEditorConfigs = { speed: 32 };
+			if( !this.mEditorConfigs ) this.mEditorConfigs = { mapSpeed: 32 };
 			if( !this.mEditorConfigs.projectPath ) {
 				var self:* = this;
 				this.setProjectPath( function(file:File):void
@@ -156,40 +156,272 @@ package
 		
 		///////////////////////////////////////////////////////////////////////
 		////// profiles
-		private var mLevelProfiles:Object 		= null;
+		private var mChapterProfiles:Object 	= null;
 		
 		// --------------------------------------------------------------------------
-		public function mergeLevelProfile( file:File, onComplete:Function ):void
+		public function get chapters():Object { return this.mChapterProfiles; }
+		
+		public function genLevelXML():XML
 		{
-			var self:Data = this;
-			var excel_reader:ExcelReader = new ExcelReader();
-			excel_reader.parse( file, function( raw:Object, msg:String="" ):void
+			var chapters:Array = [];
+			for each(var c:Object in this.mChapterProfiles )
+				chapters.push( c );
+			chapters.sortOn("id");
+			
+			var ret:XML = <root></root>;
+			for each( var chapter:Object in chapters )
 			{
-				if( !raw ) onComplete(msg);
-				else {
-					
-					// merge 
-					for each( var chapter:* in raw )
-					{
-						for( var lid:String in chapter.levels )
-						{
-							self.mLevelProfiles[lid] = chapter.levels[lid];
-							self.mLevelProfiles[lid].chapter_name 	= chapter.chapter_name;
-							self.mLevelProfiles[lid].chapter_id 	= chapter.chapter_id;
-							Utils.WriteObjectToJSON( // persistence
-								self.resolvePath("saved/profile/"+lid+".json"),
-								self.mLevelProfiles[lid]
-							);
-						}
-					}
-					
-					// update
-					self.updateEditorData( function(msg:String):void
-					{
-						onComplete(msg+"\n【成功】更新关卡配置");
-					});
+				var node:XML = <node></node>;
+				node.@id 	= chapter.id;
+				node.@label = chapter.name;
+				ret.appendChild( node );
+				
+				var levels:Array = new Array;
+				for each( var l:Object in chapter.levels )
+					levels.push( l );
+				levels.sortOn("level_id");
+				
+				for( var i:int =0; i<levels.length; i++ )
+				{
+					var leaf:XML = <level></level>;
+					leaf.@label = levels[i].level_name;
+					leaf.@id 	= levels[i].level_id;
+					node.appendChild( leaf );
 				}
-			});
+			}
+			return ret;
+		}
+		
+		public function makeChapter( id:String, name:String ):void
+		{
+			if( id in this.mChapterProfiles )
+			{
+				Alert.show("【创建失败】重复的id");
+				return;
+			}
+			
+			mChapterProfiles[id] = {
+				id : id,
+				name : name,
+				levels : {}
+			};
+		}
+		
+		public function updateChapter( id:String, name:String ):void
+		{
+			if( !(id in this.mChapterProfiles) ) return;
+			for( var key:String in this.mChapterProfiles[id].levels )
+			{
+				this.mChapterProfiles[id].levels[key].chapter_name = name;
+				this.writeToProfile(key, this.mChapterProfiles[id].levels[key]);
+			}
+			mChapterProfiles[id].name = name;
+		}
+		
+		public function deleteChapter( id:String ):void
+		{
+			if( !(id in this.mChapterProfiles) ) return;
+			
+			if( Runtime.getInstance().currentLevelID in this.mChapterProfiles[id] )
+			{
+				Runtime.getInstance().currentLevelID = null;
+			}
+			
+			for( var key:String in this.mChapterProfiles[id].levels )
+			{
+				var PROFILE:File = this.resolvePath("saved/profile/"+key+".json");
+				if( PROFILE.exists ) PROFILE.deleteFile();
+			}
+			delete this.mChapterProfiles[id];
+		}
+		
+		public function makeLevel( chapter_id:String, id:String, data:Object ):void
+		{
+			if( !(chapter_id in this.mChapterProfiles) )
+			{
+				Alert.show("【创建失败】章节id不存在");
+				return;
+			}
+			
+			for each( var chapter:Object in this.mChapterProfiles )
+			{
+				if( id in chapter.levels )
+				{
+					Alert.show("【创建失败】关卡id已存在");
+					return;
+				}
+			}
+			
+			var level:Object = {
+				chapter_id : chapter_id,
+				chapter_name : this.mChapterProfiles[chapter_id].name,
+				level_id : id,
+				monsters : {}
+			};
+			
+			for( var key:String in data )
+			{
+				level[key] = data[key];
+			}
+			
+			this.mChapterProfiles[chapter_id].levels[id] = level;
+			this.writeToProfile( id, level );
+		}
+		
+		public function updateLevel( id:String, data:Object ):void
+		{
+			var level:Object = this.getLevelProfileById( id );
+			if( !level ) return;
+			
+			if( "level_id" in data )
+			{
+				delete data["level_id"];
+			}
+			
+			if( "chapter_id" in data )
+			{
+				if( !(data.chapter_id in this.mChapterProfiles) )
+				{
+					Alert.show("【创建失败】章节id不存在");
+					return;
+				}
+				
+				if( this.mChapterProfiles[level.chapter_id].levels[id] != level )
+				{
+					this.mChapterProfiles[data.chapter_id].levels[id] = level;
+					delete this.mChapterProfiles[level.chapter_id].levels[id];
+				}
+			}
+			
+			for( var key:String in data )
+			{
+				level[key] = data[key];
+			}
+			this.writeToProfile( id, level );
+		}
+		
+		public function deleteLevel( id:String ):void
+		{
+			for each( var chapter:Object in this.mChapterProfiles )
+			{
+				if( id in chapter.levels )
+				{
+					delete chapter.levels[id];
+					var PROFILE:File = this.resolvePath("saved/profile/"+id+".json");
+					if( PROFILE.exists ) PROFILE.deleteFile();
+					return;
+				}
+			}
+			
+			if( Runtime.getInstance().currentLevelID == id )
+			{
+				Runtime.getInstance().currentLevelID = null;
+			}
+		}
+		
+		public function makeMonster( level_id:String, id:String, data:Object):void
+		{
+			var level:Object = this.getLevelProfileById( level_id );
+			if( !level ) {
+				Alert.show("【创建失败】关卡id不存在 ");
+				return;
+			}
+			
+			if( "monster_id" in data ) id = data.monster_id;
+			
+			if( id in level.monsters || !id )
+			{
+				Alert.show("【创建失败】怪物id已经存在");
+				return;
+			}
+			
+			var monster:Object = {
+				monster_id : id
+			};
+			for( var key:String in data )
+				monster[key] = data[key];
+			
+			level.monsters[id] = monster;
+			this.writeToProfile( level_id, level );
+			
+			Runtime.getInstance().onProfileDataChange();
+		}
+		
+		public function updateMonster( level_id:String, id:String, data:Object):void
+		{
+			var level:Object = this.getLevelProfileById( level_id );
+			if( !level ) {
+				Alert.show("【创建失败】关卡id不存在 ");
+				return;
+			}
+			
+			if( !(id in level.monsters) || !id )
+			{
+				Alert.show("【创建失败】怪物不存在");
+				return;
+			}
+			
+			var monster:Object = level.monsters[id];
+			
+			if( "monster_id" in data && 
+				data.monster_id in level.monsters &&
+				level.monsters[data.monster_id] != monster )
+			{
+				Alert.show("【创建失败】怪物id已经存在");
+				return;
+			}
+			
+			for( var key:String in data )
+				monster[key] = data[key];
+			level.monsters[monster.monster_id] = monster;
+			
+			this.writeToProfile( level_id, level );
+			Runtime.getInstance().onProfileDataChange();
+		}
+		
+		public function eraseMonster( level_id:String, id:String ):void
+		{
+			var profile:Object = this.getLevelProfileById( level_id );
+			if( !profile ) {
+				Alert.show("【创建失败】关卡id不存在 ");
+				return;
+			}
+			
+			if( !(id in profile.monsters) || !id )
+			{
+				Alert.show("【创建失败】怪物不存在");
+				return;
+			}
+			
+			// clean up
+			var data:Array = this.getLevelDataById( level_id ) as Array;
+			for( var ind:int=data.length-1; ind>=0; ind -- )
+			{
+				if( data[ind].type == id )
+					data.splice( ind, 1 );
+			}
+			this.updateLevelDataById( level_id, data );
+			
+			delete profile.monsters[id];
+			this.writeToProfile( level_id, profile );
+			Runtime.getInstance().onProfileDataChange();
+		}
+		
+		public function getLevelProfileById( lid:String ):Object 
+		{
+			for each( var chapter:Object in this.mChapterProfiles )
+			{
+				if( lid in chapter.levels ) return chapter.levels[lid];
+			}
+			return null;
+		}
+		
+		private function writeToProfile( lid:String, data:Object ):void
+		{
+			Utils.WriteObjectToJSON( // persistence
+				this.resolvePath( "saved/profile/"+lid+".json" ),
+				data
+			);
 		}
 		
 		///////////////////////////////////////////////////////////////////////
@@ -396,7 +628,7 @@ package
 				File.applicationStorageDirectory.resolvePath("bt_node_format.json"), false
 			) as Object || {};
 			
-			this.mLevelProfiles = {};
+			this.mChapterProfiles = {};
 			var PROFILE:File = this.resolvePath("saved/profile");
 			if( PROFILE.exists && PROFILE.isDirectory )
 			{
@@ -406,31 +638,17 @@ package
 					if( file.name.split(".")[1] != "json" )
 						continue;
 					var name:String = file.name.split(".")[0];
-					var to:Object = {}; 
-					to[name] = Utils.LoadJSONToObject( file );
+					var to:Object = Utils.LoadJSONToObject( file );
 					
-					this.merge(this.mLevelProfiles, to );
-				}
-			}else {
-				var old:Object = this.loadJson(
-					this.resolvePath("saved/profiles.json"), false
-				) as Object || {};
-				
-				for each( var chapter:* in old )
-				{
-					for( var lid:String in chapter.levels )
-					{
-						this.mLevelProfiles[lid] = chapter.levels[lid];
-						this.mLevelProfiles[lid].chapter_name 	= chapter.chapter_name;
-						this.mLevelProfiles[lid].chapter_id 	= chapter.chapter_id;
-						Utils.WriteObjectToJSON( // persistence
-							this.resolvePath("saved/profile/"+lid+".json"),
-							this.mLevelProfiles[lid]
-						);
-					}
+					if( !(to.chapter_id in this.mChapterProfiles) )
+						this.makeChapter( to.chapter_id, to.chapter_name );
+					
+					this.mChapterProfiles[to.chapter_id].levels[to.level_id] 
+						= Utils.LoadJSONToObject( file );
 				}
 			}
-			
+			// chapter profiles
+
 			
 			this.mLevelInstancesTable = {};
 			var LEVEL:File = this.resolvePath("saved/level");
@@ -448,33 +666,6 @@ package
 					this.merge( this.mLevelInstancesTable,  to );
 				}
 				
-			} else {
-				this.mLevelInstancesTable = this.loadJson( 
-					this.resolvePath("saved/levels.json"), false 
-				) as Object || {};
-				
-				var _bhs:Object = this.loadJson(
-					this.resolvePath("saved/enemy_bh.json"), false
-				) as Object || {};
-				
-				var _tri:Object = this.loadJson(
-					this.resolvePath("saved/enemy_trigger.json"), false
-				) as Object || {};
-				
-				var l2m:Object = DataParser.genLevel2MonsterTable( this.mLevelProfiles );
-				for( var lid:String in this.mLevelInstancesTable )
-				{
-					this.mLevelInstancesTable[lid].behavior = {};
-					this.mLevelInstancesTable[lid].trigger = {};
-					
-					for( var mid:String in l2m[lid] )
-					{
-						this.mLevelInstancesTable[lid].behavior[mid] = _bhs[mid] || [];
-						this.mLevelInstancesTable[lid].trigger[mid] = _tri[mid] || [];
-					}
-					
-					this.writeToLevel( lid );
-				}
 			}
 			
 			this.mBehaviorSet = {};
@@ -492,13 +683,6 @@ package
 					
 					this.merge( this.mBehaviorSet, to );
 				}
-			} else {
-				this.mBehaviorSet = this.loadJson(
-					this.resolvePath("saved/bh_lib.json"), false
-				) as Object || {};	
-				
-				for( var bid:String in this.mBehaviorSet ) 
-					this.updateBehaviorSetById( bid, this.mBehaviorSet[bid] );
 			}
 			
 			this.mFormationSet = {};
@@ -513,16 +697,9 @@ package
 					name = file.name.split(".")[0];
 					to = {};
 					to[name] = Utils.LoadJSONToObject( file );
-					
+				
 					this.merge( this.mFormationSet, to );
 				}
-			} else {
-				this.mFormationSet = this.loadJson(
-					this.resolvePath("saved/formations.json"), false
-				) as Object || {};
-				
-				for( var fid:String in this.mFormationSet )
-					this.updateFormationSetById( fid, this.mFormationSet[fid] );
 			}
 			
 			this.mDecoSet = {};
@@ -566,47 +743,129 @@ package
 				}
 			}
 			
-			this.updateEditorData( onComplete );
+			this.loadImage( onComplete );
 		}
 		
 		///////////////////////////////////////////////////////////////////////
 		////// second-hand data of editor
 		private var mEnemySkins:Dictionary 		= new Dictionary;
-		private var mEnemyProfilesTable:Object 	= null;
-		
-		private var mLevelId2Enemies:Object 	= null;
-		private var mLevelXML:XML 				= null;
-		
 		// --------------------------------------------------------------------------
+		public function get skins():Dictionary { return this.mEnemySkins; }
 		
 		public function getSkinById( fid:String ):* 
 		{
-			return this.mEnemySkins[fid];	
+			return this.mEnemySkins[fid];
 		}
-		public function getEnemyProfileById( eid:String ):Object
+		
+		public function getEnemyProfileById( lid:String, mid:String ):Object
 		{
-			return this.mEnemyProfilesTable[eid];
+			if( !lid || !mid ) return null;
+			var profile:Object = this.getLevelProfileById( lid );
+			if( !profile ) return null;
+			return profile.monsters[mid];
 		}
+		
+		public function isMonster( type:String ):Boolean
+		{
+			if( type == EditMonster.kCONFIGURABLE ) return true;
+			for each( var item:String in (this.mDynamicArgs.MonsterType || {}) )
+			{
+				if( type == item ) return true;
+			}
+			
+			return false;
+		}
+		
+		public function isBullet( type:String ):Boolean
+		{
+			for each( var item:String in (this.mDynamicArgs.BulletType || {}) )
+			{
+				if( type == item ) return true;
+			}
+			
+			return false;
+		}
+		
+		public function isTrap( type:String ):Boolean
+		{
+			for each( var item:String in (this.mDynamicArgs.TrapType || {}) )
+			{
+				if( type == item ) return true;
+			}
+			
+			return false;
+		}
+	
+		public function getTrapsByLevelId( lid:String ):Object 
+		{
+			var level:Object = this.getLevelProfileById( lid );
+			if( !level ) return null;
+			
+			var ret:Object = {};
+			for each( var monster:Object in level.monsters )
+			{
+				if( this.isTrap(monster.type) )
+				{
+					ret[monster.monster_id] = monster;
+				}
+			}
+			return ret;
+		}
+		
 		public function getEnemiesByLevelId( lid:String ):Object
 		{
-			return this.mLevelId2Enemies[lid];
+			var level:Object = this.getLevelProfileById( lid );
+			if( !level ) return null;
+			
+			var ret:Object = {};
+			for each( var monster:Object in level.monsters )
+			{
+				if( this.isMonster(monster.type) )
+				{
+					ret[monster.monster_id] = monster;
+				}
+			}
+			return ret;
 		}
-		public function get levelXML():XML { return this.mLevelXML; }
-			
-		private function updateEditorData(onComplete:Function):void
+		
+		public function getMonstersByLevelId( lid:String ):Object 
 		{
-			this.mEnemyProfilesTable = DataParser.genMonstersTable( this.mLevelProfiles );
-			this.mLevelId2Enemies    = DataParser.genLevel2MonsterTable( this.mLevelProfiles );
-			this.mLevelXML 			 = DataParser.genLevelXML( this.mLevelProfiles );
+			var level:Object = this.getLevelProfileById( lid );
+			if( !level ) return null;
 			
-			// load skins async
-			//this.mEnemySkins 	     = new Dictionary();
+			var ret:Object = {};
+			for each( var monster:Object in level.monsters )
+			{
+				if( this.isMonster(monster.type) )
+				{
+					ret[monster.monster_id] = monster;
+				}
+			}
+			return ret;
+		}
+		
+		public function getBulletsByLevelId( lid:String ):Object
+		{
+			var level:Object = this.getLevelProfileById( lid );
+			if( !level ) return null;
 			
+			var ret:Object = {};
+			for each( var bullet:Object in level.monsters )
+			{
+				if( this.isBullet(bullet.type) )
+				{
+					ret[bullet.monster_id] = bullet;
+				}
+			}
+			return ret;
+		}
+		
+		private function loadImage(onComplete:Function):void
+		{
 			var self:Data = this;
 			var length:Number = 0, countor:Number = 0; 
 			var callback:Function = function():void
 			{
-				Runtime.getInstance().onProfileDataChange();
 				var msg:String = self.validityCheckAndCleanUp();
 				onComplete( msg + "\n【成功】载入"+length+"个图像资源\n");
 			}
@@ -623,33 +882,31 @@ package
 						callback();
 					}
 				}
-			}
-			
-			for each(var item:Object in this.mEnemyProfilesTable)
-			{
-				var face:String = item.face;
-				if( this.mEnemySkins.hasOwnProperty(face) ) continue;
-				this.mEnemySkins[face] = "icu";
-				
-				var bytes:ByteArray = new ByteArray;
-				var file:File = this.resolvePath("skins/"+face+".png");
-				if( !file.exists ) continue;
-				
-				length ++;
-				var stream:FileStream = new FileStream();
-				stream.open(file, FileMode.READ);
-				stream.readBytes(bytes);
-				stream.close();
-				
-				var loader:Loader = new Loader;
-				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(face));
-				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function():void{
-					MapEditor.getInstance().addLog("加载"+face+"失败");
-					onComplete("【失败】加载图像"+face+"失败");
-				});
-				loader.loadBytes(bytes);
-				MapEditor.getInstance().addLog("加载"+face+"从"+file.nativePath+"..");
 			}	
+			var IMAGE:File = this.resolvePath( "skins" );
+			if( IMAGE.exists && IMAGE.isDirectory )
+			{
+				var formats:Array = IMAGE.getDirectoryListing();
+				for each( var file:File in formats )
+				{
+					var name:String = file.name.split(".")[0];
+					var bytes:ByteArray = new ByteArray;
+					
+					var stream:FileStream = new FileStream();
+					stream.open(file, FileMode.READ);
+					stream.readBytes(bytes);
+					stream.close();
+					
+					var loader:Loader = new Loader;
+					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(name));
+					loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function():void{
+						onComplete("【失败】加载图像"+name+"失败");
+					});
+					loader.loadBytes(bytes);
+					
+					length ++;
+				}
+			}
 			
 			if( length == 0 ) callback();
 		}
@@ -661,11 +918,14 @@ package
 			// [TODO] add args checking for behaviors
 			for( var lid:String in this.mLevelInstancesTable )
 			{
+				var profile:Object = this.getLevelProfileById( lid );
+				if( !profile ) continue;
+				
 				var data:Array = this.mLevelInstancesTable[lid].data || [];
 				var triggers:Object = this.mLevelInstancesTable[lid].trigger || {};
 				var bhs:Object = this.mLevelInstancesTable[lid].behavior || {};
 				
-				var monsters:Object = this.mLevelId2Enemies[lid] || {};
+				var monsters:Object = profile.monsters || {};
 				for( var iter:int = data.length-1; iter>=0; iter-- )
 				{
 					if( !(data[iter].type in monsters) && 
@@ -706,8 +966,9 @@ package
 		
 		public function exportLevelJS(lid:String, suffix:String):String
 		{	
-			if( !(lid in this.mLevelInstancesTable ) ) return "【失败】无相关地图数据存在";
-				
+			var profile:Object = this.getLevelProfileById( lid );
+			if( !(lid in this.mLevelInstancesTable ) || !profile  ) return "【失败】无相关地图数据存在";
+			
 			var export:Object = new Object;
 			var source:Array = this.mLevelInstancesTable[lid].data;
 			
@@ -716,7 +977,6 @@ package
 			
 			// parse instances 
 			export.objects = new Object, export.trigger = new Array;
-			var actors:Object = {}, traps:Object = {};
 			for each( var item:* in source ) 
 			{
 				if( item.type == "AreaTrigger" ) {
@@ -731,68 +991,211 @@ package
 					});
 					continue;
 				}
-
-				var data:Object = this.mEnemyProfilesTable[item.type];
-				if( data.monster_type == "Bullet" ) {
-					return "【失败】子弹类型不可被放置在地图中"; 
-				}
-				if( data.monster_type == "Monster" ) actors[item.type] = data;
-				else traps[item.type] = data;
 				
+				if( !(item.type in profile.monsters) ) continue;	
+				var data:Object = profile.monsters[item.type];
+				
+				if( !this.isMonster( data.type) && !this.isTrap( data.type ) )
+					continue;
+		
 				var t:Number = item.triggerTime || item.y;
 				export.objects[item.id] = {
 					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@",
 					time : t
 				};
 			}
-
-			export.actor = new Object; 
-			var bhs:Object = {};
-			for( var key:String in actors )
-			{
-				if( !this.mLevelInstancesTable[lid].behavior.hasOwnProperty(key) ||
-					this.mLevelInstancesTable[lid].behavior[key].length == 0 )
+			
+			function adjust( type:String, item:Object ):Array {
+				if( itype == "ccp" )
 				{
-					return "【失败】敌人"+key+"未被设置行为";
+					return [true, "@@cc.p("+item[0]+", "+item[1]+")@@"];
+				} 
+				else if ( itype == "ccsize" )
+				{
+					return [true, "@@cc.size("+item[0]+", "+item[1]+")@@"];
+				} 
+				else if ( itype == "bullet" )
+				{
+					if( !(export.actor[index][ikey] in bullets) )
+						return [false, "【失败】子弹  "+export.actor[index][ikey]+"  是无效的"];
+					else 
+						return [true, null];
+				}
+				else if ( itype == "actor" )
+				{
+					if( !(export.actor[index][ikey] in monsters) )
+						return [false, "【失败】怪物  "+export.actor[index][ikey]+"  是无效的"];
+					else 
+						return [true, null];
 				}
 				
-				export.actor[key] = Utils.deepCopy(actors[key]);	
-				export.actor[key].behaviors = this.mLevelInstancesTable[lid].behavior[key];
-				export.actor[key].triggers = this.mLevelInstancesTable[lid].trigger[key] || [];
-				this.mLevelInstancesTable[lid].behavior[key].forEach(
-					function(item:*, ...args):void {
-						bhs[item] = true;
-					}, 
-				null);
+				return [true, null];
+			}
+			
+			var monsters:Object = Data.getInstance().getMonstersByLevelId( lid );
+			var bullets:Object = Data.getInstance().getBulletsByLevelId( lid );
+			var traps:Object = Data.getInstance().getTrapsByLevelId( lid );
+			
+			export.actor = new Object; 
+			var bhs:Object = {};
+			for( var index:String in profile.monsters )
+			{
+				var monster:Object = profile.monsters[index];
+				if( !this.isMonster( monster.type ) )
+					continue;
+				
+				export.actor[index] = Utils.deepCopy(monster); 
+				export.actor[index].triggers = this.mLevelInstancesTable[lid].trigger[index] || [];
+				
+				if( monster.type == EditMonster.kCONFIGURABLE && 
+					(	!this.mLevelInstancesTable[lid].behavior.hasOwnProperty(index) ||
+						this.mLevelInstancesTable[lid].behavior[index].length == 0 ) )
+				{
+					return "【失败】自定义怪物"+index+"未被设置行为";
+				}
+				
+				if( monster.type == EditMonster.kCONFIGURABLE )
+				{
+					this.mLevelInstancesTable[lid].behavior[index].forEach(
+						function(item:*, ...args):void {
+							bhs[item] = true;
+						}, 
+						null);
+					export.actor[index].behaviors = this.mLevelInstancesTable[lid].behavior[index];
+				}
+				
+				if( "MonsterProfile" in Data.getInstance().dynamicArgs )
+				{
+					var monster_profile:Object = Data.getInstance().dynamicArgs.MonsterProfile || {};
+					for each( item in monster_profile )
+					{
+						var ikey:String = item[ConfigPanel.kKEY];
+						var itype:String = item[ConfigPanel.kTYPE];
+						
+						if( !(ikey in export.actor[index]) )
+							return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
+						
+						var adj:Array = adjust( itype, monster[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.actor[index][ikey]+"  是无效的";
+						if( adj[1] ) export.actor[index][ikey] = adj[1];
+					}
+				}
+				
+				if( monster.type != EditMonster.kCONFIGURABLE &&
+					monster.type in Data.getInstance().dynamicArgs )
+				{
+					monster_profile = Data.getInstance().dynamicArgs[monster.type];
+					for each( item in monster_profile )
+					{
+						ikey = item[ConfigPanel.kKEY];
+						itype = item[ConfigPanel.kTYPE];
+						if( !(ikey in export.actor[index]) )
+							return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
+						
+						adj = adjust( itype, monster[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.actor[index][ikey]+"  是无效的";
+						if( adj[1] ) export.actor[index][ikey] = adj[1];
+					}
+				}
 			}
 
 			export.behavior = new Object;
-			for( key in bhs )
+			for( index in bhs )
 			{
-				if( !this.mBehaviorSet.hasOwnProperty(key) ) {
-					return "【失败】试图导出不存在的行为"+key;
+				if( !this.mBehaviorSet.hasOwnProperty(index) ) {
+					return "【失败】试图导出不存在的行为"+index;
 				}
-				var raw:String = Utils.genBTreeJS(Utils.cloneObjectData(this.mBehaviorSet[key]));
-				export.behavior[key] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
+				var raw:String = Utils.genBTreeJS(Utils.cloneObjectData(this.mBehaviorSet[index]));
+				export.behavior[index] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
 					""+raw+";}@@");
 			} 
 			
-			export.trap = new Object;
-			for( key in traps )
-				export.trap[key] = Utils.deepCopy(traps[key]);
-			
 			// export bullet
 			export.bullet = new Object;
-			for( key in this.mEnemyProfilesTable ) 
+			for( index in profile.monsters ) 
 			{
-				if(this.mEnemyProfilesTable[key].monster_type == "Bullet")
+				var bullet:Object = profile.monsters[index]; 
+				if( !this.isBullet( bullet.type ) ) continue;
+				bullet = Utils.deepCopy( bullet );
+				
+				export.bullet[index] = bullet;
+				if( "BulletProfile" in Data.getInstance().dynamicArgs )
 				{
-					for( var bh:String in export.behavior )
+					var bullet_profile:Object = Data.getInstance().dynamicArgs.BulletProfile || {};
+					for each( item in bullet_profile )
 					{
-						if( export.behavior[bh].search(key) != -1)
-						{
-							export.bullet[key] = this.mEnemyProfilesTable[key];
-						}
+						ikey = item[ConfigPanel.kKEY];
+						itype = item[ConfigPanel.kTYPE];
+						
+						if( !(ikey in export.bullet[index]) )
+							return "【失败】子弹"+index+"的属性"+ikey+"未被设置";
+						
+						adj = adjust( itype, bullet[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.bullet[index][ikey]+"  是无效的";
+						if( adj[1] ) export.bullet[index][ikey] = adj[1];
+					}
+				}
+				
+				if( bullet.type in Data.getInstance().dynamicArgs )
+				{
+					bullet_profile = Data.getInstance().dynamicArgs[bullet.type] || {};
+					for each( item in bullet_profile )
+					{
+						ikey = item[ConfigPanel.kKEY];
+						itype = item[ConfigPanel.kTYPE];
+						
+						if( !(ikey in export.bullet[index]) )
+							return "【失败】子弹"+index+"的属性"+ikey+"未被设置";
+						
+						adj = adjust( itype, bullet[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.bullet[index][ikey]+"  是无效的";
+						if( adj[1] ) export.bullet[index][ikey] = adj[1];
+					}
+				}
+			}
+			
+			// export trap
+			export.trap = new Object;
+			for( index in profile.monsters )
+			{
+				if( !this.isTrap( profile.monsters[index].type )  ) continue;
+				
+				var trap:Object = profile.monsters[index];
+				export.trap[index] = profile.monsters[index];
+				trap = Utils.deepCopy( trap );
+					
+				export.trap[index] = trap;
+				if( "TrapProfile" in Data.getInstance().dynamicArgs )
+				{
+					var trap_profile:Object = Data.getInstance().dynamicArgs.TrapProfile || {};
+					for each( item in trap_profile )
+					{
+						ikey = item[ConfigPanel.kKEY];
+						itype = item[ConfigPanel.kTYPE];
+						
+						if( !(ikey in export.trap[index]) )
+							return "【失败】陷阱"+index+"的属性"+ikey+"未被设置";
+						
+						adj = adjust( itype, trap[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.trap[index][ikey]+"  是无效的";
+						if( adj[1] ) export.trap[index][ikey] = adj[1];
+					}
+				}
+				
+				if( trap.type in Data.getInstance().dynamicArgs )
+				{
+					trap_profile = Data.getInstance().dynamicArgs[trap.type] || {};
+					for each( item in trap_profile )
+					{
+						ikey = item[ConfigPanel.kKEY];
+						itype = item[ConfigPanel.kTYPE];
+						
+						if( !(ikey in export.trap[index]) )
+							return "【失败】陷阱"+index+"的属性"+ikey+"未被设置";
+						
+						adj = adjust( itype, trap[ikey] );
+						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.trap[index][ikey]+"  是无效的";
+						if( adj[1] ) export.bullet[index][ikey] = adj[1];
 					}
 				}
 			}
@@ -818,7 +1221,7 @@ package
 		
 		public function getLevelDataForServer( lid:String ):Object
 		{	
-			var profile:Object = this.mLevelProfiles[lid];
+			var profile = this.getLevelProfileById( lid );
 			if( !profile ) return null;
 	
 			if( !(lid in this.mLevelInstancesTable) ) 
@@ -835,8 +1238,13 @@ package
 			for each( var item:* in inst.data ) 
 			{
 				if( item.type == "AreaTrigger" ) continue;
+				if( this.isMonster( item.type ) )
+				{
+					continue;
+				}
+				
 				if( !(item.type in enemies) ) {
-					var m:Object = this.mLevelId2Enemies[lid][item.type];
+					var m:Object = profile.monsters[item.type];
 					enemies[item.type] = {
 						type 	: int(item.type),
 						count 	: 0,
@@ -851,12 +1259,14 @@ package
 			for each( var monster:* in enemies )
 				array.push( monster );
 			
-			return {
+			var ret = {
 				id : lid,
 				stageId: profile.chapter_id, stage: profile.chapter_name,
 				name: profile.level_name, path: "level/"+lid+".js", 
 				enemies : array
 			};
+			Utils.dumpObject( ret );
+			return ret;
 		}
 		
 		// ---------------------------------------------------------------------------------
