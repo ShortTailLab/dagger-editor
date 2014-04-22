@@ -926,6 +926,11 @@ package
 				var bhs:Object = this.mLevelInstancesTable[lid].behavior || {};
 				
 				var monsters:Object = profile.monsters || {};
+				for each( var item:Object in monsters )
+				{
+					if( !("type" in item) ) item.type = EditMonster.kCONFIGURABLE;
+				}
+				
 				for( var iter:int = data.length-1; iter>=0; iter-- )
 				{
 					if( !(data[iter].type in monsters) && 

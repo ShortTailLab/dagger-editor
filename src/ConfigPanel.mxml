@@ -309,14 +309,22 @@
 				} 
 				else if ( item[kTYPE] == "ccp" || item[kTYPE] == "ccsize" ) 
 				{	
+					var tmp_x:String = "5", tmp_y:String = "5";
+					try{
+						tmp_x = (item[kDEFAULT] as Array)[0];
+						tmp_y = (item[kDEFAULT] as Array)[1];
+					} catch(err:Error) {
+						tmp_x = "5"; tmp_y = "5";	
+					}
+					
 					var x_width:TextInput = new TextInput;
-					x_width.text 	= item[kDEFAULT][0];
+					x_width.text 	= tmp_x;
 					x_width.width	= 75;
 					x_width.restrict = "\0-9\.\\-";
 					head.addElement( x_width );
 					
 					var y_height:TextInput = new TextInput;
-					y_height.text 	= item[kDEFAULT][1];
+					y_height.text 	= tmp_y;
 					y_height.width	= 75;
 					y_height.restrict = "\0-9\.\\-";
 					head.addElement( y_height );
