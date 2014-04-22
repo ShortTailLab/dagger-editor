@@ -25,6 +25,7 @@
 			import spark.components.HGroup;
 			import spark.components.Label;
 			import spark.components.VGroup;
+			import spark.components.supportClasses.TextBase;
 			import spark.primitives.Line;
 			
 			protected var mCBComplete:Function = null;
@@ -32,6 +33,7 @@
 			protected var mKey2Group:Object = {};
 			protected var mKey2UIComponents:Object = {};
 			protected var mKey2Data:Object = {};
+			protected var mKey2Index:Object = {};
 			protected var mSource:Array = [];
 			protected var mIsPopUp:DisplayObject = null;
 			protected var mIgnoreTag:Boolean = false;
@@ -44,6 +46,7 @@
 			public static const kDEFAULT:int = 3;
 			public static const kDESC:int 	= 4;
 			public static const kOTHER:int 	= 5;
+			public static const kMAX:int 	= 6;
 			
 			protected function onCreate():void  {
 				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
@@ -67,7 +70,7 @@
 			
 			public function refresh_data( data:Array ):void
 			{
-				var ind = 0;
+				var ind:int = 0;
 				for each( var item:Array in data ) 
 				{
 					if( !(item[kTAG] in this.mKey2Group) )
@@ -98,7 +101,20 @@
 					{
 						if( item[kDEFAULT] in Data.getInstance().dynamicArgs )
 						{
-							this.refresh_data(Data.getInstance().dynamicArgs[item[kDEFAULT]]);
+							var sub_data:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[item[kDEFAULT]] ) as Array;
+							var monster:Object = Data.getInstance().getEnemyProfileById( 
+								Runtime.getInstance().currentLevelID, item[kOTHER]
+							) || {};
+							
+							for each( var sub:Array in sub_data )
+							{
+								if( sub[kKEY] in monster )
+								{
+									sub[kDEFAULT] = monster[sub[kKEY]];
+								}
+							}
+							
+							this.refresh_data( sub_data );
 						}
 					}
 					ind ++;
@@ -107,13 +123,19 @@
 			
 			public function refresh( data:Array ):void 
 			{
-				this.mSource = data;
+				this.mSource = Utils.deepCopy( data ) as Array;
+				for each( var item:Array in this.mSource )
+				{
+					while( item.length <= kMAX )
+						item.push( "wc" );
+				}
 				
 				// make items by group
 				{	
 					this.mKey2Data = {};
 					this.mKey2Group = {};
 					this.mKey2UIComponents = {};
+					this.mKey2Index = {};
 					this.mTabNavigator.removeAllChildren();
 					this.mTabNavigator.removeAllElements();
 					
@@ -145,7 +167,9 @@
 				}
 				
 				//this.mCBComplete( ret  );
-				this.mCBError("用户取消了操作");
+				//this.mCBError("用户取消了操作");
+				MapEditor.getInstance().writeToStatusBar( "用户取消了配置【"+this.mRootPanel.title+"】的操作！" );
+				
 				if( this.mIsPopUp )
 					PopUpManager.removePopUp( this );
 			}
@@ -165,12 +189,12 @@
 						else if( data[kTYPE] == "ccp" )
 						{
 							//ret[key] = "@@cc.p("+Number(item[0].text)+", "+Number(item[1].text)+")@@";
-							ret[key] = [Number(item[0].text), Number(item[1].text)];
+							ret[key] = [JSON.parse(item[0].text), JSON.parse(item[1].text)];
 						}
 						else if( data[kTYPE] == "ccsize" )
 						{
 							//ret[key] = "@@cc.size("+Number(item[0].text)+", "+Number(item[1].text)+")@@";
-							ret[key] = [Number(item[0].text), Number(item[1].text)];
+							ret[key] = [JSON.parse(item[0].text), JSON.parse(item[1].text)];
 						}
 						else if( data[kTYPE] == "array_int" ) 
 						{
@@ -196,22 +220,34 @@
 							}else
 								ret[key] = data[kOTHER][1][ind];
 						} 
-						else if( data[kTYPE] == "MonsterType" || data[kTYPE] == "MonsterType" || data[kTYPE] == "BulletType" || data[kTYPE] == "bullet" )
+						else if( data[kTYPE] == "MonsterType" || 
+								 data[kTYPE] == "MonsterType" || 
+								 data[kTYPE] == "BulletType" )
 						{
 							var target:DropDownList = item[0] as DropDownList;
 							ind = target.selectedIndex;
 							if( ind == -1 ) {
-								ret[key] = -1;
 								this.mCBError("请选择："+data[kDESC]);
 								return;
 							}
 							else ret[key] = target.selectedItem as String;
 						}
+						else if ( data[kTYPE] == "bullet" || data[kTYPE] == "actor" )
+						{
+							target = item[0] as DropDownList;
+							ind = target.selectedIndex;
+							if( ind == -1 ) {
+								this.mCBError("请选择："+data[kDESC]);
+								return;
+							} else {
+								ret[key] = this.mSource[ this.mKey2Index[key] ][kOTHER][1][ind]; 
+							}
+						}
 						else if( data[kTYPE] == "string" )
 						{
 							ret[key] = item[0].text;
 						} 
-						else 
+						else  
 						{
 							ret[key] = JSON.parse( item[0].text );
 						}
@@ -221,6 +257,8 @@
 					}
 				}
 				this.mCBComplete( ret );
+				
+				MapEditor.getInstance().writeToStatusBar( "用户完成对【"+this.mRootPanel.title+"】的配置！" );
 				if( this.mIsPopUp )
 					PopUpManager.removePopUp( this );
 			}
@@ -233,6 +271,7 @@
 				
 				var self:ConfigPanel = this;
 				this.mKey2UIComponents[item[kKEY]] = [];
+				this.mKey2Index[item[kKEY]] = data_index;
 				
 				var head:FormItem = new FormItem;
 				head.label = item[kDESC];
@@ -244,8 +283,8 @@
 					input.text 	= item[kDEFAULT];
 					input.width	= 75;
 	
-					if( item.type == "float" ) input.restrict = "\.\0-9\ ";
-					else if( item.type == "int" ) input.restrict = "0-9";
+					if( item.type == "float" ) input.restrict = "\.\0-9\\-";
+					else if( item.type == "int" ) input.restrict = "\0-9\\-";
 					
 					head.addElement( input );
 					this.mKey2UIComponents[item[kKEY]].push(input);
@@ -273,13 +312,13 @@
 					var x_width:TextInput = new TextInput;
 					x_width.text 	= item[kDEFAULT][0];
 					x_width.width	= 75;
-					x_width.restrict = "0-9";
+					x_width.restrict = "\0-9\.\\-";
 					head.addElement( x_width );
 					
 					var y_height:TextInput = new TextInput;
 					y_height.text 	= item[kDEFAULT][1];
 					y_height.width	= 75;
-					y_height.restrict = "0-9";
+					y_height.restrict = "\0-9\.\\-";
 					head.addElement( y_height );
 					
 					this.mKey2UIComponents[item[kKEY]].push(x_width);
@@ -289,7 +328,7 @@
 				{				
 					var array:TextInput = new TextInput;
 					array.text = String(JSON.stringify( item[kDEFAULT] ));
-					array.restrict = "\[\]\,\0-9\ ";
+					array.restrict = "\[\]\,\0-9\\- ";
 					
 					head.addElement( array );
 					this.mKey2UIComponents[item[kKEY]].push( array );
@@ -358,24 +397,43 @@
 						var data:Array = Utils.deepCopy(self.mSource) as Array;
 						data[data_index][kDEFAULT] = monsterList[comboBox.selectedIndex];
 						self.refresh( data );
+						self.stage.focus = self;
 					});
 					
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
 					
 				} 
-				else if ( item[kTYPE] == "bullet" )
+				else if ( item[kTYPE] == "bullet" || item[kTYPE] == "actor" )
 				{
-					var bullets:Object = Data.getInstance().getBulletsByLevelId( 
-						Runtime.getInstance().currentLevelID
-					);
+					var sources:Object = {};
+					if( item[kTYPE] == "bullet" )
+						sources = Data.getInstance().getBulletsByLevelId( 
+							Runtime.getInstance().currentLevelID
+						);
+					else if( item[kTYPE] == "actor" )
+						sources = Data.getInstance().getMonstersByLevelId(
+							Runtime.getInstance().currentLevelID
+						);
+
+					var sorted:Array = [];
+					for each( var one:Object in sources )
+						sorted.push( one );
+					sorted.sortOn("monster_id");
 					
-					var bulletList:Array = [];
-					for each( var bullet:Object in bullets )
-						bulletList.push( bullet.monster_id );
+					var itemList:Array = [ [], [] ];
+					for each( one in sorted )
+					{
+						itemList[0].push( one.monster_id +"|"+ one.monster_name );
+						itemList[1].push( one.monster_id );
+					}
+					
+					comboBox = new DropDownList;
+					comboBox.dataProvider = new ArrayList( itemList[0] );
+					comboBox.prompt = "请选择";
 					
 					ind = -1, countor = 0;
-					for each( mlk in bulletList )
+					for each( mlk in itemList[1] )
 					{
 						if( mlk == item[kDEFAULT] ) {
 							ind = countor;
@@ -383,15 +441,11 @@
 						}
 						countor ++;
 					}
-					bulletList.sort();
-					
-					comboBox = new DropDownList;
-					comboBox.dataProvider = new ArrayList( bulletList );
-					comboBox.prompt = "请选择";
 					comboBox.selectedIndex = ind;
 					
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
+					this.mSource[data_index][kOTHER] = itemList;
 				}
 				
 				return head;
@@ -435,7 +489,7 @@
 			</s:NavigatorContent>
 		</mx:TabNavigator>
 		
-		<s:Button id="mConfirmButton" right="5" bottom="5" height="27" label="确认修改(Enter)"
+		<s:Button id="mConfirmButton" right="5" bottom="5" height="25" label="确认修改(Enter)"
 				  click="onConfirm(event)" enabled="true" fontSize="13"/>
 	</s:TitleWindow>
 </s:Module>

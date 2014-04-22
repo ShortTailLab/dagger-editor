@@ -7,6 +7,7 @@ package mapEdit
 		public function dtor():void{};
 		
 		public function select(value:Boolean):void {}
+		public function setSize( value:Number ):void {}
 		public function setBaseSize( value:Number  ):void {}
 		public function unserialize(data:Object):void {}
 		public function serialize():Object { return{}; }

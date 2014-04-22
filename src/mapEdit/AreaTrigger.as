@@ -331,6 +331,15 @@ package mapEdit
 			this.scaleX = this.scaleY = scale;
 		}
 		
+		override public function setSize( value:Number ):void
+		{
+			var scale:Number = Math.min( 
+				value/this.width, 
+				value/this.height 
+			);
+			this.scaleX = this.scaleY = scale;
+		}
+		
 		private function onEnterFrame(e:*):void
 		{	
 			
