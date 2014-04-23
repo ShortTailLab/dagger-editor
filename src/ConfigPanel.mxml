@@ -6,6 +6,8 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import behaviorEdit.PathEditPanel;
+			
 			import mx.collections.ArrayCollection;
 			import mx.collections.ArrayList;
 			import mx.containers.FormItem;
@@ -454,6 +456,29 @@
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
 					this.mSource[data_index][kOTHER] = itemList;
+				}
+				else if ( item[kTYPE] == "path" )
+				{
+					var pathInput:TextInput = new TextInput;
+					pathInput.text 	= JSON.stringify(item[kDEFAULT]);;
+					pathInput.width	= 75;
+					pathInput.editable = false;
+					head.addElement( pathInput );
+					
+					pathInput.addEventListener(MouseEvent.CLICK, function(evt:MouseEvent):void
+					{
+						var window:PathEditPanel = new PathEditPanel(
+							"path", JSON.parse(pathInput.text) as Array, false, true
+						);
+						window.addEventListener( MsgEvent.EDIT_PATH, function(evt:MsgEvent):void
+						{
+							pathInput.text = JSON.stringify( evt.hintData );
+						});
+						PopUpManager.addPopUp( window, self, true );
+						PopUpManager.centerPopUp( window );
+					});
+					
+					this.mKey2UIComponents[item[kKEY]].push(pathInput);
 				}
 				
 				return head;

@@ -105,6 +105,12 @@
 				this.mNext.addEventListener(MouseEvent.ROLL_OVER, onMouseOverNext);
 				this.mNext.addEventListener(MouseEvent.ROLL_OUT, onMouseOutNext);
 				
+				this.addEventListener(KeyboardEvent.KEY_DOWN, function(evt:KeyboardEvent):void
+				{
+					evt.stopPropagation();
+					evt.stopImmediatePropagation();
+				});
+				
 				if (this.mData) {
 					this.updateComponents();
 				}
@@ -276,7 +282,9 @@
 				var id:String = event.currentTarget.id;
 				var index:int = int(id.charAt(id.length-1));
 				var data:Object = this.mData.data.parm[index-1];
+				
 				var window:PathEditPanel = new PathEditPanel(name, data.path, data.type=="array_ccp_curve");
+				
 				window.addEventListener(MsgEvent.EDIT_PATH, onPathEditPanelClose);
 				PopUpManager.addPopUp(window, this, true);
 				PopUpManager.centerPopUp(window);

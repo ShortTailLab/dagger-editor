@@ -466,7 +466,7 @@ package
 				this.mPasteTipsLayer = null;
 			}
 			
-			if( !v ) return;
+			if( !v || this.mSelectedComponents.length <= 0 ) return;
 			this.mPasteTipsLayer = new Group;
 			
 			this.addElement( this.mPasteTipsLayer );

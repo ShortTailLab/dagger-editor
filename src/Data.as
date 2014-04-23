@@ -1019,6 +1019,15 @@ package
 				{
 					return [true, "@@cc.size("+item[0]+", "+item[1]+")@@"];
 				} 
+				else if ( itype == "path" )
+				{
+					var data:Array = [];
+					for each ( var dot:Array in item )
+					{
+						data.push( "@@cc.p("+dot[0]+", "+dot[1]+")@@" );
+					}
+					return [true, data];
+				}
 				else if ( itype == "bullet" )
 				{
 					if( !(export.actor[index][ikey] in bullets) )
@@ -1207,7 +1216,6 @@ package
 			
 			// undefined
 			export.luck = new Object;
-			
 			var content:String = JSON.stringify(export, null, "\t");
 			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
 				adjustJS(content) + "; return level; }"; 
