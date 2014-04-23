@@ -1028,17 +1028,28 @@ package
 					}
 					return [true, data];
 				}
+				else if ( itype == "path2" )
+				{
+					data = [];
+					for( var ii:int=1; ii<item.length; ii++ )
+					{
+						var dot1:Array = item[ii-1];
+						var dot2:Array = item[ii];
+						data.push( "@@cc.p("+String(item[ii][0]-item[ii-1][0])+", "+String(item[ii][1]-item[ii-1][1])+")@@" );
+					}
+					return [true, data];
+				}
 				else if ( itype == "bullet" )
 				{
-					if( !(export.actor[index][ikey] in bullets) )
-						return [false, "【失败】子弹  "+export.actor[index][ikey]+"  是无效的"];
+					if( !(item in bullets) )
+						return [false, "【失败】子弹  "+item+"  是无效的"];
 					else 
 						return [true, null];
 				}
 				else if ( itype == "actor" )
 				{
-					if( !(export.actor[index][ikey] in monsters) )
-						return [false, "【失败】怪物  "+export.actor[index][ikey]+"  是无效的"];
+					if( !(item in monsters) )
+						return [false, "【失败】怪物  "+item+"  是无效的"];
 					else 
 						return [true, null];
 				}
