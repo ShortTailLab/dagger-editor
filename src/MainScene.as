@@ -12,15 +12,8 @@ package
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.ui.Keyboard;
+	import flash.ui.KeyboardType;
 	import flash.utils.Timer;
-	
-	import manager.MsgInform;
-	
-	import mapEdit.AreaTrigger;
-	import mapEdit.Component;
-	import mapEdit.Coordinator;
-	import mapEdit.Entity;
-	import mapEdit.MainSceneXML;
 	
 	import mx.controls.Alert;
 	import mx.core.IVisualElement;
@@ -31,6 +24,14 @@ package
 	
 	import spark.components.Group;
 	import spark.core.SpriteVisualElement;
+	
+	import manager.MsgInform;
+	
+	import mapEdit.AreaTrigger;
+	import mapEdit.Component;
+	import mapEdit.Coordinator;
+	import mapEdit.Entity;
+	import mapEdit.MainSceneXML;
 	
 	public class MainScene extends MainSceneXML
 	{
@@ -324,6 +325,14 @@ package
 			);
 			this.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			this.addEventListener( ResizeEvent.RESIZE, onResize );
+			
+			this.addEventListener( KeyboardEvent.KEY_DOWN, 
+				function(e:KeyboardEvent):void
+				{
+					if(e.keyCode == Keyboard.BACKSPACE || e.keyCode == Keyboard.DELETE)
+						self.onDeleteSelectedMonsters();
+				}
+			);
 			
 			Runtime.getInstance().addEventListener( 
 				Runtime.SELECT_DATA_CHANGE, this.onSelectChange
