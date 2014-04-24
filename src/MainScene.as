@@ -3,21 +3,21 @@ this view contains the map,the time scroller, the inputform.
 */
 package 
 {
+	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.text.ReturnKeyLabel;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.ui.Keyboard;
-	import flash.ui.KeyboardType;
 	import flash.utils.Timer;
 	
 	import mx.controls.Alert;
 	import mx.core.IVisualElement;
-	import mx.core.UIComponent;
 	import mx.events.FlexEvent;
 	import mx.events.ResizeEvent;
 	import mx.events.SliderEvent;
@@ -25,9 +25,8 @@ package
 	import spark.components.Group;
 	import spark.core.SpriteVisualElement;
 	
-	import manager.MsgInform;
-	
 	import mapEdit.AreaTrigger;
+	import mapEdit.BossWaypoint;
 	import mapEdit.Component;
 	import mapEdit.Coordinator;
 	import mapEdit.Entity;
@@ -68,6 +67,10 @@ package
 		private var mTipsFontSize:Number 	= 12;
 		private var mPasteData:Array 		= [];
 		private var mPasteTipsLayer:Group 	= null;
+		
+		private var mBossEditModeOn:Boolean = false;
+		private var mBossPathVisuals:Array = new Array;
+		private var mBossPathPoints:Array = null;
 		
 		public function MainScene()
 		{
@@ -215,13 +218,25 @@ package
 			this.setProgress(this.mProgressInPixel);
 			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent):void {
-					if( self.mSelectFrame ) return;
-					self.mSelectFrame = new SpriteVisualElement;
-					self.mSelectFrame.x = self.mCoordinator.mouseX;
-					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
-					self.mComponentsLayer.addElement( self.mSelectFrame );
+					if(self.mBossEditModeOn)
+					{
+						self.onMouseClickBossEditMode(e);
+					}
+					else
+					{
+						if( self.mSelectFrame.visible ) return;
+						
+						self.mSelectFrame.graphics.clear();
+						self.mSelectFrame.x = self.mCoordinator.mouseX;
+						self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
+						self.mSelectFrame.visible = true;
+					}
 				}
 			);
+			
+			this.mSelectFrame = new SpriteVisualElement;
+			this.mSelectFrame.visible = false;
+			this.mComponentsLayer.addElement( self.mSelectFrame );
 			
 			this.mAdaptiveLayer.addElement( this.mCoordinator );
 			this.mAdaptiveLayer.setElementIndex( 
@@ -234,11 +249,13 @@ package
 					{
 						var inSelected:Boolean = false;
 						for each( var item:Component in self.mSelectedComponents )
+						{
 							if( item == self.mFocusComponent )
 							{
 								inSelected = true;
 								break;
 							}
+						}
 						if( !inSelected ) self.onCancelSelect();
 						
 						var deltaX:Number = (self.mouseX - self.mDraggingX);
@@ -270,7 +287,7 @@ package
 						self.onMonsterChange();
 					}
 					
-					if( !self.mSelectFrame ) return;
+					if(!self.mSelectFrame.visible ) return;
 					
 					self.mSelectFrame.graphics.clear();
 					self.mSelectFrame.graphics.lineStyle(1);
@@ -282,8 +299,7 @@ package
 					
 					if( !e.buttonDown )
 					{
-						self.mComponentsLayer.removeElement( self.mSelectFrame );
-						self.mSelectFrame = null;
+						self.mSelectFrame.visible = false;
 					}
 				}
 			);
@@ -293,7 +309,7 @@ package
 					e.stopPropagation();
 					self.mFocusComponent = null;
 					
-					if( !self.mSelectFrame ) return;
+					if(!self.mSelectFrame.visible) return;
 					
 					var bound:Rectangle =  self.mSelectFrame.getBounds(self);
 					if( (bound.right - bound.left) + (bound.bottom - bound.top) < 50 )
@@ -301,8 +317,7 @@ package
 					else
 						self.onSelectMonsters( );
 					
-					self.mComponentsLayer.removeElement( self.mSelectFrame );
-					self.mSelectFrame = null;
+					self.mSelectFrame.visible = false;
 				}
 			);
 			
@@ -316,8 +331,7 @@ package
 									
 					if( self.isOutOfCoordinator() && self.mSelectFrame )
 					{
-						self.mComponentsLayer.removeElement( self.mSelectFrame );
-						self.mSelectFrame = null;
+						self.mSelectFrame.visible = false;
 					}
 					
 					self.updateMouseTips();
@@ -326,17 +340,120 @@ package
 			this.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			this.addEventListener( ResizeEvent.RESIZE, onResize );
 			
+			
 			this.addEventListener( KeyboardEvent.KEY_DOWN, 
 				function(e:KeyboardEvent):void
 				{
-					if(e.keyCode == Keyboard.BACKSPACE || e.keyCode == Keyboard.DELETE)
-						self.onDeleteSelectedMonsters();
+					if(e.altKey)
+					{
+						// turn on BossEditMode when pressing alt
+						if(!self.mBossEditModeOn)
+							self.turnOnBossEditMode();
+					}
+				}
+			);
+			
+			this.addEventListener(KeyboardEvent.KEY_UP, 
+				function(e:KeyboardEvent):void
+				{
+					// turn off BossEditMode when alt is released
+					if(!e.altKey && self.mBossEditModeOn)
+						self.turnOffBossEditMode();
 				}
 			);
 			
 			Runtime.getInstance().addEventListener( 
 				Runtime.SELECT_DATA_CHANGE, this.onSelectChange
 			);
+		}
+		
+		public static function deepTrace( obj : *, level : int = 0 ) : void{
+			var tabs : String = "";
+			for ( var i : int = 0 ; i < level ; i++, tabs += "\t" )
+			{}
+			
+			for ( var prop : String in obj ){
+				trace( tabs + prop + " : " + obj[ prop ] );
+				deepTrace( obj[ prop ], level + 1 );
+			}
+		}
+		
+		private  function onMouseClickBossEditMode(e:MouseEvent):void
+		{
+			var profile:Object = Data.getInstance().getEnemyProfileById(
+				Runtime.getInstance().currentLevelID, 
+				this.mSelectedComponents[0].classId
+			);
+			
+			if(!profile.isBoss)
+			{
+				Alert.show("选定的对象不是Boss类单位");
+				return;
+			}
+			
+			var x:Number = this.mCoordinator.mouseX;
+			var y:Number = this.mCoordinator.mouseY - this.mProgressInPixel;
+			trace("placing points on map " + x + ", " + y);
+			
+			
+			var dot:SpriteVisualElement = new BossWaypoint(this.mBossPathPoints.length);
+			dot.x = x; dot.y = y;
+			this.mBossPathVisuals.push(dot);
+			this.mComponentsLayer.addElement(dot);
+			
+			var profile:Object = Data.getInstance().getEnemyProfileById(
+				Runtime.getInstance().currentLevelID, 
+				this.mSelectedComponents[0].classId
+			);
+			
+			this.mBossPathPoints.push( {x: x, y:y, skill : {} });
+			
+			deepTrace(profile);
+			trace("");
+		}
+		
+		private static function buildADot(px:Number, py:Number):SpriteVisualElement
+		{
+			var dot:SpriteVisualElement = new SpriteVisualElement;
+			dot.graphics.lineStyle(1);
+			dot.graphics.beginFill(0);
+			dot.graphics.drawCircle(0, 0, 10);
+			dot.graphics.endFill();
+			
+			with( dot ) { x = px; y = py; }			
+			return dot;
+		}
+		
+		public function turnOnBossEditMode() : void
+		{
+			if(this.mSelectedComponents.length)
+			{
+				var profile:Object = Data.getInstance().getEnemyProfileById(
+					Runtime.getInstance().currentLevelID, 
+					this.mSelectedComponents[0].classId
+				);
+				
+				deepTrace(profile);
+				
+				if(profile.isBoss)
+				{
+					trace("turned on boss edit mode");
+					this.mBossEditModeLabel.text = "BOSS编辑模式：开启";
+					this.mBossEditModeOn = true;
+					
+					// should not create new data entry here, move this to data model.
+					if(!profile.bossPath)
+						profile.bossPath = [];
+					this.mBossPathPoints = profile.bossPath;
+				}
+			}
+		}
+		
+		public function turnOffBossEditMode() :void
+		{
+			this.mBossEditModeLabel.text = "BOSS编辑模式：关闭";
+			this.mBossEditModeOn = false;
+			this.mBossPathPoints = null;
 		}
 		
 		public function save():void
@@ -357,7 +474,8 @@ package
 			// clean up
 			this.mComponents = new Vector.<Component>();
 			this.mComponentsLayer.removeAllElements();
-
+			this.mComponentsLayer.addElement(this.mSelectFrame);
+			
 			//
 			this.mLevelId = lid;
 			
@@ -916,6 +1034,9 @@ package
 					item.y = now.y;	
 				}
 			}
+			
+			if(e.keyCode == Keyboard.BACKSPACE || e.keyCode == Keyboard.DELETE)
+				this.onDeleteSelectedMonsters();
 		}
 		
 		private var mSelectType:String 		= null;
