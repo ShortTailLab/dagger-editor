@@ -1010,7 +1010,12 @@ package
 				};
 			}
 			
-			function adjust( type:String, item:Object ):Array {
+			function adjust( name:String, itype:String, item:Object ):Array {
+				
+				var monsters:Object = Data.getInstance().getMonstersByLevelId( lid );
+				var bullets:Object = Data.getInstance().getBulletsByLevelId( lid );
+				var traps:Object = Data.getInstance().getTrapsByLevelId( lid );
+				
 				if( itype == "ccp" )
 				{
 					return [true, "@@cc.p("+item[0]+", "+item[1]+")@@"];
@@ -1019,19 +1024,44 @@ package
 				{
 					return [true, "@@cc.size("+item[0]+", "+item[1]+")@@"];
 				} 
+				else if ( itype == "path" )
+				{
+					var data:Array = [];
+					for each ( var dot:Array in item )
+					{
+						data.push( "@@cc.p("+dot[0]+", "+dot[1]+")@@" );
+					}
+					return [true, data];
+				}
+				else if ( itype == "path2" )
+				{
+					data = [];
+					for( var ii:int=1; ii<item.length; ii++ )
+					{
+						var dot1:Array = item[ii-1];
+						var dot2:Array = item[ii];
+						data.push( "@@cc.p("+String(item[ii][0]-item[ii-1][0])+", "+String(item[ii][1]-item[ii-1][1])+")@@" );
+					}
+					return [true, data];
+				}
 				else if ( itype == "bullet" )
 				{
-					if( !(export.actor[index][ikey] in bullets) )
-						return [false, "【失败】子弹  "+export.actor[index][ikey]+"  是无效的"];
+					if( !(item in bullets) )
+						return [false, "【失败】"+name+"配置的子弹  "+item+"  是无效的"];
 					else 
 						return [true, null];
 				}
 				else if ( itype == "actor" )
 				{
-					if( !(export.actor[index][ikey] in monsters) )
-						return [false, "【失败】怪物  "+export.actor[index][ikey]+"  是无效的"];
+					if( !(item in monsters) )
+						return [false, "【失败】"+name+"配置的怪物  "+item+"  是无效的"];
 					else 
 						return [true, null];
+				}
+				else if ( itype == "trap" )
+				{
+					if( !(item in traps) )
+						return [false, "【失败】"+name+"配置的陷阱 "+item+" 是无效的"];
 				}
 				
 				return [true, null];
@@ -1080,8 +1110,8 @@ package
 						if( !(ikey in export.actor[index]) )
 							return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
 						
-						var adj:Array = adjust( itype, monster[ikey] );
-						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.actor[index][ikey]+"  是无效的";
+						var adj:Array = adjust( monster.monster_id, itype, monster[ikey] );
+						if( !adj[0] ) return adj[1];
 						if( adj[1] ) export.actor[index][ikey] = adj[1];
 					}
 				}
@@ -1097,8 +1127,8 @@ package
 						if( !(ikey in export.actor[index]) )
 							return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
 						
-						adj = adjust( itype, monster[ikey] );
-						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.actor[index][ikey]+"  是无效的";
+						adj = adjust( monster.monster_id, itype, monster[ikey] );
+						if( !adj[0] ) return adj[1];
 						if( adj[1] ) export.actor[index][ikey] = adj[1];
 					}
 				}
@@ -1135,8 +1165,8 @@ package
 						if( !(ikey in export.bullet[index]) )
 							return "【失败】子弹"+index+"的属性"+ikey+"未被设置";
 						
-						adj = adjust( itype, bullet[ikey] );
-						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.bullet[index][ikey]+"  是无效的";
+						adj = adjust( bullet.monster_id, itype, bullet[ikey] );
+						if( !adj[0] ) return adj[1];
 						if( adj[1] ) export.bullet[index][ikey] = adj[1];
 					}
 				}
@@ -1152,8 +1182,8 @@ package
 						if( !(ikey in export.bullet[index]) )
 							return "【失败】子弹"+index+"的属性"+ikey+"未被设置";
 						
-						adj = adjust( itype, bullet[ikey] );
-						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.bullet[index][ikey]+"  是无效的";
+						adj = adjust( bullet.monster_id, itype, bullet[ikey] );
+						if( !adj[0] ) return adj[1];
 						if( adj[1] ) export.bullet[index][ikey] = adj[1];
 					}
 				}
@@ -1181,8 +1211,8 @@ package
 						if( !(ikey in export.trap[index]) )
 							return "【失败】陷阱"+index+"的属性"+ikey+"未被设置";
 						
-						adj = adjust( itype, trap[ikey] );
-						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.trap[index][ikey]+"  是无效的";
+						adj = adjust( trap.monster_id, itype, trap[ikey] );
+						if( !adj[0] ) return adj[1];
 						if( adj[1] ) export.trap[index][ikey] = adj[1];
 					}
 				}
@@ -1198,16 +1228,15 @@ package
 						if( !(ikey in export.trap[index]) )
 							return "【失败】陷阱"+index+"的属性"+ikey+"未被设置";
 						
-						adj = adjust( itype, trap[ikey] );
-						if( !adj[0] ) return "【失败】"+ikey+"中的配置"+export.trap[index][ikey]+"  是无效的";
-						if( adj[1] ) export.bullet[index][ikey] = adj[1];
+						adj = adjust( trap.monster_id, itype, trap[ikey] );
+						if( !adj[0] ) return adj[1];
+						if( adj[1] ) export.trap[index][ikey] = adj[1];
 					}
 				}
 			}
 			
 			// undefined
 			export.luck = new Object;
-			
 			var content:String = JSON.stringify(export, null, "\t");
 			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
 				adjustJS(content) + "; return level; }"; 

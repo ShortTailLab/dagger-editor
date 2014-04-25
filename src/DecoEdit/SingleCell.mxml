@@ -119,11 +119,11 @@
 			
 			private var lastMouse:Point;
 			private function onMouseDown(event:MouseEvent):void {
-				if (this.mSelected) {
+//				if (this.mSelected) {
 					this.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 					this.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 					lastMouse = new Point(this.stage.mouseX, this.stage.mouseY);
-				}
+//				}
 			}
 			
 			private function onMouseMove(event:MouseEvent):void {
@@ -140,8 +140,34 @@
 				this.mData.y1 = newPos.y;
 				this.mEdit.updateCurrentCell();
 				this.mEdit.setModified(true);
+				if (this.mEdit.currentCell == this || this.mEdit.appendCells.indexOf(this) != -1) {
+					if (this.mEdit.currentCell != this) {
+						this.mEdit.currentCell.mouseMove(this.stage.mouseX - lastMouse.x, this.stage.mouseY - lastMouse.y);
+					}
+					for (var i:int = 0; i < this.mEdit.appendCells.length; i++) {
+						if (this.mEdit.appendCells[i] != this) {
+							this.mEdit.appendCells[i].mouseMove(this.stage.mouseX - lastMouse.x, this.stage.mouseY - lastMouse.y);
+						}
+					}
+				}
 				lastMouse.x = this.stage.mouseX;
 				lastMouse.y = this.stage.mouseY;
+			}
+			
+			public function mouseMove(offsetX:Number, offsetY:Number):void {
+				var newX:Number = this.x + offsetX;
+				var newY:Number = this.y + offsetY;
+				if (newX < 0) newX = 0;
+				if (newX > this.mLayer.data.w) newX = this.mLayer.data.w;
+				if (newY < 0) newY = 0;
+				if (newY > this.mLayer.data.h) newY = this.mLayer.data.h;
+				this.x = newX;
+				this.y = newY;
+				var newPos:Object = SingleLayer.toCocosWorld(this.x, this.y, this.mData, this.mLayer.data);
+				this.mData.x1 = newPos.x;
+				this.mData.y1 = newPos.y;
+//				this.mEdit.updateCurrentCell();
+//				this.mEdit.setModified(true);
 			}
 			
 			private function onMouseUp(event:MouseEvent):void {
@@ -150,13 +176,19 @@
 			}
 			
 			private function onMouseClick(event:MouseEvent):void {
-				if (this.mSelected) return;
-				this.setSelected(!this.mSelected);
-				if (this.mSelected) {
-					this.mEdit.setCurrent(this.mLayer, this);
+//				if (this.mSelected) return;
+//				this.setSelected(!this.mSelected);
+//				if (this.mSelected) {
+//					this.mEdit.setCurrent(this.mLayer, this);
+//				}
+//				else {
+//					this.mEdit.setCurrent(this.mLayer, null);
+//				}
+				if (DecoPanel.CTRL_KEY) {
+					this.mEdit.appendCurrent(this.mLayer, this);
 				}
 				else {
-					this.mEdit.setCurrent(this.mLayer, null);
+					this.mEdit.setCurrent(this.mLayer, this);
 				}
 			}
 			
@@ -219,6 +251,7 @@
 			}
 			
 			public function get data():Object { return this.mData; }
+			public function get layer():Object { return this.mLayer; }
 		]]>
 	</fx:Script>
 	<fx:Declarations>

@@ -28,14 +28,16 @@ package behaviorEdit
 		private var isCurve:Boolean;
 		private var _tip:TextField;
 		private var _dragging:Dot;
+		private var _isArray:Boolean = false;
 		
-		public function PathEditPanel(parmName:String, path:Array = null, _isCurve:Boolean = true)
+		public function PathEditPanel(parmName:String, path:Array = null, _isCurve:Boolean = true, isArray:Boolean = false)
 		{
 			this.title = "路径编辑";
 			this.width = screenRX*0.5+padding*2;
 			this.height = screenRY*0.5+padding*2 + 70;
 			this.parmName = parmName;
 			this.isCurve = _isCurve;
+			this._isArray = isArray;
 			
 			var bg:UIComponent = new UIComponent;
 			bg.graphics.beginFill(0xffffff);
@@ -67,7 +69,10 @@ package behaviorEdit
 				for(var i:int = 0; i < path.length; i++)
 				{
 					var color:uint = isCurve && i%2==1 ? 0x00ff00 : 0xff0000;
-					makeDot(color, path[i].x, path[i].y);
+					if( !isArray )
+						makeDot(color, path[i].x, -path[i].y);
+					else 
+						makeDot(color, path[i][0], -path[i][1]);
 				}
 				render();
 			}
@@ -86,10 +91,15 @@ package behaviorEdit
 			var data:Array = new Array;
 			for each(var dot in dots)
 			{
-				var p:Object = new Object;
-				p.x = dot.x;
-				p.y = dot.y;
-				data.push(p);
+				if( !this._isArray )
+				{
+					var p:Object = new Object;
+					p.x = dot.x;
+					p.y = -dot.y;
+					data.push(p);
+				} else {
+					data.push( [dot.x, -dot.y ]);
+				}
 			}
 			var evt:MsgEvent = new MsgEvent(MsgEvent.EDIT_PATH);
 			evt.hintMsg = parmName;
