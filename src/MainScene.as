@@ -26,7 +26,6 @@ package
 	import spark.core.SpriteVisualElement;
 	
 	import mapEdit.AreaTrigger;
-	import mapEdit.BossWaypoint;
 	import mapEdit.Component;
 	import mapEdit.Coordinator;
 	import mapEdit.Entity;
@@ -67,10 +66,6 @@ package
 		private var mTipsFontSize:Number 	= 12;
 		private var mPasteData:Array 		= [];
 		private var mPasteTipsLayer:Group 	= null;
-		
-		private var mBossEditModeOn:Boolean = false;
-		private var mBossPathVisuals:Array = new Array;
-		private var mBossPathPoints:Array = null;
 		
 		public function MainScene()
 		{
@@ -218,19 +213,12 @@ package
 			this.setProgress(this.mProgressInPixel);
 			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent):void {
-					if(self.mBossEditModeOn)
-					{
-						self.onMouseClickBossEditMode(e);
-					}
-					else
-					{
-						if( self.mSelectFrame.visible ) return;
-						
-						self.mSelectFrame.graphics.clear();
-						self.mSelectFrame.x = self.mCoordinator.mouseX;
-						self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
-						self.mSelectFrame.visible = true;
-					}
+					if( self.mSelectFrame.visible ) return;
+					
+					self.mSelectFrame.graphics.clear();
+					self.mSelectFrame.x = self.mCoordinator.mouseX;
+					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
+					self.mSelectFrame.visible = true;
 				}
 			);
 			
@@ -340,28 +328,6 @@ package
 			this.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			this.addEventListener( ResizeEvent.RESIZE, onResize );
 			
-			
-			this.addEventListener( KeyboardEvent.KEY_DOWN, 
-				function(e:KeyboardEvent):void
-				{
-					if(e.altKey)
-					{
-						// turn on BossEditMode when pressing alt
-						if(!self.mBossEditModeOn)
-							self.turnOnBossEditMode();
-					}
-				}
-			);
-			
-			this.addEventListener(KeyboardEvent.KEY_UP, 
-				function(e:KeyboardEvent):void
-				{
-					// turn off BossEditMode when alt is released
-					if(!e.altKey && self.mBossEditModeOn)
-						self.turnOffBossEditMode();
-				}
-			);
-			
 			Runtime.getInstance().addEventListener( 
 				Runtime.SELECT_DATA_CHANGE, this.onSelectChange
 			);
@@ -376,84 +342,6 @@ package
 				trace( tabs + prop + " : " + obj[ prop ] );
 				deepTrace( obj[ prop ], level + 1 );
 			}
-		}
-		
-		private  function onMouseClickBossEditMode(e:MouseEvent):void
-		{
-			var profile:Object = Data.getInstance().getEnemyProfileById(
-				Runtime.getInstance().currentLevelID, 
-				this.mSelectedComponents[0].classId
-			);
-			
-			if(!profile.isBoss)
-			{
-				Alert.show("选定的对象不是Boss类单位");
-				return;
-			}
-			
-			var x:Number = this.mCoordinator.mouseX;
-			var y:Number = this.mCoordinator.mouseY - this.mProgressInPixel;
-			trace("placing points on map " + x + ", " + y);
-			
-			
-			var dot:SpriteVisualElement = new BossWaypoint(this.mBossPathPoints.length);
-			dot.x = x; dot.y = y;
-			this.mBossPathVisuals.push(dot);
-			this.mComponentsLayer.addElement(dot);
-			
-			var profile:Object = Data.getInstance().getEnemyProfileById(
-				Runtime.getInstance().currentLevelID, 
-				this.mSelectedComponents[0].classId
-			);
-			
-			this.mBossPathPoints.push( {x: x, y:y, skill : {} });
-			
-			deepTrace(profile);
-			trace("");
-		}
-		
-		private static function buildADot(px:Number, py:Number):SpriteVisualElement
-		{
-			var dot:SpriteVisualElement = new SpriteVisualElement;
-			dot.graphics.lineStyle(1);
-			dot.graphics.beginFill(0);
-			dot.graphics.drawCircle(0, 0, 10);
-			dot.graphics.endFill();
-			
-			with( dot ) { x = px; y = py; }			
-			return dot;
-		}
-		
-		public function turnOnBossEditMode() : void
-		{
-			if(this.mSelectedComponents.length)
-			{
-				var profile:Object = Data.getInstance().getEnemyProfileById(
-					Runtime.getInstance().currentLevelID, 
-					this.mSelectedComponents[0].classId
-				);
-				
-				deepTrace(profile);
-				
-				if(profile.isBoss)
-				{
-					trace("turned on boss edit mode");
-					this.mBossEditModeLabel.text = "BOSS编辑模式：开启";
-					this.mBossEditModeOn = true;
-					
-					// should not create new data entry here, move this to data model.
-					if(!profile.bossPath)
-						profile.bossPath = [];
-					this.mBossPathPoints = profile.bossPath;
-				}
-			}
-		}
-		
-		public function turnOffBossEditMode() :void
-		{
-			this.mBossEditModeLabel.text = "BOSS编辑模式：关闭";
-			this.mBossEditModeOn = false;
-			this.mBossPathPoints = null;
 		}
 		
 		public function save():void
