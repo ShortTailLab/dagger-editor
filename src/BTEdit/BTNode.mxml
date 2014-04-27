@@ -800,8 +800,8 @@
 						newData = {type:"执行", children:this.mData.children, data:{execType:event.data.name.func, parm:[]}};
 						for (var i:int = 0; i < event.data.name.args.length; i++) {
 							if (event.data.name.args[i].type == "ccp") {
-								newData.data.parm.push({type:"ccp", name:"dir x", value:"float"});
-								newData.data.parm.push({type:"ccp", name:"dir y", value:"float"});
+								newData.data.parm.push({type:"ccp", name:"x", value:"float"});
+								newData.data.parm.push({type:"ccp", name:"y", value:"float"});
 							}
 							else if (event.data.name.args[i].type == "ccsize") {
 								newData.data.parm.push({type:"ccsize", name:"width", value:"float"});

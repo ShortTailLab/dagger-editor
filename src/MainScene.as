@@ -3,34 +3,33 @@ this view contains the map,the time scroller, the inputform.
 */
 package 
 {
+	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.text.ReturnKeyLabel;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.ui.Keyboard;
 	import flash.utils.Timer;
 	
-	import manager.MsgInform;
-	
-	import mapEdit.AreaTrigger;
-	import mapEdit.Component;
-	import mapEdit.Coordinator;
-	import mapEdit.Entity;
-	import mapEdit.MainSceneXML;
-	
 	import mx.controls.Alert;
 	import mx.core.IVisualElement;
-	import mx.core.UIComponent;
 	import mx.events.FlexEvent;
 	import mx.events.ResizeEvent;
 	import mx.events.SliderEvent;
 	
 	import spark.components.Group;
 	import spark.core.SpriteVisualElement;
+	
+	import mapEdit.AreaTrigger;
+	import mapEdit.Component;
+	import mapEdit.Coordinator;
+	import mapEdit.Entity;
+	import mapEdit.MainSceneXML;
 	
 	public class MainScene extends MainSceneXML
 	{
@@ -214,13 +213,18 @@ package
 			this.setProgress(this.mProgressInPixel);
 			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent):void {
-					if( self.mSelectFrame ) return;
-					self.mSelectFrame = new SpriteVisualElement;
+					if( self.mSelectFrame.visible ) return;
+					
+					self.mSelectFrame.graphics.clear();
 					self.mSelectFrame.x = self.mCoordinator.mouseX;
 					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
-					self.mComponentsLayer.addElement( self.mSelectFrame );
+					self.mSelectFrame.visible = true;
 				}
 			);
+			
+			this.mSelectFrame = new SpriteVisualElement;
+			this.mSelectFrame.visible = false;
+			this.mComponentsLayer.addElement( self.mSelectFrame );
 			
 			this.mAdaptiveLayer.addElement( this.mCoordinator );
 			this.mAdaptiveLayer.setElementIndex( 
@@ -233,11 +237,13 @@ package
 					{
 						var inSelected:Boolean = false;
 						for each( var item:Component in self.mSelectedComponents )
+						{
 							if( item == self.mFocusComponent )
 							{
 								inSelected = true;
 								break;
 							}
+						}
 						if( !inSelected ) self.onCancelSelect();
 						
 						var deltaX:Number = (self.mouseX - self.mDraggingX);
@@ -269,7 +275,7 @@ package
 						self.onMonsterChange();
 					}
 					
-					if( !self.mSelectFrame ) return;
+					if(!self.mSelectFrame.visible ) return;
 					
 					self.mSelectFrame.graphics.clear();
 					self.mSelectFrame.graphics.lineStyle(1);
@@ -281,8 +287,7 @@ package
 					
 					if( !e.buttonDown )
 					{
-						self.mComponentsLayer.removeElement( self.mSelectFrame );
-						self.mSelectFrame = null;
+						self.mSelectFrame.visible = false;
 					}
 				}
 			);
@@ -292,7 +297,7 @@ package
 					e.stopPropagation();
 					self.mFocusComponent = null;
 					
-					if( !self.mSelectFrame ) return;
+					if(!self.mSelectFrame.visible) return;
 					
 					var bound:Rectangle =  self.mSelectFrame.getBounds(self);
 					if( (bound.right - bound.left) + (bound.bottom - bound.top) < 50 )
@@ -300,8 +305,7 @@ package
 					else
 						self.onSelectMonsters( );
 					
-					self.mComponentsLayer.removeElement( self.mSelectFrame );
-					self.mSelectFrame = null;
+					self.mSelectFrame.visible = false;
 				}
 			);
 			
@@ -315,8 +319,7 @@ package
 									
 					if( self.isOutOfCoordinator() && self.mSelectFrame )
 					{
-						self.mComponentsLayer.removeElement( self.mSelectFrame );
-						self.mSelectFrame = null;
+						self.mSelectFrame.visible = false;
 					}
 					
 					self.updateMouseTips();
@@ -328,6 +331,17 @@ package
 			Runtime.getInstance().addEventListener( 
 				Runtime.SELECT_DATA_CHANGE, this.onSelectChange
 			);
+		}
+		
+		public static function deepTrace( obj : *, level : int = 0 ) : void{
+			var tabs : String = "";
+			for ( var i : int = 0 ; i < level ; i++, tabs += "\t" )
+			{}
+			
+			for ( var prop : String in obj ){
+				trace( tabs + prop + " : " + obj[ prop ] );
+				deepTrace( obj[ prop ], level + 1 );
+			}
 		}
 		
 		public function save():void
@@ -348,7 +362,8 @@ package
 			// clean up
 			this.mComponents = new Vector.<Component>();
 			this.mComponentsLayer.removeAllElements();
-
+			this.mComponentsLayer.addElement(this.mSelectFrame);
+			
 			//
 			this.mLevelId = lid;
 			
@@ -907,6 +922,9 @@ package
 					item.y = now.y;	
 				}
 			}
+			
+			if(e.keyCode == Keyboard.BACKSPACE || e.keyCode == Keyboard.DELETE)
+				this.onDeleteSelectedMonsters();
 		}
 		
 		private var mSelectType:String 		= null;
