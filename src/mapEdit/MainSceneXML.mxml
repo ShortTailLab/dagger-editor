@@ -73,7 +73,6 @@
 										<s:Label id="mTipsSizeLabel" fontSize="12" text="文字大小："/>
 										<s:TextInput id="mTipsSizeInput" width="50" restrict="0-9" />
 									</s:HGroup>
-									<s:Label id="mBossEditModeLabel" fontSize="12" text="BOSS编辑模式: 关闭" />
 								</s:VGroup>
 							</s:HGroup>
 						</s:Panel>
