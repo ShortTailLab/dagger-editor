@@ -3,14 +3,12 @@ this view contains the map,the time scroller, the inputform.
 */
 package 
 {
-	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
-	import flash.text.ReturnKeyLabel;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.ui.Keyboard;
@@ -923,7 +921,7 @@ package
 				}
 			}
 			
-			if(e.keyCode == Keyboard.BACKSPACE || e.keyCode == Keyboard.DELETE)
+			if(e.keyCode == Keyboard.DELETE)
 				this.onDeleteSelectedMonsters();
 		}
 		
