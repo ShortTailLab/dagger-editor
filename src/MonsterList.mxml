@@ -20,6 +20,7 @@
 			import mapEdit.AreaTrigger;
 			import mapEdit.Component;
 			import mapEdit.Entity;
+			import mapEdit.FormationTrigger;
 			
 			import mx.collections.ArrayCollection;
 			import mx.core.FlexGlobals;
@@ -185,11 +186,15 @@
 				var id:String = this.mMonsterList.selectedItem.id;
 				this.mSelectedLabel.text = id;
 				
-				if( id == "AreaTrigger" )
+				if( id == AreaTrigger.TRIGGER_TYPE )
 				{
 					this.mSelection = new AreaTrigger;
 					this.mSelection.y = 65;
 					this.mSelection.x = 47;
+				} else if( id == FormationTrigger.TRIGGER_TYPE ) {
+					this.mSelection = new FormationTrigger;
+					this.mSelection.x = 47;
+					this.mSelection.y = 65;
 				} else {
 					this.mSelection = new Entity( id, false );
 					this.mSelection.y = 100;
@@ -247,6 +252,7 @@
 					);
 				}
 				
+				this.mTrapData.push( {id: FormationTrigger.TRIGGER_TYPE, name:"阵型触发器" } );
 				this.mTrapData.push( {id: AreaTrigger.TRIGGER_TYPE, name:"区域触发器" } );
 				for each( item in traps )
 				{

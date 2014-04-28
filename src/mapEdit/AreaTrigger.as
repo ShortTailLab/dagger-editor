@@ -196,6 +196,7 @@ package mapEdit
 			{
 				dot.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 				dot.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+				dot.addEventListener(MouseEvent.MOUSE_OUT, onMouseUp);
 			}
 			
 			var self:AreaTrigger = this;

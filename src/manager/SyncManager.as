@@ -172,7 +172,6 @@ package manager
 						}catch(err:IOError) {
 							onComplete(m +"\n【失败】未能成功连接；");
 						}
-						
 					}
 				);
 				

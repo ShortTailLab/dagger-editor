@@ -18,6 +18,9 @@ package
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
+	import mapEdit.AreaTrigger;
+	import mapEdit.FormationTrigger;
+	
 	import mx.controls.Alert;
 	
 	public class Data extends EventDispatcher
@@ -795,6 +798,11 @@ package
 			
 			return false;
 		}
+		
+		public function isTrigger( type:String ):Boolean
+		{
+			return type == AreaTrigger.TRIGGER_TYPE || FormationTrigger.TRIGGER_TYPE;
+		}
 	
 		public function getTrapsByLevelId( lid:String ):Object 
 		{
@@ -933,8 +941,8 @@ package
 				
 				for( var iter:int = data.length-1; iter>=0; iter-- )
 				{
-					if( !(data[iter].type in monsters) && 
-						  data[iter].type != "AreaTrigger" )
+					if( this.isMonster( data[iter].type ) && 
+						!(data[iter].type in monsters) )
 					{
 						result += "【删除】敌人"+data[iter].type+"未被关卡"+lid+"定义\n";
 						data.splice( iter, 1 );
@@ -995,6 +1003,18 @@ package
 						}
 					});
 					continue;
+				}else if ( item.type == FormationTrigger.TRIGGER_TYPE )
+				{
+					export.trigger.push({
+						cond : {
+							type : "Line",
+							bottom : item.y,
+							height : item.height
+						},
+						result : {
+							type : "Formation"	
+						}
+					});
 				}
 				
 				if( !(item.type in profile.monsters) ) continue;	
@@ -1234,7 +1254,7 @@ package
 		
 		public function getLevelDataForServer( lid:String ):Object
 		{	
-			var profile = this.getLevelProfileById( lid );
+			var profile:Object = this.getLevelProfileById( lid );
 			if( !profile ) return null;
 	
 			if( !(lid in this.mLevelInstancesTable) ) 
@@ -1250,11 +1270,7 @@ package
 			var enemies:Object = {};
 			for each( var item:* in inst.data ) 
 			{
-				if( item.type == "AreaTrigger" ) continue;
-				if( this.isMonster( item.type ) )
-				{
-					continue;
-				}
+				if( !this.isMonster( item.type ) ) continue;
 				
 				if( !(item.type in enemies) ) {
 					var m:Object = profile.monsters[item.type];
@@ -1272,7 +1288,7 @@ package
 			for each( var monster:* in enemies )
 				array.push( monster );
 			
-			var ret = {
+			var ret:Object = {
 				id : lid,
 				stageId: profile.chapter_id, stage: profile.chapter_name,
 				name: profile.level_name, path: "level/"+lid+".js", 

@@ -20,6 +20,7 @@ package
 	import mapEdit.Component;
 	import mapEdit.Coordinator;
 	import mapEdit.Entity;
+	import mapEdit.FormationTrigger;
 	import mapEdit.MainSceneXML;
 	
 	import mx.controls.Alert;
@@ -212,12 +213,13 @@ package
 				this.mGridWidth, this.mGridHeight, height, this.mProgressInPixel 
 			);
 			this.setProgress(this.mProgressInPixel);
+			
 			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent):void {
-					if( self.mSelectFrame ) return;
+					if( self.mSelectFrame && !self.mFocusComponent ) return;
 					self.mSelectFrame = new SpriteVisualElement;
 					self.mSelectFrame.x = self.mCoordinator.mouseX;
-					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
+					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel+17;
 					self.mComponentsLayer.addElement( self.mSelectFrame );
 				}
 			);
@@ -276,7 +278,7 @@ package
 					self.mSelectFrame.graphics.drawRect(
 						0, 0, 
 						self.mCoordinator.mouseX-self.mSelectFrame.x, 
-						self.mCoordinator.mouseY-self.mProgressInPixel-self.mSelectFrame.y
+						self.mCoordinator.mouseY-self.mProgressInPixel-self.mSelectFrame.y+17
 					);
 					
 					if( !e.buttonDown )
@@ -290,6 +292,8 @@ package
 			this.addEventListener( MouseEvent.MOUSE_UP,
 				function(e:MouseEvent):void {
 					e.stopPropagation();
+					if( self.mFocusComponent as FormationTrigger )
+						self.mFocusComponent.x = 0;
 					self.mFocusComponent = null;
 					
 					if( !self.mSelectFrame ) return;
@@ -597,7 +601,7 @@ package
 			item.contextMenu = menu;
 			
 			// update information panel
-			if( item.classId == AreaTrigger.TRIGGER_TYPE )
+			if( Data.getInstance().isTrigger( item.classId ) )
 			{
 				this.mInfoId.text = "ID:   " + String(item.classId);
 				this.mInfoName.text = "NAME: ";
@@ -659,7 +663,7 @@ package
 			for each( var m:Component in this.mComponents )
 				if( m.classId == type ) this.selectComponent( m );
 				
-			if( type == AreaTrigger.TRIGGER_TYPE )
+			if( Data.getInstance().isTrigger( type ) )
 			{
 				this.mInfoId.text = "ID:   " + String(type);
 				this.mInfoName.text = "NAME: ";
@@ -772,8 +776,14 @@ package
 			var profile:Object = Data.getInstance().getEnemyProfileById( 
 				Runtime.getInstance().currentLevelID, item.classId
 			);
-			if( (!profile || Data.getInstance().isBullet( profile.type )) && 
-				item.classId != AreaTrigger.TRIGGER_TYPE ) {
+			
+			if( !profile && !Data.getInstance().isTrigger(item.classId) ) {
+				MapEditor.getInstance().writeToStatusBar("【错误】对象数据不存在");
+				return;
+			}
+			
+			if( Data.getInstance().isBullet( item.classId ) )
+			{
 				MapEditor.getInstance().writeToStatusBar("【错误】不可将子弹类型放置入场景中");
 				return;
 			}
@@ -813,6 +823,7 @@ package
 			
 			item.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent) : void {
+					e.stopPropagation();
 					clickTimer.start();
 					self.mFocusComponent = item;
 					self.mDraggingX = self.mouseX;
@@ -961,6 +972,8 @@ package
 		{	
 			if( type == AreaTrigger.TRIGGER_TYPE )
 				return new AreaTrigger( );
+			else if( type == FormationTrigger.TRIGGER_TYPE )
+				return new FormationTrigger( );
 			else 
 			{
 				if( !Data.getInstance().getEnemyProfileById( 
