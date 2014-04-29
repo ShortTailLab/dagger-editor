@@ -25,7 +25,6 @@ package
 	
 	import mx.controls.Alert;
 	import mx.core.IVisualElement;
-	import mx.core.UIComponent;
 	import mx.events.FlexEvent;
 	import mx.events.ResizeEvent;
 	import mx.events.SliderEvent;
@@ -224,13 +223,18 @@ package
 			
 			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent):void {
-					if( self.mSelectFrame && !self.mFocusComponent ) return;
-					self.mSelectFrame = new SpriteVisualElement;
+					if( self.mSelectFrame.visible && !self.mFocusComponent ) return;
+					self.mSelectFrame.graphics.clear();
 					self.mSelectFrame.x = self.mCoordinator.mouseX;
-					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel+17;
-					self.mComponentsLayer.addElement( self.mSelectFrame );
+					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
+					self.mSelectFrame.visible = true;
 				}
 			);
+			
+			this.mSelectFrame = new SpriteVisualElement;
+			this.mSelectFrame.visible = false;
+			this.mComponentsLayer.addElement( self.mSelectFrame );
+			
 
 			this.mAdaptiveLayer.addElement( this.mCoordinator );
 			this.mAdaptiveLayer.setElementIndex( 
@@ -243,11 +247,13 @@ package
 					{
 						var inSelected:Boolean = false;
 						for each( var item:Component in self.mSelectedComponents )
+						{
 							if( item == self.mFocusComponent )
 							{
 								inSelected = true;
 								break;
 							}
+						}
 						if( !inSelected ) self.onCancelSelect();
 						
 						var deltaX:Number = (self.mouseX - self.mDraggingX);
@@ -279,7 +285,7 @@ package
 						self.onMonsterChange();
 					}
 					
-					if( !self.mSelectFrame ) return;
+					if(!self.mSelectFrame.visible ) return;
 					
 					self.mSelectFrame.graphics.clear();
 					self.mSelectFrame.graphics.lineStyle(1);
@@ -291,8 +297,7 @@ package
 					
 					if( !e.buttonDown )
 					{
-						self.mComponentsLayer.removeElement( self.mSelectFrame );
-						self.mSelectFrame = null;
+						self.mSelectFrame.visible = false;
 					}
 				}
 			);
@@ -304,7 +309,7 @@ package
 						self.mFocusComponent.x = 0;
 					self.mFocusComponent = null;
 					
-					if( !self.mSelectFrame ) return;
+					if(!self.mSelectFrame.visible) return;
 					
 					var bound:Rectangle =  self.mSelectFrame.getBounds(self);
 					if( (bound.right - bound.left) + (bound.bottom - bound.top) < 50 )
@@ -312,8 +317,7 @@ package
 					else
 						self.onSelectMonsters( );
 					
-					self.mComponentsLayer.removeElement( self.mSelectFrame );
-					self.mSelectFrame = null;
+					self.mSelectFrame.visible = false;
 				}
 			);
 			
@@ -326,8 +330,7 @@ package
 								   int(-self.mComponentsLayer.mouseY*2)+")";
 					if( self.isOutOfCoordinator() && self.mSelectFrame )
 					{
-						self.mComponentsLayer.removeElement( self.mSelectFrame );
-						self.mSelectFrame = null;
+						self.mSelectFrame.visible = false;
 					}
 					
 					self.updateMouseTips();
@@ -339,6 +342,17 @@ package
 			Runtime.getInstance().addEventListener( 
 				Runtime.SELECT_DATA_CHANGE, this.onSelectChange
 			);
+		}
+		
+		public static function deepTrace( obj : *, level : int = 0 ) : void{
+			var tabs : String = "";
+			for ( var i : int = 0 ; i < level ; i++, tabs += "\t" )
+			{}
+			
+			for ( var prop : String in obj ){
+				trace( tabs + prop + " : " + obj[ prop ] );
+				deepTrace( obj[ prop ], level + 1 );
+			}
 		}
 		
 		public function save():void
@@ -359,7 +373,8 @@ package
 			// clean up
 			this.mComponents = new Vector.<Component>();
 			this.mComponentsLayer.removeAllElements();
-
+			this.mComponentsLayer.addElement(this.mSelectFrame);
+			
 			//
 			this.mLevelId = lid;
 			
@@ -836,6 +851,19 @@ package
 				function(e:MouseEvent) : void {
 					e.stopPropagation();
 					clickTimer.start();
+					
+					var flag:Boolean = false;
+					for each( var tar:Component in self.mSelectedComponents )
+					{
+						if( item == tar ) flag = true;
+					}
+					
+					if( !flag )
+					{
+						self.onCancelSelect();
+						self.selectComponent( item );
+					}
+					
 					self.mFocusComponent = item;
 					self.mDraggingX = self.mouseX;
 					self.mDraggingY = self.mouseY;
@@ -929,6 +957,9 @@ package
 					item.y = now.y;	
 				}
 			}
+			
+			if(e.keyCode == Keyboard.DELETE)
+				this.onDeleteSelectedMonsters();
 		}
 		
 		private var mSelectType:String 		= null;

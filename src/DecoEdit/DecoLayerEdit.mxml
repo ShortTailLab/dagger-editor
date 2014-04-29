@@ -25,6 +25,7 @@
 			private var mCurrentCellData:Object;
 			private var mCurrentLayer:SingleLayer;
 			private var mCurrentCell:SingleCell;
+			private var mAppendCells:Array = [];
 			private var mRender:DecoLayerRender;
 			
 			private function onCreate():void {
@@ -518,36 +519,119 @@
 			}
 			
 			public function setCurrent(layer:SingleLayer, cell:SingleCell):void {
-				if (this.mCurrentLayer) this.mCurrentLayer.setSelected(false);
-				this.clearCurrentCell();
-				this.mCurrentLayer = layer;
-				this.mCurrentCell = cell;
-				this.mCurrentLayer.setSelected(true);
-				var i:int = 0;
-				for each (var d:Object in this.mData.layers) {
-					if (d == this.mCurrentLayer.data) {
-						this.mLayerTree.selectedIndex = i+1;
-						break;
+				if (this.mCurrentCell == cell) {
+					this.clearCurrentCell();
+					if (this.mAppendCells.length > 0) {
+						var c:SingleCell = this.mAppendCells.shift();
+						this.mCurrentCell = c;
+						this.mCurrentCellData = c.data;
+						i = 0;
+						for each (d in this.mCurrentLayerData.cells) {
+							if (d == this.mCurrentCell.data) {
+								this.mCellTree.selectedIndex = i+1;
+								break;
+							}
+							i++;
+						}
 					}
-					i++;
+					this.setCellProperties();
 				}
-				this.mCurrentLayerData = this.mCurrentLayer.data;
-				if (cell) {
-					i = 0;
-					for each (d in this.mCurrentLayerData.cells) {
-						if (d == this.mCurrentCell.data) {
-							this.mCellTree.selectedIndex = i+1;
+				else {
+					if (this.mCurrentLayer) this.mCurrentLayer.setSelected(false);
+					this.clearCurrentCell();
+					this.mCurrentLayer = layer;
+					this.mCurrentCell = cell;
+					this.mCurrentLayer.setSelected(true);
+					var i:int = 0;
+					for each (var d:Object in this.mData.layers) {
+						if (d == this.mCurrentLayer.data) {
+							this.mLayerTree.selectedIndex = i+1;
 							break;
 						}
 						i++;
 					}
+					this.mCurrentLayerData = this.mCurrentLayer.data;
+					if (cell) {
+						i = 0;
+						for each (d in this.mCurrentLayerData.cells) {
+							if (d == this.mCurrentCell.data) {
+								this.mCellTree.selectedIndex = i+1;
+								break;
+							}
+							i++;
+						}
+						cell.setSelected(true);
+					}
+					else {
+						this.mCellTree.selectedIndex = 0;
+					}
+					this.mCurrentCellData = this.mCurrentCell?this.mCurrentCell.data:null;
+					this.setLayerProperties();
+					this.setCellProperties();
 				}
-				else {
-					this.mCellTree.selectedIndex = 0;
+			}
+			
+			public function appendCurrent(layer:SingleLayer, cell:SingleCell):void {
+				if (this.mCurrentCell == cell) {
+					this.clearCurrentCell();
+					if (this.mAppendCells.length > 0) {
+						var c:SingleCell = this.mAppendCells.shift();
+						this.mCurrentCell = c;
+						this.mCurrentCellData = c.data;
+						i = 0;
+						for each (d in this.mCurrentLayerData.cells) {
+							if (d == this.mCurrentCell.data) {
+								this.mCellTree.selectedIndex = i+1;
+								break;
+							}
+							i++;
+						}
+					}
+					this.setCellProperties();
 				}
-				this.mCurrentCellData = this.mCurrentCell?this.mCurrentCell.data:null;
-				this.setLayerProperties();
-				this.setCellProperties();
+				else if (!this.mCurrentCell) {
+					if (this.mCurrentLayer) this.mCurrentLayer.setSelected(false);
+					this.clearCurrentCell();
+					this.mCurrentLayer = layer;
+					this.mCurrentCell = cell;
+					this.mCurrentLayer.setSelected(true);
+					var i:int = 0;
+					for each (var d:Object in this.mData.layers) {
+						if (d == this.mCurrentLayer.data) {
+							this.mLayerTree.selectedIndex = i+1;
+							break;
+						}
+						i++;
+					}
+					this.mCurrentLayerData = this.mCurrentLayer.data;
+					if (cell) {
+						i = 0;
+						for each (d in this.mCurrentLayerData.cells) {
+							if (d == this.mCurrentCell.data) {
+								this.mCellTree.selectedIndex = i+1;
+								break;
+							}
+							i++;
+						}
+					}
+					else {
+						this.mCellTree.selectedIndex = 0;
+					}
+					this.mCurrentCellData = this.mCurrentCell?this.mCurrentCell.data:null;
+					this.setLayerProperties();
+					this.setCellProperties();
+				}
+				else if (this.mCurrentCell && this.mCurrentCell.layer == cell.layer) {
+					i = this.mAppendCells.indexOf(cell);
+					if (i == -1) {
+						this.mAppendCells.push(cell);
+						cell.setSelected(true);
+					}
+					else {
+						this.mAppendCells.splice(i, 1);
+						cell.setSelected(false);
+					}
+				}
 			}
 			
 			private var mPreviewer:Previewer;
@@ -571,6 +655,7 @@
 			public function get currentCell():SingleCell { return this.mCurrentCell; }
 			public function get currentLayerData():Object { return this.mCurrentLayerData; }
 			public function get currentCellData():Object { return this.mCurrentCellData; }
+			public function get appendCells():Array { return this.mAppendCells; }
 		]]>
 	</fx:Script>
 	<fx:Declarations>

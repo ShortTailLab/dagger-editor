@@ -35,10 +35,10 @@
 			protected var mKey2Group:Object = {};
 			protected var mKey2UIComponents:Object = {};
 			protected var mKey2Data:Object = {};
-			protected var mKey2Index:Object = {};
-			protected var mSource:Array = [];
 			protected var mIsPopUp:DisplayObject = null;
 			protected var mIgnoreTag:Boolean = false;
+			
+			protected var mData:Array = [];
 			
 			// in 	: args 	{ group : [ [key, cnKey, type, default], ... ] }
 			// out 	: ret 	{ key : value }
@@ -52,14 +52,14 @@
 			
 			protected function onCreate():void  {
 				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyboardAction);
-				this.refresh( this.mSource );	
+				this.refresh( this.mData );	
 			};
 			
 			public function init( onComplete:Function, onError:Function, data:Array, ignoreTag:Boolean = false, isPopUp:DisplayObject = null ):void
 			{
 				this.mCBComplete = onComplete;
 				this.mCBError 	 = onError;
-				this.mSource 	 = data;
+				this.mData 		 = data;
 				
 				this.mIgnoreTag  = ignoreTag;
 				this.mIsPopUp 	 = isPopUp;
@@ -72,7 +72,6 @@
 			
 			public function refresh_data( data:Array ):void
 			{
-				var ind:int = 0;
 				for each( var item:Array in data ) 
 				{
 					if( !(item[kTAG] in this.mKey2Group) )
@@ -88,7 +87,7 @@
 					}
 					
 					this.mKey2Group[item[kTAG]].addElement( 
-						this.createAndRegisterItem( item, ind ) 
+						this.createAndRegisterItem( item ) 
 					);
 					
 					var rule:HRule = new HRule;
@@ -119,14 +118,13 @@
 							this.refresh_data( sub_data );
 						}
 					}
-					ind ++;
 				}
 			}
 			
 			public function refresh( data:Array ):void 
-			{
-				this.mSource = Utils.deepCopy( data ) as Array;
-				for each( var item:Array in this.mSource )
+			{	
+				var mData:Array = Utils.deepCopy( data ) as Array;
+				for each( var item:Array in mData )
 				{
 					while( item.length <= kMAX )
 						item.push( "wc" );
@@ -137,11 +135,10 @@
 					this.mKey2Data = {};
 					this.mKey2Group = {};
 					this.mKey2UIComponents = {};
-					this.mKey2Index = {};
 					this.mTabNavigator.removeAllChildren();
 					this.mTabNavigator.removeAllElements();
 					
-					this.refresh_data(this.mSource);
+					this.refresh_data( mData );
 				}
 			}
 			
@@ -161,15 +158,6 @@
 			protected function onClose(event:Event):void
 			{
 				if( !this.mIsPopUp ) return;
-				
-				var ret:Object = {};
-				for each ( var item:Array in this.mSource ) 
-				{
-					ret[item[kKEY]] = item[kDEFAULT];
-				}
-				
-				//this.mCBComplete( ret  );
-				//this.mCBError("用户取消了操作");
 				MapEditor.getInstance().writeToStatusBar( "用户取消了配置【"+this.mRootPanel.title+"】的操作！" );
 				
 				if( this.mIsPopUp )
@@ -223,7 +211,7 @@
 								ret[key] = data[kOTHER][1][ind];
 						} 
 						else if( data[kTYPE] == "MonsterType" || 
-								 data[kTYPE] == "MonsterType" || 
+								 data[kTYPE] == "TrapType" || 
 								 data[kTYPE] == "BulletType" )
 						{
 							var target:DropDownList = item[0] as DropDownList;
@@ -234,7 +222,7 @@
 							}
 							else ret[key] = target.selectedItem as String;
 						}
-						else if ( data[kTYPE] == "bullet" || data[kTYPE] == "actor" )
+						else if ( data[kTYPE] == "bullet" || data[kTYPE] == "actor" || data[kTYPE] == "trap" )
 						{
 							target = item[0] as DropDownList;
 							ind = target.selectedIndex;
@@ -242,7 +230,7 @@
 								this.mCBError("请选择："+data[kDESC]);
 								return;
 							} else {
-								ret[key] = this.mSource[ this.mKey2Index[key] ][kOTHER][1][ind]; 
+								ret[key] = this.mKey2Data[kOTHER][1][ind];
 							}
 						}
 						else if( data[kTYPE] == "string" )
@@ -265,7 +253,7 @@
 					PopUpManager.removePopUp( this );
 			}
 			
-			protected function createAndRegisterItem( item:Object, data_index:int ):UIComponent
+			protected function createAndRegisterItem( item:Object ):UIComponent
 			{
 				if( item[kKEY] in this.mKey2UIComponents ) {
 					Alert.show("【警告】重复的字段"+item[kKEY]);
@@ -273,7 +261,6 @@
 				
 				var self:ConfigPanel = this;
 				this.mKey2UIComponents[item[kKEY]] = [];
-				this.mKey2Index[item[kKEY]] = data_index;
 				
 				var head:FormItem = new FormItem;
 				head.label = item[kDESC];
@@ -384,7 +371,7 @@
 					{
 						monsterList = [];
 						if( Data.getInstance().dynamicArgs.TrapType )
-							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.BulletType as Array));
+							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.TrapType as Array));
 					}
 					
 					ind = -1, countor = 0;
@@ -404,8 +391,13 @@
 					
 					comboBox.addEventListener(Event.CHANGE, function(evt:Event):void
 					{	
-						var data:Array = Utils.deepCopy(self.mSource) as Array;
-						data[data_index][kDEFAULT] = monsterList[comboBox.selectedIndex];
+						for each( var inn:Array in self.mData )
+						{
+							if( inn[kKEY] == item[kKEY] )
+								inn[kDEFAULT] = monsterList[comboBox.selectedIndex];
+						}
+						
+						var data:Array = Utils.deepCopy(self.mData) as Array;
 						self.refresh( data );
 						self.stage.focus = self;
 					});
@@ -414,7 +406,7 @@
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
 					
 				} 
-				else if ( item[kTYPE] == "bullet" || item[kTYPE] == "actor" )
+				else if ( item[kTYPE] == "bullet" || item[kTYPE] == "actor" || item[kTYPE] == "trap" )
 				{
 					var sources:Object = {};
 					if( item[kTYPE] == "bullet" )
@@ -423,6 +415,10 @@
 						);
 					else if( item[kTYPE] == "actor" )
 						sources = Data.getInstance().getMonstersByLevelId(
+							Runtime.getInstance().currentLevelID
+						);
+					else if( item[kTYPE] == "trap" )
+						sources = Data.getInstance().getTrapsByLevelId(
 							Runtime.getInstance().currentLevelID
 						);
 
@@ -455,9 +451,9 @@
 					
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
-					this.mSource[data_index][kOTHER] = itemList;
+					this.mKey2Data[kOTHER] = itemList;
 				}
-				else if ( item[kTYPE] == "path" )
+				else if ( item[kTYPE] == "path" || item[kTYPE] == "path2" )
 				{
 					var pathInput:TextInput = new TextInput;
 					pathInput.text 	= JSON.stringify(item[kDEFAULT]);;

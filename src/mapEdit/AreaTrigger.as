@@ -187,8 +187,10 @@ package mapEdit
 		private var mMainScene:MainScene 	= null;
 		public function enableEditing( scene:MainScene ):void
 		{
-			if( this.mEnableEditing ) return;
-			else this.mEnableEditing = true;
+			if( this.mEnableEditing ) 
+				return;
+			
+			this.mEnableEditing = true;
 			
 			this.mMainScene = scene;
 			

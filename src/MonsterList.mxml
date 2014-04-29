@@ -204,8 +204,7 @@
 						Runtime.getInstance().currentLevelID, id 
 					);
 					
-					if( !Data.getInstance().isTrap( profile.type ) )
-						this.mEditData.enabled = true;
+					this.mEditData.enabled = true;
 					
 					if( Data.getInstance().isMonster( profile.type ) )
 						this.mEditTrigger.enabled = true;
