@@ -1270,7 +1270,10 @@ package
 			var enemies:Object = {};
 			for each( var item:* in inst.data ) 
 			{
-				if( !this.isMonster( item.type ) ) continue;
+				var ip:Object = Data.getInstance().getEnemyProfileById(
+					lid, item.type 
+				);
+				if( !ip || !this.isMonster( ip.type ) ) continue;
 				
 				if( !(item.type in enemies) ) {
 					var m:Object = profile.monsters[item.type];

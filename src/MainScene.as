@@ -49,8 +49,8 @@ package
 		private var mProgressInPixel:Number = 0;
 		private var mFinishingLine:Number = 0;
 		
-		private var mSelectedTipsLayer:Group = null;
 		private var mCoordinator:Coordinator = null;
+		private var mSelectedTipsLayer:Group = null;
 		
 		// configs
 		private var mGridHeight:int 	= 16;
@@ -204,10 +204,18 @@ package
 				}
 			);
 			
+			this.mProgressInput.addEventListener(FlexEvent.ENTER,
+				function(e:FlexEvent):void {
+					self.setProgress( int(self.mProgressInput.text)/2 );	
+				}
+			);
+			
 			//
 			this.mCoordinator = new Coordinator( );
 			this.mCoordinator.y = this.mAdaptiveLayer.height-1;
+			//this.mCoordinator.y = this.mComponentsLayer.height;
 			this.mCoordinator.x = -1;
+			
 			this.mCoordinator.showGrid( this.mShowGrid.selected );
 			this.mCoordinator.setMeshDensity( 
 				this.mGridWidth, this.mGridHeight, height, this.mProgressInPixel 
@@ -223,7 +231,7 @@ package
 					self.mComponentsLayer.addElement( self.mSelectFrame );
 				}
 			);
-			
+
 			this.mAdaptiveLayer.addElement( this.mCoordinator );
 			this.mAdaptiveLayer.setElementIndex( 
 				this.mComponentsLayer, this.mAdaptiveLayer.numElements-1 
@@ -314,9 +322,8 @@ package
 				function(e:MouseEvent):void
 				{
 					self.mMousePos.text = 
-						"鼠标位置：("+int(self.mCoordinator.mouseX)+", "+
-									int(-self.mCoordinator.mouseY+self.mProgressInPixel)+")";
-									
+						"鼠标位置：("+int(self.mComponentsLayer.mouseX*2)+", "+
+								   int(-self.mComponentsLayer.mouseY*2)+")";
 					if( self.isOutOfCoordinator() && self.mSelectFrame )
 					{
 						self.mComponentsLayer.removeElement( self.mSelectFrame );
@@ -419,12 +426,13 @@ package
 				var item:Component 	= this.creator( type, this.mTipsFontSize );		
 				if( !item ) return;
 					
-				var gridPos:Point 	= this.mCoordinator.getGridPos();
-				if( !this.mRestrictGrid.selected )
-					gridPos = this.mCoordinator.getPos();
+				var gridPos:Point = new Point(  this.mComponentsLayer.mouseX,
+												this.mComponentsLayer.mouseY );
+				if( this.mRestrictGrid.selected )
+					gridPos = this.mCoordinator.getGridPos( gridPos.x, gridPos.y);
 					
 				item.x 	= gridPos.x; 
-				item.y	= gridPos.y - this.mProgressInPixel + 15;
+				item.y	= gridPos.y - this.mProgressInPixel;
 				
 				if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
 					this.insertComponent( item );
@@ -742,13 +750,16 @@ package
 		{
 			progress = Math.max( progress, 0 );
 			this.mProgressInPixel = progress;
-			this.mComponentsLayer.y = this.mProgressInPixel + this.height - 65;
+			this.mComponentsLayer.y = this.mProgressInPixel + this.mCoordinator.y;
+			
 			this.mCoordinator.setMeshDensity( 
 				this.mGridWidth, this.mGridHeight, this.height-65, this.mProgressInPixel 
 			);
 			
 			this.mTimeline.value = this.mProgressInPixel /this.mMapSpeed;
 			this.mNowTimeLabel.text = "当前时间："+Utils.getTimeFormat(this.mTimeline.value);
+			
+			this.mProgressInput.text = String(progress*2);
 		}
 		
 		private function onMonsterChange():void
@@ -947,6 +958,7 @@ package
 				});
 				if( mat2 as Entity )
 					(mat2 as Entity).setBaseSize( 50 );
+//				mat2.y += mat2.height/2;
 				mSelectedTipsLayer.addElement(mat2);
 			}
 		}
