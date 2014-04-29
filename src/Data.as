@@ -1071,7 +1071,7 @@ package
 						else 
 							ft_data[ftk] = ft_item[ConfigPanel.kDEFAULT];
 						
-						var ft_adj:Array = adjust( item.type, ftk, ft_data[ftk] );
+						var ft_adj:Array = adjust( item.type, ft_item[ConfigPanel.kTYPE], ft_data[ftk] );
 						if( !ft_adj[0] ) return ft_adj[1];
 						if( ft_adj[1] ) ft_data[ftk] = ft_adj[1]; 
 					}

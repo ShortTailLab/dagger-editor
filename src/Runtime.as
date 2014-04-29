@@ -1,5 +1,7 @@
 package
 {
+	import com.hurlant.crypto.symmetric.NullPad;
+	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 
@@ -68,6 +70,20 @@ package
 		public static const CANCEL_SELECTION:String = "runtime.cancel.selection";
 		public function onCancelSelection():void {
 			this.dispatchEvent( new Event(Runtime.CANCEL_SELECTION) );
+		}
+		
+		//
+		public static const ON_PASTE_TARGET_CHANGE:String = "runtime.on.paste.target.change";
+		private var mPasteTarget:String = null;
+		private var mPasteTargetLevel:String = null;
+		public function get pasteTargetLevel():String { return this.mPasteTargetLevel; }
+		public function get pasteTarget():String {
+			return this.mPasteTarget;
+		}
+		public function set pasteTarget(v:String):void {
+			this.mPasteTarget = v;
+			this.mPasteTargetLevel = Runtime.getInstance().currentLevelID;
+			this.dispatchEvent( new Event(Runtime.ON_PASTE_TARGET_CHANGE) );	
 		}
 	}
 }

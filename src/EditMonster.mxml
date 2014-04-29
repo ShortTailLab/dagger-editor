@@ -48,9 +48,28 @@
 				);
 				menu.addItem( createBullet );
 				
+				var paste:ContextMenuItem = new ContextMenuItem("粘贴");
+				paste.addEventListener(
+					ContextMenuEvent.MENU_ITEM_SELECT, this.onPaste
+				);
+				menu.addItem( paste );
+				
+				if( Runtime.getInstance().pasteTarget )
+					paste.enabled = true;
+				else 
+					paste.enabled = false;
+				Runtime.getInstance().addEventListener(Runtime.ON_PASTE_TARGET_CHANGE,
+					function(e:Event):void
+					{
+						if( Runtime.getInstance().pasteTarget )
+							paste.enabled = true;
+						else 
+							paste.enabled = false;
+					}
+				);
 				this.mMonsterGroup.contextMenu = menu;
 			}
-			
+		
 			public static var kCONFIGURABLE:String = "HOMEMADE";
 			
 			protected function genData( type:String, profile_type:String, id:String = null ):Array
@@ -109,6 +128,50 @@
 				return data;
 			}
 			
+			protected function onPaste(e:ContextMenuEvent):void
+			{
+				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
+				
+				var profile:Object = Data.getInstance().getEnemyProfileById( 
+					Runtime.getInstance().pasteTargetLevel, Runtime.getInstance().pasteTarget 
+				);
+				
+				if( !profile || !level ) return;
+				
+				var data:Array = [];
+				if( Data.getInstance().isMonster( profile.type ) )
+				{
+					data = this.genData( "MonsterType", "MonsterProfile" );
+				} 
+				else if ( Data.getInstance().isBullet( profile.type ) ) 
+				{
+					data = this.genData( "BulletType", "BulletProfile" );
+				}
+				else if ( Data.getInstance().isTrap( profile.type ) )
+				{
+					data = this.genData( "TrapType", "TrapProfile" );
+				}
+				else return;
+				
+				for each( var item:Array in data )
+				{
+					var key:String = item[ConfigPanel.kKEY];
+					if( key in profile )
+						item[ConfigPanel.kDEFAULT] = profile[key];
+				}
+				
+				var t:ConfigPanel = new ConfigPanel( );
+				t.init( function( configs:Object ):void {
+					
+					Data.getInstance().makeMonster( 
+						Runtime.getInstance().currentLevelID, configs.monster_id, configs 
+					);
+					
+				}, function (err:String):void {
+					Alert.show( err );
+				}, data, false, MapEditor.getInstance());
+			}
+		
 			protected function onCreateMonster(evt:Event):void
 			{				
 				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
