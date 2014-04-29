@@ -440,6 +440,9 @@ package
 			{
 				var item:Component 	= this.creator( type, this.mTipsFontSize );		
 				if( !item ) return;
+				
+				trace( this.mComponentsLayer.mouseX +", "+this.mComponentsLayer.mouseY);
+				trace( this.mCoordinator.mouseX+", "+this.mCoordinator.mouseY );
 					
 				var gridPos:Point = new Point(  this.mComponentsLayer.mouseX,
 												this.mComponentsLayer.mouseY );
@@ -447,7 +450,7 @@ package
 					gridPos = this.mCoordinator.getGridPos( gridPos.x, gridPos.y);
 					
 				item.x 	= gridPos.x; 
-				item.y	= gridPos.y - this.mProgressInPixel;
+				item.y	= gridPos.y;
 				
 				if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
 					this.insertComponent( item );
