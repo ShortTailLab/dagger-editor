@@ -440,9 +440,6 @@ package
 			{
 				var item:Component 	= this.creator( type, this.mTipsFontSize );		
 				if( !item ) return;
-				
-				trace( this.mComponentsLayer.mouseX +", "+this.mComponentsLayer.mouseY);
-				trace( this.mCoordinator.mouseX+", "+this.mCoordinator.mouseY );
 					
 				var gridPos:Point = new Point(  this.mComponentsLayer.mouseX,
 												this.mComponentsLayer.mouseY );
@@ -822,6 +819,8 @@ package
 			
 			if( item as AreaTrigger )
 				(item as AreaTrigger).enableEditing( this );
+			else if( item as FormationTrigger )
+				(item as FormationTrigger).enableEditing( this );
 			else if( item as Entity )
 				(item as Entity).setBaseSize( 50 );
 			
@@ -861,7 +860,7 @@ package
 						if( item == tar ) flag = true;
 					}
 					
-					if( !flag )
+					if( !flag && !(item as AreaTrigger) )
 					{
 						self.onCancelSelect();
 						self.selectComponent( item );
@@ -1110,7 +1109,24 @@ package
 			var data:Array = new Array;
 			for each(var m:Component in this.mComponents)
 			{
-				data.push(m.serialize());
+				var d:Object = m.serialize();
+				if( m.classId == FormationTrigger.TRIGGER_TYPE )
+				{
+					d.objs = [];
+					for each(var item:Component in this.mComponents )
+					{
+						if( item as Entity )
+						{
+							var tmp:Entity = item as Entity;
+							if( tmp.gameY > d.y && tmp.gameY < d.y+d.height )
+							{
+								d.objs.push(tmp.globalId);
+							}
+						}
+					}
+				}
+				
+				data.push(d);
 			}
 			return data;
 		}

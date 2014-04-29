@@ -63,5 +63,11 @@ package
 		public function onProfileDataChange():void {
 			this.dispatchEvent( new Event(Runtime.PROFLE_DATA_CHANGE) );
 		}
+		
+		// 
+		public static const CANCEL_SELECTION:String = "runtime.cancel.selection";
+		public function onCancelSelection():void {
+			this.dispatchEvent( new Event(Runtime.CANCEL_SELECTION) );
+		}
 	}
 }

@@ -101,6 +101,7 @@
 				this.mMainScene.onRightClick();
 				Runtime.getInstance().selectedComponentType = null;
 				Runtime.getInstance().selectedFormationType = null;
+				Runtime.getInstance().onCancelSelection();
 			}
 
 			private function onDataReady(e:Event=null):void
