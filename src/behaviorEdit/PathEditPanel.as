@@ -98,7 +98,7 @@ package behaviorEdit
 					p.y = -dot.y*2;
 					data.push(p);
 				} else {
-					data.push( [dot.x, -dot.y ]);
+					data.push( [dot.x*2, -dot.y*2 ]);
 				}
 			}
 			var evt:MsgEvent = new MsgEvent(MsgEvent.EDIT_PATH);
