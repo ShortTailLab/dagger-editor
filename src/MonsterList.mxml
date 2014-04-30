@@ -13,6 +13,8 @@
 			
 			import Trigger.EditTriggers;
 			
+			import flash.net.dns.AAAARecord;
+			
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.GameEvent;
@@ -20,8 +22,10 @@
 			import mapEdit.AreaTrigger;
 			import mapEdit.Component;
 			import mapEdit.Entity;
+			import mapEdit.FormationTrigger;
 			
 			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
 			import mx.core.FlexGlobals;
 			import mx.managers.PopUpManager;
 			
@@ -126,11 +130,22 @@
 					}
 				);
 				
+				this.mCopy.addEventListener(MouseEvent.CLICK,
+					function(evt:MouseEvent):void
+					{
+						if( self.mMonsterList.selectedIndex == -1 ) return;
+						Runtime.getInstance().pasteTarget = self.mMonsterList.selectedItem.id;
+						MapEditor.getInstance().writeToStatusBar(
+							"添加对象"+self.mMonsterList.selectedItem.id+"至粘贴板"
+						);
+					}
+				);
+				
 				this.mEditData.enabled 		= false;
 				this.mEditBehavior.enabled 	= false;
 				this.mEditTrigger.enabled 	= false;
 				this.mEraseSelf.enabled 	= false;
-				
+				this.mCopy.enabled 			= false;
 			}
 			
 			protected var mSelection:Component = null;
@@ -179,17 +194,22 @@
 				this.mEditData.enabled 		= false;
 				this.mEditBehavior.enabled 	= false;
 				this.mEditTrigger.enabled 	= false;
-				this.mEraseSelf.enabled 	= true;
+				this.mEraseSelf.enabled 	= false;
+				this.mCopy.enabled 			= false;
 				
 				if( this.mMonsterList.selectedIndex == -1 ) return;	
 				var id:String = this.mMonsterList.selectedItem.id;
 				this.mSelectedLabel.text = id;
 				
-				if( id == "AreaTrigger" )
+				if( id == AreaTrigger.TRIGGER_TYPE )
 				{
 					this.mSelection = new AreaTrigger;
 					this.mSelection.y = 65;
 					this.mSelection.x = 47;
+				} else if( id == FormationTrigger.TRIGGER_TYPE ) {
+					this.mSelection = new FormationTrigger;
+					this.mSelection.x = 47;
+					this.mSelection.y = 65;
 				} else {
 					this.mSelection = new Entity( id, false );
 					this.mSelection.y = 100;
@@ -199,7 +219,9 @@
 						Runtime.getInstance().currentLevelID, id 
 					);
 					
-					this.mEditData.enabled = true;
+					this.mEditData.enabled 		= true;
+					this.mEraseSelf.enabled 	= true;
+					this.mCopy.enabled 			= true;
 					
 					if( Data.getInstance().isMonster( profile.type ) )
 						this.mEditTrigger.enabled = true;
@@ -246,6 +268,7 @@
 					);
 				}
 				
+				this.mTrapData.push( {id: FormationTrigger.TRIGGER_TYPE, name:"阵型触发器" } );
 				this.mTrapData.push( {id: AreaTrigger.TRIGGER_TYPE, name:"区域触发器" } );
 				for each( item in traps )
 				{
@@ -297,7 +320,7 @@
 		<s:RadioButtonGroup id="mRadioGroup"/>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
-	<s:List id="mMonsterList" x="0" top="60" bottom="125" width="100%" borderVisible="false">
+	<s:List id="mMonsterList" x="0" top="60" bottom="145" width="100%" borderVisible="false">
 	</s:List>
 	<s:TextInput id="mSearchBox" left="5" right="5" top="5" height="25" borderColor="#C3C3C3"
 				 borderVisible="true" prompt="请输入搜索内容"/>
@@ -309,12 +332,13 @@
 		<s:RadioButton id="mRadioTrap" width="33%" height="25" label="陷阱" enabled="true"
 					   groupName="mRadioGroup"/>
 	</s:HGroup>
-	<s:BorderContainer id="mDetailsContent" left="5" right="5" bottom="5" height="115"
+	<s:BorderContainer id="mDetailsContent" left="5" right="5" bottom="5" height="135"
 					   backgroundColor="#EDE8E8" borderColor="#C8C8C8">
-		<s:VGroup left="100" right="5" top="5" bottom="5">
+		<s:VGroup left="100" right="5" top="2" bottom="2">
 			<s:Button id="mEditData" label="编辑数据"/>
 			<s:Button id="mEditBehavior" label="修改行为"/>
 			<s:Button id="mEditTrigger" label="触发事件"/>
+			<s:Button id="mCopy" width="69" label="复制对象"/>
 			<s:Button id="mEraseSelf" label="删除对象"/>
 		</s:VGroup>
 		<s:Label id="mSelectedLabel" left="20" top="5" height="15" fontSize="13" fontWeight="bold"

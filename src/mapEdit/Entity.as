@@ -109,6 +109,10 @@ package mapEdit
 			return obj;
 		}
 		
+		public function get gameY():Number {
+			return Number( -this.y/Runtime.getInstance().sceneScalor );
+		}
+		
 		public function set triggeredTime(v:Number):void {
 			this.mTriggeredTime = v;
 		}

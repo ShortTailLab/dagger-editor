@@ -79,20 +79,22 @@ package mapEdit
 			{
 				this.graphics.moveTo(0, -i*mUnitHeight);
 				this.graphics.lineTo(MainScene.kSCENE_WIDTH/2, -i*mUnitHeight);
-				
-				if(i * mUnitHeight == 640)
-				{
-					this.graphics.lineStyle(2);
-					this.graphics.moveTo(0, -i*mUnitHeight);
-					this.graphics.lineTo(MainScene.kSCENE_WIDTH/2, -i*mUnitHeight);
-					this.graphics.lineStyle(1, 0, 0.3);
-				}
 			}
+			
+			var boldLine:int = 1280 - (base*2) % 1280;
+			this.graphics.lineStyle(2);
+			for(i=0; i<3; i++)
+			{
+				this.graphics.moveTo( 0, -boldLine/2 );
+				this.graphics.lineTo( MainScene.kSCENE_WIDTH/2, -boldLine/2);
+				boldLine += 1280;
+			}
+			this.graphics.lineStyle( 1, 0, 0.3 );
 			
 			for(var j:int = 0; j<this.mNumColums; j++)
 			{
 				this.graphics.moveTo(j*mUnitWidth, 0);
-				this.graphics.lineTo(mUnitWidth*j, -i*mUnitHeight);
+				this.graphics.lineTo(mUnitWidth*j, -this.mNumRows*this.mUnitHeight);
 			}
 			
 		}

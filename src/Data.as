@@ -18,6 +18,9 @@ package
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
+	import mapEdit.AreaTrigger;
+	import mapEdit.FormationTrigger;
+	
 	import mx.controls.Alert;
 	
 	public class Data extends EventDispatcher
@@ -795,6 +798,11 @@ package
 			
 			return false;
 		}
+		
+		public function isTrigger( type:String ):Boolean
+		{
+			return type == AreaTrigger.TRIGGER_TYPE || FormationTrigger.TRIGGER_TYPE;
+		}
 	
 		public function getTrapsByLevelId( lid:String ):Object 
 		{
@@ -933,8 +941,8 @@ package
 				
 				for( var iter:int = data.length-1; iter>=0; iter-- )
 				{
-					if( !(data[iter].type in monsters) && 
-						  data[iter].type != "AreaTrigger" )
+					if( this.isMonster( data[iter].type ) && 
+						!(data[iter].type in monsters) )
 					{
 						result += "【删除】敌人"+data[iter].type+"未被关卡"+lid+"定义\n";
 						data.splice( iter, 1 );
@@ -973,42 +981,6 @@ package
 		{	
 			var profile:Object = this.getLevelProfileById( lid );
 			if( !(lid in this.mLevelInstancesTable ) || !profile  ) return "【失败】无相关地图数据存在";
-			
-			var export:Object = new Object;
-			var source:Array = this.mLevelInstancesTable[lid].data;
-			
-			// confs
-			export.map = { speed : this.mEditorConfigs.mapSpeed };
-			
-			// parse instances 
-			export.objects = new Object, export.trigger = new Array;
-			for each( var item:* in source ) 
-			{
-				if( item.type == "AreaTrigger" ) {
-					export.trigger.push({
-						cond : {
-							type: "Area",
-							area: "@@cc.rect("+item.x+","+item.y+","+item.width+","+item.height+")@@"
-						},
-						result : {
-							type: "Object", objs : item.objs
-						}
-					});
-					continue;
-				}
-				
-				if( !(item.type in profile.monsters) ) continue;	
-				var data:Object = profile.monsters[item.type];
-				
-				if( !this.isMonster( data.type) && !this.isTrap( data.type ) )
-					continue;
-		
-				var t:Number = item.triggerTime || item.y;
-				export.objects[item.id] = {
-					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@",
-					time : t
-				};
-			}
 			
 			function adjust( name:String, itype:String, item:Object ):Array {
 				
@@ -1065,6 +1037,70 @@ package
 				}
 				
 				return [true, null];
+			}
+			
+			var export:Object = new Object;
+			var source:Array = this.mLevelInstancesTable[lid].data;
+			
+			// confs
+			export.map = { speed : this.mEditorConfigs.mapSpeed };
+			
+			// parse instances 
+			export.objects = new Object, export.trigger = new Array;
+			for each( var item:* in source ) 
+			{
+				if( item.type == "AreaTrigger" ) {
+					export.trigger.push({
+						cond : {
+							type: "Area",
+							area: "@@cc.rect("+item.x+","+item.y+","+item.width+","+item.height+")@@"
+						},
+						result : {
+							type: "Object", objs : item.objs
+						}
+					});
+					continue;
+				}else if ( item.type == FormationTrigger.TRIGGER_TYPE )
+				{
+					var ft_data:Object = {};
+					for each( var ft_item:Array in Data.getInstance().dynamicArgs.Section )
+					{
+						var ftk:String = ft_item[ConfigPanel.kKEY];
+						if( ftk in item.data )
+							ft_data[ftk] = item.data[ftk];
+						else 
+							ft_data[ftk] = ft_item[ConfigPanel.kDEFAULT];
+						
+						var ft_adj:Array = adjust( item.type, ft_item[ConfigPanel.kTYPE], ft_data[ftk] );
+						if( !ft_adj[0] ) return ft_adj[1];
+						if( ft_adj[1] ) ft_data[ftk] = ft_adj[1]; 
+					}
+					export.trigger.push({
+						cond : {
+							type : "Line",
+							bottom : item.y,
+							height : item.height
+						},
+						result : {
+							type : "Section",
+							objs : item.objs,
+							targets : item.targets,
+							data : ft_data
+						}
+					});
+				}
+				
+				if( !(item.type in profile.monsters) ) continue;	
+				var data:Object = profile.monsters[item.type];
+				
+				if( !this.isMonster( data.type) && !this.isTrap( data.type ) )
+					continue;
+		
+				var t:Number = item.triggerTime || item.y;
+				export.objects[item.id] = {
+					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@",
+					time : t
+				};
 			}
 			
 			var monsters:Object = Data.getInstance().getMonstersByLevelId( lid );
@@ -1255,7 +1291,7 @@ package
 		
 		public function getLevelDataForServer( lid:String ):Object
 		{	
-			var profile = this.getLevelProfileById( lid );
+			var profile:Object = this.getLevelProfileById( lid );
 			if( !profile ) return null;
 	
 			if( !(lid in this.mLevelInstancesTable) ) 
@@ -1271,11 +1307,10 @@ package
 			var enemies:Object = {};
 			for each( var item:* in inst.data ) 
 			{
-				if( item.type == "AreaTrigger" ) continue;
-				if( this.isMonster( item.type ) )
-				{
-					continue;
-				}
+				var ip:Object = Data.getInstance().getEnemyProfileById(
+					lid, item.type 
+				);
+				if( !ip || !this.isMonster( ip.type ) ) continue;
 				
 				if( !(item.type in enemies) ) {
 					var m:Object = profile.monsters[item.type];
@@ -1293,7 +1328,7 @@ package
 			for each( var monster:* in enemies )
 				array.push( monster );
 			
-			var ret = {
+			var ret:Object = {
 				id : lid,
 				stageId: profile.chapter_id, stage: profile.chapter_name,
 				name: profile.level_name, path: "level/"+lid+".js", 

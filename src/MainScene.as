@@ -14,6 +14,15 @@ package
 	import flash.ui.Keyboard;
 	import flash.utils.Timer;
 	
+	import manager.MsgInform;
+	
+	import mapEdit.AreaTrigger;
+	import mapEdit.Component;
+	import mapEdit.Coordinator;
+	import mapEdit.Entity;
+	import mapEdit.FormationTrigger;
+	import mapEdit.MainSceneXML;
+	
 	import mx.controls.Alert;
 	import mx.core.IVisualElement;
 	import mx.events.FlexEvent;
@@ -22,12 +31,6 @@ package
 	
 	import spark.components.Group;
 	import spark.core.SpriteVisualElement;
-	
-	import mapEdit.AreaTrigger;
-	import mapEdit.Component;
-	import mapEdit.Coordinator;
-	import mapEdit.Entity;
-	import mapEdit.MainSceneXML;
 	
 	public class MainScene extends MainSceneXML
 	{
@@ -45,8 +48,8 @@ package
 		private var mProgressInPixel:Number = 0;
 		private var mFinishingLine:Number = 0;
 		
-		private var mSelectedTipsLayer:Group = null;
 		private var mCoordinator:Coordinator = null;
+		private var mSelectedTipsLayer:Group = null;
 		
 		// configs
 		private var mGridHeight:int 	= 16;
@@ -200,19 +203,27 @@ package
 				}
 			);
 			
+			this.mProgressInput.addEventListener(FlexEvent.ENTER,
+				function(e:FlexEvent):void {
+					self.setProgress( int(self.mProgressInput.text)/2 );	
+				}
+			);
+			
 			//
 			this.mCoordinator = new Coordinator( );
 			this.mCoordinator.y = this.mAdaptiveLayer.height-1;
+			//this.mCoordinator.y = this.mComponentsLayer.height;
 			this.mCoordinator.x = -1;
+			
 			this.mCoordinator.showGrid( this.mShowGrid.selected );
 			this.mCoordinator.setMeshDensity( 
 				this.mGridWidth, this.mGridHeight, height, this.mProgressInPixel 
 			);
 			this.setProgress(this.mProgressInPixel);
+			
 			this.mCoordinator.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent):void {
-					if( self.mSelectFrame.visible ) return;
-					
+					if( self.mSelectFrame.visible && !self.mFocusComponent ) return;
 					self.mSelectFrame.graphics.clear();
 					self.mSelectFrame.x = self.mCoordinator.mouseX;
 					self.mSelectFrame.y = self.mCoordinator.mouseY-self.mProgressInPixel;
@@ -224,6 +235,7 @@ package
 			this.mSelectFrame.visible = false;
 			this.mComponentsLayer.addElement( self.mSelectFrame );
 			
+
 			this.mAdaptiveLayer.addElement( this.mCoordinator );
 			this.mAdaptiveLayer.setElementIndex( 
 				this.mComponentsLayer, this.mAdaptiveLayer.numElements-1 
@@ -280,7 +292,7 @@ package
 					self.mSelectFrame.graphics.drawRect(
 						0, 0, 
 						self.mCoordinator.mouseX-self.mSelectFrame.x, 
-						self.mCoordinator.mouseY-self.mProgressInPixel-self.mSelectFrame.y
+						self.mCoordinator.mouseY-self.mProgressInPixel-self.mSelectFrame.y+17
 					);
 					
 					if( !e.buttonDown )
@@ -293,6 +305,8 @@ package
 			this.addEventListener( MouseEvent.MOUSE_UP,
 				function(e:MouseEvent):void {
 					e.stopPropagation();
+					if( self.mFocusComponent as FormationTrigger )
+						self.mFocusComponent.x = 0;
 					self.mFocusComponent = null;
 					
 					if(!self.mSelectFrame.visible) return;
@@ -312,9 +326,8 @@ package
 				function(e:MouseEvent):void
 				{
 					self.mMousePos.text = 
-						"鼠标位置：("+int(self.mCoordinator.mouseX)+", "+
-									int(-self.mCoordinator.mouseY+self.mProgressInPixel)+")";
-									
+						"鼠标位置：("+int(self.mComponentsLayer.mouseX*2)+", "+
+								   int(-self.mComponentsLayer.mouseY*2)+")";
 					if( self.isOutOfCoordinator() && self.mSelectFrame )
 					{
 						self.mSelectFrame.visible = false;
@@ -428,12 +441,13 @@ package
 				var item:Component 	= this.creator( type, this.mTipsFontSize );		
 				if( !item ) return;
 					
-				var gridPos:Point 	= this.mCoordinator.getGridPos();
-				if( !this.mRestrictGrid.selected )
-					gridPos = this.mCoordinator.getPos();
+				var gridPos:Point = new Point(  this.mComponentsLayer.mouseX,
+												this.mComponentsLayer.mouseY );
+				if( this.mRestrictGrid.selected )
+					gridPos = this.mCoordinator.getGridPos( gridPos.x, gridPos.y);
 					
 				item.x 	= gridPos.x; 
-				item.y	= gridPos.y - this.mProgressInPixel + 15;
+				item.y	= gridPos.y;
 				
 				if( item.x > 0 && item.x < MainScene.kSCENE_WIDTH/2 )
 					this.insertComponent( item );
@@ -610,7 +624,7 @@ package
 			item.contextMenu = menu;
 			
 			// update information panel
-			if( item.classId == AreaTrigger.TRIGGER_TYPE )
+			if( Data.getInstance().isTrigger( item.classId ) )
 			{
 				this.mInfoId.text = "ID:   " + String(item.classId);
 				this.mInfoName.text = "NAME: ";
@@ -672,7 +686,7 @@ package
 			for each( var m:Component in this.mComponents )
 				if( m.classId == type ) this.selectComponent( m );
 				
-			if( type == AreaTrigger.TRIGGER_TYPE )
+			if( Data.getInstance().isTrigger( type ) )
 			{
 				this.mInfoId.text = "ID:   " + String(type);
 				this.mInfoName.text = "NAME: ";
@@ -751,13 +765,16 @@ package
 		{
 			progress = Math.max( progress, 0 );
 			this.mProgressInPixel = progress;
-			this.mComponentsLayer.y = this.mProgressInPixel + this.height - 65;
+			this.mComponentsLayer.y = this.mProgressInPixel + this.mCoordinator.y;
+			
 			this.mCoordinator.setMeshDensity( 
 				this.mGridWidth, this.mGridHeight, this.height-65, this.mProgressInPixel 
 			);
 			
 			this.mTimeline.value = this.mProgressInPixel /this.mMapSpeed;
 			this.mNowTimeLabel.text = "当前时间："+Utils.getTimeFormat(this.mTimeline.value);
+			
+			this.mProgressInput.text = String(progress*2);
 		}
 		
 		private function onMonsterChange():void
@@ -785,8 +802,14 @@ package
 			var profile:Object = Data.getInstance().getEnemyProfileById( 
 				Runtime.getInstance().currentLevelID, item.classId
 			);
-			if( (!profile || Data.getInstance().isBullet( profile.type )) && 
-				item.classId != AreaTrigger.TRIGGER_TYPE ) {
+			
+			if( !profile && !Data.getInstance().isTrigger(item.classId) ) {
+				MapEditor.getInstance().writeToStatusBar("【错误】对象数据不存在");
+				return;
+			}
+			
+			if( Data.getInstance().isBullet( item.classId ) )
+			{
 				MapEditor.getInstance().writeToStatusBar("【错误】不可将子弹类型放置入场景中");
 				return;
 			}
@@ -796,6 +819,8 @@ package
 			
 			if( item as AreaTrigger )
 				(item as AreaTrigger).enableEditing( this );
+			else if( item as FormationTrigger )
+				(item as FormationTrigger).enableEditing( this );
 			else if( item as Entity )
 				(item as Entity).setBaseSize( 50 );
 			
@@ -826,7 +851,21 @@ package
 			
 			item.addEventListener( MouseEvent.MOUSE_DOWN,
 				function(e:MouseEvent) : void {
+					e.stopPropagation();
 					clickTimer.start();
+					
+					var flag:Boolean = false;
+					for each( var tar:Component in self.mSelectedComponents )
+					{
+						if( item == tar ) flag = true;
+					}
+					
+					if( !flag && !(item as AreaTrigger) )
+					{
+						self.onCancelSelect();
+						self.selectComponent( item );
+					}
+					
 					self.mFocusComponent = item;
 					self.mDraggingX = self.mouseX;
 					self.mDraggingY = self.mouseY;
@@ -952,6 +991,7 @@ package
 				});
 				if( mat2 as Entity )
 					(mat2 as Entity).setBaseSize( 50 );
+//				mat2.y += mat2.height/2;
 				mSelectedTipsLayer.addElement(mat2);
 			}
 		}
@@ -977,6 +1017,8 @@ package
 		{	
 			if( type == AreaTrigger.TRIGGER_TYPE )
 				return new AreaTrigger( );
+			else if( type == FormationTrigger.TRIGGER_TYPE )
+				return new FormationTrigger( );
 			else 
 			{
 				if( !Data.getInstance().getEnemyProfileById( 
@@ -1067,7 +1109,24 @@ package
 			var data:Array = new Array;
 			for each(var m:Component in this.mComponents)
 			{
-				data.push(m.serialize());
+				var d:Object = m.serialize();
+				if( m.classId == FormationTrigger.TRIGGER_TYPE )
+				{
+					d.objs = [];
+					for each(var item:Component in this.mComponents )
+					{
+						if( item as Entity )
+						{
+							var tmp:Entity = item as Entity;
+							if( tmp.gameY > d.y && tmp.gameY < d.y+d.height )
+							{
+								d.objs.push(tmp.globalId);
+							}
+						}
+					}
+				}
+				
+				data.push(d);
 			}
 			return data;
 		}
