@@ -133,7 +133,7 @@ package
 							for(var j:int = 0; j < path.length; j++)
 							{
 								//path*2 to make it compatible to the old edition
-								result += "cc.p("+(path[j].x*2)+","+(path[j].y*2)+")";
+								result += "cc.p("+(path[j].x)+","+(path[j].y)+")";
 								if(j < path.length-1)
 									result += ","
 							}

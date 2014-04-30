@@ -94,8 +94,8 @@ package behaviorEdit
 				if( !this._isArray )
 				{
 					var p:Object = new Object;
-					p.x = dot.x;
-					p.y = -dot.y;
+					p.x = dot.x*2;
+					p.y = -dot.y*2;
 					data.push(p);
 				} else {
 					data.push( [dot.x, -dot.y ]);
