@@ -1200,9 +1200,10 @@ package
 		{
 			for each( var m:Component in this.mComponents )
 			{
-				var ati:AreaTrigger = m as AreaTrigger;
-				if( !ati ) continue;
-				if( ati.isMonsterIn( sid ) ) return true;
+				if( m as AreaTrigger &&
+					(m as AreaTrigger).isMonsterIn( sid ) ) return true;
+				if( m as FormationTrigger &&
+					(m as FormationTrigger).isMonsterIn( sid ) ) return true;
 			}
 			return false;
 		}

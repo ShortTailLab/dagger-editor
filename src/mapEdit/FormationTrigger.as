@@ -35,6 +35,12 @@ package mapEdit
 			
 			this.buildDefaultContent();
 			
+			this.mInfoLayer = new Sprite();
+			this.mInfoLayer.visible = false;
+			this.addChild( this.mInfoLayer );
+			
+			this.mDotsOnMonster = {};
+			
 			this.addEventListener(MouseEvent.MOUSE_UP, this.onMouseUp);
 		}
 		
@@ -42,33 +48,8 @@ package mapEdit
 		{	
 			this.mDotCorners = new Vector.<Sprite>;
 
-			this.mDotCorners.push( buildADot(0, 0) );
-			this.mDotCorners.push( buildADot(0, -100) );
-			
-			var self:FormationTrigger = this;
-			var menu:ContextMenu = new ContextMenu;
-			
-			var createMonster:ContextMenuItem = new ContextMenuItem("设定");
-			createMonster.addEventListener(
-				ContextMenuEvent.MENU_ITEM_SELECT, function(e:Event):void
-				{
-					var info:Array = Utils.deepCopy( Data.getInstance().dynamicArgs.Section ) as Array || [];
-					for each( var item:Array in info )
-					{
-						if( item[ConfigPanel.kKEY] in self.mData ) 
-							item[ConfigPanel.kDEFAULT] = self.mData[item[ConfigPanel.kKEY]];
-					}
-					
-					var t:ConfigPanel = new ConfigPanel();
-					t.init( function( configs:Object ):void {
-						self.mData = configs;
-					}, function(err:String):void{ Alert.show( err ); }, info, false, MapEditor.getInstance() );
-				}
-			);
-			menu.addItem( createMonster );
-			
-			this.mDotCorners[0].contextMenu = menu;
-			this.mDotCorners[1].contextMenu = menu;
+			this.mDotCorners.push( buildADot(0, 50) );
+			this.mDotCorners.push( buildADot(0, -50) );
 			
 			this.updateRect();
 		}
@@ -83,10 +64,6 @@ package mapEdit
 			
 			with( dot ) { x = px; y = py; }
 			this.addChild( dot );
-			
-			dot.addEventListener( MouseEvent.MOUSE_DOWN, this.onMouseDown );
-			dot.addEventListener( MouseEvent.MOUSE_UP, 	 this.onMouseUp );
-			dot.addEventListener( MouseEvent.MOUSE_OUT, this.onMouseUp );
 			
 			return dot;
 		}
@@ -202,15 +179,37 @@ package mapEdit
 			if( this.mEnableEditing ) return;
 			this.mEnableEditing = true;
 			
-			this.mMainScene = scene;
-			
-			this.mInfoLayer = new Sprite();
-			this.mInfoLayer.visible = false;
-			this.addChild( this.mInfoLayer );
-			
-			this.mDotsOnMonster = {};
-			
 			var self:FormationTrigger = this;
+			var menu:ContextMenu = new ContextMenu;
+			
+			var createMonster:ContextMenuItem = new ContextMenuItem("设定");
+			createMonster.addEventListener(
+				ContextMenuEvent.MENU_ITEM_SELECT, function(e:Event):void
+				{
+					var info:Array = Utils.deepCopy( Data.getInstance().dynamicArgs.Section ) as Array || [];
+					for each( var item:Array in info )
+					{
+						if( item[ConfigPanel.kKEY] in self.mData ) 
+							item[ConfigPanel.kDEFAULT] = self.mData[item[ConfigPanel.kKEY]];
+					}
+					
+					var t:ConfigPanel = new ConfigPanel();
+					t.init( function( configs:Object ):void {
+						self.mData = configs;
+					}, function(err:String):void{ Alert.show( err ); }, info, false, MapEditor.getInstance() );
+				}
+			);
+			menu.addItem( createMonster );
+			
+			this.mMainScene = scene;
+			for each( var dot:Sprite in this.mDotCorners )
+			{
+				dot.addEventListener( MouseEvent.MOUSE_DOWN, this.onMouseDown );
+				dot.addEventListener( MouseEvent.MOUSE_UP, 	 this.onMouseUp );
+				dot.addEventListener( MouseEvent.MOUSE_OUT, this.onMouseUp );
+				dot.contextMenu = menu;
+			}
+			
 			this.mAnchorDOT = this.buildADot2(0, (this.mDotCorners[0].y+this.mDotCorners[1].y)/2);
 			this.mAnchorDOT.addEventListener(MouseEvent.MOUSE_DOWN,
 				function( e:MouseEvent ):void {
@@ -249,7 +248,9 @@ package mapEdit
 				for( var sid:String in self.mDotsOnMonster )
 				{
 					var entity:Entity = self.mMainScene.getMonsterBySID( sid );
-					if( !entity ) self.removeAMonster( sid );
+					if( !entity ) {
+						self.removeAMonster( sid );
+					}
 					else {
 						var pos:Point = self.globalToLocal(
 							entity.parent.localToGlobal( new Point( entity.x, entity.y ) )
@@ -337,6 +338,14 @@ package mapEdit
 				delete this.mDotsOnMonster[sid];
 			}
 		}
+		
+		public function isMonsterIn( sid:String ):Boolean
+		{
+			if( this.mDotsOnMonster.hasOwnProperty( sid ) )
+				return true;
+			return false;
+		}
+		
 		//		
 		override public function setBaseSize( value:Number ):void
 		{
