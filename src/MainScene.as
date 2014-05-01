@@ -188,6 +188,19 @@ package
 				}
 			);	
 			
+			this.mSectionDelayInput.addEventListener(FlexEvent.ENTER,
+				function (e:FlexEvent):void {
+					for each( var item:Component in self.mSelectedComponents )
+					{
+						var t2:Entity = item as Entity;
+						if( !t2 ) continue;
+						
+						t2.sectionDelay = Number(self.mSectionDelayInput.text);
+					}
+					self.onMonsterChange();
+				}
+			);
+			
 			// others 
 			this.mTipsFontSize = Number(Data.getInstance().conf["main.scene.tips.size"] || 12);
 			this.mTipsSizeInput.text = String(this.mTipsFontSize);
@@ -565,7 +578,7 @@ package
 		private static const kSELECTED_BOARD_UNIT_HEIGHT:int 	= 50;
 		private static const kSELECTED_BOARD_COLUMS:int 		= 3;
 		private var mSelectedBoardTip:Component 				= null;
-		private function selectComponent( item:Component ):void
+		public function selectComponent( item:Component ):void
 		{
 			if( this.mSelectedComponents.hasOwnProperty(item.globalId) ) return;
 			
@@ -642,6 +655,11 @@ package
 			else 
 				this.mInfoTimeInput.text = String( -1 );
 			
+			if( item as Entity )
+				this.mSectionDelayInput.text = String( (item as Entity).sectionDelay );
+			else 
+				this.mSectionDelayInput.text = String( -1 );
+			
 			// update board of monsters
 			var index:int = this.mSelectedBoard.numElements;
 			var row:int = index / MainScene.kSELECTED_BOARD_COLUMS;
@@ -702,6 +720,7 @@ package
 				this.mInfoXInput.text 		= "";
 				this.mInfoYInput.text 		= "";
 				this.mInfoTimeInput.text 	= "";
+				this.mSectionDelayInput.text = "";
 			}
 		}
 		
@@ -840,9 +859,18 @@ package
 						
 						if( clickTimer.running )
 						{
-							if( !e.shiftKey )
-								self.onCancelSelect();
-							self.selectComponent( item );
+							var flag:Boolean = false;
+							for each( var tar:Component in self.mSelectedComponents )
+							{
+								if( item == tar ) flag = true;
+							}
+							
+							if( !flag && !(item as AreaTrigger) )
+							{
+								if( !e.shiftKey )
+									self.onCancelSelect();
+								self.selectComponent( item );
+							}
 						}
 						clickTimer.stop();
 					}
@@ -853,18 +881,6 @@ package
 				function(e:MouseEvent) : void {
 					e.stopPropagation();
 					clickTimer.start();
-					
-					var flag:Boolean = false;
-					for each( var tar:Component in self.mSelectedComponents )
-					{
-						if( item == tar ) flag = true;
-					}
-					
-					if( !flag && !(item as AreaTrigger) )
-					{
-						self.onCancelSelect();
-						self.selectComponent( item );
-					}
 					
 					self.mFocusComponent = item;
 					self.mDraggingX = self.mouseX;

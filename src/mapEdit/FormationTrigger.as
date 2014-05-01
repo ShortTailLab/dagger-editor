@@ -389,7 +389,8 @@ package mapEdit
 			this.mDotCorners[0].x = this.mDotCorners[1].x = 0;
 			this.updateRect();
 			
-			this.select( true );
+			if( this.mMainScene )
+				this.mMainScene.selectComponent( this );
 		}
 	}
 }

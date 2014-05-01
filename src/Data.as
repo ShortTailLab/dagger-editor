@@ -1088,6 +1088,7 @@ package
 							data : ft_data
 						}
 					});
+					continue;
 				}
 				
 				if( !(item.type in profile.monsters) ) continue;	
@@ -1098,8 +1099,10 @@ package
 		
 				var t:Number = item.triggerTime || item.y;
 				export.objects[item.id] = {
-					name : item.type, coord:"@@cc.p("+item.x+","+item.y+")@@",
-					time : t
+					name : item.type, 
+					coord:"@@cc.p("+item.x+","+item.y+")@@",
+					time : t,
+					sectionDelay : item.sectionDelay
 				};
 			}
 			
@@ -1144,8 +1147,11 @@ package
 						var itype:String = item[ConfigPanel.kTYPE];
 						
 						if( !(ikey in export.actor[index]) )
-							return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
-						
+						{
+							export.actor[index][ikey] = item[ConfigPanel.kDEFAULT];
+							//return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
+						}
+							
 						var adj:Array = adjust( monster.monster_id, itype, monster[ikey] );
 						if( !adj[0] ) return adj[1];
 						if( adj[1] ) export.actor[index][ikey] = adj[1];
@@ -1161,8 +1167,10 @@ package
 						ikey = item[ConfigPanel.kKEY];
 						itype = item[ConfigPanel.kTYPE];
 						if( !(ikey in export.actor[index]) )
-							return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
-						
+						{
+							export.actor[index][ikey] = item[ConfigPanel.kDEFAULT];
+							//return "【失败】怪物"+index+"的属性"+ikey+"未被设置";
+						}
 						adj = adjust( monster.monster_id, itype, monster[ikey] );
 						if( !adj[0] ) return adj[1];
 						if( adj[1] ) export.actor[index][ikey] = adj[1];
@@ -1199,7 +1207,10 @@ package
 						itype = item[ConfigPanel.kTYPE];
 						
 						if( !(ikey in export.bullet[index]) )
-							return "【失败】子弹"+index+"的属性"+ikey+"未被设置";
+						{
+							export.bullet[index][ikey] = item[ConfigPanel.kDEFAULT];
+							//return "【失败】子弹"+index+"的属性"+ikey+"未被设置";
+						}
 						
 						adj = adjust( bullet.monster_id, itype, bullet[ikey] );
 						if( !adj[0] ) return adj[1];
@@ -1216,7 +1227,10 @@ package
 						itype = item[ConfigPanel.kTYPE];
 						
 						if( !(ikey in export.bullet[index]) )
-							return "【失败】子弹"+index+"的属性"+ikey+"未被设置";
+						{
+							export.bullet[index][ikey] = item[ConfigPanel.kDEFAULT];
+							//return "【失败】子弹"+index+"的属性"+ikey+"未被设置";
+						}
 						
 						adj = adjust( bullet.monster_id, itype, bullet[ikey] );
 						if( !adj[0] ) return adj[1];
@@ -1245,7 +1259,10 @@ package
 						itype = item[ConfigPanel.kTYPE];
 						
 						if( !(ikey in export.trap[index]) )
-							return "【失败】陷阱"+index+"的属性"+ikey+"未被设置";
+						{
+							export.trap[index][ikey] = item[ConfigPanel.kDEFAULT];
+							//return "【失败】陷阱"+index+"的属性"+ikey+"未被设置";
+						}
 						
 						adj = adjust( trap.monster_id, itype, trap[ikey] );
 						if( !adj[0] ) return adj[1];
@@ -1262,7 +1279,10 @@ package
 						itype = item[ConfigPanel.kTYPE];
 						
 						if( !(ikey in export.trap[index]) )
-							return "【失败】陷阱"+index+"的属性"+ikey+"未被设置";
+						{
+							export.trap[index][ikey] = item[ConfigPanel.kDEFAULT];
+							//return "【失败】陷阱"+index+"的属性"+ikey+"未被设置";
+						}
 						
 						adj = adjust( trap.monster_id, itype, trap[ikey] );
 						if( !adj[0] ) return adj[1];
