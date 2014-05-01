@@ -28,6 +28,7 @@ package mapEdit
 		
 		// --- > related data 
 		private var mTriggeredTime:Number = -1;
+		private var mSectionDelay:Number = 1;
 		//private var x, y 
 		
 		public function reset( type:String ):void 
@@ -88,6 +89,11 @@ package mapEdit
 			else 
 				this.mTriggeredTime = -1;
 			
+			if( data.hasOwnProperty("sectionDelay") )
+				this.mSectionDelay = data.sectionDelay;
+			else 
+				this.mSectionDelay = 1;
+			
 			if( data.hasOwnProperty("scale") )
 				this.mProfileScalor = data.scale;
 			else 
@@ -106,6 +112,9 @@ package mapEdit
 			{
 				obj.triggerTime = this.mTriggeredTime;
 			}	
+			
+			obj.sectionDelay = this.mSectionDelay;
+			
 			return obj;
 		}
 		
@@ -118,6 +127,14 @@ package mapEdit
 		}
 		public function get triggeredTime():Number {
 			return this.mTriggeredTime;
+		}
+		
+		public function set sectionDelay(v:Number):void {
+			this.mSectionDelay = v;
+		}
+		
+		public function get sectionDelay():Number {
+			return this.mSectionDelay;
 		}
 		
 		override public function select(value:Boolean):void

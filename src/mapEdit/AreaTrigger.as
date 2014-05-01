@@ -237,7 +237,9 @@ package mapEdit
 				for( var sid:String in self.mDotsOnMonster )
 				{
 					var entity:Entity = self.mMainScene.getMonsterBySID( sid );
-					if( !entity ) self.removeAMonster( sid );
+					if( !entity ) {
+						self.removeAMonster( sid );
+					}
 					else {
 						var pos:Point = self.globalToLocal(
 							entity.parent.localToGlobal(new Point(entity.x, entity.y))
