@@ -740,13 +740,13 @@
 				switch (this.mType) {
 					case TYPE_ROOT:
 						if (this.mData.type) {
-							child = new BTNode();
+							child = BT.POOL_POP();
 							this.mChildrens.push(child);
 							child.setData(TYPE_FUNC, this.mData.type, this.mData, this.mCanvas, this);
 							this.mCanvas.addNodeToCanvas(child);
 						}
 						else if (this.mData.subTree) {
-							child = new BTNode();
+							child = BT.POOL_POP();
 							this.mChildrens.push(child);
 							var subTreeData:Object = Utils.cloneObjectData(Data.getInstance().behaviorSet[this.mData.subTree]);
 							child.isSubBT = true;
@@ -759,7 +759,7 @@
 						break;
 					case TYPE_FUNC:
 						for each (var data:Object in this.mData.children) {
-							child = new BTNode();
+							child = BT.POOL_POP();
 							this.mChildrens.push(child);
 							if (data.type) {
 								child.setData(TYPE_FUNC, data.type, data, this.mCanvas, this);
@@ -978,6 +978,15 @@
 				}
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
+			}
+			
+			public function reset():void {
+				this.mMaxDepth = -1;
+				this.mMaxSiblings = -1;
+				this.mSiblingIndex = -1;
+				this.mNodeDepth = -1;
+				this.mIsInSubTree = -1;
+				this.mIsSubBT = false;
 			}
 			
 			public function isInSubBT():Boolean {

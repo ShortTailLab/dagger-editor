@@ -30,6 +30,7 @@
 			private var mNodes:Vector.<BTNode>;
 			private var mNodesInfo:Array;
 			private var mLineSprite:Sprite;
+			private static var POOL:Vector.<BTNode> = new Vector.<BTNode>();
 			
 			private function onCreate():void {
 				this.mCreated = true;
@@ -68,7 +69,7 @@
 				this.mNumTotalNodes = this.getNodesInObject(this.mData[0])+1;
 				this.mNodes = new Vector.<BTNode>();
 				
-				this.mTreeRoot = new BTNode();
+				this.mTreeRoot = BT.POOL_POP();
 				this.mTreeRoot.setData(BTNode.TYPE_ROOT, this.mName, this.mData[0], this, null);
 				this.addNodeToCanvas(this.mTreeRoot);
 //				this.mContainer.width = 2000;
@@ -114,7 +115,15 @@
 				if (this.mContainer.contains(node)) {
 					this.mContainer.removeElement(node);
 					this.mNodes.splice(this.mNodes.indexOf(node), 1);
+					node.reset();
+					BT.POOL.push(node);
 				}
+			}
+			
+			public static function POOL_POP():BTNode {
+				var node:BTNode = BT.POOL.pop();
+				if (!node) node = new BTNode();
+				return node;
 			}
 			
 			public function setModified(bool:Boolean):void {
