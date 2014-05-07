@@ -102,6 +102,11 @@
 				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_EVERY};
 				this.onPressClose();
 			}
+			
+			private function onPressFunc9(event:MouseEvent):void {
+				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_RANDOM};
+				this.onPressClose();
+			}
 		]]>
 	</fx:Script>
 	<fx:Declarations>
@@ -120,24 +125,30 @@
 			</mx:List>
 		</s:NavigatorContent>
 		<s:NavigatorContent width="100%" height="100%" label="功能节点">
-			<s:VGroup x="0" y="0" width="100%" height="100%" gap="20">
-				<s:Button width="50" height="50" label="按钮" click="onPressFunc1(event)" buttonMode="true"
-						  icon="@Embed('assets/zhixing.png')"/>
-				<s:Button width="50" height="50" label="按钮" click="onPressFunc2(event)" buttonMode="true"
-						  icon="@Embed('assets/shunxu.png')"/>
-				<s:Button width="50" height="50" label="按钮" click="onPressFunc3(event)" buttonMode="true"
-						  icon="@Embed('assets/youxian.png')"/>
-				<s:Button width="50" height="50" label="按钮" click="onPressFunc4(event)" buttonMode="true"
-						  icon="@Embed('assets/tongbu.png')"/>
-				<s:Button width="50" height="50" label="按钮" click="onPressFunc5(event)" buttonMode="true"
-						  icon="@Embed('assets/tiaojian.png')"/>
-				<s:Button width="50" height="50" label="按钮" click="onPressFunc6(event)" buttonMode="true"
-						  icon="@Embed('assets/xunhuan.png')"/>
-				<s:Button width="50" height="50" label="按钮" click="onPressFunc7(event)" buttonMode="true"
-						  icon="@Embed('assets/once.png')"/>
-				<s:Button width="50" height="50" label="按钮" click="onPressFunc8(event)" buttonMode="true"
-						  icon="@Embed('assets/every.png')"/>
-			</s:VGroup>
+			<s:HGroup gap="40">
+				<s:VGroup x="0" y="0" width="100%" height="100%" gap="20">
+					<s:Button width="50" height="50" label="按钮" click="onPressFunc1(event)" buttonMode="true"
+							  icon="@Embed('assets/zhixing.png')"/>
+					<s:Button width="50" height="50" label="按钮" click="onPressFunc2(event)" buttonMode="true"
+							  icon="@Embed('assets/shunxu.png')"/>
+					<s:Button width="50" height="50" label="按钮" click="onPressFunc3(event)" buttonMode="true"
+							  icon="@Embed('assets/youxian.png')"/>
+					<s:Button width="50" height="50" label="按钮" click="onPressFunc4(event)" buttonMode="true"
+							  icon="@Embed('assets/tongbu.png')"/>
+					<s:Button width="50" height="50" label="按钮" click="onPressFunc5(event)" buttonMode="true"
+							  icon="@Embed('assets/tiaojian.png')"/>
+					<s:Button width="50" height="50" label="按钮" click="onPressFunc6(event)" buttonMode="true"
+							  icon="@Embed('assets/xunhuan.png')"/>
+					<s:Button width="50" height="50" label="按钮" click="onPressFunc7(event)" buttonMode="true"
+							  icon="@Embed('assets/once.png')"/>
+					<s:Button width="50" height="50" label="按钮" click="onPressFunc8(event)" buttonMode="true"
+							  icon="@Embed('assets/every.png')"/>
+				</s:VGroup>
+				<s:VGroup x="149" y="222" width="100%" height="100%">
+					<s:Button width="50" height="50" label="按钮" click="onPressFunc9(event)" buttonMode="true"
+							  icon="@Embed('assets/random.png')"/>
+				</s:VGroup>
+			</s:HGroup>
 		</s:NavigatorContent>
 		<s:NavigatorContent width="100%" height="100%" label="行为库">
 			<s:List id="mLibraryList" x="0" y="0" width="100%" height="100%" change="onSelectLibrary(event)"></s:List>
