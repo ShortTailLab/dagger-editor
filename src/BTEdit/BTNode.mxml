@@ -24,6 +24,13 @@
 			private var mData:Object;
 			private var mType:int;
 			
+			// cache
+			private var mMaxDepth:int = -1;
+			private var mMaxSiblings:int = -1;
+			private var mSiblingIndex:int = -1;
+			private var mNodeDepth:int = -1;
+			private var mIsInSubTree:int = -1;
+			
 			/** root node, not editable */
 			public static const TYPE_ROOT:int = 1;
 			/** function node from 6 defined types */
@@ -65,6 +72,7 @@
 			private var mIsDetached:Boolean = false;
 			
 			private function onCreate():void {
+				trace("created ");
 				this.mCreated = true;
 				var menu:ContextMenu = new ContextMenu();
 				var item0:ContextMenuItem = new ContextMenuItem("更换");
@@ -498,6 +506,7 @@
 				if (this.mCreated) {
 					this.updateComponents();
 				}
+				this.updateChildrens();
 			}
 			
 			public function updateComponents():void {
@@ -709,7 +718,7 @@
 						this.mSubContainer.height = 185-(7-numParams)*25;
 						break;
 				}
-				this.updateChildrens();
+//				this.updateChildrens();
 			}
 			
 			public function clearChildrens():void {
@@ -719,7 +728,10 @@
 						this.mChildrens[i].clearChildrens();
 					}
 				}
-				this.mChildrens = new Vector.<BTNode>();
+				else {
+					this.mChildrens = new Vector.<BTNode>();
+				}
+				this.mChildrens.length = 0;
 			}
 			
 			private function updateChildrens():void {
@@ -969,11 +981,17 @@
 			}
 			
 			public function isInSubBT():Boolean {
-				if (this.isSubBT) return true;
-				if (this.mParent) {
-					return this.mParent.isInSubBT();
+				if (this.mIsInSubTree != -1) return this.mIsInSubTree==1;
+				if (this.mIsSubBT) {
+					this.mIsInSubTree = 1;
+					return true;
 				}
-				return false;
+				if (this.mParent) {
+					this.mIsInSubTree = this.mParent.isInSubBT()?1:0;
+					return this.mIsInSubTree==1;
+				}
+				this.mIsInSubTree = 0;
+				return this.mIsInSubTree==1;
 			}
 			
 			public function containsChild(node:BTNode):Boolean {
@@ -987,30 +1005,37 @@
 			}
 			
 			public function get nodeDepth():int {
+				if (this.mNodeDepth != -1) return this.mNodeDepth;
 				var depth:int = 0;
 				var p:BTNode = this.mParent;
 				while (p) {
 					depth++;
 					p = p.nodeParent;
 				}
+				this.mNodeDepth = depth;
 				return depth;
 			}
 			
 			public function get siblingIndex():int {
+				if (this.mSiblingIndex != -1) return this.mSiblingIndex;
 				if (this.mParent) { 
 					var index:int = this.mParent.nodeChildrens.indexOf(this);
 					if (index <= 0) {
-						return this.mParent.siblingIndex;
+						this.mSiblingIndex = this.mParent.siblingIndex;
+						return this.mSiblingIndex;
 					}
 					else {
-						return this.mParent.nodeChildrens[index-1].maxSiblings + this.mParent.nodeChildrens[index-1].siblingIndex;
+						this.mSiblingIndex = this.mParent.nodeChildrens[index-1].maxSiblings + this.mParent.nodeChildrens[index-1].siblingIndex;
+						return this.mSiblingIndex;
 					}
 				}
+				this.mSiblingIndex = 0;
 				return 0;
 			}
 			
 			/** max depth count from current node */
 			public function get maxDepth():int {
+				if (this.mMaxDepth != -1) return this.mMaxDepth; 
 				if (this.mChildrens.length <= 0) return 1;
 				var max:int = 1;
 				for (var i:int = 0; i < this.mChildrens.length; i++) {
@@ -1019,16 +1044,19 @@
 						max = depth;
 					}
 				}
+				this.mMaxDepth = max+1;
 				return max+1;
 			}
 			
 			public function get maxSiblings():int {
+				if (this.mMaxSiblings != -1) return this.mMaxSiblings; 
 				if (!this.mChildrens || this.mChildrens.length <= 0) return 1;
 				var max:int = 0;
 				for (var i:int = 0; i < this.mChildrens.length; i++) {
 					var s:int = this.mChildrens[i].maxSiblings;
 					max += s;
 				}
+				this.mMaxSiblings = max;
 				return max;
 			}
 			

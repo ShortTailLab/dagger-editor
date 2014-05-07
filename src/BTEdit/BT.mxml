@@ -104,6 +104,7 @@
 						node.y = row*200;
 					}
 					if (this.mNodes.length >= this.mNumTotalNodes) {
+						trace("init tree done");
 						this.autoLayout();
 					}
 				}
@@ -226,7 +227,7 @@
 				for (i = 0; i < this.mNodes.length; i++) {
 					var row:int = this.mNodes[i].siblingIndex;
 					var col:int = this.mNodes[i].nodeDepth;
-					trace("name "+this.mNodes[i].nodeName+" row "+row+" col "+col+" w "+this.mNodes[i].nodeWidth+" h "+this.mNodes[i].nodeHeight);
+//					trace("name "+this.mNodes[i].nodeName+" row "+row+" col "+col+" w "+this.mNodes[i].nodeWidth+" h "+this.mNodes[i].nodeHeight);
 					this.mNodesInfo.push({r:row, c:col});
 					if (this.mNodes[i].nodeWidth > this.mColWidth[col]) {
 						this.mColWidth[col] = this.mNodes[i].nodeWidth;
@@ -253,6 +254,21 @@
 				this.mContainer.width = this.mColWidth[this.mColWidth.length-1];
 				this.mContainer.height = this.mRowHeight[this.mRowHeight.length-1]+200;
 				this.drawLines();
+			}
+			
+			public function setScale(s:Number):void {
+				this.scaleX = s;
+				this.scaleY = s;
+				if (this.verticalScrollBar) {
+					this.verticalScrollBar.scaleX = this.verticalScrollBar.scaleY = 1/s;
+				}
+				if (this.horizontalScrollBar) {
+					this.horizontalScrollBar.scaleX = this.horizontalScrollBar.scaleY = 1/s;
+				}
+				if (this.mColWidth) {
+					this.mContainer.width = this.mColWidth[this.mColWidth.length-1];
+					this.mContainer.height = this.mRowHeight[this.mRowHeight.length-1]+200;
+				}
 			}
 			
 			private function drawLines():void {
