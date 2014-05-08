@@ -70,9 +70,9 @@ package behaviorEdit
 				{
 					var color:uint = isCurve && i%2==1 ? 0x00ff00 : 0xff0000;
 					if( !isArray )
-						makeDot(color, path[i].x, -path[i].y);
+						makeDot(color, path[i].x/2, -path[i].y/2);
 					else 
-						makeDot(color, path[i][0], -path[i][1]);
+						makeDot(color, path[i][0]/2, -path[i][1]/2);
 				}
 				render();
 			}

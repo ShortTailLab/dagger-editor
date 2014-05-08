@@ -248,7 +248,7 @@
 				EventManager.getInstance().addEventListener(EventType.INPUT_DIALOG_CONFIRM, renameBehavior);
 				var input:InputDialog = new InputDialog();
 				input.setTitle("重命名行为", this.mFilteredLibrary[this.mLibrary.selectedIndex]);
-				PopUpManager.addPopUp(input, MapEditor.getInstance());
+				PopUpManager.addPopUp(input, MapEditor.getInstance(), true);
 				PopUpManager.centerPopUp(input);
 			}
 			
@@ -557,7 +557,7 @@
 				EventManager.getInstance().addEventListener(EventType.INPUT_DIALOG_CONFIRM, renameBehavior);
 				var input:InputDialog = new InputDialog();
 				input.setTitle("重命名行为", current);
-				PopUpManager.addPopUp(input, MapEditor.getInstance());
+				PopUpManager.addPopUp(input, MapEditor.getInstance(), true);
 				PopUpManager.centerPopUp(input);
 			}
 			
