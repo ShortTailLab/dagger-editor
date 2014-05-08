@@ -159,14 +159,22 @@
 				this.mSelectedNode.y = this.stage.mouseY;
 				this.mSelectedNode.startDrag();
 				this.stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+				this.stage.addEventListener(MouseEvent.RIGHT_MOUSE_DOWN, onMouseRightDown);
 			}
 			
 			private function onMouseDown(event:Event):void {
 				var p:Point = this.parent.localToGlobal(new Point(this.x, this.y));
 				if (this.stage.mouseX < p.x || this.stage.mouseY < p.y) {
 					this.stage.removeEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+					this.stage.removeEventListener(MouseEvent.RIGHT_MOUSE_DOWN, onMouseRightDown);
 					clearSelected();
 				}
+			}
+			
+			private function onMouseRightDown(event:Event):void {
+				this.stage.removeEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+				this.stage.removeEventListener(MouseEvent.RIGHT_CLICK, onMouseRightDown);
+				clearSelected();
 			}
 			
 			public function clearSelected():void {

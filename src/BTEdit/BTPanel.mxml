@@ -125,6 +125,20 @@
 				else if (event.ctrlKey && event.shiftKey && event.keyCode == Keyboard.S) {
 					this.onPressSaveAll();
 				}
+				else if (event.keyCode == Keyboard.MINUS) {
+					if (this.mZoom.value > this.mZoom.minimum) {
+						this.mZoom.value -= 0.1;
+						if (this.mZoom.value < this.mZoom.minimum) this.mZoom.value = this.mZoom.minimum;
+						this.onZoomChanged(event);
+					}
+				}
+				else if (event.keyCode == Keyboard.EQUAL) {
+					if (this.mZoom.value < this.mZoom.maximum) {
+						this.mZoom.value += 0.1;
+						if (this.mZoom.value > this.mZoom.maximum) this.mZoom.value = this.mZoom.maximum;
+						this.onZoomChanged(event);
+					}
+				}
 			}
 			
 			private function onTabIndexChanged(event:IndexChangedEvent):void {
@@ -234,7 +248,7 @@
 				EventManager.getInstance().addEventListener(EventType.INPUT_DIALOG_CONFIRM, renameBehavior);
 				var input:InputDialog = new InputDialog();
 				input.setTitle("重命名行为", this.mFilteredLibrary[this.mLibrary.selectedIndex]);
-				PopUpManager.addPopUp(input, MapEditor.getInstance());
+				PopUpManager.addPopUp(input, MapEditor.getInstance(), true);
 				PopUpManager.centerPopUp(input);
 			}
 			
@@ -543,7 +557,7 @@
 				EventManager.getInstance().addEventListener(EventType.INPUT_DIALOG_CONFIRM, renameBehavior);
 				var input:InputDialog = new InputDialog();
 				input.setTitle("重命名行为", current);
-				PopUpManager.addPopUp(input, MapEditor.getInstance());
+				PopUpManager.addPopUp(input, MapEditor.getInstance(), true);
 				PopUpManager.centerPopUp(input);
 			}
 			
@@ -652,7 +666,7 @@
 				</mx:TabNavigator>
 				<s:Button right="0" top="0" width="30" label="+" click="onPressNewTab(event)"/>
 				<s:HSlider id="mZoom" right="30" bottom="0" change="onZoomChanged(event)" maximum="1.5"
-						   minimum="0.1" stepSize="0.01" value="1"/>
+						   minimum="0.1" stepSize="0.01" value="1" toolTip="按+/-键进行调节"/>
 				<s:Label id="mZoomValue" right="0" bottom="1" width="30" backgroundColor="#C8C8C8"
 						 fontSize="10" text="100%" textAlign="center" verticalAlign="top"/>
 			</s:Group>

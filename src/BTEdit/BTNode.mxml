@@ -300,7 +300,7 @@
 				var window:PathEditPanel = new PathEditPanel(name, data.path, data.type=="array_ccp_curve");
 				
 				window.addEventListener(MsgEvent.EDIT_PATH, onPathEditPanelClose);
-				PopUpManager.addPopUp(window, this, true);
+				PopUpManager.addPopUp(window, MapEditor.getInstance(), true);
 				PopUpManager.centerPopUp(window);
 			}
 			
@@ -698,16 +698,16 @@
 								this["mVar"+i].visible = false;
 								this["mInput"+i].visible = false;
 							}
-							if (this.mData.children && this.mData.children.length > 0) {
+//							if (this.mData.children && this.mData.children.length > 0) {
 								this.mNext.visible = false;
 								this.mNextLine.visible = false;
-							}
-							else {
-								this.mNext.visible = true;
-								this.mNextLine.visible = true;
-								this.mNextLine.x = 50;
-								this.mNext.x = 100;
-							}
+//							}
+//							else {
+//								this.mNext.visible = true;
+//								this.mNextLine.visible = true;
+//								this.mNextLine.x = 50;
+//								this.mNext.x = 100;
+//							}
 							this.mTitle.visible = false;
 						}
 						break;
@@ -836,7 +836,7 @@
 				
 				EventManager.getInstance().addEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNodeSelected);
 				var selection:BTNodeSelection = new BTNodeSelection();
-				PopUpManager.addPopUp(selection, MapEditor.getInstance());
+				PopUpManager.addPopUp(selection, MapEditor.getInstance(), true);
 				PopUpManager.centerPopUp(selection);
 			}
 			
@@ -950,7 +950,7 @@
 				
 				EventManager.getInstance().addEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNextNodeSelected);
 				var selection:BTNodeSelection = new BTNodeSelection();
-				PopUpManager.addPopUp(selection, MapEditor.getInstance());
+				PopUpManager.addPopUp(selection, MapEditor.getInstance(), true);
 				PopUpManager.centerPopUp(selection);
 			}
 			
