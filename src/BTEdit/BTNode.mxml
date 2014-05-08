@@ -24,6 +24,17 @@
 			private var mData:Object;
 			private var mType:int;
 			
+			// cache
+			private var mMaxDepth:int = -1;
+			private var mMaxSiblings:int = -1;
+			private var mSiblingIndex:int = -1;
+			private var mNodeDepth:int = -1;
+			private var mIsInSubTree:int = -1;
+			
+			// node vars
+			private var mNodeVars:Array = [];
+			private var mNodeInputs:Array = [];
+			
 			/** root node, not editable */
 			public static const TYPE_ROOT:int = 1;
 			/** function node from 6 defined types */
@@ -45,6 +56,7 @@
 			public static const FUNC_NODE_LOOP:String = "循环";
 			public static const FUNC_NODE_ONCE:String = "once";
 			public static const FUNC_NODE_EVERY:String = "every";
+			public static const FUNC_NODE_RANDOM:String = "随机";
 			
 			public static const ICON_FUNC_NODE:Object = {
 				"执行":BTPanel.ICON_EXEC, 
@@ -54,7 +66,8 @@
 				"条件":BTPanel.ICON_COND, 
 				"循环":BTPanel.ICON_LOOP,
 				"once":BTPanel.ICON_ONCE,
-				"every":BTPanel.ICON_EVERY
+				"every":BTPanel.ICON_EVERY,
+				"随机":BTPanel.ICON_RANDOM
 			};
 			
 			private var mChildrens:Vector.<BTNode>;
@@ -65,6 +78,7 @@
 			private var mIsDetached:Boolean = false;
 			
 			private function onCreate():void {
+				trace("created ");
 				this.mCreated = true;
 				var menu:ContextMenu = new ContextMenu();
 				var item0:ContextMenuItem = new ContextMenuItem("更换");
@@ -329,6 +343,9 @@
 						data.interval = 0.5;
 						data.skip = 0;
 					}
+					else if (this.mCanvas.SELECTED_NODE == FUNC_NODE_RANDOM) {
+						data.weights = [];
+					}
 					if (this.type == TYPE_ROOT) {
 						if (!this.mData.children || this.mData.children.length < 1) {
 							if (this.mData.subTree) {
@@ -498,6 +515,7 @@
 				if (this.mCreated) {
 					this.updateComponents();
 				}
+				this.updateChildrens();
 			}
 			
 			public function updateComponents():void {
@@ -507,12 +525,15 @@
 				var hasNextNode:Boolean = false;
 				var numParams:int;
 				this.toolTip = "";
+				for (i = 0; i < this.mNodeVars.length; i++) {
+					this.removeElement(this.mNodeVars[i]);
+					this.removeElement(this.mNodeInputs[i]);
+					this.mNodeInputs[i].removeEventListener(TextOperationEvent.CHANGE, onValueChanged);
+				}
+				this.mNodeVars.length = 0;
+				this.mNodeInputs.length = 0;
 				switch (this.mType) {
 					case TYPE_ROOT:
-						this.mNodeVar1.visible = false;
-						this.mNodeInput1.visible = false;
-						this.mNodeVar2.visible = false;
-						this.mNodeInput2.visible = false;
 						this.mBtn.visible = true;
 						this.mBtn.setStyle("icon", this.isSubBT?new BTPanel.ICON_SUBTREE():new BTPanel.ICON_ROOT());
 						this.mSubContainer.width = this.mSubContainer.height = 50;
@@ -534,10 +555,6 @@
 						break;
 					case TYPE_FUNC: 
 						if (this.mName == FUNC_NODE_EXEC) {
-							this.mNodeVar1.visible = false;
-							this.mNodeInput1.visible = false;
-							this.mNodeVar2.visible = false;
-							this.mNodeInput2.visible = false;
 							// empty node
 							if (this.mData.args || !this.mData.data) {
 								this.mBtn.visible = true;
@@ -605,33 +622,73 @@
 						}
 						else {
 							if (this.mName == FUNC_NODE_LOOP) {
-								this.mNodeVar1.visible = true;
-								this.mNodeVar1.text = "loop";
-								this.mNodeInput1.visible = true;
-								this.mNodeVar2.visible = false;
-								this.mNodeInput2.visible = false;
+								var label:Label = new Label();
+								this.addElement(label);
+								label.id = "mNodeVar1"; label.x = -25; label.y = 55; label.width = 50; label.text = "loop";
+								label.setStyle("fontSize", 14); label.setStyle("textAlign", "right"); label.setStyle("verticalAlign", "middle");
+								this.mNodeVars.push(label);
+								var input:TextInput = new TextInput();
+								this.addElement(input);
+								input.id = "mNodeInput1"; input.x = 25; input.y = 52; input.width = 40; input.height = 18;
+								input.setStyle("fontSize", 11); input.setStyle("textAlign", "center");
+								this.mNodeInputs.push(input);
+								input.addEventListener(TextOperationEvent.CHANGE, onValueChanged);
 								if (this.mData.times) {
-									this.mNodeInput1.text = this.mData.times;
+									input.text = this.mData.times;
 								}
+								input.editable = !this.isInSubBT();
 							}
 							else if (this.mName == FUNC_NODE_EVERY) {
-								this.mNodeVar1.visible = true;
-								this.mNodeVar1.text = "inteval";
-								this.mNodeInput1.visible = true;
-								if (this.mData.interval) 
-									this.mNodeInput1.text = this.mData.interval;
-								this.mNodeVar2.visible = true;
-								this.mNodeVar2.text = "skip";
-								this.mNodeInput2.visible = true;
-								if (this.mData.skip) {
-									this.mNodeInput2.text = this.mData.skip;
+								label = new Label();
+								this.addElement(label);
+								label.id = "mNodeVar1"; label.x = -25; label.y = 55; label.width = 50; label.text = "inteval";
+								label.setStyle("fontSize", 14); label.setStyle("textAlign", "right"); label.setStyle("verticalAlign", "middle");
+								this.mNodeVars.push(label);
+								input = new TextInput();
+								this.addElement(input);
+								input.id = "mNodeInput1"; input.x = 25; input.y = 52; input.width = 40; input.height = 18;
+								input.setStyle("fontSize", 11); input.setStyle("textAlign", "center");
+								this.mNodeInputs.push(input);
+								input.addEventListener(TextOperationEvent.CHANGE, onValueChanged);
+								if (this.mData.interval) {
+									input.text = this.mData.interval;
 								}
+								input.editable = !this.isInSubBT();
+								
+								label = new Label();
+								this.addElement(label);
+								label.id = "mNodeVar2"; label.x = -25; label.y = 75; label.width = 50; label.text = "skip";
+								label.setStyle("fontSize", 14); label.setStyle("textAlign", "right"); label.setStyle("verticalAlign", "middle");
+								this.mNodeVars.push(label);
+								input = new TextInput();
+								this.addElement(input);
+								input.id = "mNodeInput2"; input.x = 25; input.y = 72; input.width = 40; input.height = 18;
+								input.setStyle("fontSize", 11); input.setStyle("textAlign", "center");
+								this.mNodeInputs.push(input);
+								input.addEventListener(TextOperationEvent.CHANGE, onValueChanged);
+								if (this.mData.hasOwnProperty("skip")) {
+									input.text = this.mData.skip;
+								}
+								input.editable = !this.isInSubBT();
 							}
-							else {
-								this.mNodeVar1.visible = false;
-								this.mNodeInput1.visible = false;
-								this.mNodeVar2.visible = false;
-								this.mNodeInput2.visible = false;
+							else if (this.mName == FUNC_NODE_RANDOM) {
+								for (i = 0; i < this.mData.children.length; i++) {
+									label = new Label();
+									this.addElement(label);
+									label.id = "mNodeVar"+(i+1); label.x = -25; label.y = 55+i*20; label.width = 50; label.text = "weight"; 
+									label.setStyle("fontSize", 14); label.setStyle("textAlign", "right"); label.setStyle("verticalAlign", "middle");
+									this.mNodeVars.push(label);
+									input = new TextInput();
+									this.addElement(input);
+									input.id = "mNodeInput"+(i+1); input.x = 25; input.y = 52+i*20; input.width = 40; input.height = 18;
+									input.setStyle("fontSize", 11); input.setStyle("textAlign", "center");
+									this.mNodeInputs.push(input);
+									input.addEventListener(TextOperationEvent.CHANGE, onValueChanged);
+									if (this.mData.weights.length > i) {
+										input.text = this.mData.weights[i];
+									}
+									input.editable = !this.isInSubBT();
+								}
 							}
 							
 							this.mBtn.visible = true;
@@ -661,10 +718,6 @@
 								break;
 							}
 						}
-						this.mNodeVar1.visible = false;
-						this.mNodeInput1.visible = false;
-						this.mNodeVar2.visible = false;
-						this.mNodeInput2.visible = false;
 						this.mBtn.visible = false;
 						this.mTitle.visible = true;
 						this.mTitle.text = this.mName.substr(8);
@@ -709,7 +762,7 @@
 						this.mSubContainer.height = 185-(7-numParams)*25;
 						break;
 				}
-				this.updateChildrens();
+//				this.updateChildrens();
 			}
 			
 			public function clearChildrens():void {
@@ -719,7 +772,10 @@
 						this.mChildrens[i].clearChildrens();
 					}
 				}
-				this.mChildrens = new Vector.<BTNode>();
+				else {
+					this.mChildrens = new Vector.<BTNode>();
+				}
+				this.mChildrens.length = 0;
 			}
 			
 			private function updateChildrens():void {
@@ -728,13 +784,13 @@
 				switch (this.mType) {
 					case TYPE_ROOT:
 						if (this.mData.type) {
-							child = new BTNode();
+							child = BT.POOL_POP();
 							this.mChildrens.push(child);
 							child.setData(TYPE_FUNC, this.mData.type, this.mData, this.mCanvas, this);
 							this.mCanvas.addNodeToCanvas(child);
 						}
 						else if (this.mData.subTree) {
-							child = new BTNode();
+							child = BT.POOL_POP();
 							this.mChildrens.push(child);
 							var subTreeData:Object = Utils.cloneObjectData(Data.getInstance().behaviorSet[this.mData.subTree]);
 							child.isSubBT = true;
@@ -747,7 +803,7 @@
 						break;
 					case TYPE_FUNC:
 						for each (var data:Object in this.mData.children) {
-							child = new BTNode();
+							child = BT.POOL_POP();
 							this.mChildrens.push(child);
 							if (data.type) {
 								child.setData(TYPE_FUNC, data.type, data, this.mCanvas, this);
@@ -833,6 +889,12 @@
 							newData.interval = 0.5;
 							newData.skip = 0;
 						}
+						else if (event.data.name == FUNC_NODE_RANDOM) {
+							newData.weights = [];
+							for (i = 0; i < this.mData.children.length; i++) {
+								newData.weights.push(1);
+							}
+						}
 						this.setData(TYPE_FUNC, event.data.name, newData, this.mCanvas, this.mParent);
 						break;
 					case TYPE_SUB_BT:
@@ -852,6 +914,13 @@
 			}
 			
 			public function writeDataBackToParent():void {
+				if (this.mName == FUNC_NODE_RANDOM) {
+					for (var i:int = 0; i < this.mData.children.length; i++) {
+						if (this.mData.weights.length <= i) {
+							this.mData.weights.push(1);
+						}
+					}
+				}
 				if (this.mParent) {
 					if (this.isSubBT) {
 						if (this.mParent.type == TYPE_ROOT) {
@@ -929,6 +998,12 @@
 							newData.interval = 0.5;
 							newData.skip = 0;
 						}
+						else if (event.data.name == FUNC_NODE_RANDOM) {
+							newData.weights = [];
+							for (i = 0; i < this.mData.children.length; i++) {
+								newData.weights.push(1);
+							}
+						}
 						if (this.type == TYPE_ROOT) {
 							this.mData = newData;
 						}
@@ -947,33 +1022,52 @@
 			
 			private function onValueChanged(event:TextOperationEvent):void {
 				var id:String = event.currentTarget.id;
-				if (id == "mNodeInput1") {
+				if (id.indexOf("mNodeInput") != -1) {
 					if (this.mName == FUNC_NODE_LOOP) {
 						this.mData.times = (event.currentTarget as TextInput).text;
 					}
 					else if (this.mName == FUNC_NODE_EVERY) {
-						this.mData.interval = (event.currentTarget as TextInput).text;
+						if (id == "mNodeInput1") {
+							this.mData.interval = (event.currentTarget as TextInput).text;
+						}
+						else if (id == "mNodeInput2") {
+							this.mData.skip = (event.currentTarget as TextInput).text;
+						}
 					}
-				}
-				else if (id == "mNodeInput2") {
-					if (this.mName == FUNC_NODE_EVERY) {
-						this.mData.skip = (event.currentTarget as TextInput).text;
+					else if (this.mName == FUNC_NODE_RANDOM) {
+						var index:int = Utils.getLastInt(id);
+						this.mData.weights[index-1] = (event.currentTarget as TextInput).text;
 					}
 				}
 				else {
-					var index:int = int(id.charAt(id.length-1));
+					index = int(id.charAt(id.length-1));
 					this.mData.data.parm[index-1].value = (event.currentTarget as TextInput).text;
 				}
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
 			}
 			
+			public function reset():void {
+				this.mMaxDepth = -1;
+				this.mMaxSiblings = -1;
+				this.mSiblingIndex = -1;
+				this.mNodeDepth = -1;
+				this.mIsInSubTree = -1;
+				this.mIsSubBT = false;
+			}
+			
 			public function isInSubBT():Boolean {
-				if (this.isSubBT) return true;
-				if (this.mParent) {
-					return this.mParent.isInSubBT();
+				if (this.mIsInSubTree != -1) return this.mIsInSubTree==1;
+				if (this.mIsSubBT) {
+					this.mIsInSubTree = 1;
+					return true;
 				}
-				return false;
+				if (this.mParent) {
+					this.mIsInSubTree = this.mParent.isInSubBT()?1:0;
+					return this.mIsInSubTree==1;
+				}
+				this.mIsInSubTree = 0;
+				return this.mIsInSubTree==1;
 			}
 			
 			public function containsChild(node:BTNode):Boolean {
@@ -987,30 +1081,37 @@
 			}
 			
 			public function get nodeDepth():int {
+				if (this.mNodeDepth != -1) return this.mNodeDepth;
 				var depth:int = 0;
 				var p:BTNode = this.mParent;
 				while (p) {
 					depth++;
 					p = p.nodeParent;
 				}
+				this.mNodeDepth = depth;
 				return depth;
 			}
 			
 			public function get siblingIndex():int {
+				if (this.mSiblingIndex != -1) return this.mSiblingIndex;
 				if (this.mParent) { 
 					var index:int = this.mParent.nodeChildrens.indexOf(this);
 					if (index <= 0) {
-						return this.mParent.siblingIndex;
+						this.mSiblingIndex = this.mParent.siblingIndex;
+						return this.mSiblingIndex;
 					}
 					else {
-						return this.mParent.nodeChildrens[index-1].maxSiblings + this.mParent.nodeChildrens[index-1].siblingIndex;
+						this.mSiblingIndex = this.mParent.nodeChildrens[index-1].maxSiblings + this.mParent.nodeChildrens[index-1].siblingIndex;
+						return this.mSiblingIndex;
 					}
 				}
+				this.mSiblingIndex = 0;
 				return 0;
 			}
 			
 			/** max depth count from current node */
 			public function get maxDepth():int {
+				if (this.mMaxDepth != -1) return this.mMaxDepth; 
 				if (this.mChildrens.length <= 0) return 1;
 				var max:int = 1;
 				for (var i:int = 0; i < this.mChildrens.length; i++) {
@@ -1019,16 +1120,19 @@
 						max = depth;
 					}
 				}
+				this.mMaxDepth = max+1;
 				return max+1;
 			}
 			
 			public function get maxSiblings():int {
+				if (this.mMaxSiblings != -1) return this.mMaxSiblings; 
 				if (!this.mChildrens || this.mChildrens.length <= 0) return 1;
 				var max:int = 0;
 				for (var i:int = 0; i < this.mChildrens.length; i++) {
 					var s:int = this.mChildrens[i].maxSiblings;
 					max += s;
 				}
+				this.mMaxSiblings = max;
 				return max;
 			}
 			
@@ -1050,6 +1154,9 @@
 			}
 			
 			public function get nodeWidth():Number {
+//				if (this.mName == FUNC_NODE_LOOP || this.mName == FUNC_NODE_EVERY || this.mName == FUNC_NODE_RANDOM) {
+//					return this.mSubContainer.width+20;
+//				}
 				return this.mSubContainer.width;
 			}
 			
@@ -1059,6 +1166,9 @@
 				}
 				else if (this.mName == FUNC_NODE_EVERY) {
 					return this.mSubContainer.height+40;
+				}
+				else if (this.mName == FUNC_NODE_RANDOM) {
+					return this.mSubContainer.height+20*this.mData.weights.length;
 				}
 				return this.mSubContainer.height;
 			}
@@ -1113,14 +1223,6 @@
 		<s:Label id="mVar6" x="0" y="155" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
 	</s:BorderContainer>
-	<s:Label id="mNodeVar1" x="-25" y="55" width="50" color="#000000" fontSize="14" text="interval:"
-			 textAlign="right" verticalAlign="middle"/>
-	<s:TextInput id="mNodeInput1" x="25" y="52" width="40" height="18" change="onValueChanged(event)"
-				 fontSize="11" text="1" textAlign="center"/>
-	<s:Label id="mNodeVar2" x="-25" y="75" width="50" color="#000000" fontSize="14" text="interval:"
-			 textAlign="right" verticalAlign="middle"/>
-	<s:TextInput id="mNodeInput2" x="25" y="72" width="40" height="18" change="onValueChanged(event)"
-				 fontSize="11" text="1" textAlign="center"/>
 	<s:Button id="mNext" x="200" y="0" width="50" height="50" label="可接节点" 
 			  click="onPressNext(event)" middleClick="onPressNext(event)" cornerRadius="0" fontFamily="Arial" fontStyle="normal"
 			  fontWeight="normal" icon="@Embed('assets/zhixing.png')"/>

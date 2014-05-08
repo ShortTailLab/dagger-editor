@@ -12,5 +12,6 @@ package behaviorEdit
 		static public var BTYPE_EXEC:String = "执行";
 		static public var BTYPE_ONCE:String = "once";
 		static public var BTYPE_EVERY:String = "every";
+		static public var BTYPE_RANDOM:String = "随机";
 	}
 }

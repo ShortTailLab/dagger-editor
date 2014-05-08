@@ -30,6 +30,7 @@
 			private var mNodes:Vector.<BTNode>;
 			private var mNodesInfo:Array;
 			private var mLineSprite:Sprite;
+			private static var POOL:Vector.<BTNode> = new Vector.<BTNode>();
 			
 			private function onCreate():void {
 				this.mCreated = true;
@@ -68,7 +69,7 @@
 				this.mNumTotalNodes = this.getNodesInObject(this.mData[0])+1;
 				this.mNodes = new Vector.<BTNode>();
 				
-				this.mTreeRoot = new BTNode();
+				this.mTreeRoot = BT.POOL_POP();
 				this.mTreeRoot.setData(BTNode.TYPE_ROOT, this.mName, this.mData[0], this, null);
 				this.addNodeToCanvas(this.mTreeRoot);
 //				this.mContainer.width = 2000;
@@ -104,6 +105,7 @@
 						node.y = row*200;
 					}
 					if (this.mNodes.length >= this.mNumTotalNodes) {
+						trace("init tree done");
 						this.autoLayout();
 					}
 				}
@@ -113,7 +115,15 @@
 				if (this.mContainer.contains(node)) {
 					this.mContainer.removeElement(node);
 					this.mNodes.splice(this.mNodes.indexOf(node), 1);
+					node.reset();
+					BT.POOL.push(node);
 				}
+			}
+			
+			public static function POOL_POP():BTNode {
+				var node:BTNode = BT.POOL.pop();
+				if (!node) node = new BTNode();
+				return node;
 			}
 			
 			public function setModified(bool:Boolean):void {
@@ -138,6 +148,7 @@
 					case BTNode.FUNC_NODE_LOOP: bitmap = new BTPanel.ICON_LOOP(); break;
 					case BTNode.FUNC_NODE_ONCE: bitmap = new BTPanel.ICON_ONCE(); break;
 					case BTNode.FUNC_NODE_EVERY: bitmap = new BTPanel.ICON_EVERY(); break;
+					case BTNode.FUNC_NODE_RANDOM: bitmap = new BTPanel.ICON_RANDOM(); break;
 				}
 				bitmap.x = -bitmap.width/2;
 				bitmap.y = -bitmap.height/2;
@@ -226,7 +237,7 @@
 				for (i = 0; i < this.mNodes.length; i++) {
 					var row:int = this.mNodes[i].siblingIndex;
 					var col:int = this.mNodes[i].nodeDepth;
-					trace("name "+this.mNodes[i].nodeName+" row "+row+" col "+col+" w "+this.mNodes[i].nodeWidth+" h "+this.mNodes[i].nodeHeight);
+//					trace("name "+this.mNodes[i].nodeName+" row "+row+" col "+col+" w "+this.mNodes[i].nodeWidth+" h "+this.mNodes[i].nodeHeight);
 					this.mNodesInfo.push({r:row, c:col});
 					if (this.mNodes[i].nodeWidth > this.mColWidth[col]) {
 						this.mColWidth[col] = this.mNodes[i].nodeWidth;
@@ -253,6 +264,21 @@
 				this.mContainer.width = this.mColWidth[this.mColWidth.length-1];
 				this.mContainer.height = this.mRowHeight[this.mRowHeight.length-1]+200;
 				this.drawLines();
+			}
+			
+			public function setScale(s:Number):void {
+				this.scaleX = s;
+				this.scaleY = s;
+				if (this.verticalScrollBar) {
+					this.verticalScrollBar.scaleX = this.verticalScrollBar.scaleY = 1/s;
+				}
+				if (this.horizontalScrollBar) {
+					this.horizontalScrollBar.scaleX = this.horizontalScrollBar.scaleY = 1/s;
+				}
+				if (this.mColWidth) {
+					this.mContainer.width = this.mColWidth[this.mColWidth.length-1];
+					this.mContainer.height = this.mRowHeight[this.mRowHeight.length-1]+200;
+				}
 			}
 			
 			private function drawLines():void {

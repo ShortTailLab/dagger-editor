@@ -60,6 +60,8 @@
 			public static const ICON_ONCE:Class;
 			[Embed(source="assets/every.png")] 
 			public static const ICON_EVERY:Class;
+			[Embed(source="assets/random.png")] 
+			public static const ICON_RANDOM:Class;
 			
 			private function onCreation():void {
 				this.mTabDict = new Object();
@@ -303,6 +305,7 @@
 			}
 			
 			private function onPressSave(event:Event=null):void {
+				if (this.mTabNavigator.selectedIndex == -1) return;
 				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
 				if (this.mTabDict[current].modified) {
 					var data:Object = this.mTabDict[current].bt.export();
@@ -403,6 +406,11 @@
 				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_EVERY);
 			}
 			
+			private function onPressNode9(event:Event):void {
+				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
+				this.mTabDict[current].bt.setSelected(BTNode.FUNC_NODE_RANDOM);
+			}
+			
 			private function addTab(name:String, data:Array):void {
 				var tab:NavigatorContent;
 				if (this.mTabDict[name]) {
@@ -418,6 +426,7 @@
 				var tree:BT = new BT();
 				tree.setData(name, data, this);
 				tab.addElement(tree);
+				tree.setScale(this.mZoom.value);
 				var modified:Boolean = Data.getInstance().behaviorSet[name]==null?true:false;
 				
 				tab.label = name+(modified?"*":"");
@@ -568,6 +577,16 @@
 					this.addTab(name, [ null ]);
 				}
 			}
+			
+			private function onZoomChanged(event:Event):void {
+				if (this.mTabNames.length > 0) {
+					for each (var elem:Object in this.mTabDict) {
+						elem.bt.setScale(this.mZoom.value);
+					}
+				}
+				this.mZoomValue.text = int(this.mZoom.value*100) + "%";
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -623,12 +642,19 @@
 				<s:Button width="50" height="50" label="增加every节点" buttonMode="true"
 						  click="onPressNode8(event)" cornerRadius="0" fontFamily="Arial"
 						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/every.png')"/>
+				<s:Button width="50" height="50" label="增加随机节点" buttonMode="true"
+						  click="onPressNode9(event)" cornerRadius="0" fontFamily="Arial"
+						  fontStyle="normal" fontWeight="normal" icon="@Embed('assets/random.png')"/>
 			</s:HGroup>
 			<s:Group width="100%" height="100%">
 				<mx:TabNavigator id="mTabNavigator" x="0" y="0" width="100%" height="100%"
 								 paddingTop="5">
 				</mx:TabNavigator>
 				<s:Button right="0" top="0" width="30" label="+" click="onPressNewTab(event)"/>
+				<s:HSlider id="mZoom" right="30" bottom="0" change="onZoomChanged(event)" maximum="1.5"
+						   minimum="0.1" stepSize="0.01" value="1"/>
+				<s:Label id="mZoomValue" right="0" bottom="1" width="30" backgroundColor="#C8C8C8"
+						 fontSize="10" text="100%" textAlign="center" verticalAlign="top"/>
 			</s:Group>
 		</s:VGroup>
 	</s:HGroup>

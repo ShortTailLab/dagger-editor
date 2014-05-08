@@ -188,6 +188,24 @@ package
 						}
 						result += "BT.every("+sourceData.interval+",";
 					}
+					else if (sourceData.type == BType.BTYPE_RANDOM) {
+						result += "BT.randomSelect(";
+						result += "[";
+						for(var k:int = 0; k < sourceData.weights.length; k++) {
+							result += sourceData.weights[k];
+							if(k < sourceData.weights.length-1)
+								result += ","
+						}
+						result += "],[";
+						while(childrenJS.length > 0)
+						{
+							result += childrenJS.shift();
+							if(childrenJS.length > 0)
+								result += ",";
+						}
+						result += "])";
+						return result;
+					}
 					else
 						return "";
 					
@@ -438,6 +456,15 @@ package
 		
 		static public function cloneObjectData(data:Object):Object {
 			return JSON.parse(JSON.stringify(data));
+		}
+		
+		static public function getLastInt(str:String):int {
+			var r:int;
+			for (var i:int = str.length-1; i >= 0; i--) {
+				if (str.charAt(i) < "0" || str.charAt(i) > "9") break;
+			}
+			r = int(str.substr(i+1));
+			return r;
 		}
 	}
 }
