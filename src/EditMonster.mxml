@@ -72,7 +72,7 @@
 		
 			public static var kCONFIGURABLE:String = "HOMEMADE";
 			
-			protected function genData( type:String, profile_type:String, id:String = null ):Array
+			public static function genData( type:String, profile_type:String, id:String = null ):Array
 			{
 				var dynamic_data:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[profile_type] ) as Array;
 				var monster:Object = Data.getInstance().getEnemyProfileById( 
@@ -141,15 +141,15 @@
 				var data:Array = [];
 				if( Data.getInstance().isMonster( profile.type ) )
 				{
-					data = this.genData( "MonsterType", "MonsterProfile" );
+					data = EditMonster.genData( "MonsterType", "MonsterProfile" );
 				} 
 				else if ( Data.getInstance().isBullet( profile.type ) ) 
 				{
-					data = this.genData( "BulletType", "BulletProfile" );
+					data = EditMonster.genData( "BulletType", "BulletProfile" );
 				}
 				else if ( Data.getInstance().isTrap( profile.type ) )
 				{
-					data = this.genData( "TrapType", "TrapProfile" );
+					data = EditMonster.genData( "TrapType", "TrapProfile" );
 				}
 				else return;
 				
@@ -184,7 +184,7 @@
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				}, this.genData( "MonsterType", "MonsterProfile" ), false, MapEditor.getInstance());
+				}, EditMonster.genData( "MonsterType", "MonsterProfile" ), false, MapEditor.getInstance());
 			}
 			
 			protected function onCreateBullet(evt:Event):void
@@ -199,7 +199,7 @@
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				}, this.genData( "BulletType", "BulletProfile" ), false, MapEditor.getInstance());
+				}, EditMonster.genData( "BulletType", "BulletProfile" ), false, MapEditor.getInstance());
 			}
 			
 			protected function onCreateTrap(evt:Event):void
@@ -214,7 +214,7 @@
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				}, this.genData( "TrapType", "TrapProfile" ), false, MapEditor.getInstance());
+				}, EditMonster.genData( "TrapType", "TrapProfile" ), false, MapEditor.getInstance());
 			}
 			
 			public function onEditEnemy( lid:String, id:String ):void
@@ -243,7 +243,7 @@
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				},this.genData( type, profile, id ), false, MapEditor.getInstance());
+				},EditMonster.genData( type, profile, id ), false, MapEditor.getInstance());
 				t.mRootPanel.title = profile;
 			}
 		]]>

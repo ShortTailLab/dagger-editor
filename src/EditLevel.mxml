@@ -70,16 +70,16 @@
 				{
 					Runtime.getInstance().currentLevelID = item.@id;
 					this.mIsChapter = false;
-					this.mInformPanel.refresh( this.genLevelData( item.@id ) );
+					this.mInformPanel.refresh( EditLevel.genLevelData( item.@id ) );
 				} else {
 					this.mIsChapter = true;
-					this.mInformPanel.refresh( this.genChapterData( item.@id ) );
+					this.mInformPanel.refresh( EditLevel.genChapterData( item.@id ) );
 				}
 				this.mCurrentId = item.@id;
 				this.mInformPanel.mRootPanel.title = item.@id+" | "+item.@label;
 			}
 			
-			protected function genLevelData( lid:String = null ):Array
+			static public function genLevelData( lid:String = null ):Array
 			{
 				var ld:Object = Data.getInstance().getLevelProfileById( lid );
 				
@@ -131,7 +131,7 @@
 				return data;
 			}
 			
-			protected function genChapterData( cid:String = null ):Array
+			static public function genChapterData( cid:String = null ):Array
 			{
 				var chapter:Object = Data.getInstance().chapters[cid];
 				
@@ -171,7 +171,7 @@
 					Data.getInstance().makeLevel( configs.chapter_id, configs.level_id, configs );
 					self.refresh();
 					
-				}, function (err:String):void { Alert.show( err ); }, this.genLevelData( ), false, this);
+				}, function (err:String):void { Alert.show( err ); }, EditLevel.genLevelData( ), false, this);
 				
 				t.mRootPanel.title = "新建关卡";
 			}
@@ -187,7 +187,7 @@
 					);
 					self.refresh();
 					
-				}, function (err:String):void { Alert.show( err ); }, this.genChapterData( ), false, this);
+				}, function (err:String):void { Alert.show( err ); }, EditLevel.genChapterData( ), false, this);
 				t.mRootPanel.title = "新建章节";
 			}
 			

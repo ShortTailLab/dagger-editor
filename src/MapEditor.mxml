@@ -15,6 +15,7 @@
 			import bgedit.BgEditView;
 			import bgedit.BgModel;
 			
+			import excel.ExchangeManager;
 			import excel.SkillConfigReader;
 			
 			import manager.EventManager;
@@ -119,6 +120,21 @@
 				this.mMainScene.mouseFocusEnabled = true;
 				
 				this.mEditMonster.init();
+				
+				this.mExportChapterToExcel.addEventListener(
+					MouseEvent.CLICK, this.exportToExcel
+				);
+			}
+			
+			private function exportToExcel(e:MouseEvent):void
+			{
+				var data:Object = Data.getInstance().getChapterProfileById(
+					Runtime.getInstance().currentLevelID
+				);
+				
+				var bytes:ByteArray = ExchangeManager.export( data );
+				var fr:FileReference = new FileReference();
+				fr.save(bytes, data.id+".xls");
 			}
 			
 			private function saveLevel(e:Event):void
@@ -280,7 +296,10 @@
 			</s:HGroup>
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
-				<s:Label text="编辑器" color="0x777777"/>	
+				<s:Label text="EXCEl" color="0x777777"/>	
+				<s:Button id="mExportChapterToExcel" label="导出章节"/>
+				<s:Button id="mImportToChapter" label="导入章节"/>
+				<s:Label text="编辑器" color="0x777777"/>
 				<s:Button id="set_project_path" label="重设路径" click="setPathRoot(event)"/>
 				<s:Label text="配置项目" color="0x777777"/>
 				<s:Button id="config" label="JSON配置" click="uploadConfigFile(event)"/>

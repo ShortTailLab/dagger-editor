@@ -419,6 +419,15 @@ package
 			return null;
 		}
 		
+		public function getChapterProfileById( lid:String ):Object
+		{
+			for each( var chapter:Object in this.mChapterProfiles )
+			{
+				if( lid in chapter.levels ) return chapter;
+			}
+			return null;
+		}
+		
 		private function writeToProfile( lid:String, data:Object ):void
 		{
 			Utils.WriteObjectToJSON( // persistence
