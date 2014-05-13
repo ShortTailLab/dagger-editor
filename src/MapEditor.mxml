@@ -132,9 +132,7 @@
 					Runtime.getInstance().currentLevelID
 				);
 				
-				var bytes:ByteArray = ExchangeManager.export( data );
-				var fr:FileReference = new FileReference();
-				fr.save(bytes, data.id+".xls");
+				ExchangeManager.serialize( data );
 			}
 			
 			private function saveLevel(e:Event):void
