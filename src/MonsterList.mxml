@@ -268,8 +268,6 @@
 					);
 				}
 				
-				this.mTrapData.push( {id: FormationTrigger.TRIGGER_TYPE, name:"阵型触发器" } );
-				this.mTrapData.push( {id: AreaTrigger.TRIGGER_TYPE, name:"区域触发器" } );
 				for each( item in traps )
 				{
 					this.mTrapData.push( 

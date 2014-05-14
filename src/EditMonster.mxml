@@ -21,8 +21,6 @@
 			import spark.components.VScrollBar;
 			// ---------------------------------------------------------
 			
-			protected var mFormation:FormationSelector = null;
-			
 			////// entrance
 			public function init():void
 			{

@@ -98,10 +98,9 @@
 			
 			private function onRightClick(e:MouseEvent=null):void
 			{
-				this.stage.focus = this.mMainScene;
-				this.mMainScene.onRightClick();
+//				this.stage.focus = this.mMainScene;
+//				this.mMainScene.onRightClick();
 				Runtime.getInstance().selectedComponentType = null;
-				Runtime.getInstance().selectedFormationType = null;
 				Runtime.getInstance().onCancelSelection();
 			}
 
@@ -115,11 +114,17 @@
 
 				
 				this.mEditLevel.refresh();
-				
-				this.mMainScene.init();
-				this.mMainScene.mouseFocusEnabled = true;
-				
 				this.mEditMonster.init();
+				
+				var self:MapEditor = this;
+				this.mMainScene.reset( Data.getInstance().getFirstLevelId() );
+				Runtime.getInstance().addEventListener(Runtime.CURRENT_LEVEL_CHANGE,
+					function(e:Event):void
+					{
+						self.mMainScene.reset( Runtime.getInstance().currentLevelID );		
+					}
+				)
+				
 				
 				this.mExportChapterToExcel.addEventListener(
 					MouseEvent.CLICK, this.exportToExcel
@@ -137,7 +142,7 @@
 			
 			private function saveLevel(e:Event):void
 			{
-				this.mMainScene.save();
+//				this.mMainScene.save();
 			}
 			
 			private function sendToStaticServer(e:Event):void
@@ -312,8 +317,9 @@
 			</ns1:EditLevel>
 			
 			<s:BorderContainer id="mSceneArea" width="100%" height="100%" dropShadowVisible="true">
-				<ns1:MainScene id="mMainScene" x="0" y="0" width="100%" height="100%">
-				</ns1:MainScene>
+				<ns1:EditSection id="mMainScene" x="10" y="10">
+				</ns1:EditSection>
+				
 			</s:BorderContainer>
 			
 			<s:Group id="mSelectorArea" width="200" height="100%">

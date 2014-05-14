@@ -5,6 +5,7 @@ package mapEdit
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 
@@ -116,6 +117,14 @@ package mapEdit
 			obj.sectionDelay = this.mSectionDelay;
 			
 			return obj;
+		}
+		
+		override public function get pos():Point 
+		{
+			return new Point( 
+				Number( this.x / Runtime.getInstance().sceneScalor ),
+				Number( -this.y / Runtime.getInstance().sceneScalor )
+			);
 		}
 		
 		public function get gameY():Number {

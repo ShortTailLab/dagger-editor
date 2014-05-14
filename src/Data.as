@@ -458,45 +458,37 @@ package
 			}
 			return min;
 		}
-		public function getLevelDataById( lid:String ):Object
+		
+		public function getLevelById( lid:String ):Object
 		{
 			if( !(lid in this.mLevelInstancesTable) )
 				this.mLevelInstancesTable[lid] = {
-					data : [], behavior : {}, trigger : {}
+					sections : [], behavior : {}, trigger : {}
 				};
-			
-			return this.mLevelInstancesTable[lid].data;
+			return this.mLevelInstancesTable[lid];
+		}
+		
+		public function getLevelDataById( lid:String ):Object
+		{
+			return this.getLevelById( lid ).sections;
 		}
 		
 		public function updateLevelDataById( lid:String, inst:Object ):void
 		{
-			if( !(lid in this.mLevelInstancesTable) )
-				this.mLevelInstancesTable[lid] = {
-					data : [], behavior : {}, trigger : {}
-				};
-			
-			this.mLevelInstancesTable[lid].data = inst;
+			this.getLevelById( lid ).sections = inst;
 			this.writeToLevel( lid );
 		}
 		
 		public function getEnemyBehaviorsById( lid:String, eid:String ):Object
 		{
-			if( !(lid in this.mLevelInstancesTable) )
-				this.mLevelInstancesTable[lid] = {
-					data : [], behavior : {}, trigger : {}
-				};
-			
-			return this.mLevelInstancesTable[lid].behavior[eid] || [];
+			var level:Object = this.getLevelById( lid );
+			if( !(eid in level.behavior ) ) level.behavior[eid] = [];
+			return level.behavior[eid];
 		}
 		
 		public function updateEnemyBehaviorsById( lid:String, eid:String, bhs:Array ):void
 		{	
-			if( !(lid in this.mLevelInstancesTable) )
-				this.mLevelInstancesTable[lid] = {
-					data : [], behavior : {}, trigger : {}
-				};
-			
-			this.mLevelInstancesTable[lid].behavior[eid] = bhs;
+			this.getLevelById( lid ).behavior[eid] = bhs;
 			this.writeToLevel( lid );
 		}
 		
@@ -519,22 +511,14 @@ package
 		
 		public function getEnemyTriggersById( lid:String, eid:String ):Object
 		{
-			if( !(lid in this.mLevelInstancesTable) )
-				this.mLevelInstancesTable[lid] = {
-					data : [], behavior : {}, trigger : {}
-				};
-			
-			return this.mLevelInstancesTable[lid].trigger[eid];
+			var level:Object = this.getLevelById( lid );
+			if( !(eid in level.trigger) ) level.trigger[eid] = {};
+			return level.trigger[eid];
 		}
 		
 		public function updateEnemyTriggersById( lid:String, eid:String, triggers:Object ):void
 		{
-			if( !(lid in this.mLevelInstancesTable) )
-				this.mLevelInstancesTable[lid] = {
-					data : [], behavior : {}, trigger : {}
-				};
-			
-			this.mLevelInstancesTable[lid].trigger[eid] = triggers;
+			this.getLevelById( lid ).trigger[eid] = triggers;
 			this.writeToLevel( lid );
 		}
 		
