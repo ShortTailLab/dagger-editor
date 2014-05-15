@@ -82,8 +82,8 @@ package mapEdit
 			if( this.mClassId != data.type )
 				throw new Error("bad args");
 			
-			this.x 			= data.x * Runtime.getInstance().sceneScalor;
-			this.y 			= -data.y * Runtime.getInstance().sceneScalor;
+			this.x 			= data.x * EditSection.kSceneScalor;
+			this.y 			= EditSection.kSceneHeight - data.y * EditSection.kSceneScalor;
 			this.globalId 	= data.id;
 			
 			if( data.hasOwnProperty("sectionDelay") )
@@ -95,10 +95,12 @@ package mapEdit
 		override public function serialize():Object
 		{
 			var obj:Object = new Object;
+			
 			obj.id 		= this.globalId;
 			obj.type 	= this.mClassId;
-			obj.x 		= Number( this.x / Runtime.getInstance().sceneScalor );
-			obj.y 		= Number( -this.y / Runtime.getInstance().sceneScalor );
+			
+			obj.x 		= this.x/EditSection.kSceneScalor;
+			obj.y 		= (EditSection.kSceneHeight-this.y)/EditSection.kSceneScalor;
 			
 			obj.sectionDelay = this.mSectionDelay;
 			

@@ -1045,12 +1045,20 @@ package
 					inst : []
 				};
 				
+				var template:Array 	= Utils.deepCopy( Data.getInstance().dynamicArgs.Section ) as Array || [];
+				for each( var info:Array in template )
+				{
+					if( !(info[ConfigPanel.kKEY] in next.info) )
+						next.info[info[ConfigPanel.kKEY]] = info[ConfigPanel.kDEFAULT];
+				}
+				
 				for each( var inst:Object in section.inst )
 				{
 					next.inst.push ( {
 						type : inst.type,
 						coord : "@@cc.p("+inst.x+","+inst.y+")@@",
-						sectionDelay : inst.sectionDelay
+						sectionDelay : inst.sectionDelay,
+						id : inst.id
 					} );
 				}
 				
@@ -1143,7 +1151,7 @@ package
 	
 			if( !(lid in this.mLevelInstancesTable) ) 
 				return { 
-					id : lid,
+					id : int(lid),
 					stageId: int(profile.chapter_id),
 					stage: profile.chapter_name,
 					name: profile.level_name,
@@ -1178,8 +1186,9 @@ package
 			for each( var monster:* in enemies ) array.push( monster );
 			
 			var ret:Object = {
-				id : lid,
-				stageId: profile.chapter_id, stage: profile.chapter_name,
+				id : int(lid),
+				stageId: int(profile.chapter_id), 
+				stage: profile.chapter_name,
 				name: profile.level_name, path: "level/"+lid+".js", 
 				enemies : array
 			};

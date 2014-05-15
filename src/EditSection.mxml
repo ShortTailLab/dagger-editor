@@ -204,12 +204,14 @@
 					this.mPasteTipsLayer.y = this.mouseY;
 				}
 				
-				this.mInfoMousePos.text = "鼠标位置：("+this.mouseX+", "+this.mouseY+")";
-				
-				if( this.currentSection && this.currentManager )
+				var section:Group = this.currentSection;
+				if( section && this.currentManager )
 				{
-					this.currentSection.setElementIndex( 
-						this.currentManager, this.currentSection.numElements-1 
+					var x:Number = section.mouseX/EditSection.kSceneScalor;
+					var y:Number = (EditSection.kSceneHeight-section.mouseY)/EditSection.kSceneScalor;
+					this.mInfoMousePos.text = "鼠标位置：("+x+", "+y+")";
+					section.setElementIndex( 
+						this.currentManager, section.numElements-1 
 					);
 				}
 			}
