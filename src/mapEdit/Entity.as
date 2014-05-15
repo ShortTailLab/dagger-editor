@@ -84,6 +84,7 @@ package mapEdit
 			
 			this.x 			= data.x * Runtime.getInstance().sceneScalor;
 			this.y 			= -data.y * Runtime.getInstance().sceneScalor;
+			this.globalId 	= data.id;
 			
 			if( data.hasOwnProperty("sectionDelay") )
 				this.mSectionDelay = data.sectionDelay;

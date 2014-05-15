@@ -204,30 +204,23 @@
 				var id:String = this.mMonsterList.selectedItem.id;
 				this.mSelectedLabel.text = id;
 				
-
-				if( id == SectionManager.TRIGGER_TYPE ) {
-					this.mSelection = new SectionManager;
-					this.mSelection.x = 47;
-					this.mSelection.y = 65;
-				} else {
-					this.mSelection = new Entity( id, false );
-					this.mSelection.y = 100;
-					this.mSelection.x = 47;
-					
-					var profile:* = Data.getInstance().getEnemyProfileById(
-						Runtime.getInstance().currentLevelID, id 
-					);
-					
-					this.mEditData.enabled 		= true;
-					this.mEraseSelf.enabled 	= true;
-					this.mCopy.enabled 			= true;
-					
-					if( Data.getInstance().isMonster( profile.type ) )
-						this.mEditTrigger.enabled = true;
-					
-					if( profile.type == EditMonster.kCONFIGURABLE )
-						this.mEditBehavior.enabled = true;
-				}
+				this.mSelection = new Entity( id, false );
+				this.mSelection.y = 100;
+				this.mSelection.x = 47;
+				
+				var profile:* = Data.getInstance().getEnemyProfileById(
+					Runtime.getInstance().currentLevelID, id 
+				);
+				
+				this.mEditData.enabled 		= true;
+				this.mEraseSelf.enabled 	= true;
+				this.mCopy.enabled 			= true;
+				
+				if( Data.getInstance().isMonster( profile.type ) )
+					this.mEditTrigger.enabled = true;
+				
+				if( profile.type == EditMonster.kCONFIGURABLE )
+					this.mEditBehavior.enabled = true;
 				
 				this.mSelection.setSize( 70 );
 				this.mDetailsContent.addElement( this.mSelection );

@@ -472,7 +472,7 @@ package
 			return this.getLevelById( lid ).sections;
 		}
 		
-		public function updateLevelDataById( lid:String, inst:Object ):void
+		public function updateLevelDataById( lid:String, inst:Array ):void
 		{
 			this.getLevelById( lid ).sections = inst;
 			this.writeToLevel( lid );
@@ -793,7 +793,7 @@ package
 		
 		public function isTrigger( type:String ):Boolean
 		{
-			return SectionManager.TRIGGER_TYPE;
+			return type == SectionManager.TRIGGER_TYPE;
 		}
 	
 		public function getTrapsByLevelId( lid:String ):Object 

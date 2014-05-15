@@ -164,7 +164,7 @@
 					PopUpManager.removePopUp( this );
 			}
 			
-			protected function onConfirm(event:MouseEvent=null):void
+			protected function parse( warn:Boolean=true ):Object
 			{
 				var ret:Object = {};
 				for( var key:String in this.mKey2UIComponents )
@@ -178,12 +178,10 @@
 						}
 						else if( data[kTYPE] == "ccp" )
 						{
-							//ret[key] = "@@cc.p("+Number(item[0].text)+", "+Number(item[1].text)+")@@";
 							ret[key] = [JSON.parse(item[0].text), JSON.parse(item[1].text)];
 						}
 						else if( data[kTYPE] == "ccsize" )
 						{
-							//ret[key] = "@@cc.size("+Number(item[0].text)+", "+Number(item[1].text)+")@@";
 							ret[key] = [JSON.parse(item[0].text), JSON.parse(item[1].text)];
 						}
 						else if( data[kTYPE] == "array_int" ) 
@@ -193,9 +191,11 @@
 							for( var i:int=1; i<ret[key].length; i+=2 )
 								weight += ret[key][i];
 							if( weight > 100 ) 
-							{
-								this.mCBError( data[kTAG]+"|"+data[kDESC]+"总权重大于100，请检查" );
-								return;
+							{ 
+								if( warn ) {
+									this.mCBError( data[kTAG]+"|"+data[kDESC]+"总权重大于100，请检查" );
+									return null;
+								}
 							}
 						} 
 						else if( data[kTYPE] == "combo_box" )
@@ -204,21 +204,25 @@
 							
 							if( ind < 0 || ind >= data[kOTHER][1].length )
 							{
-								ret[key] = -1;
-								this.mCBError("请选择："+data[kDESC]);
-								return;
+								if( warn ) {
+									this.mCBError("请选择："+data[kDESC]);
+									return null;
+								}
 							}else
 								ret[key] = data[kOTHER][1][ind];
 						} 
 						else if( data[kTYPE] == "MonsterType" || 
-								 data[kTYPE] == "TrapType" || 
-								 data[kTYPE] == "BulletType" )
+							data[kTYPE] == "TrapType" || 
+							data[kTYPE] == "BulletType" )
 						{
 							var target:DropDownList = item[0] as DropDownList;
 							ind = target.selectedIndex;
 							if( ind == -1 ) {
-								this.mCBError("请选择："+data[kDESC]);
-								return;
+								if( warn ) 
+								{
+									this.mCBError("请选择："+data[kDESC]);
+									return null;
+								} 
 							}
 							else ret[key] = target.selectedItem as String;
 						}
@@ -227,8 +231,8 @@
 							target = item[0] as DropDownList;
 							ind = target.selectedIndex;
 							if( ind == -1 ) {
-								this.mCBError("请选择："+data[kDESC]);
-								return;
+								if( warn ) this.mCBError("请选择："+data[kDESC]);
+								return null;
 							} else {
 								ret[key] = this.mKey2Data[kOTHER][1][ind];
 							}
@@ -242,12 +246,23 @@
 							ret[key] = JSON.parse( item[0].text );
 						}
 					}catch(err:Error) {
-						this.mCBError( data[kTAG] +" | "+data[kDESC]+"填写错误，请检查" );
-						return;
+						if( warn ) {
+							this.mCBError( data[kTAG] +" | "+data[kDESC]+"填写错误，请检查" );
+							return null;
+						}
+						delete ret[key];
 					}
 				}
-				this.mCBComplete( ret );
 				
+				return ret;
+			}
+			
+			protected function onConfirm(event:MouseEvent=null):void
+			{
+				var ret:Object = this.parse();
+				if( !ret ) return;
+				
+				this.mCBComplete( ret );
 				MapEditor.getInstance().writeToStatusBar( "用户完成对【"+this.mRootPanel.title+"】的配置！" );
 				if( this.mIsPopUp )
 					PopUpManager.removePopUp( this );
@@ -391,13 +406,21 @@
 					
 					comboBox.addEventListener(Event.CHANGE, function(evt:Event):void
 					{	
+						var data:Array = Utils.deepCopy(self.mData) as Array;
+						var oldData:Object = self.parse( false );
+						if( oldData ) 
+						{
+							for each( var inn:Array in data )
+							{
+								if( inn[kKEY] in oldData )
+									inn[kDEFAULT] = oldData[inn[kKEY]];
+							}
+						}
 						for each( var inn:Array in self.mData )
 						{
 							if( inn[kKEY] == item[kKEY] )
 								inn[kDEFAULT] = monsterList[comboBox.selectedIndex];
 						}
-						
-						var data:Array = Utils.deepCopy(self.mData) as Array;
 						self.refresh( data );
 						self.stage.focus = self;
 					});

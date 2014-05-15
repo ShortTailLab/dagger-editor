@@ -24,15 +24,21 @@ package mapEdit
 		private var mUnderSelection:Boolean 	= false;
 		private var mData:Object 				= {};
 		private var mTargets:Object 			= [];
+		
 		private var mSectionEditor:EditSection 	= null;
+		private var mSectionInd:String 			= null;
+		
 		private var mInfoLayer:Sprite 		= null;
+		private var mTipsLayer:Sprite 		= null;
+		
 		private var mCtrlDOT:Sprite 		= null;
 		private var mEnableEditing:Boolean 	= false;
 		private var mDotsOnMonster:Object 	= {};
 		
-		public function SectionManager( editor:EditSection )
+		public function SectionManager( editor:EditSection, ind:String )
 		{
 			this.mClassId = SectionManager.TRIGGER_TYPE;
+			this.mSectionInd = ind;
 			
 			this.x = this.y = 0;
 			
@@ -41,6 +47,10 @@ package mapEdit
 			this.mInfoLayer = new Sprite();
 			this.mInfoLayer.visible = false;
 			this.addChild( this.mInfoLayer );
+			
+			this.mTipsLayer = new Sprite();
+			this.mTipsLayer.visible = false;
+			this.addChild( this.mTipsLayer );
 			
 			this.mDotsOnMonster = {};
 			
@@ -97,6 +107,40 @@ package mapEdit
 			
 			if( this.mInfoLayer )
 				this.mInfoLayer.visible = this.mUnderSelection;
+			if( this.mTipsLayer )
+				this.mTipsLayer.visible = this.mUnderSelection;
+			
+			if( value )
+			{
+				for( var sid:String in this.mDotsOnMonster )
+				{
+					var entity:Entity = this.mSectionEditor.getMonsterBySID( sid, this.mSectionInd );
+					if( !entity ) {
+						this.removeAMonster( sid );
+					}
+				}
+				this.updateMonsterInfo();
+			}
+		}
+		
+		protected function updateMonsterInfo():void
+		{
+			this.mInfoLayer.graphics.clear();
+			for( var sid:String in this.mDotsOnMonster )
+			{
+				var entity:Entity = this.mSectionEditor.getMonsterBySID( sid, this.mSectionInd );
+				if( entity ) {
+					var pos:Point = this.globalToLocal(
+						entity.parent.localToGlobal( new Point( entity.x, entity.y ) )
+					);
+					this.mDotsOnMonster[sid].x = pos.x;
+					this.mDotsOnMonster[sid].y = pos.y;
+					
+					this.mInfoLayer.graphics.lineStyle(1, 0.5);
+					this.mInfoLayer.graphics.moveTo( 0, 0 );
+					this.mInfoLayer.graphics.lineTo( pos.x, pos.y );
+				}
+			}
 		}
 		
 		public function enableEditing( scene:EditSection ):void
@@ -108,11 +152,12 @@ package mapEdit
 			var self:SectionManager = this;
 			this.addEventListener(MouseEvent.MOUSE_DOWN,
 				function( e:MouseEvent ):void {
+					e.stopPropagation();
 					if( self.mUnderSelection ) 
 					{
-						e.stopPropagation();
 						self.startCtrl( self.buildADot2( 0, 0 ) );
 					}
+					self.mSectionEditor.selectComponent( self );
 				}
 			);
 			
@@ -124,38 +169,18 @@ package mapEdit
 						e.stopImmediatePropagation()	
 						self.endCtrl(null);
 					}
-					self.mSectionEditor.selectComponent( self );
 				}
 			);
 			
 			this.addEventListener(Event.ENTER_FRAME, function(e:Event):void
 			{
-				self.mInfoLayer.graphics.clear();
+				self.mTipsLayer.graphics.clear();
 				
 				if( self.mCtrlDOT )
 				{
-					self.mInfoLayer.graphics.lineStyle( 1, 0.5 );
-					self.mInfoLayer.graphics.moveTo( 0, 0);
-					self.mInfoLayer.graphics.lineTo( self.mCtrlDOT.x,  self.mCtrlDOT.y);					
-				}
-				
-				for( var sid:String in self.mDotsOnMonster )
-				{
-					var entity:Entity = self.mSectionEditor.getMonsterBySID( sid );
-					if( !entity ) {
-						self.removeAMonster( sid );
-					}
-					else {
-						var pos:Point = self.globalToLocal(
-							entity.parent.localToGlobal( new Point( entity.x, entity.y ) )
-						);
-						self.mDotsOnMonster[sid].x = pos.x;
-						self.mDotsOnMonster[sid].y = pos.y;
-						
-						self.mInfoLayer.graphics.lineStyle(1, 0.5);
-						self.mInfoLayer.graphics.moveTo( 0, 0 );
-						self.mInfoLayer.graphics.lineTo( pos.x, pos.y );
-					}
+					self.mTipsLayer.graphics.lineStyle( 1, 0.5 );
+					self.mTipsLayer.graphics.moveTo( 0, 0);
+					self.mTipsLayer.graphics.lineTo( self.mCtrlDOT.x,  self.mCtrlDOT.y);					
 				}
 			});
 			
@@ -202,7 +227,7 @@ package mapEdit
 		
 		private function tryToCaputureAMonster(globalPos:Point):void 
 		{	
-			var entity:Entity = this.mSectionEditor.getMonsterByPoint( globalPos );
+			var entity:Entity = this.mSectionEditor.getMonsterByPoint( globalPos, this.mSectionInd );
 			if( !entity ) return;
 			
 			if ( this.mDotsOnMonster.hasOwnProperty( entity.globalId ) ) return;
@@ -222,16 +247,17 @@ package mapEdit
 			
 			this.mInfoLayer.addChild( dot );
 			this.mDotsOnMonster[sid] = dot;
+			this.updateMonsterInfo();
 		}
 		
 		private function removeAMonster( sid:String ):void 
 		{
-			var entity:Entity = this.mSectionEditor.getMonsterBySID( sid );
 			if( this.mDotsOnMonster.hasOwnProperty( sid ) )
 			{
 				this.mInfoLayer.removeChild( this.mDotsOnMonster[sid] );
 				delete this.mDotsOnMonster[sid];
 			}
+			this.updateMonsterInfo();
 		}
 		
 		public function isMonsterIn( sid:String ):Boolean
