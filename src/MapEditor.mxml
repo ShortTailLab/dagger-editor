@@ -56,6 +56,7 @@
 
 				BgModel.getInstance().init();
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
+				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 				
 				Runtime.getInstance().addEventListener(Runtime.CURRENT_LEVEL_CHANGE,
 					function( evt:Event ):void {
@@ -98,10 +99,14 @@
 			
 			private function onRightClick(e:MouseEvent=null):void
 			{
-//				this.stage.focus = this.mMainScene;
-//				this.mMainScene.onRightClick();
 				Runtime.getInstance().selectedComponentType = null;
 				Runtime.getInstance().onCancelSelection();
+			}
+			
+			private function onKeyDown(e:KeyboardEvent):void
+			{
+				if( e.keyCode == Keyboard.ESCAPE )
+					this.onRightClick();
 			}
 
 			private function onDataReady(e:Event=null):void
@@ -115,16 +120,6 @@
 				
 				this.mEditLevel.refresh();
 				this.mEditMonster.init();
-				
-				var self:MapEditor = this;
-				this.mMainScene.reset( Data.getInstance().getFirstLevelId() );
-				Runtime.getInstance().addEventListener(Runtime.CURRENT_LEVEL_CHANGE,
-					function(e:Event):void
-					{
-						self.mMainScene.reset( Runtime.getInstance().currentLevelID );		
-					}
-				)
-				
 				
 				this.mExportChapterToExcel.addEventListener(
 					MouseEvent.CLICK, this.exportToExcel

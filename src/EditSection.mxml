@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Module xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		  xmlns:s="library://ns.adobe.com/flex/spark" 
-		  xmlns:mx="library://ns.adobe.com/flex/mx" width="340" height="100%" creationComplete="ctor()">
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" creationComplete="ctor()">
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
@@ -10,7 +10,14 @@
 		<![CDATA[
 			import mapEdit.Component;
 			import mapEdit.Entity;
+			import mapEdit.SectionManager;
 			
+			import misc.ConfirmPanel;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ComboBase;
+			import mx.core.INavigatorContent;
 			import mx.core.IVisualElement;
 			
 			import spark.components.Form;
@@ -18,6 +25,7 @@
 			import spark.components.Label;
 			import spark.components.NavigatorContent;
 			import spark.core.SpriteVisualElement;
+			import spark.primitives.Rect;
 			
 			// ---------------------------------------------------------
 			////// constant variables
@@ -30,11 +38,20 @@
 			
 			// ---------------------------------------------------------
 			////// 
-			protected var mSectionInd2Content:* 	= null;
-			protected var mSectionCountor:int 		= 0;
-			
 			protected var mSelectedComponents:Array = null;
 			protected var mSelectedTipsLayer:Group 	= null;
+			
+			protected var mSelectFrame:SpriteVisualElement 	= null;
+			protected var mFocusComponent:Component 		= null;
+			
+			protected var mCopiedComponents:Array 	= null;
+			protected var mPasteTipsLayer:Group 	= null;
+			
+			protected var mSectionInd2Content:* 	= null;
+			protected var mSectionInd2Manager:* 	= null;
+			protected var mSectionInd2Info:* 		= null;
+			protected var mCopiedSection:* 			= null;
+			protected var mSectionCountor:int 		= 0;
 			
 			protected function ctor():void
 			{
@@ -42,19 +59,43 @@
 				this.mSelectedTipsLayer.alpha = 0.5;
 				this.addElement( this.mSelectedTipsLayer );
 				
+				this.mSelectFrame = new SpriteVisualElement;
+				this.mSelectFrame.visible = false;
+				this.addElement( this.mSelectFrame );
+				
+				this.mPasteTipsLayer = new Group();
+				this.mPasteTipsLayer.alpha = 0.5;
+				this.addElement( this.mPasteTipsLayer );
+				
 				var self:EditSection = this;
 				this.mAppendSection.addEventListener(MouseEvent.CLICK, function(e:Event):void
 				{
 					self.appendSection( {}, String(self.mSectionCountor++) );
 				});
 				
+				this.mCopySection.addEventListener(MouseEvent.CLICK, this.copyCurrentSection);
+				this.mPasteSection.addEventListener(MouseEvent.CLICK, this.pasteToCurrentSection);
+				this.mEraseSection.addEventListener(MouseEvent.CLICK, this.eraseCurrentSection);
+				this.mEditSection.addEventListener(MouseEvent.CLICK, this.editCurrentSection);
+				
 				Runtime.getInstance().addEventListener( 
 					Runtime.SELECT_DATA_CHANGE, this.onSelectedTypeChange
 				);
+				Runtime.getInstance().addEventListener(
+					Runtime.CANCEL_SELECTION, this.onCancelEvent
+				);
+				Runtime.getInstance().addEventListener(Runtime.CURRENT_LEVEL_CHANGE,
+					function(e:Event):void
+					{
+						self.reset( Runtime.getInstance().currentLevelID );		
+					}
+				)
 				
 				this.addEventListener(Event.ENTER_FRAME, this.update);
 				this.addEventListener(MouseEvent.MOUSE_DOWN, this.onMouseDown);
+				this.addEventListener(MouseEvent.MOUSE_MOVE, this.onMouseMove);
 				this.addEventListener(MouseEvent.MOUSE_UP, this.onMouseUp);
+				this.addEventListener(KeyboardEvent.KEY_DOWN, this.onKeyDown);
 			}
 			// ---------------------------------------------------------
 			////// entrance
@@ -64,13 +105,22 @@
 					section:Object = null;
 				
 				this.mSectionInd2Content 	= {};
+				this.mSectionInd2Info 		= {};
+				this.mSectionInd2Manager 	= {};
+				
 				this.mSelectedComponents 	= [];
+				this.mCopiedComponents 		= [];
 				this.mSectionCountor 		= 1;
+				this.mCopiedSection 		= null;
 				this.mMainNavigator.removeAllElements();
 				this.mSelectedTipsLayer.removeAllElements();
 				
+				this.onCancelEvent();
+				
 				for( section in level )
 					this.appendSection( section, String(this.mSectionCountor++) );
+				
+				this.mSelectedList.labelField = "label";
 			}
 			
 			// ------------------------
@@ -82,10 +132,34 @@
 					this.mSelectedTipsLayer.x = this.mouseX;
 					this.mSelectedTipsLayer.y = this.mouseY;
 				}
+				
+				if( this.mPasteTipsLayer )
+				{
+					this.mPasteTipsLayer.x = this.mouseX;
+					this.mPasteTipsLayer.y = this.mouseY;
+				}
+				
+				this.mInfoMousePos.text = "鼠标位置：("+this.mouseX+", "+this.mouseY+")";
+				
+				if( this.currentSection && this.currentManager )
+				{
+					this.currentSection.setElementIndex( 
+						this.currentManager, this.currentSection.numElements-1 
+					);
+				}
 			}
 			
 			// ------------------------
 			////// event handling
+			public function onCancelEvent(e:Event=null):void
+			{
+				this.cancelSelected();
+				this.copyComponents();
+				
+				this.mInfoCopiedSection.text = "回合黏贴：未开启";
+				this.mPasteSection.enabled = false;
+			}
+			
 			public function onSelectedTypeChange(e:Event):void 
 			{
 				var self:EditSection = this;
@@ -95,65 +169,202 @@
 				if( !type ) return;
 				
 				var item:Component = EditSection.makeComponentByType( type );
-				item.addEventListener( MouseEvent.MOUSE_DOWN, function(e:*):void
-				{
-					self.onMouseDown( e );
-				});
 				this.mSelectedTipsLayer.addElement( item );
 			}
 			
-			public function onKeyDown(e:KeyboardEvent):void {}
-			
-			public function onMouseDown(e:Event):void {
-				this.cancelSelected();
+			public function onKeyDown(e:KeyboardEvent):void 
+			{
+				var code:uint = e.keyCode, item:Component = null, flag:Boolean = false;
 				
-				var type:String = Runtime.getInstance().selectedComponentType;
-				if( !type ) return;
-				var item:Component = EditSection.makeComponentByType( type );
-				if( !item ) return;
-				var section:Group = this.getCurrentSection();
+				if( code == Keyboard.C && e.ctrlKey )
+					this.copyComponents();
+				else if( code == Keyboard.V && e.ctrlKey )
+					this.pasteComponents();
+				else if( code == Keyboard.V && e.ctrlKey )
+					this.save();
+				else if( code == Keyboard.DELETE || (code == Keyboard.D && e.ctrlKey) )
+					this.eraseSelectedComponents();
+				else if( code == Keyboard.LEFT )
+				{
+					for each( item in this.mSelectedComponents )
+						item.x -= EditSection.kGridWidth * 0.5;
+				}
+				else if( code == Keyboard.RIGHT )
+				{
+					for each( item in this.mSelectedComponents )
+						item.x += EditSection.kGridWidth * 0.5;
+				}
+				else if( code == Keyboard.UP )
+				{
+					for each( item in this.mSelectedComponents )
+						item.y -= EditSection.kGridHeight;
+				}
+				else if( code == Keyboard.DOWN )
+				{
+					for each( item in this.mSelectedComponents )
+						item.y += EditSection.kGridHeight;
+				} else {
+					flag = true;
+				}
+				
+				if( !flag ) e.stopPropagation(); 
+				
+				if( code == Keyboard.UP || code == Keyboard.LEFT || 
+					code == Keyboard.DOWN || code == Keyboard.RIGHT  )
+				{
+					for each( item in this.mSelectedComponents )
+					{
+						var now:Point = EditSection.getGridPos( new Point(item.x, item.y) );
+						item.x = now.x;
+						item.y = now.y;	
+					}
+				}
+			}
+			
+			public function onMouseDown(e:Event):void 
+			{				
+				var section:Group = this.currentSection;
 				if( !section ) return;
+				if( !section.getBounds(this).containsPoint( new Point(this.mouseX, this.mouseY) ) ) 
+					return;
 				
-				var pos:Point = EditSection.getGridPos( 
-					new Point( section.mouseX, section.mouseY ) 
-				);
-				item.x = pos.x; item.y = pos.y;
+				this.cancelSelected();
+				var type:String = Runtime.getInstance().selectedComponentType;
+				if( type ) 
+				{
+					var item:Component = EditSection.makeComponentByType( type );
+					if( !item ) return;
 
-				this.insertComponent( item );
+					var pos:Point = EditSection.getGridPos( 
+						new Point( section.mouseX, section.mouseY ) 
+					);
+					item.x = pos.x; item.y = pos.y;
+	
+					this.insertComponent( item );
+				} else {
+					this.mSelectFrame.graphics.clear();
+					this.mSelectFrame.x = this.mouseX;
+					this.mSelectFrame.y = this.mouseY;
+					this.mSelectFrame.visible = true;
+				}
 			}
-			public function onMouseUp(e:Event):void {}
-			
-			public function onMouseDown_Component(e:Event):void 
+			protected var mLastMousePos:Point = new Point();
+			public function onMouseMove(e:MouseEvent):void
 			{
+				if( this.mFocusComponent )
+				{
+					var deltaX:Number = this.mouseX - this.mLastMousePos.x;
+					var deltaY:Number = this.mouseY - this.mLastMousePos.y;
+					var item:Component = null;
+					for each( item in this.mSelectedComponents )
+					{
+						item.x += deltaX;
+						item.y += deltaY;
+					}
+					this.mLastMousePos.x = this.mouseX;
+					this.mLastMousePos.y = this.mouseY;
+				} else if ( this.mSelectFrame.visible ) {
+					this.mSelectFrame.graphics.clear();
+					this.mSelectFrame.graphics.lineStyle( 1 );
+					this.mSelectFrame.graphics.drawRect(
+						0, 0,
+						this.mouseX-this.mSelectFrame.x,
+						this.mouseY-this.mSelectFrame.y
+					);
+					
+					if( !e.buttonDown ) this.mSelectFrame.visible = false;
+				}
+			}
+			public function onMouseUp(e:Event):void 
+			{
+				var section:Group = this.currentSection, 
+					group:Array = this.currentComponents,
+					item:Component = null;
+				if( this.mSelectFrame.visible || !section )
+				{
+					var from:Rectangle = this.mSelectFrame.getBounds(section);
+					this.cancelSelected();
+					for each ( item in group )
+					{
+						var to:Rectangle = item.getBounds(section);
+						if( from.intersects( to ) )
+							this.selectComponent( item );
+					}
+				}
 				
+				this.mFocusComponent = null;
+				this.mSelectFrame.visible = false;
 			}
-			public function onMouseUp_Component(e:Event):void {}
-			public function onMouseDoubleClick_Component(e:Event):void 
+			
+			protected var mDoubleClickTimer:Timer = new Timer(300, 1);
+			public function onMouseDown_Component(e:MouseEvent):void 
 			{
+				e.stopPropagation();
+				var item:Component = e.currentTarget as Component;
+				if( !item ) return;
+				
+				if( this.mDoubleClickTimer.running ) 
+				{ 
+					this.mDoubleClickTimer.stop();
+					this.selectComponentsByType( item.classId );
+				} else {
+					this.mDoubleClickTimer.start();
+					
+					if( this.isSelected( item ) )
+					 	this.mFocusComponent = item;
+					else
+					{
+						if( !e.shiftKey ) this.cancelSelected();
+						this.selectComponent( item );
+						this.mFocusComponent = item;
+					}
+					
+					this.mLastMousePos.x = this.mouseX;
+					this.mLastMousePos.y = this.mouseY;
+				}
 			}
 			
 			// ---------------------------
 			////// facilities
-			public function save():void {}
+			public function save():void 
+			{
+				var sections:Object = [];
+				
+				for each( var item:Object in this.mSectionInd2Info )
+				{
+//					sections.push(
+//						
+//					);
+				}
+				
+				MapEditor.getInstance().writeToStatusBar("保存关卡"+Runtime.getInstance().currentLevelID);
+			}
+			
 			public function appendSection( items:Object, ind:String ):void 
 			{
+				if( !Runtime.getInstance().currentLevelID ) return;
+				
 				var page:NavigatorContent = new NavigatorContent;
 				page.label 			= ind;
 				page.id    			= ind;
 
 				this.mSectionInd2Content[ind] = new Group();
+				this.mSectionInd2Info[ind] = {};
+				
 				page.addElement( this.mSectionInd2Content[ind] );		
 				this.mMainNavigator.addElement( page );
 				
 				var content:Group = this.mSectionInd2Content[ind];
 				content.height = 640;
 				EditSection.makeCoordinator( content );
+				
+				var man:SectionManager = EditSection.makeSectionManager( content );
+				this.mSectionInd2Manager[ind] = man;
 			}
 			
-			private static var gComponentInd:int = 0;
 			public function insertComponent( item:Component ):void 
 			{
-				var section:Group = this.getCurrentSection();
+				var section:Group = this.currentSection;
 				if( !section ) return;
 				
 				if( Data.getInstance().isBullet( item.classId ) )
@@ -163,23 +374,21 @@
 				}
 
 				if( item.globalId == "" || !item.globalId )
-					item.globalId = new Date().time+String(gComponentInd++);
+					item.globalId = EditSection.makeGlobalId();
 				
-				var self:EditSection = this;
-				
-				item.doubleClickEnabled = true;
 				item.addEventListener( MouseEvent.MOUSE_DOWN, this.onMouseDown_Component );
-				item.addEventListener( MouseEvent.DOUBLE_CLICK, this.onMouseDoubleClick_Component );
+				section.addElement( item );
 				
+				this.mInfoNumComponents.text = "实体数量："+this.currentComponents.length;
 			}
 			public function eraseComponents( items:Array ):void {}
 			public function eraseSelectedComponents( e:Event = null ):void
 			{
-				var section:Group 	= this.getCurrentSection();
-				var group:Array  	= this.getCurrentComponents();
+				var section:Group 	= this.currentSection;
+				var group:Array  	= this.currentComponents;
 				
 				var typeTable:Object = {}, i:int = 0, item:Component = null;
-				for( i=group.length-1; i>=0; i++ )
+				for( i=group.length-1; i>=0; i-- )
 				{
 					for each( item in this.mSelectedComponents )
 					{
@@ -203,6 +412,32 @@
 				MapEditor.getInstance().writeToStatusBar( str );
 				
 				this.cancelSelected();
+				this.mInfoNumComponents.text = "实体数量："+group.length;
+			}
+			
+			public function updateSelectedList():void
+			{
+				var listData:Array = [], item:Component = null, typeTable:Object = {};
+				this.mSelectedList.dataProvider = new ArrayCollection( listData );
+				
+				for each( item in this.mSelectedComponents )
+				{
+					if( !(item.classId in typeTable) ) typeTable[item.classId] = 0;
+					typeTable[item.classId] ++;
+				}
+					
+				var key:String = null, profile:Object = null;
+				for( key in typeTable )
+				{
+					profile = Data.getInstance().getEnemyProfileById(
+						Runtime.getInstance().currentLevelID, key
+					);
+					if( !profile ) continue;
+					
+					listData.push( { 
+						label : "["+key+"]"+profile.monster_name+"("+typeTable[key]+")" 
+					} );
+				}
 			}
 			
 			public function selectComponent( item:Component ):void 
@@ -241,19 +476,24 @@
 				menu.addItem( changeType ); menu.addItem( erase );
 				
 				item.select( true );
-				item.contextMenu = menu;
+				if( item as Entity )
+					item.contextMenu = menu;
+		
+				this.updateSelectedList();
 			}
+			
 			public function selectComponentsByType( type:String ):void 
 			{
 				this.cancelSelected();
 				
-				var group:Array = this.getCurrentComponents();
+				var group:Array = this.currentComponents;
 				for each( var item:Component in group )
 				{
 					if( item.classId == type ) 
 						this.selectComponent( item );
 				}
 			}
+			
 			public function cancelSelected( ):void 
 			{
 				if( !this.mSelectedComponents ) return;
@@ -265,6 +505,8 @@
 				}
 				
 				this.mSelectedComponents = [];
+				this.copyComponents();
+				this.updateSelectedList();
 			}
 			
 			public function changeSelectedType( toType:String ):void
@@ -286,26 +528,213 @@
 				this.eraseSelectedComponents();
 			}
 			
-			public function getCurrentSection():Group 
+			public function copyComponents():void
+			{
+				this.mCopiedComponents = [];
+				this.mPasteTipsLayer.removeAllElements();
+			
+				if( this.mSelectedComponents.length <= 0 ) return;
+				
+				var min_x:Number = this.mSelectedComponents[0].x;
+				var max_x:Number = this.mSelectedComponents[0].x;
+				
+				var min_y:Number = this.mSelectedComponents[0].y;
+				var max_y:Number = this.mSelectedComponents[0].y;
+				for each( item in this.mSelectedComponents )
+				{
+					min_x = Math.min( min_x, item.x);
+					max_x = Math.max( max_x, item.x);
+					min_y = Math.min( min_y, item.y);
+					max_y = Math.max( max_y, item.y);
+				}
+				
+				var item:Component = null, profile:Object = null;
+				for each( item in this.mSelectedComponents )
+				{
+					profile = Data.getInstance().getEnemyProfileById(
+						Runtime.getInstance().currentLevelID,
+						item.classId
+					);
+					if( !profile ) continue;
+					
+					this.mCopiedComponents.push( {
+						data : item.serialize(),
+						label : "["+item.classId+"]"+profile.monster_name,
+						pos : new Point( item.x-min_x-(max_x-min_x)/2,
+										 item.y-min_y-(max_y-min_y)/2 )
+					} );
+					
+					var tip:Component = EditSection.makeComponentByType( item.classId );
+					tip.x = this.mCopiedComponents[this.mCopiedComponents.length-1].pos.x;
+					tip.y = this.mCopiedComponents[this.mCopiedComponents.length-1].pos.y;
+					this.mPasteTipsLayer.addElement( tip );
+				}
+			}
+			
+			public function pasteComponents():void
+			{
+				var section:Group = this.currentSection;
+				if( !section ) return;
+				
+				var info:* = null, item:Component = null;
+				for each( info in this.mCopiedComponents )
+				{
+					item = EditSection.makeComponentByType( info.data.type );
+					item.unserialize( info.data );
+					var coord:Point = EditSection.getGridPos( 
+						new Point( section.mouseX+info.pos.x, section.mouseY+info.pos.y )
+					);
+					item.x = coord.x; item.y = coord.y;
+					this.insertComponent( item );
+				}
+			}
+			
+			//
+			public function editCurrentSection(e:Event=null):void
+			{
+				if( !this.mMainNavigator.selectedChild ) return;
+				
+				var template:Array 	= Utils.deepCopy( Data.getInstance().dynamicArgs.Section ) as Array || [],
+					info:Object 	= this.currentInfo;
+				for each( var item:Array in template )
+				{
+					if( item[ConfigPanel.kKEY] in info )
+						item[ConfigPanel.kKEY] = info[item[ConfigPanel.kKEY]];
+				}
+				
+				var self:EditSection = this;
+				new ConfigPanel().init( 
+					function( configs:Object ):void { self.currentInfo = configs; }, 
+					function( err:String ):void { Alert.show(err); },
+					template, false, MapEditor.getInstance()
+				);
+			}
+			
+			public function eraseCurrentSection(e:Event=null):void
+			{
+				if( !this.mMainNavigator.selectedChild ) return;
+				var self:EditSection = this;
+				ConfirmPanel.make( function():void
+				{
+					if( !self.mMainNavigator.selectedChild ) return;
+					
+					var item:INavigatorContent = self.mMainNavigator.selectedChild;
+					
+					delete self.mSectionInd2Content[item.label];
+					delete self.mSectionInd2Info[item.label];
+					self.mMainNavigator.removeItemAt( self.mMainNavigator.selectedIndex );
+					
+				}, "【删除】是否删除本回合?" );
+			}
+			
+			public function copyCurrentSection(e:Event=null):void
+			{
+				if( !this.mMainNavigator.selectedChild ) return;
+				
+				this.mInfoCopiedSection.text = "回合黏贴：回合"+this.mMainNavigator.selectedChild.label;
+				this.mPasteSection.enabled = true;
+			}
+			
+			public function pasteToCurrentSection(e:Event=null):void
+			{
+				if( !this.mMainNavigator.selectedChild ) return;
+				
+				var self:EditSection = this;
+				ConfirmPanel.make( function():void
+				{
+					
+				}, "【黏贴】是否覆盖本回合？");
+			}
+			
+			// 
+			public function get currentSection():Group 
 			{
 				if( !this.mMainNavigator.selectedChild ) return null;
 				return this.mSectionInd2Content[this.mMainNavigator.selectedChild.label];
 			}
 			
-			public function getCurrentComponents():Array
+			public function get currentInfo():Object
+			{
+				if( !this.mMainNavigator.selectedChild ) return {};
+				return this.mSectionInd2Info[this.mMainNavigator.selectedChild.label] || {};
+			}
+			
+			public function set currentInfo( info:Object ):void
+			{
+				if( !this.mMainNavigator.selectedChild ) return;
+				this.mSectionInd2Info[this.mMainNavigator.selectedChild.label] = info;
+			}
+			
+			public function get currentManager():SectionManager
+			{
+				if( !this.mMainNavigator.selectedChild ) return null;
+				return this.mSectionInd2Manager[this.mMainNavigator.selectedChild.label];
+			}
+			
+			public function get currentComponents():Array
 			{	
-				var section:Group = this.getCurrentSection();
+				if( !this.mMainNavigator.selectedChild ) return [];
+				return this.getComponentsByInd( this.mMainNavigator.selectedChild.label );
+			}
+			
+			public function getComponentsByInd( ind:String ):Array
+			{
+				var section:Group = this.mSectionInd2Content[ind];
 				if( !section ) return [];
 				
 				var ret:Array = [], i:int = 0;
 				for( i=0; i<section.numElements; i++ )
 				{
 					var item:IVisualElement = section.getElementAt( i );
-					if( !(item as Component) ) continue;
+					if( !(item as Entity) ) continue;
 					ret.push( item );
 				}
 				
-				return ret;
+				return ret; 
+			}
+			
+			public function getMonsterBySID( sid:String ):Entity
+			{
+				var section:Group = this.currentSection;
+				if( !section ) return null;
+				
+				var ret:Array = [], i:int = 0;
+				for( i=0; i<section.numElements; i++ )
+				{
+					var item:Entity = section.getElementAt( i ) as Entity;
+					if( !item || item.globalId != sid ) continue;
+					return item;
+				}
+				
+				return null; 
+			}
+			
+			public function getMonsterByPoint( pos:Point ):Entity
+			{
+				var section:Group = this.currentSection;
+				if( !section ) return null;
+				
+				var local:Point = section.globalToLocal( pos );
+				var ret:Array = [], i:int = 0;
+				for( i=0; i<section.numElements; i++ )
+				{
+					var item:Entity = section.getElementAt( i ) as Entity;
+					if( !item ) continue;
+					
+					if( item.getBounds( section ).contains( local.x, local.y ) ) 
+						return item;
+				}
+				
+				return null; 
+			}
+			
+			public function isSelected( item:Component ):Boolean
+			{
+				for each( var cmp:Component in this.mSelectedComponents )
+				{
+					if( cmp == item ) return true;
+				}
+				return false;
 			}
 			
 			// -------------------------------
@@ -364,6 +793,20 @@
 				return item;
 			}
 			
+			static protected function makeSectionManager( section:Group ):SectionManager
+			{
+				var man:SectionManager = new SectionManager;
+				man.y = 100; man.x = 0;
+				section.addElement( man );
+				return man;
+			}
+			
+			static protected var gComponentInd:int = 0;
+			static protected function makeGlobalId():String 
+			{
+				return new Date().time + String(gComponentInd++);
+			}
+			
 			static public function getGridPos( src:Point ):Point
 			{
 				var dst:Point = new Point();
@@ -374,10 +817,40 @@
 			}
 		]]>
 	</fx:Script>
-	<s:Group width="315" height="100%" horizontalCenter="0">
-		<mx:TabNavigator id="mMainNavigator" left="0" width="100%" height="100%">
+	<!-- background color -->
+	<s:Rect top="0" left="0" right="0" bottom="0">
+		<s:fill><s:SolidColor color="0xEEEEFF"/></s:fill>
+	</s:Rect>
+	
+	<s:Group left="240" width="315" height="100%">
+		<mx:TabNavigator id="mMainNavigator" right="0" width="315" height="100%">
 		</mx:TabNavigator>
 		<s:Button id="mAppendSection" right="0" top="0" width="30" label="+" />
 	</s:Group>
+	<s:VGroup left="5" width="200" height="90%" verticalCenter="0">
+		<s:Panel id="mComponentInfoPanel" width="100%" height="33%" borderColor="#DEDCDC"
+				 borderVisible="true" dropShadowVisible="false" title="怪物信息">
+			<s:Group left="5" right="5" top="5" bottom="5">
+			</s:Group>
+		</s:Panel>
+		<s:Panel id="mSelectedInfoPanel" width="100%" height="150" borderColor="#DEDCDC"
+				 borderVisible="true" dropShadowVisible="false" title="选择信息">
+			<s:List id="mSelectedList" left="5" right="5" top="5" bottom="5" borderVisible="false"></s:List>
+		</s:Panel>
+		<s:Panel id="mSectionInfoPanel" width="100%" height="155" borderColor="#DEDCDC"
+				 borderVisible="true" dropShadowVisible="false" title="编辑信息">
+			<s:Group left="5" right="5" top="5" bottom="5">
+				<s:Button id="mEditSection" left="5" bottom="5" width="85" label="编辑回合"/>
+				<s:Button id="mCopySection" left="5" bottom="30" width="85" label="复制回合"/>
+				<s:Button id="mPasteSection" right="5" bottom="30" width="85" label="粘贴回合"
+						  chromeColor="#FDB9B9" enabled="false"/>
+				<s:Button id="mEraseSection" right="5" bottom="5" width="85" label="删除回合"
+						  chromeColor="#FDB9B9"/>
+				<s:Label id="mInfoMousePos" left="5" top="5" text="鼠标位置：(0, 0)"/>
+				<s:Label id="mInfoNumComponents" left="5" top="25" text="实体数量：0"/>
+				<s:Label id="mInfoCopiedSection" left="5" top="45" text="回合黏贴：未开启"/>
+			</s:Group>
+		</s:Panel>
+	</s:VGroup>
 	
 </s:Module>

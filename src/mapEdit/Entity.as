@@ -81,24 +81,14 @@ package mapEdit
 		{
 			if( this.mClassId != data.type )
 				throw new Error("bad args");
-			this.mGlobalId	= data.id;
+			
 			this.x 			= data.x * Runtime.getInstance().sceneScalor;
 			this.y 			= -data.y * Runtime.getInstance().sceneScalor;
-			
-			if( data.hasOwnProperty("triggerTime") ) 
-				this.mTriggeredTime = data.triggerTime;
-			else 
-				this.mTriggeredTime = -1;
 			
 			if( data.hasOwnProperty("sectionDelay") )
 				this.mSectionDelay = data.sectionDelay;
 			else 
 				this.mSectionDelay = 1;
-			
-			if( data.hasOwnProperty("scale") )
-				this.mProfileScalor = data.scale;
-			else 
-				this.mProfileScalor = 1;
 		}
 		
 		override public function serialize():Object
@@ -108,11 +98,6 @@ package mapEdit
 			obj.type 	= this.mClassId;
 			obj.x 		= Number( this.x / Runtime.getInstance().sceneScalor );
 			obj.y 		= Number( -this.y / Runtime.getInstance().sceneScalor );
-			
-			if( this.mTriggeredTime > 0 )
-			{
-				obj.triggerTime = this.mTriggeredTime;
-			}	
 			
 			obj.sectionDelay = this.mSectionDelay;
 			

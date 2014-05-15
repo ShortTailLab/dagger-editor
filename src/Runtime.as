@@ -4,6 +4,8 @@ package
 	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
+	
+	import mapEdit.Component;
 
 	public class Runtime extends EventDispatcher
 	{

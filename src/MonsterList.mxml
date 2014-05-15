@@ -19,10 +19,11 @@
 			import manager.EventType;
 			import manager.GameEvent;
 			
-			import mapEdit.AreaTrigger;
 			import mapEdit.Component;
 			import mapEdit.Entity;
-			import mapEdit.FormationTrigger;
+			import mapEdit.SectionManager;
+			
+			import misc.ConfirmPanel;
 			
 			import mx.collections.ArrayCollection;
 			import mx.containers.TitleWindow;
@@ -119,14 +120,16 @@
 						);
 						
 						if( !enemy ) return;
-						
-						if(self.mSelection)
+						ConfirmPanel.make( function():void
 						{
-							Data.getInstance().eraseMonster(
-								Runtime.getInstance().currentLevelID,
-								self.mSelectedLabel.text
-							);
-						}
+							if(self.mSelection)
+							{
+								Data.getInstance().eraseMonster(
+									Runtime.getInstance().currentLevelID,
+									self.mSelectedLabel.text
+								);
+							}
+						}, "【删除】是否删除怪物"+enemy.monster_name+"?" );
 					}
 				);
 				
@@ -201,13 +204,9 @@
 				var id:String = this.mMonsterList.selectedItem.id;
 				this.mSelectedLabel.text = id;
 				
-				if( id == AreaTrigger.TRIGGER_TYPE )
-				{
-					this.mSelection = new AreaTrigger;
-					this.mSelection.y = 65;
-					this.mSelection.x = 47;
-				} else if( id == FormationTrigger.TRIGGER_TYPE ) {
-					this.mSelection = new FormationTrigger;
+
+				if( id == SectionManager.TRIGGER_TYPE ) {
+					this.mSelection = new SectionManager;
 					this.mSelection.x = 47;
 					this.mSelection.y = 65;
 				} else {
@@ -228,9 +227,6 @@
 					
 					if( profile.type == EditMonster.kCONFIGURABLE )
 						this.mEditBehavior.enabled = true;
-					
-					if( profile.type == AreaTrigger.TRIGGER_TYPE )
-						this.mEraseSelf.enabled = false;
 				}
 				
 				this.mSelection.setSize( 70 );
@@ -337,7 +333,7 @@
 			<s:Button id="mEditBehavior" label="修改行为"/>
 			<s:Button id="mEditTrigger" label="触发事件"/>
 			<s:Button id="mCopy" width="69" label="复制对象"/>
-			<s:Button id="mEraseSelf" label="删除对象"/>
+			<s:Button id="mEraseSelf" label="删除对象" chromeColor="#FDB9B9"/>
 		</s:VGroup>
 		<s:Label id="mSelectedLabel" left="20" top="5" height="15" fontSize="13" fontWeight="bold"
 				 textAlign="center" verticalAlign="middle"/>

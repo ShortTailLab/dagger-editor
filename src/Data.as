@@ -18,8 +18,7 @@ package
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
-	import mapEdit.AreaTrigger;
-	import mapEdit.FormationTrigger;
+	import mapEdit.SectionManager;
 	
 	import mx.controls.Alert;
 	
@@ -794,7 +793,7 @@ package
 		
 		public function isTrigger( type:String ):Boolean
 		{
-			return type == AreaTrigger.TRIGGER_TYPE || FormationTrigger.TRIGGER_TYPE;
+			return SectionManager.TRIGGER_TYPE;
 		}
 	
 		public function getTrapsByLevelId( lid:String ):Object 
@@ -1053,7 +1052,7 @@ package
 						}
 					});
 					continue;
-				}else if ( item.type == FormationTrigger.TRIGGER_TYPE )
+				}else if ( item.type == SectionManager.TRIGGER_TYPE )
 				{
 					var ft_data:Object = {};
 					for each( var ft_item:Array in Data.getInstance().dynamicArgs.Section )

@@ -250,10 +250,7 @@
 	<s:BorderContainer id="mSelectorArea" x="0" y="0" width="100%" height="100%" borderVisible="false"
 					   dropShadowVisible="true">
 		<s:VGroup x="0" y="0" width="100%" height="100%">
-			<s:Panel id="mFormationPanel" width="100%" height="30%" dropShadowVisible="false" title="阵型">
-			</s:Panel>
-			
-			<s:Panel id="mMonsterGroup" width="100%" height="70%" dropShadowVisible="false" title="怪物">
+			<s:Panel id="mMonsterGroup" width="100%" height="100%" dropShadowVisible="false" title="怪物">
 				<ns1:MonsterList id="mMonsterPanel" left="5" right="5" top="5" bottom="5">
 				</ns1:MonsterList>
 			</s:Panel>
