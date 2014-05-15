@@ -1316,8 +1316,8 @@ package
 	
 			if( !(lid in this.mLevelInstancesTable) ) 
 				return { 
-					id : lid,
-					stageId: profile.chapter_id,
+					id : int(lid),
+					stageId: int(profile.chapter_id),
 					stage: profile.chapter_name,
 					name: profile.level_name,
 					path: "level/"+lid+".js", enemies : [] 
@@ -1349,8 +1349,8 @@ package
 				array.push( monster );
 			
 			var ret:Object = {
-				id : lid,
-				stageId: profile.chapter_id, stage: profile.chapter_name,
+				id : int(lid),
+				stageId: int(profile.chapter_id), stage: profile.chapter_name,
 				name: profile.level_name, path: "level/"+lid+".js", 
 				enemies : array
 			};
