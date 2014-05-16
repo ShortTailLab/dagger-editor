@@ -1,7 +1,10 @@
 package mapEdit
 {
 	// interface
+	import flash.geom.Point;
+	
 	import spark.core.SpriteVisualElement;
+
 	public class Component extends SpriteVisualElement
 	{
 		public function dtor():void{};
@@ -18,6 +21,8 @@ package mapEdit
 		
 		protected var mClassId:String = null;
 		public function get classId():String { return this.mClassId; }
+		
+		public function get pos():Point { return new Point(); }
 		
 //		protected var mSubType:String = null;
 //		public function get type():String { return this.mSubType; }

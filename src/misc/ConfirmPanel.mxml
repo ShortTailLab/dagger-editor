@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="200" height="63" creationComplete="ctor()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			static public function make(onComplete:Function, title:String):void
+			{
+				var panel:ConfirmPanel = new ConfirmPanel;
+				panel.reset( onComplete, title );
+				
+				PopUpManager.addPopUp( panel, MapEditor.getInstance(), true );
+				PopUpManager.centerPopUp( panel );
+			}
+			
+			// --------------------------
+			protected var mOwner:Function = null;
+			protected var mTitle:String = "";
+			protected function ctor():void
+			{
+				this.addEventListener(KeyboardEvent.KEY_DOWN, this.onKeyDown);
+				this.mConfirm.addEventListener(MouseEvent.CLICK, this.onConfirm);
+				this.mCancel.addEventListener(MouseEvent.CLICK, this.onCancel);
+				this.mContentPanel.title = this.mTitle;
+				this.stage.focus = this;
+			}
+			
+			protected function onKeyDown(e:KeyboardEvent):void
+			{
+				e.stopPropagation();
+				
+				if( e.keyCode == Keyboard.ESCAPE )
+					this.onCancel();
+				else if( e.keyCode == Keyboard.ENTER )
+					this.onConfirm();
+			}
+			
+			protected function onConfirm(e:Event=null):void
+			{
+				this.mOwner();
+				this.onCancel();
+			}
+			
+			protected function onCancel(e:Event=null):void
+			{
+				PopUpManager.removePopUp( this );
+			}
+			
+			public function reset( onComplete:Function, title:String ):void
+			{
+				this.mOwner = onComplete;
+				this.mTitle = title;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Panel id="mContentPanel" height="60" width="100%" borderVisible="false"
+			 dropShadowVisible="true" title="确定">
+		<s:Button id="mConfirm" left="5" top="5" bottom="5" label="确认(Enter)"/>
+		<s:Button id="mCancel" right="5" top="5" bottom="5" label="取消(Esc)"/>
+	</s:Panel>
+</s:Module>

@@ -5,6 +5,7 @@ package mapEdit
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 
@@ -80,42 +81,38 @@ package mapEdit
 		{
 			if( this.mClassId != data.type )
 				throw new Error("bad args");
-			this.mGlobalId	= data.id;
-			this.x 			= data.x * Runtime.getInstance().sceneScalor;
-			this.y 			= -data.y * Runtime.getInstance().sceneScalor;
 			
-			if( data.hasOwnProperty("triggerTime") ) 
-				this.mTriggeredTime = data.triggerTime;
-			else 
-				this.mTriggeredTime = -1;
+			this.x 			= data.x * EditSection.kSceneScalor;
+			this.y 			= EditSection.kSceneHeight - data.y * EditSection.kSceneScalor;
+			this.globalId 	= data.id;
 			
 			if( data.hasOwnProperty("sectionDelay") )
 				this.mSectionDelay = data.sectionDelay;
 			else 
 				this.mSectionDelay = 1;
-			
-			if( data.hasOwnProperty("scale") )
-				this.mProfileScalor = data.scale;
-			else 
-				this.mProfileScalor = 1;
 		}
 		
 		override public function serialize():Object
 		{
 			var obj:Object = new Object;
+			
 			obj.id 		= this.globalId;
 			obj.type 	= this.mClassId;
-			obj.x 		= Number( this.x / Runtime.getInstance().sceneScalor );
-			obj.y 		= Number( -this.y / Runtime.getInstance().sceneScalor );
 			
-			if( this.mTriggeredTime > 0 )
-			{
-				obj.triggerTime = this.mTriggeredTime;
-			}	
+			obj.x 		= this.x/EditSection.kSceneScalor;
+			obj.y 		= (EditSection.kSceneHeight-this.y)/EditSection.kSceneScalor;
 			
 			obj.sectionDelay = this.mSectionDelay;
 			
 			return obj;
+		}
+		
+		override public function get pos():Point 
+		{
+			return new Point( 
+				Number( this.x / Runtime.getInstance().sceneScalor ),
+				Number( -this.y / Runtime.getInstance().sceneScalor )
+			);
 		}
 		
 		public function get gameY():Number {

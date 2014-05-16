@@ -334,11 +334,18 @@ package
 		}
 		
 		static public function dumpObject( obj : *, level : int = 0 ) : void{
+			trace(" ------------------------ " );
+			Utils.dumpObject2(obj, level);
+			trace(" ^^^^^^^^^^^^^^^^^^^^^^^^ " );
+		}
+		
+		static protected function dumpObject2( obj:*, level:int = 0 ):void
+		{
 			var tabs : String = "";
 			for ( var i : int = 0 ; i < level ; i++, tabs += "\t" );
 			for ( var prop : String in obj ){
 				trace( tabs + "[" + prop + "] -> " + obj[ prop ] );
-				dumpObject( obj[ prop ], level + 1 );
+				dumpObject2( obj[ prop ], level + 1 );
 			}
 		}
 		
