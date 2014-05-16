@@ -36,6 +36,8 @@
 			// setup during launch of app
 			private function onCreate():void
 			{
+				this.mLevelTree.focusEnabled = false; 
+				
 				// update level tree view;
 				this.mInformPanel.mRootPanel.title = "未选中任何关卡";
 				this.mInformPanel.mConfirmButton.label = "修改";

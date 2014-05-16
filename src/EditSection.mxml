@@ -35,7 +35,7 @@
 			public static var kSceneHeight:Number 	= 640;
 			
 			public static var kGridWidth:Number 	= 35;
-			public static var kGridHeight:Number 	= 50;
+			public static var kGridHeight:Number 	= 46;
 			
 			// ---------------------------------------------------------
 			////// 
@@ -130,6 +130,7 @@
 					this.appendSection( section, String(this.mSectionCountor++) );
 				
 				this.mSelectedList.labelField = "label";
+				this.stage.focus = this;
 			}
 			
 			public function appendSection( section:Object, ind:String ):void 
@@ -255,6 +256,8 @@
 			
 			public function onKeyDown(e:KeyboardEvent):void 
 			{
+				e.stopPropagation();
+				
 				var code:uint = e.keyCode, item:Component = null, flag:Boolean = false;
 				
 				if( code == Keyboard.C && e.ctrlKey )
@@ -317,7 +320,7 @@
 					if( !item ) return;
 
 					var pos:Point = EditSection.getGridPos( 
-						new Point( section.mouseX, section.mouseY ) 
+						new Point( section.mouseX, section.mouseY+EditSection.kGridHeight ) 
 					);
 					item.x = pos.x; item.y = pos.y;
 	
@@ -921,7 +924,7 @@
 				var dst:Point = new Point();
 				var postWidth:Number = EditSection.kGridWidth*0.5;
 				dst.x = (Math.floor(src.x / postWidth))*postWidth;
-				dst.y = (Math.floor(src.y / EditSection.kGridHeight)+0.5)*EditSection.kGridHeight;
+				dst.y = (Math.floor(src.y / EditSection.kGridHeight))*EditSection.kGridHeight;
 				return dst;
 			}
 		]]>

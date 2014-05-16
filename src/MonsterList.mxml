@@ -76,6 +76,7 @@
 				
 				this.mMonsterList.addEventListener(IndexChangeEvent.CHANGE, this.onIndexChange);				
 				this.mMonsterList.labelField = "name";
+				this.mMonsterList.focusEnabled = false;
 				
 				this.mEditData.addEventListener(MouseEvent.CLICK, 
 					function(evt:MouseEvent):void

@@ -238,6 +238,7 @@
 				t.init( function( configs:Object ):void {
 					
 					Data.getInstance().updateMonster(lid, id, configs);
+					Runtime.getInstance().currentLevelID = Runtime.getInstance().currentLevelID;
 					
 				}, function (err:String):void {
 					Alert.show( err );
