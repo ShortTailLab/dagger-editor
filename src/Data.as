@@ -1114,6 +1114,25 @@ package
 						if( adj[1] ) export.profile[index][iKey] = adj[1];
 						
 					}
+					
+					var type:String = export.profile[index].type;
+					if( type && type in Data.getInstance().dynamicArgs )
+					{
+						subData = Data.getInstance().dynamicArgs[type] || {};
+						for each( subItem in subData )
+						{
+							iKey 	= subItem[ConfigPanel.kKEY];
+							iType 	= subItem[ConfigPanel.kTYPE];
+							if( !(iKey in export.profile[index]) )
+								export.profile[index][iKey] = subItem[ConfigPanel.kDEFAULT];
+							
+							adj = adjust( 
+								export.profile[index].monster_id, iType, export.profile[index][iKey] 
+							);
+							if( !adj[0] ) return adj[1];
+							if( adj[1] ) export.profile[index][iKey] = adj[1];
+						}
+					}
 				}
 			}
 			
