@@ -35,9 +35,6 @@
 			protected var mKey2Group:Object = {};
 			protected var mKey2UIComponents:Object = {};
 			protected var mKey2Data:Object = {};
-			protected var mIsPopUp:DisplayObject = null;
-			protected var mIgnoreTag:Boolean = false;
-			
 			protected var mData:Array = [];
 			
 			// in 	: args 	{ group : [ [key, cnKey, type, default], ... ] }
@@ -55,19 +52,15 @@
 				this.refresh( this.mData );	
 			};
 			
-			public function init( onComplete:Function, onError:Function, data:Array, ignoreTag:Boolean = false, isPopUp:DisplayObject = null ):void
+			public function init( onComplete:Function, onError:Function, data:Array ):void
 			{
 				this.mCBComplete = onComplete;
 				this.mCBError 	 = onError;
 				this.mData 		 = data;
 				
-				this.mIgnoreTag  = ignoreTag;
-				this.mIsPopUp 	 = isPopUp;
-				if( this.mIsPopUp ) {
-					PopUpManager.addPopUp( this, this.mIsPopUp, true );
-					PopUpManager.centerPopUp( this );
-					this.stage.focus = this;
-				}
+				PopUpManager.addPopUp( this, MapEditor.getInstance(), true );
+				PopUpManager.centerPopUp( this );
+				this.stage.focus = this;
 			}
 			
 			public function refresh_data( data:Array ):void
@@ -145,11 +138,11 @@
 			protected function onKeyboardAction(event:KeyboardEvent):void
 			{	
 				//trace( event.ctrlKey +" "+event.charCode);
-				if( event.charCode == Keyboard.ENTER && this.mIsPopUp )
+				if( event.charCode == Keyboard.ENTER )
 				{
 					this.onConfirm();
 				} 
-				else if ( event.charCode == Keyboard.ESCAPE && this.mIsPopUp )
+				else if ( event.charCode == Keyboard.ESCAPE )
 				{
 					this.onClose(null);
 				}
@@ -157,11 +150,8 @@
 			
 			protected function onClose(event:Event):void
 			{
-				if( !this.mIsPopUp ) return;
 				MapEditor.getInstance().writeToStatusBar( "用户取消了配置【"+this.mRootPanel.title+"】的操作！" );
-				
-				if( this.mIsPopUp )
-					PopUpManager.removePopUp( this );
+				PopUpManager.removePopUp( this );
 			}
 			
 			protected function parse( warn:Boolean=true ):Object
@@ -264,8 +254,7 @@
 				
 				this.mCBComplete( ret );
 				MapEditor.getInstance().writeToStatusBar( "用户完成对【"+this.mRootPanel.title+"】的配置！" );
-				if( this.mIsPopUp )
-					PopUpManager.removePopUp( this );
+				PopUpManager.removePopUp( this );
 			}
 			
 			protected function createAndRegisterItem( item:Object ):UIComponent

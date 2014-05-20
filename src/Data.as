@@ -211,15 +211,34 @@ package
 			};
 		}
 		
-		public function updateChapter( id:String, name:String ):void
+		public function updateChapter( id:String, data:Object ):void
 		{
+			if( !("chapter_id" in data) || !("chapter_name" in data) )
+				return;
+			
+			if( data.chapter_id in this.mChapterProfiles && data.chapter_id != id ) 
+			{
+				Alert.show("【失败】章节id已存在");
+				return;
+			}
 			if( !(id in this.mChapterProfiles) ) return;
+			
+			
 			for( var key:String in this.mChapterProfiles[id].levels )
 			{
-				this.mChapterProfiles[id].levels[key].chapter_name = name;
+				this.mChapterProfiles[id].levels[key].chapter_id = data.chapter_id;
+				this.mChapterProfiles[id].levels[key].chapter_name = data.chapter_name;
 				this.writeToProfile(key, this.mChapterProfiles[id].levels[key]);
 			}
-			mChapterProfiles[id].name = name;
+			
+			mChapterProfiles[id].name 	= data.chapter_name;
+			mChapterProfiles[id].id 	= data.chapter_id;
+			
+			if( id != data.chapter_id )
+			{
+				mChapterProfiles[data.chapter_id] = mChapterProfiles[id];
+				delete mChapterProfiles[id];
+			}
 		}
 		
 		public function deleteChapter( id:String ):void

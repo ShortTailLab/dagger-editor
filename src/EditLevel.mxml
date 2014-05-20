@@ -20,6 +20,8 @@
 			import manager.EventType;
 			import manager.SyncManager;
 			
+			import misc.ConfirmPanel;
+			
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.controls.Tree;
@@ -39,18 +41,25 @@
 				this.mLevelTree.focusEnabled = false; 
 				
 				// update level tree view;
-				this.mInformPanel.mRootPanel.title = "未选中任何关卡";
-				this.mInformPanel.mConfirmButton.label = "修改";
-				this.mInformPanel.mConfirmButton.width = 50;
-				this.mInformPanel.init( this.onConfirm, this.onError, [], true );
 				
-				var erase:Button = new Button;
-				erase.left = 5; erase.bottom = 5; erase.height = 25; erase.width = 50;
-				erase.label = "删除";
-				this.mInformPanel.mRootPanel.addElement( erase );
+				var menu:ContextMenu = new ContextMenu;
 				
-				this.mMakeChapter.addEventListener(MouseEvent.CLICK, this.onMakeChapter);
-				this.mMakeLevel.addEventListener(MouseEvent.CLICK, this.onMakeLevel);
+				var makeChapter:ContextMenuItem = new ContextMenuItem("创建章节");
+				makeChapter.addEventListener(
+					ContextMenuEvent.MENU_ITEM_SELECT, this.onMakeChapter
+				);
+				menu.addItem( makeChapter );
+				
+				var makeLevel:ContextMenuItem = new ContextMenuItem("创建关卡");
+				makeLevel.addEventListener(
+					ContextMenuEvent.MENU_ITEM_SELECT, this.onMakeLevel
+				);
+				menu.addItem( makeLevel );
+
+				this.mLevelGroup.contextMenu = menu;
+				
+				this.mEditTarget.addEventListener(MouseEvent.CLICK, this.onEdit);
+				this.mEraseTarget.addEventListener(MouseEvent.CLICK, this.onErase);
 			}
 			
 			public function refresh():void
@@ -72,13 +81,10 @@
 				{
 					Runtime.getInstance().currentLevelID = item.@id;
 					this.mIsChapter = false;
-					this.mInformPanel.refresh( EditLevel.genLevelData( item.@id ) );
 				} else {
 					this.mIsChapter = true;
-					this.mInformPanel.refresh( EditLevel.genChapterData( item.@id ) );
 				}
 				this.mCurrentId = item.@id;
-				this.mInformPanel.mRootPanel.title = item.@id+" | "+item.@label;
 			}
 			
 			static public function genLevelData( lid:String = null ):Array
@@ -173,7 +179,7 @@
 					Data.getInstance().makeLevel( configs.chapter_id, configs.level_id, configs );
 					self.refresh();
 					
-				}, function (err:String):void { Alert.show( err ); }, EditLevel.genLevelData( ), false, this);
+				}, function (err:String):void { Alert.show( err ); }, EditLevel.genLevelData( ));
 				
 				t.mRootPanel.title = "新建关卡";
 			}
@@ -189,8 +195,50 @@
 					);
 					self.refresh();
 					
-				}, function (err:String):void { Alert.show( err ); }, EditLevel.genChapterData( ), false, this);
+				}, function (err:String):void { Alert.show( err ); }, EditLevel.genChapterData( ));
 				t.mRootPanel.title = "新建章节";
+			}
+			
+			protected function onEdit( evt:Event ):void
+			{
+				var item:XML = this.mLevelTree.selectedItem as XML;
+				if( !item ) return;
+				
+				var data:Array = [];
+				if(item.name() == "level")
+					data = EditLevel.genLevelData( item.@id );
+				else
+					data = EditLevel.genChapterData( item.@id );
+				
+				var self:EditLevel = this;
+				new ConfigPanel().init( function( configs:Object ) : void {
+					if( item.name() == "level" )
+						Data.getInstance().updateLevel( item.@id, configs );	
+					else 
+						Data.getInstance().updateChapter( item.@id, configs );
+					
+					self.refresh();
+				}, function ( err:String ):void {
+					Alert.show( err );
+				}, data );
+			}
+			
+			protected function onErase( evt:Event ):void
+			{
+				var item:XML = this.mLevelTree.selectedItem as XML;
+				if( !item ) return;
+				this.mCurrentId = item.@id;
+				if( !this.mCurrentId ) return;
+				
+				var self:EditLevel = this;
+				ConfirmPanel.make( function():void
+				{	
+					if(item.name() == "level")
+						Data.getInstance().deleteLevel( self.mCurrentId );
+					else
+						Data.getInstance().deleteChapter( self.mCurrentId );
+					self.refresh();
+				}, "【删除】是否删除怪物"+this.mCurrentId+"?" );
 			}
 			
 			protected function setCurrLevel( lid:String ):void
@@ -215,7 +263,7 @@
 
 		]]>
 	</fx:Script>
-	<mx:VDividedBox width="100%" height="100%">
+	<s:Group id="mLevelGroup" width="100%" height="100%">
 		
 		<s:Panel width="100%" height="100%" borderVisible="true" chromeColor="#CFCFCF"
 				 dropShadowVisible="true" fontFamily="Arial" fontSize="13" fontStyle="normal"
@@ -225,16 +273,9 @@
 						 itemClick="onItemClick(event)" labelField="@label">
 				</mx:Tree>
 			</s:Group>
-			<s:Button id="mMakeLevel" right="5" bottom="5" label="新建关卡"/>
-			<s:Button id="mMakeChapter" left="5" bottom="5" label="新建章节"/>
+			<s:Button id="mEraseTarget" right="5" bottom="5" label="删除" chromeColor="#FDB9B9"/>
+			<s:Button id="mEditTarget" left="5" bottom="5" label="编辑"/>
 		</s:Panel>
-
 		
-		<ns1:ConfigPanel id="mInformPanel" width="100%" height="50%" >
-			<ns1:layout>
-				<s:BasicLayout/>
-			</ns1:layout>
-		</ns1:ConfigPanel>
-		
-	</mx:VDividedBox>
+	</s:Group>
 </s:Module>

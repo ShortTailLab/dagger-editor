@@ -167,7 +167,7 @@
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				}, data, false, MapEditor.getInstance());
+				}, data);
 			}
 		
 			protected function onCreateMonster(evt:Event):void
@@ -182,7 +182,7 @@
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				}, EditMonster.genData( "MonsterType", "MonsterProfile" ), false, MapEditor.getInstance());
+				}, EditMonster.genData( "MonsterType", "MonsterProfile" ));
 			}
 			
 			protected function onCreateBullet(evt:Event):void
@@ -197,7 +197,7 @@
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				}, EditMonster.genData( "BulletType", "BulletProfile" ), false, MapEditor.getInstance());
+				}, EditMonster.genData( "BulletType", "BulletProfile" ));
 			}
 			
 			protected function onCreateTrap(evt:Event):void
@@ -212,7 +212,7 @@
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				}, EditMonster.genData( "TrapType", "TrapProfile" ), false, MapEditor.getInstance());
+				}, EditMonster.genData( "TrapType", "TrapProfile" ));
 			}
 			
 			public function onEditEnemy( lid:String, id:String ):void
@@ -242,7 +242,7 @@
 					
 				}, function (err:String):void {
 					Alert.show( err );
-				},EditMonster.genData( type, profile, id ), false, MapEditor.getInstance());
+				},EditMonster.genData( type, profile, id ));
 				t.mRootPanel.title = profile;
 			}
 		]]>

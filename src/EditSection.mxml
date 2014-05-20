@@ -685,7 +685,7 @@
 						self.currentInfo = configs; 
 					}, 
 					function( err:String ):void { Alert.show(err); },
-					template, false, MapEditor.getInstance()
+					template
 				);
 			}
 			
