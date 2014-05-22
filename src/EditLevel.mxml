@@ -97,7 +97,7 @@
 					chapter[0].push( item.id +"|"+ item.name );
 					chapter[1].push( item.id );
 				}
-				
+					
 				if( ld )
 				{	
 					var data:Array = [
@@ -115,11 +115,10 @@
 							nextId = Math.max( nextId, int(level.level_id) );
 					}
 					
-					
 					data = [
-						[ "配置", "chapter_id", "combo_box", -1, "所属章节", chapter ],
-						[ "配置", "level_id", "string", String(nextId+1), "关卡id" ],
-						[ "配置", "level_name", "string", "关卡"+String(nextId+1), "关卡名" ]
+						[ "配置", "chapter_id", 	"combo_box", -1, "所属章节", chapter ],
+						[ "配置", "level_id", 	"string", String(nextId+1), "关卡id" ],
+						[ "配置", "level_name", 	"string", "关卡"+String(nextId+1), "关卡名" ]
 					];
 				}
 				

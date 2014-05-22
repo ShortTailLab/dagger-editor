@@ -8,6 +8,8 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import com.hurlant.crypto.symmetric.NullPad;
+			
 			import mapEdit.Component;
 			import mapEdit.Entity;
 			import mapEdit.SectionManager;
@@ -79,8 +81,13 @@
 				this.mEraseSection.addEventListener(MouseEvent.CLICK, this.eraseCurrentSection);
 				this.mEditSection.addEventListener(MouseEvent.CLICK, this.editCurrentSection);
 				
+				this.mEditLevel.addEventListener(MouseEvent.CLICK, this.editCurrentLevel);
+				
 				this.mSecDelayInput.restrict = ".0-9";
-				this.mSecDelayInput.addEventListener(FlexEvent.ENTER, this.onSectionDelayInput);
+				this.mSecDelayInput.addEventListener(FlexEvent.ENTER, this.onMonsterInfoUpdate);
+				
+				this.mTotalTimeInput.restrict = ".0-9";
+				this.mTotalTimeInput.addEventListener(FlexEvent.ENTER, this.onMonsterInfoUpdate);
 				
 				Runtime.getInstance().addEventListener( 
 					Runtime.SELECT_DATA_CHANGE, this.onSelectedTypeChange
@@ -219,14 +226,19 @@
 			
 			// ------------------------
 			////// event handling
-			public function onSectionDelayInput(e:Event=null):void
+			public function onMonsterInfoUpdate(e:Event=null):void
 			{
 				try{
-					var val:Number = Number( this.mSecDelayInput.text );
-					for each( var item:Entity in this.mSelectedComponents )
-						item.sectionDelay = val;
+					var val:Number = 0, val2:Number = 0, item:Entity = null;
+					val = Number( this.mSecDelayInput.text );
+					val2 = Number( this.mTotalTimeInput.text );
+					for each( item in this.mSelectedComponents )
+					{
+						item.sectionDelay 	= val;
+						item.totalTime 		= val2;
+					}
 						
-					MapEditor.getInstance().writeToStatusBar("更改延迟时间");
+					MapEditor.getInstance().writeToStatusBar("更改怪物基本信息");
 				}catch ( err:Error ) { return; }
 			}
 			
@@ -331,6 +343,8 @@
 					this.mSelectFrame.y = this.mouseY;
 					this.mSelectFrame.visible = true;
 				}
+				
+				this.stage.focus = this;
 			}
 			protected var mLastMousePos:Point = new Point();
 			public function onMouseMove(e:MouseEvent):void
@@ -515,6 +529,7 @@
 				var changeType:ContextMenuItem = new ContextMenuItem("更换类型");
 				changeType.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:Event):void
 				{
+					e.stopPropagation();
 					var enemies:Object = Data.getInstance().getEnemiesByLevelId( 
 						Runtime.getInstance().currentLevelID
 					);
@@ -544,7 +559,8 @@
 				if( item as Entity )
 				{
 					item.contextMenu = menu;
-					this.mSecDelayInput.text = String((item as Entity).sectionDelay);
+					this.mSecDelayInput.text 	= String((item as Entity).sectionDelay);
+					this.mTotalTimeInput.text	= String((item as Entity).totalTime);
 				}
 				
 				this.updateSelectedList();
@@ -573,6 +589,7 @@
 				}
 				
 				this.mSecDelayInput.text = null;
+				this.mTotalTimeInput.text = null;
 				this.mSelectedComponents = [];
 				this.copyComponents();
 				this.updateSelectedList();
@@ -659,6 +676,27 @@
 					item.x = coord.x; item.y = coord.y;
 					this.insertComponent( item );
 				}
+			}
+			
+			//
+			public function editCurrentLevel(e:Event=null):void
+			{
+				var lid:String = Runtime.getInstance().currentLevelID;
+				if( !lid ) return;
+				
+				var template:Array = Utils.deepCopy( Data.getInstance().dynamicArgs.LevelConfig ) as Array || [],
+					info:Object    = Data.getInstance().getLevelConfigsById( lid );
+				
+				for each( var item:Array in template )
+				{
+					if( item[ConfigPanel.kKEY] in info )
+						item[ConfigPanel.kDEFAULT] = info[item[ConfigPanel.kKEY]];
+				}
+				
+				var self:EditSection = this;
+				new ConfigPanel().init( function ( configs:Object ):void {
+					Data.getInstance().updateLevelConfigsById( lid, configs );
+				}, function(err:String):void { Alert.show( err ); }, template );
 			}
 			
 			//
@@ -940,25 +978,28 @@
 		<s:Button id="mAppendSection" right="0" top="0" width="30" label="+" />
 	</s:Group>
 	<s:VGroup left="5" width="200" height="90%" verticalCenter="0">
-		<s:Panel id="mComponentInfoPanel" width="100%" height="75" borderColor="#DEDCDC"
+		<s:Panel id="mComponentInfoPanel" width="100%" height="100" borderColor="#DEDCDC"
 				 borderVisible="true" dropShadowVisible="false" title="怪物信息">
 			<s:Group left="5" right="5" top="5" bottom="5">
-				<s:Label id="mInfoMousePos0" left="5" top="10" bottom="10" text="延迟时间："/>
-				<s:TextInput id="mSecDelayInput" left="75" right="25" top="5" bottom="5" prompt="0"/>
+				<s:Label id="mInfoMousePos0" left="5" top="10" height="15" text="延迟时间："/>
+				<s:Label id="mInfoMousePos1" left="5" bottom="10" height="15" text="执行时间："/>
+				<s:TextInput id="mSecDelayInput" left="75" right="25" top="5" height="20" prompt="0"/>
+				<s:TextInput id="mTotalTimeInput" left="75" right="25" top="32" height="20" prompt="0"/>
 			</s:Group>
 		</s:Panel>
 		<s:Panel id="mSelectedInfoPanel" width="100%" height="150" borderColor="#DEDCDC"
 				 borderVisible="true" dropShadowVisible="false" title="选择信息">
 			<s:List id="mSelectedList" left="5" right="5" top="5" bottom="5" borderVisible="false"></s:List>
 		</s:Panel>
-		<s:Panel id="mSectionInfoPanel" width="100%" height="155" borderColor="#DEDCDC"
+		<s:Panel id="mSectionInfoPanel" width="100%" height="185" borderColor="#DEDCDC"
 				 borderVisible="true" dropShadowVisible="false" title="编辑信息">
 			<s:Group left="5" right="5" top="5" bottom="5">
-				<s:Button id="mEditSection" left="5" bottom="5" width="85" label="编辑回合"/>
+				<s:Button id="mEditSection" left="5" bottom="55" width="85" label="编辑回合"/>
 				<s:Button id="mCopySection" left="5" bottom="30" width="85" label="复制回合"/>
-				<s:Button id="mPasteSection" right="5" bottom="30" width="85" label="粘贴回合"
+				<s:Button id="mEditLevel" left="5" bottom="5" width="85" label="编辑关卡"/>
+				<s:Button id="mPasteSection" right="5" bottom="55" width="85" label="粘贴回合"
 						  chromeColor="#FDB9B9" enabled="false"/>
-				<s:Button id="mEraseSection" right="5" bottom="5" width="85" label="删除回合"
+				<s:Button id="mEraseSection" right="5" bottom="30" width="85" label="删除回合"
 						  chromeColor="#FDB9B9"/>
 				<s:Label id="mInfoMousePos" left="5" top="5" text="鼠标位置：(0, 0)"/>
 				<s:Label id="mInfoNumComponents" left="5" top="25" text="实体数量：0"/>

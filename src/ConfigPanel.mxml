@@ -24,9 +24,11 @@
 			import spark.components.ComboBox;
 			import spark.components.DropDownList;
 			import spark.components.Form;
+			import spark.components.Group;
 			import spark.components.HGroup;
 			import spark.components.Label;
 			import spark.components.VGroup;
+			import spark.components.supportClasses.DropDownController;
 			import spark.components.supportClasses.TextBase;
 			import spark.primitives.Line;
 			
@@ -79,6 +81,7 @@
 						this.mKey2Group[item[kTAG]] = group;
 					}
 					
+					this.mKey2Data[item[kKEY]] = item;
 					this.mKey2Group[item[kTAG]].addElement( 
 						this.createAndRegisterItem( item ) 
 					);
@@ -86,8 +89,6 @@
 					var rule:HRule = new HRule;
 					rule.percentWidth = 100; rule.height = 1; rule.x = 75;
 					this.mKey2Group[item[kTAG]].addElement( rule );
-					
-					this.mKey2Data[item[kKEY]] = item;
 					
 					if( item[kTYPE] == "MonsterType" || 
 						item[kTYPE] == "BulletType" ||
@@ -224,8 +225,27 @@
 								if( warn ) this.mCBError("请选择："+data[kDESC]);
 								return null;
 							} else {
-								ret[key] = this.mKey2Data[kOTHER][1][ind];
+								ret[key] = data[kOTHER][1][ind];
 							}
+						}
+						else if ( data[kTYPE] == "map" )
+						{
+							var nameList:Array = [];
+							var containner:VGroup = item[0] as VGroup;
+							var subTarget:DropDownList = null;
+							for( i=0; i<containner.numElements; i++ )
+							{
+								subTarget = containner.getElementAt( i ) as DropDownList;
+								if( !subTarget ) continue;
+								ind = subTarget.selectedIndex;
+								if( ind == -1 )
+								{
+									if( warn ) this.mCBError("请选择："+data[kDESC]);
+									return null;
+								}
+								nameList.push( data[kOTHER][1][ind] );
+							}
+							ret[key] = nameList;
 						}
 						else if( data[kTYPE] == "string" )
 						{
@@ -274,7 +294,7 @@
 				{
 					var input:TextInput = new TextInput;
 					input.text 	= item[kDEFAULT];
-					input.width	= 75;
+					input.width	= 100;
 	
 					if( item.type == "float" ) input.restrict = "\.\0-9\\-";
 					else if( item.type == "int" ) input.restrict = "\0-9\\-";
@@ -286,7 +306,7 @@
 				{
 					var str_input:TextInput = new TextInput;
 					str_input.text = item[kDEFAULT];
-					str_input.width = 75;
+					str_input.width = 100;
 					str_input.editable = true;
 					
 					head.addElement( str_input );
@@ -312,13 +332,13 @@
 					
 					var x_width:TextInput = new TextInput;
 					x_width.text 	= tmp_x;
-					x_width.width	= 75;
+					x_width.width	= 100;
 					x_width.restrict = "\0-9\.\\-";
 					head.addElement( x_width );
 					
 					var y_height:TextInput = new TextInput;
 					y_height.text 	= tmp_y;
-					y_height.width	= 75;
+					y_height.width	= 100;
 					y_height.restrict = "\0-9\.\\-";
 					head.addElement( y_height );
 					
@@ -339,7 +359,7 @@
 					var comboBox:DropDownList = new DropDownList;
 					comboBox.dataProvider = new ArrayList( item[kOTHER][0] );
 					comboBox.prompt = "请选择";
-					comboBox.width = 100;
+					comboBox.width = 150;
 					
 					var ind:int = -1, countor:int = 0;
 					for each( var mlk:String in item[kOTHER][1] )
@@ -389,6 +409,7 @@
 					}
 					
 					comboBox = new DropDownList;
+					comboBox.width = 150;
 					comboBox.dataProvider = new ArrayList( monsterList );
 					comboBox.prompt = "请选择";
 					comboBox.selectedIndex = ind;
@@ -399,7 +420,7 @@
 						var oldData:Object = self.parse( false );
 						if( oldData ) 
 						{
-							for each( var inn:Array in data )
+							for each( inn in data )
 							{
 								if( inn[kKEY] in oldData )
 									inn[kDEFAULT] = oldData[inn[kKEY]];
@@ -447,6 +468,7 @@
 					}
 					
 					comboBox = new DropDownList;
+					comboBox.width = 150;
 					comboBox.dataProvider = new ArrayList( itemList[0] );
 					comboBox.prompt = "请选择";
 					
@@ -463,13 +485,13 @@
 					
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
-					this.mKey2Data[kOTHER] = itemList;
+					this.mKey2Data[item[kKEY]][kOTHER] = itemList;
 				}
 				else if ( item[kTYPE] == "path" || item[kTYPE] == "path2" )
 				{
 					var pathInput:TextInput = new TextInput;
 					pathInput.text 	= JSON.stringify(item[kDEFAULT]);;
-					pathInput.width	= 75;
+					pathInput.width	= 150;
 					pathInput.editable = false;
 					head.addElement( pathInput );
 					
@@ -487,6 +509,60 @@
 					});
 					
 					this.mKey2UIComponents[item[kKEY]].push(pathInput);
+				}
+				else if ( item[kTYPE] == "map" )
+				{
+					var nameList:Array = [[], []];
+					var IMAGE:File = Data.getInstance().resolvePath( "maps" );
+					if( IMAGE.exists && IMAGE.isDirectory )
+					{
+						var files:Array = IMAGE.getDirectoryListing();
+						for each( var file:File in files)
+						{
+							nameList[0].push( file.name.split(".")[0] );
+							nameList[1].push( file.name.split(".")[0] );
+						}
+					}
+					
+					var defaultList:Array = item[kDEFAULT] as Array || [];
+					
+					var mapGroup:VGroup = new VGroup;
+					head.addElement( mapGroup );
+					
+					function makeAMapComboBox( cmp:String ) 
+					{
+						comboBox = new DropDownList;
+						comboBox.width = 150;
+						comboBox.dataProvider = new ArrayList( nameList[0] );
+						comboBox.prompt = "请选择";
+						
+						ind = -1, countor = 0;
+						for each( mlk in nameList[1] )
+						{
+							if( mlk == cmp ) {
+								ind = countor;
+								break;
+							}
+							countor ++;
+						}
+						comboBox.selectedIndex = ind;
+						
+						mapGroup.addElement( comboBox );
+					}
+					
+					var addMap:Button 	= new Button;
+					addMap.label 		= "添加地图";
+					addMap.addEventListener(MouseEvent.CLICK, function(e:Event):void
+					{
+						makeAMapComboBox( -1 );
+					});
+					mapGroup.addElement( addMap );
+					
+					for each( var img:String in defaultList )
+						makeAMapComboBox( img );
+					
+					this.mKey2UIComponents[item[kKEY]].push( mapGroup );
+					this.mKey2Data[item[kKEY]][kOTHER] = nameList;
 				}
 				
 				return head;

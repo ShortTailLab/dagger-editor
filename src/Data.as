@@ -15,6 +15,7 @@ package
 	import flash.filesystem.FileStream;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
+	import flash.net.dns.AAAARecord;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
@@ -483,7 +484,7 @@ package
 		{
 			if( !(lid in this.mLevelInstancesTable) )
 				this.mLevelInstancesTable[lid] = {
-					sections : [], behavior : {}, trigger : {}
+					sections : [], behavior : {}, trigger : {}, config : {}
 				};
 			return this.mLevelInstancesTable[lid];
 		}
@@ -497,6 +498,17 @@ package
 		{
 			this.getLevelById( lid ).sections = inst;
 			this.writeToLevel( lid );
+		}
+		
+		public function updateLevelConfigsById( lid:String, inst:Object ):void
+		{
+			this.getLevelById( lid ).config = inst;
+			this.writeToLevel( lid );
+		}
+		
+		public function getLevelConfigsById( lid:String ):Object
+		{
+			return this.getLevelById(lid).config || {};
 		}
 		
 		public function getEnemyBehaviorsById( lid:String, eid:String ):Object
@@ -903,7 +915,7 @@ package
 						callback();
 					}
 				}
-			}	
+			}
 			var IMAGE:File = this.resolvePath( "skins" );
 			if( IMAGE.exists && IMAGE.isDirectory )
 			{
@@ -1077,6 +1089,7 @@ package
 						type : inst.type,
 						coord : "@@cc.p("+inst.x+","+inst.y+")@@",
 						sectionDelay : inst.sectionDelay,
+						totalTime : inst.totalTime,
 						id : inst.id
 					} );
 				}
@@ -1084,10 +1097,10 @@ package
 				export.sections.push( next );
 			}
 			
-//			var monsters:Object = Data.getInstance().getMonstersByLevelId( lid );
-//			var bullets:Object = Data.getInstance().getBulletsByLevelId( lid );
-//			var traps:Object = Data.getInstance().getTrapsByLevelId( lid );
+			//
+			export.config = this.getLevelConfigsById( lid );
 			
+			//
 			var item:Object = null, bhTable:Object = {};
 			export.profile = {};
 			for( var index:String in profile.monsters )

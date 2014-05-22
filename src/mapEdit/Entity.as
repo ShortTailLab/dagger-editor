@@ -30,6 +30,7 @@ package mapEdit
 		// --- > related data 
 		private var mTriggeredTime:Number = -1;
 		private var mSectionDelay:Number = 1;
+		private var mTotalTime:Number = 1;
 		//private var x, y 
 		
 		public function reset( type:String ):void 
@@ -90,6 +91,11 @@ package mapEdit
 				this.mSectionDelay = data.sectionDelay;
 			else 
 				this.mSectionDelay = 1;
+			
+			if( data.hasOwnProperty("totalTime") )
+				this.mTotalTime = data.totalTime;
+			else 
+				this.mTotalTime = 0;
 		}
 		
 		override public function serialize():Object
@@ -102,7 +108,8 @@ package mapEdit
 			obj.x 		= this.x/EditSection.kSceneScalor;
 			obj.y 		= (EditSection.kSceneHeight-this.y)/EditSection.kSceneScalor;
 			
-			obj.sectionDelay = this.mSectionDelay;
+			obj.sectionDelay 	= this.mSectionDelay;
+			obj.totalTime 		= this.mTotalTime;
 			
 			return obj;
 		}
@@ -132,6 +139,14 @@ package mapEdit
 		
 		public function get sectionDelay():Number {
 			return this.mSectionDelay;
+		}
+		
+		public function set totalTime(v:Number):void {
+			this.mTotalTime = v;
+		}
+		
+		public function get totalTime():Number {
+			return this.mTotalTime;
 		}
 		
 		override public function select(value:Boolean):void
