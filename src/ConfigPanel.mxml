@@ -54,15 +54,20 @@
 				this.refresh( this.mData );	
 			};
 			
+			protected static var isStartedHACK:Boolean = false; 
 			public function init( onComplete:Function, onError:Function, data:Array ):void
 			{
 				this.mCBComplete = onComplete;
 				this.mCBError 	 = onError;
 				this.mData 		 = data;
 				
-				PopUpManager.addPopUp( this, MapEditor.getInstance(), true );
-				PopUpManager.centerPopUp( this );
-				this.stage.focus = this;
+				if( !ConfigPanel.isStartedHACK )
+				{
+					PopUpManager.addPopUp( this, MapEditor.getInstance(), true );
+					PopUpManager.centerPopUp( this );
+					this.stage.focus = this;
+					ConfigPanel.isStartedHACK = true;
+				}
 			}
 			
 			public function refresh_data( data:Array ):void
@@ -153,6 +158,7 @@
 			{
 				MapEditor.getInstance().writeToStatusBar( "用户取消了配置【"+this.mRootPanel.title+"】的操作！" );
 				PopUpManager.removePopUp( this );
+				ConfigPanel.isStartedHACK = false;
 			}
 			
 			protected function parse( warn:Boolean=true ):Object
