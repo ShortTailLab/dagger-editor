@@ -81,6 +81,7 @@
 				this.mEditData.addEventListener(MouseEvent.CLICK, 
 					function(evt:MouseEvent):void
 					{
+						evt.stopPropagation();
 						MapEditor.getInstance().mEditMonster.onEditEnemy( 
 							Runtime.getInstance().currentLevelID, 
 							self.mSelectedLabel.text
@@ -91,6 +92,7 @@
 				this.mEditBehavior.addEventListener(MouseEvent.CLICK, 
 					function(evt:MouseEvent):void
 					{
+						evt.stopPropagation();
 						var enemy:Object = Data.getInstance().getEnemyProfileById( 
 							Runtime.getInstance().currentLevelID, 
 							self.mSelectedLabel.text
@@ -107,6 +109,7 @@
 				this.mEditTrigger.addEventListener(MouseEvent.CLICK, 
 					function(evt:MouseEvent):void
 					{
+						evt.stopPropagation();
 						if(self.mSelection) 
 							MonsterList.OpenTriggerEditor( self.mSelection as Entity );
 					}
@@ -115,6 +118,7 @@
 				this.mEraseSelf.addEventListener(MouseEvent.CLICK,
 					function(evt:MouseEvent):void
 					{
+						evt.stopPropagation();
 						var enemy:Object = Data.getInstance().getEnemyProfileById( 
 							Runtime.getInstance().currentLevelID, 
 							self.mSelectedLabel.text
@@ -137,6 +141,7 @@
 				this.mCopy.addEventListener(MouseEvent.CLICK,
 					function(evt:MouseEvent):void
 					{
+						evt.stopPropagation();
 						if( self.mMonsterList.selectedIndex == -1 ) return;
 						Runtime.getInstance().pasteTarget = self.mMonsterList.selectedItem.id;
 						MapEditor.getInstance().writeToStatusBar(
