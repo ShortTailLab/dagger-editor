@@ -28,9 +28,9 @@ package mapEdit
 		}
 		
 		// --- > related data 
-		private var mTriggeredTime:Number = -1;
-		private var mSectionDelay:Number = 1;
-		private var mTotalTime:Number = 1;
+		private var mStartDelay:Number 	= 1;
+		private var mDelay:Number 		= 1;
+		private var mTeamNumber:String 	= null;
 		//private var x, y 
 		
 		public function reset( type:String ):void 
@@ -87,15 +87,20 @@ package mapEdit
 			this.y 			= EditSection.kSceneHeight - data.y * EditSection.kSceneScalor;
 			this.globalId 	= data.id;
 			
-			if( data.hasOwnProperty("sectionDelay") )
-				this.mSectionDelay = data.sectionDelay;
+			if( data.hasOwnProperty("startDelay") )
+				this.mStartDelay = data.startDelay;
 			else 
-				this.mSectionDelay = 1;
+				this.mStartDelay = 1;
 			
-			if( data.hasOwnProperty("totalTime") )
-				this.mTotalTime = data.totalTime;
+			if( data.hasOwnProperty("delay") )
+				this.mDelay = data.delay;
 			else 
-				this.mTotalTime = 0;
+				this.mDelay = 1;
+			
+			if( data.hasOwnProperty("team") )
+				this.mTeamNumber = data.team;
+			else 
+				this.mTeamNumber = null;
 		}
 		
 		override public function serialize():Object
@@ -108,8 +113,10 @@ package mapEdit
 			obj.x 		= this.x/EditSection.kSceneScalor;
 			obj.y 		= (EditSection.kSceneHeight-this.y)/EditSection.kSceneScalor;
 			
-			obj.sectionDelay 	= this.mSectionDelay;
-			obj.totalTime 		= this.mTotalTime;
+			obj.startDelay 	= this.mStartDelay;
+			obj.delay 		= this.mDelay;
+			if( this.mTeamNumber && this.mTeamNumber != "null" )
+				obj.team 		= this.mTeamNumber;
 			
 			return obj;
 		}
@@ -126,27 +133,32 @@ package mapEdit
 			return Number( -this.y/Runtime.getInstance().sceneScalor );
 		}
 		
-		public function set triggeredTime(v:Number):void {
-			this.mTriggeredTime = v;
-		}
-		public function get triggeredTime():Number {
-			return this.mTriggeredTime;
+		public function set startDelay(v:Number):void {
+			this.mStartDelay = v;
 		}
 		
-		public function set sectionDelay(v:Number):void {
-			this.mSectionDelay = v;
+		public function get startDelay():Number {
+			return this.mStartDelay;
 		}
 		
-		public function get sectionDelay():Number {
-			return this.mSectionDelay;
+		public function set delay(v:Number):void {
+			this.mDelay = v;
 		}
 		
-		public function set totalTime(v:Number):void {
-			this.mTotalTime = v;
+		public function get delay():Number {
+			return this.mDelay;
 		}
 		
-		public function get totalTime():Number {
-			return this.mTotalTime;
+		public function set teamNumber(v:String):void
+		{
+			if( !v  || v == "" || v == "null" ) this.mTeamNumber = null;
+			else 
+				this.mTeamNumber = v;
+		}
+		
+		public function get teamNumber():String
+		{
+			return this.mTeamNumber;
 		}
 		
 		override public function select(value:Boolean):void
@@ -160,47 +172,16 @@ package mapEdit
 					-mSkin.width*0.5, -mSkin.height, mSkin.width, mSkin.height
 				);
 				this.addChild( this.mSelectedFrame );
-				
-				this.showTimeTriggerTips();
 			}
 			else if(!value && mSelectedFrame)
 			{
 				if( this.mShadowTips )
 				{
-					this.removeEventListener(Event.ENTER_FRAME, onEnterFrame);
 					this.removeChild(mShadowTips);
 					this.mShadowTips = null;
 				}
 				this.removeChild(mSelectedFrame);
 				this.mSelectedFrame = null;
-			}
-		}
-		
-		public function showTimeTriggerTips():void
-		{
-			if(this.mTriggeredTime >= 0 && !this.mShadowTips)
-			{
-				this.mShadowTips = new Entity( this.mClassId, false );
-				this.mShadowTips.setBaseSize( 50 );
-				this.mShadowTips.alpha = 0.5;
-				this.mShadowTips.x = 0;
-				this.mShadowTips.y = 0;
-				this.addChild(mShadowTips);
-				this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
-			}
-			else if(this.mTriggeredTime < 0 && mShadowTips)
-			{
-				this.removeEventListener(Event.ENTER_FRAME, onEnterFrame);
-				this.removeChild(mShadowTips);
-				mShadowTips = null;
-			}
-		}
-		
-		private function onEnterFrame(e:Event):void
-		{
-			if(this.mTriggeredTime>0 && mShadowTips)
-			{
-				this.mShadowTips.y = -this.mTriggeredTime/2-this.y;
 			}
 		}
 		
