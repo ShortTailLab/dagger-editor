@@ -1088,8 +1088,9 @@ package
 					next.inst.push ( {
 						type : inst.type,
 						coord : "@@cc.p("+inst.x+","+inst.y+")@@",
-						sectionDelay : inst.sectionDelay,
-						totalTime : inst.totalTime,
+						startDelay : inst.startDelay,
+						delay : inst.delay,
+						team : inst.team,
 						id : inst.id
 					} );
 				}
