@@ -253,7 +253,26 @@
 							}
 							ret[key] = nameList;
 						}
-						else if( data[kTYPE] == "string" )
+						else if ( data[kTYPE] == "actorList" )
+						{
+							var actorList:Array = [];
+							containner = item[0] as VGroup;
+							subTarget = null;
+							for( i=0; i<containner.numElements; i++ )
+							{
+								subTarget = containner.getElementAt( i ) as DropDownList;
+								if( !subTarget ) continue;
+								ind = subTarget.selectedIndex;
+								if( ind == -1 )
+								{
+									if( warn ) this.mCBError("请选择："+data[kDESC]);
+									return null;
+								}
+								actorList.push( data[kOTHER][1][ind] );
+							}
+							ret[key] = actorList;
+						}
+						else if ( data[kTYPE] == "string" )
 						{
 							ret[key] = item[0].text;
 						} 
@@ -531,48 +550,91 @@
 						}
 					}
 					
-					var defaultList:Array = item[kDEFAULT] as Array || [];
+					this.makeComboList( head, item as Array, nameList );
+				}
+				else if ( item[kTYPE] == "actorList" )
+				{
+					var actorList:Array = [[], []];
+
+					sources = Data.getInstance().getMonstersByLevelId(
+						Runtime.getInstance().currentLevelID
+					);
+
+					sorted = [];
+					for each( one in sources )
+						sorted.push( one );
+					sorted.sortOn("monster_id");
 					
-					var mapGroup:VGroup = new VGroup;
-					head.addElement( mapGroup );
-					
-					function makeAMapComboBox( cmp:String ) 
+					for each( one in sorted )
 					{
-						comboBox = new DropDownList;
-						comboBox.width = 150;
-						comboBox.dataProvider = new ArrayList( nameList[0] );
-						comboBox.prompt = "请选择";
-						
-						ind = -1, countor = 0;
-						for each( mlk in nameList[1] )
-						{
-							if( mlk == cmp ) {
-								ind = countor;
-								break;
-							}
-							countor ++;
-						}
-						comboBox.selectedIndex = ind;
-						
-						mapGroup.addElement( comboBox );
+						actorList[0].push( one.monster_id +"|"+ one.monster_name );
+						actorList[1].push( one.monster_id );
 					}
 					
-					var addMap:Button 	= new Button;
-					addMap.label 		= "添加地图";
-					addMap.addEventListener(MouseEvent.CLICK, function(e:Event):void
-					{
-						makeAMapComboBox( -1 );
-					});
-					mapGroup.addElement( addMap );
-					
-					for each( var img:String in defaultList )
-						makeAMapComboBox( img );
-					
-					this.mKey2UIComponents[item[kKEY]].push( mapGroup );
-					this.mKey2Data[item[kKEY]][kOTHER] = nameList;
+					this.makeComboList( head, item as Array, actorList );
 				}
 				
 				return head;
+			}
+			
+			protected function makeComboList( root:FormItem, item:Array, data:Array ):void
+			{	
+				var mapGroup:VGroup = new VGroup;
+				root.addElement( mapGroup );
+				
+				var comboList:Array = [];
+				function makeAComboBox( cmp:String ) 
+				{
+					var comboBox:DropDownList = new DropDownList;
+					comboBox.width = 150;
+					comboBox.dataProvider = new ArrayList( data[0] );
+					comboBox.prompt = "请选择";
+					
+					var ind:int = -1, countor:int = 0;
+					for each( var mlk:String in data[1] )
+					{
+						if( mlk == cmp ) {
+							ind = countor;
+							break;
+						}
+						countor ++;
+					}
+					comboBox.selectedIndex = ind;
+					
+					comboList.push(comboBox);
+					mapGroup.addElement( comboBox );
+				}
+				
+				function eraseAComboBox():void
+				{
+					mapGroup.removeElement( comboList.pop() );
+				}
+				
+				var ctrlGroup:HGroup = new HGroup;
+				var make:Button = new Button;
+				make.label = "新增";
+				make.addEventListener( MouseEvent.CLICK, function(e:Event):void
+				{
+					makeAComboBox( -1 );
+				});
+				
+				var erase:Button = new Button;
+				erase.label = "删除";
+				erase.addEventListener( MouseEvent.CLICK, function(e:Event):void
+				{
+					eraseAComboBox();	
+				});
+				
+				ctrlGroup.addElement( make );
+				ctrlGroup.addElement( erase );
+				mapGroup.addElement( ctrlGroup );
+				
+				var defaultList:Array = item[kDEFAULT] as Array || [];
+				for each( var img:String in defaultList )
+				makeAComboBox( img );
+				
+				this.mKey2UIComponents[item[kKEY]].push( mapGroup );
+				this.mKey2Data[item[kKEY]][kOTHER] = data;
 			}
 			
 			public static function mergeTo(from:Array, to:Array, rewrite:Boolean = false):void
