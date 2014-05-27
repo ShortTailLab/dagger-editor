@@ -418,14 +418,6 @@ package
 			}
 			
 			// clean up
-			var data:Array = this.getLevelDataById( level_id ) as Array;
-			for( var ind:int=data.length-1; ind>=0; ind -- )
-			{
-				if( data[ind].type == id )
-					data.splice( ind, 1 );
-			}
-			this.updateLevelDataById( level_id, data );
-			
 			delete profile.monsters[id];
 			this.writeToProfile( level_id, profile );
 			Runtime.getInstance().onProfileDataChange();
@@ -491,7 +483,7 @@ package
 		
 		public function getLevelDataById( lid:String ):Array
 		{
-			return this.getLevelById( lid ).sections;
+			return this.getLevelById( lid ).sections || [];
 		}
 		
 		public function updateLevelDataById( lid:String, inst:Array ):void
@@ -677,7 +669,6 @@ package
 			}
 			// chapter profiles
 
-			
 			this.mLevelInstancesTable = {};
 			var LEVEL:File = this.resolvePath("saved/level");
 			if( LEVEL.exists && LEVEL.isDirectory )
@@ -903,13 +894,16 @@ package
 				onComplete( msg + "\n【成功】载入"+length+"个图像资源\n");
 			}
 			
-			var alldone:Function = function(face:String):Function
+			var alldone:Function = function(face:String, done:Boolean):Function
 			{
 				return function(e:Event):void
 				{
-					var loader:Loader = (e.target as LoaderInfo).loader; 
-					self.mEnemySkins[face] = Bitmap(loader.content).bitmapData;
-					MapEditor.getInstance().addLog("加载"+face+"成功");
+					if( done )
+					{
+						MapEditor.getInstance().addLog("加载"+face+"成功");
+						var loader:Loader = (e.target as LoaderInfo).loader; 
+						self.mEnemySkins[face] = Bitmap(loader.content).bitmapData;
+					}
 					if( ++countor >= length ) {
 						MapEditor.getInstance().addLog("全部skin加载完成");
 						callback();
@@ -931,10 +925,8 @@ package
 					stream.close();
 					
 					var loader:Loader = new Loader;
-					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(name));
-					loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function():void{
-						onComplete("【失败】加载图像"+name+"失败");
-					});
+					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(name, true));
+					loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, alldone(name, false));
 					loader.loadBytes(bytes);
 					
 					length ++;
@@ -947,6 +939,22 @@ package
 		private function validityCheckAndCleanUp():String
 		{
 			var result:String = "";
+			
+			for each( var chapter:Object in this.mChapterProfiles )
+			{
+				for each( var level:Object in chapter.levels )
+				{
+					for each( var monster:Object in level.monsters )
+					{
+						if( this.isMonster( monster.type ) ||
+							this.isBullet( monster.type ) ||
+							this.isTrap( monster.type ) ) continue;
+						
+						this.eraseMonster( level.level_id, monster.monster_id );
+						result += "【删除】未定义的敌人类型"+monster.monster_id+"("+monster.type+")";
+					}
+				}
+			}
 			
 			// [TODO] add args checking for behaviors
 			for( var lid:String in this.mLevelInstancesTable )

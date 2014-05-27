@@ -376,6 +376,7 @@
 					var array:TextInput = new TextInput;
 					array.text = String(JSON.stringify( item[kDEFAULT] ));
 					array.restrict = "\[\]\,\0-9\\- ";
+					array.width = 150;
 					
 					head.addElement( array );
 					this.mKey2UIComponents[item[kKEY]].push( array );
