@@ -83,11 +83,14 @@
 				
 				this.mEditLevel.addEventListener(MouseEvent.CLICK, this.editCurrentLevel);
 				
-				this.mSecDelayInput.restrict = ".0-9";
-				this.mSecDelayInput.addEventListener(FlexEvent.ENTER, this.onMonsterInfoUpdate);
+				this.mStartDelayInput.restrict = ".0-9";
+				this.mStartDelayInput.addEventListener(FlexEvent.ENTER, this.onMonsterInfoUpdate);
 				
-				this.mTotalTimeInput.restrict = ".0-9";
-				this.mTotalTimeInput.addEventListener(FlexEvent.ENTER, this.onMonsterInfoUpdate);
+				this.mDelayInput.restrict = ".0-9";
+				this.mDelayInput.addEventListener(FlexEvent.ENTER, this.onMonsterInfoUpdate);
+				
+				this.mTeamNumberInput.restrict = "0-9a-z";
+				this.mTeamNumberInput.addEventListener(FlexEvent.ENTER, this.onMonsterInfoUpdate);
 				
 				Runtime.getInstance().addEventListener( 
 					Runtime.SELECT_DATA_CHANGE, this.onSelectedTypeChange
@@ -229,13 +232,16 @@
 			public function onMonsterInfoUpdate(e:Event=null):void
 			{
 				try{
-					var val:Number = 0, val2:Number = 0, item:Entity = null;
-					val = Number( this.mSecDelayInput.text );
-					val2 = Number( this.mTotalTimeInput.text );
+					var val:Number = 0, val2:Number = 0, team:String = null, item:Entity = null;
+					val = Number( this.mStartDelayInput.text );
+					val2 = Number( this.mDelayInput.text );
+					team = String( this.mTeamNumberInput.text );
+					
 					for each( item in this.mSelectedComponents )
 					{
-						item.sectionDelay 	= val;
-						item.totalTime 		= val2;
+						item.startDelay 	= val;
+						item.delay 			= val2;
+						item.teamNumber 	= team;
 					}
 						
 					MapEditor.getInstance().writeToStatusBar("更改怪物基本信息");
@@ -559,8 +565,9 @@
 				if( item as Entity )
 				{
 					item.contextMenu = menu;
-					this.mSecDelayInput.text 	= String((item as Entity).sectionDelay);
-					this.mTotalTimeInput.text	= String((item as Entity).totalTime);
+					this.mStartDelayInput.text 	= String((item as Entity).startDelay);
+					this.mDelayInput.text	= String((item as Entity).delay);
+					this.mTeamNumberInput.text 	= String((item as Entity).teamNumber);
 				}
 				
 				this.updateSelectedList();
@@ -588,8 +595,9 @@
 					item.contextMenu = null;
 				}
 				
-				this.mSecDelayInput.text = null;
-				this.mTotalTimeInput.text = null;
+				this.mStartDelayInput.text 	= null;
+				this.mDelayInput.text 	= null;
+				this.mTeamNumberInput.text 	= null;
 				this.mSelectedComponents = [];
 				this.copyComponents();
 				this.updateSelectedList();
@@ -669,7 +677,10 @@
 				{
 					item = EditSection.makeComponentByType( info.data.type );
 					if( !item ) continue;
+					
 					item.unserialize( info.data );
+					item.globalId = null;
+					
 					var coord:Point = EditSection.getGridPos( 
 						new Point( section.mouseX+info.pos.x, section.mouseY+info.pos.y )
 					);
@@ -978,13 +989,15 @@
 		<s:Button id="mAppendSection" right="0" top="0" width="30" label="+" />
 	</s:Group>
 	<s:VGroup left="5" width="200" height="90%" verticalCenter="0">
-		<s:Panel id="mComponentInfoPanel" width="100%" height="100" borderColor="#DEDCDC"
+		<s:Panel id="mComponentInfoPanel" width="100%" height="125" borderColor="#DEDCDC"
 				 borderVisible="true" dropShadowVisible="false" title="怪物信息">
 			<s:Group left="5" right="5" top="5" bottom="5">
-				<s:Label id="mInfoMousePos0" left="5" top="10" height="15" text="延迟时间："/>
-				<s:Label id="mInfoMousePos1" left="5" bottom="10" height="15" text="执行时间："/>
-				<s:TextInput id="mSecDelayInput" left="75" right="25" top="5" height="20" prompt="0"/>
-				<s:TextInput id="mTotalTimeInput" left="75" right="25" top="32" height="20" prompt="0"/>
+				<s:Label id="mInfoMousePos0" left="5" top="12" height="15" text="抬手时间："/>
+				<s:Label id="mInfoMousePos1" left="5" top="37" height="15" text="延迟时间："/>
+				<s:Label id="mInfoMousePos2" left="5" top="64" height="15" text="队伍编号："/>
+				<s:TextInput id="mStartDelayInput" left="75" right="25" top="5" height="20" prompt="0"/>
+				<s:TextInput id="mDelayInput" left="75" right="25" top="32" height="20" prompt="0"/>
+				<s:TextInput id="mTeamNumberInput" left="75" right="25" top="59" height="20" prompt="0"/>
 			</s:Group>
 		</s:Panel>
 		<s:Panel id="mSelectedInfoPanel" width="100%" height="150" borderColor="#DEDCDC"
