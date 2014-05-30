@@ -62,6 +62,8 @@
 			public static const ICON_EVERY:Class;
 			[Embed(source="assets/random.png")] 
 			public static const ICON_RANDOM:Class;
+			[Embed(source="assets/fold.png")] 
+			public static const ICON_FOLD:Class;
 			
 			private function onCreation():void {
 				this.mTabDict = new Object();
@@ -359,7 +361,7 @@
 			
 			private function onPressAutoLayout(event:Event):void {
 				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
-				this.mTabDict[current].bt.autoLayout();
+				this.mTabDict[current].bt.updateTree(true);
 			}
 			
 			private function onSearchChanged(event:Event):void {

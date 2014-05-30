@@ -6,6 +6,7 @@
 				   dropShadowVisible="false">
 	<fx:Script>
 		<![CDATA[
+			import behaviorEdit.NodeTypePanel;
 			import behaviorEdit.PathEditPanel;
 			
 			import manager.EventManager;
@@ -25,11 +26,11 @@
 			private var mType:int;
 			
 			// cache
-			private var mMaxDepth:int = -1;
-			private var mMaxSiblings:int = -1;
-			private var mSiblingIndex:int = -1;
-			private var mNodeDepth:int = -1;
-			private var mIsInSubTree:int = -1;
+//			private var mMaxDepth:int = -1;
+//			private var mMaxSiblings:int = -1;
+//			private var mSiblingIndex:int = -1;
+//			private var mNodeDepth:int = -1;
+//			private var mIsInSubTree:int = -1;
 			
 			// node vars
 			private var mNodeVars:Array = [];
@@ -96,6 +97,9 @@
 				var item1:ContextMenuItem = new ContextMenuItem("删除");
 				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteNode);
 				menu.addItem(item1);
+				item = new ContextMenuItem("折叠/展开");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onFoldNode);
+				menu.addItem(item);
 				var item2:ContextMenuItem = new ContextMenuItem("解锁子行为");
 				item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onUnlockNode);
 				menu.addItem(item2);
@@ -160,7 +164,7 @@
 				this.mCanvas.CURRENT_EDIT_NODE = node;
 				
 				if (!this.mParent) return;
-				this.mCanvas.DRAGGING_NODES = node.getAllChildrens();
+				this.mCanvas.DRAGGING_NODES = [node];
 				this.mCanvas.DRAGGING_INFOS = [];
 				for each (var n:BTNode in this.mCanvas.DRAGGING_NODES) {
 					this.mCanvas.DRAGGING_INFOS.push({x:n.x, y:n.y, index:(n.parent as Group).getChildIndex(n)});
@@ -229,7 +233,19 @@
 					node.nodeName = tName;
 					node.nodeData = tData;
 					node.writeDataBackToParent();
-					this.mCanvas.updateTree(true);
+//					node.mParent.replaceChildWith(node, this.mCanvas.TARGET_NODE);
+					var nearest:BTNode = node.checkNearestRootNode(this.mCanvas.TARGET_NODE);
+					if (nearest) {
+						nearest.mParent.updateComponents();
+						nearest.mParent.updateChildrens();
+					}
+					else {
+						this.mCanvas.TARGET_NODE.mParent.updateComponents();
+						this.mCanvas.TARGET_NODE.mParent.updateChildrens();
+						node.mParent.updateComponents();
+						node.mParent.updateChildrens();
+					}
+					this.mCanvas.autoLayout();
 					this.mCanvas.setModified(true);
 				}
 				else if (this.mCanvas.TARGET_NODE && this.mCanvas.TARGET_TYPE == 2) {
@@ -242,7 +258,11 @@
 					}
 					this.mCanvas.TARGET_NODE.nodeData.children.push(sData);
 					this.mCanvas.TARGET_NODE.writeDataBackToParent();
+					this.mCanvas.TARGET_NODE.mParent.updateComponents();
+					this.mCanvas.TARGET_NODE.mParent.updateChildrens();
+//					this.mCanvas.TARGET_NODE.mParent.replaceChildWith(null, node);
 					node.onDeleteNode();
+					this.mCanvas.autoLayout();
 				}
 				this.mCanvas.TARGET_NODE = null;
 				this.mCanvas.DRAGGING_NODES = null;
@@ -272,6 +292,7 @@
 			}
 			
 			private function onMouseOverNext(event:Event):void {
+				if (this.isFolded()) return;
 				if (this.mCanvas.DRAGGING_NODES) {
 					var filter:spark.filters.GlowFilter = new spark.filters.GlowFilter();
 					filter.color = 0x00FF00;
@@ -285,6 +306,7 @@
 			}
 			
 			private function onMouseOutNext(event:Event):void {
+				if (this.isFolded()) return;
 				if (this.mCanvas.DRAGGING_NODES) {
 					this.mNext.filters = [];
 					this.mCanvas.TARGET_NODE = null;
@@ -367,10 +389,11 @@
 						else {
 							this.mData.children.push(data);
 						}
-						this.clearChildrens();
 						this.writeDataBackToParent();
 					}
-					this.mCanvas.updateTree(true);
+					this.updateComponents();
+					this.updateChildrens();
+					this.mCanvas.autoLayout();
 					this.mCanvas.clearSelected();
 					this.mCanvas.setModified(true);
 					this.mBtn.filters = [];
@@ -410,15 +433,32 @@
 							this.mParent.nodeData.children.splice(index, 1);
 						}
 						this.mParent.writeDataBackToParent();
-//						this.mParent.updateComponents();
+						this.mParent.updateComponents();
+						this.mParent.updateChildrens();
+						this.mCanvas.autoLayout();
 					}
 					else {
 						this.mData = {type:"执行", children:[], data:null};
-//						this.updateComponents();
+						this.mCanvas.updateTree(true);
 					}
 				}
-				this.mCanvas.updateTree(true);
 				this.mCanvas.setModified(true);
+			}
+			
+			private function onFoldNode(event:Event):void {
+				if (!this.mData.children || this.mData.children.length == 0) {
+					return;
+				}
+				if (!this.isFolded()) {
+					this.mData.fold = true;
+				}
+				else {
+					this.mData.fold = false;
+				}
+				this.writeDataBackToParent();
+				this.mCanvas.setModified(true);
+				this.updateComponents();
+				this.mCanvas.autoLayout();
 			}
 			
 			private function onUnlockNode(event:Event):void {
@@ -437,7 +477,9 @@
 					root.nodeParent.writeDataBackToParent();
 					this.mCanvas.removeNodeFromCanvas(root);
 					this.mCanvas.setModified(true);
-					this.mCanvas.updateTree(true);
+					this.updateComponents();
+					this.updateChildrens();
+					this.mCanvas.autoLayout();
 				}
 			}
 			
@@ -457,29 +499,30 @@
 							}
 							this.mParent.writeDataBackToParent();
 //							this.mParent.updateComponents();
-							this.mCanvas.updateTree(true);
+							this.updateComponents();
+							this.updateChildrens();
+							this.mCanvas.autoLayout();
 						}
 					}
 					else {
 						this.mCanvas.setModified(true);
 						if (!this.mParent) {
 							this.mData = clipping;
-							this.clearChildrens();
-//							this.updateComponents();
+							this.mCanvas.updateTree(true);
 						}
 						else {
 							if (this.mParent.type == TYPE_ROOT) {
 								this.mParent.nodeData = clipping;
-								this.mParent.clearChildrens();
 							}
 							else {
 								index = this.mParent.mChildrens.indexOf(this);
 								this.mParent.nodeData.children[index] = clipping;
 							}
 							this.mParent.writeDataBackToParent();
-//							this.mParent.updateComponents();
+							this.mParent.updateComponents();
+							this.mParent.updateChildrens();
+							this.mCanvas.autoLayout();
 						}
-						this.mCanvas.updateTree(true);
 					}
 				}
 			}
@@ -490,6 +533,7 @@
 			}
 			
 			private function onPasteNodeToNext(event:Event):void {
+				if (this.isFolded()) return;
 				if (BTPanel.CLIPPING) {
 					var clipping:Object = Utils.cloneObjectData(BTPanel.CLIPPING);
 					if (this.type == TYPE_ROOT) {
@@ -500,8 +544,9 @@
 					}
 					this.writeDataBackToParent();
 					this.mCanvas.setModified(true);
-//					this.updateComponents();
-					this.mCanvas.updateTree(true);
+					this.updateComponents();
+					this.updateChildrens();
+					this.mCanvas.autoLayout();
 				}
 			}
 			
@@ -542,16 +587,17 @@
 							this["mInput"+i].visible = false;
 						}
 						this.mTitle.visible = false;
-//						if (!this.mData.children || (!this.mData.data && this.mData.children.length == 0 && !this.mData.type)) {
-//							this.mNextLine.visible = true;
-//							this.mNext.visible = true;
-//							this.mNextLine.x = 50;
-//							this.mNext.x = 100;
-//						}
-//						else {
+						if (this.isFolded()) {
+							this.mNextLine.visible = true;
+							this.mNext.visible = true;
+							this.mNextLine.x = 50;
+							this.mNext.x = 75;
+							this.mNext.setStyle("icon", new BTPanel.ICON_FOLD());
+						}
+						else {
 							this.mNextLine.visible = false;
 							this.mNext.visible = false;
-//						}
+						}
 						break;
 					case TYPE_FUNC: 
 						if (this.mName == FUNC_NODE_EXEC) {
@@ -605,11 +651,19 @@
 									this["mVar"+j].visible = false;
 									this["mInput"+j].visible = false;
 								}
-								if (hasNextNode && (!this.mData.children || this.mData.children.length < 1)) {
+								if (this.isFolded()) {
+									this.mNextLine.visible = true;
+									this.mNext.visible = true;
+									this.mNextLine.x = 150;
+									this.mNext.x = 175;
+									this.mNext.setStyle("icon", new BTPanel.ICON_FOLD());
+								}
+								else if (hasNextNode && (!this.mData.children || this.mData.children.length < 1)) {
 									this.mNext.visible = true;
 									this.mNextLine.visible = true;
 									this.mNextLine.x = 150;
-									this.mNext.x = 200;
+									this.mNext.x = 175;
+									this.mNext.setStyle("icon", new BTPanel.ICON_EXEC());
 								}
 								else {
 									this.mNext.visible = false;
@@ -698,16 +752,17 @@
 								this["mVar"+i].visible = false;
 								this["mInput"+i].visible = false;
 							}
-//							if (this.mData.children && this.mData.children.length > 0) {
+							if (this.isFolded()) {
+								this.mNextLine.visible = true;
+								this.mNext.visible = true;
+								this.mNextLine.x = 50;
+								this.mNext.x = 75;
+								this.mNext.setStyle("icon", new BTPanel.ICON_FOLD());
+							}
+							else {
 								this.mNext.visible = false;
 								this.mNextLine.visible = false;
-//							}
-//							else {
-//								this.mNext.visible = true;
-//								this.mNextLine.visible = true;
-//								this.mNextLine.x = 50;
-//								this.mNext.x = 100;
-//							}
+							}
 							this.mTitle.visible = false;
 						}
 						break;
@@ -748,11 +803,19 @@
 							this["mVar"+j].visible = false;
 							this["mInput"+j].visible = false;
 						}
-						if (hasNextNode && (this.mData.args || !this.mData.children || this.mData.children.length < 1)) {
+						if (this.isFolded()) {
+							this.mNextLine.visible = true;
+							this.mNext.visible = true;
+							this.mNextLine.x = 150;
+							this.mNext.x = 175;
+							this.mNext.setStyle("icon", new BTPanel.ICON_FOLD());
+						}
+						else if (hasNextNode && (this.mData.args || !this.mData.children || this.mData.children.length < 1)) {
 							this.mNext.visible = true;
 							this.mNextLine.visible = true;
 							this.mNextLine.x = 150;
-							this.mNext.x = 200;
+							this.mNext.x = 175;
+							this.mNext.setStyle("icon", new BTPanel.ICON_EXEC());
 						}
 						else {
 							this.mNext.visible = false;
@@ -910,7 +973,9 @@
 				}
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
-				this.mCanvas.updateTree(true);
+				this.updateComponents();
+				this.updateChildrens();
+				this.mCanvas.autoLayout();
 			}
 			
 			public function writeDataBackToParent():void {
@@ -947,6 +1012,10 @@
 			
 			private function onPressNext(event:Event):void {
 				if (this.isInSubBT()) return;
+				if (this.isFolded()) {
+					this.onFoldNode(event);
+					return;
+				}
 				
 				EventManager.getInstance().addEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNextNodeSelected);
 				var selection:BTNodeSelection = new BTNodeSelection();
@@ -1017,7 +1086,9 @@
 				}
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
-				this.mCanvas.updateTree(true);
+				this.updateComponents();
+				this.updateChildrens();
+				this.mCanvas.autoLayout();
 			}
 			
 			private function onValueChanged(event:TextOperationEvent):void {
@@ -1048,26 +1119,37 @@
 			}
 			
 			public function reset():void {
-				this.mMaxDepth = -1;
-				this.mMaxSiblings = -1;
-				this.mSiblingIndex = -1;
-				this.mNodeDepth = -1;
-				this.mIsInSubTree = -1;
+//				this.mMaxDepth = -1;
+//				this.mMaxSiblings = -1;
+//				this.mSiblingIndex = -1;
+//				this.mNodeDepth = -1;
+//				this.mIsInSubTree = -1;
 				this.mIsSubBT = false;
 			}
 			
 			public function isInSubBT():Boolean {
-				if (this.mIsInSubTree != -1) return this.mIsInSubTree==1;
 				if (this.mIsSubBT) {
-					this.mIsInSubTree = 1;
 					return true;
 				}
 				if (this.mParent) {
-					this.mIsInSubTree = this.mParent.isInSubBT()?1:0;
-					return this.mIsInSubTree==1;
+					return this.mParent.isInSubBT();
 				}
-				this.mIsInSubTree = 0;
-				return this.mIsInSubTree==1;
+				return false;
+			}
+			
+			public function isInFoldedTree():Boolean {
+				if (this.mParent && this.mParent.isFolded()) {
+					return true;
+				}
+				if (!this.mParent) {
+					return false;
+				}
+				return this.mParent.isInFoldedTree();
+			}
+			
+			public function isFolded():Boolean {
+				if (this.mData.fold) return true;
+				return false;
 			}
 			
 			public function containsChild(node:BTNode):Boolean {
@@ -1080,38 +1162,82 @@
 				return false;
 			}
 			
+			public function checkNearestRootNode(node:BTNode):BTNode {
+				if (this == node) return this;
+				var node1:BTNode;
+				var node2:BTNode;
+				var depth1:int = this.nodeDepth;
+				var depth2:int = node.nodeDepth;
+				if (depth1 <= depth2) {
+					node1 = this;
+					node2 = node;
+				}
+				else {
+					node1 = node;
+					node2 = this;
+					var tmp:int = depth1;
+					depth1 = depth2;
+					depth2 = tmp;
+				}
+				while (depth2 > depth1) {
+					node2 = node2.nodeParent;
+					depth2--;
+				}
+				if (node2 == node1) return node2;
+				else {
+					node2 = node2.nodeParent;
+					node1 = node1.nodeParent;
+					if (node2 == node1) return node2;
+				}
+				return null;
+			}
+			
+			public function replaceChildWith(child:BTNode, target:BTNode):void {
+				if (child) {
+					var index:int = this.mChildrens.indexOf(child);
+					if (index >= 0) {
+						this.mChildrens[index] = target;
+					}					
+				}
+				else {
+					this.mChildrens.push(target);
+				}
+				index = target.nodeParent.nodeChildrens.indexOf(target);
+				if (index >= 0) {
+					if (child) {
+						target.nodeParent.nodeChildrens[index] = child;
+					}
+				}
+				var p:BTNode = target.nodeParent;
+				target.nodeParent = this;
+				if (child) child.nodeParent = p;
+			}
+			
 			public function get nodeDepth():int {
-				if (this.mNodeDepth != -1) return this.mNodeDepth;
 				var depth:int = 0;
 				var p:BTNode = this.mParent;
 				while (p) {
 					depth++;
 					p = p.nodeParent;
 				}
-				this.mNodeDepth = depth;
 				return depth;
 			}
 			
 			public function get siblingIndex():int {
-				if (this.mSiblingIndex != -1) return this.mSiblingIndex;
 				if (this.mParent) { 
 					var index:int = this.mParent.nodeChildrens.indexOf(this);
 					if (index <= 0) {
-						this.mSiblingIndex = this.mParent.siblingIndex;
-						return this.mSiblingIndex;
+						return this.mParent.siblingIndex;
 					}
 					else {
-						this.mSiblingIndex = this.mParent.nodeChildrens[index-1].maxSiblings + this.mParent.nodeChildrens[index-1].siblingIndex;
-						return this.mSiblingIndex;
+						return this.mParent.nodeChildrens[index-1].maxSiblings + this.mParent.nodeChildrens[index-1].siblingIndex;
 					}
 				}
-				this.mSiblingIndex = 0;
 				return 0;
 			}
 			
 			/** max depth count from current node */
 			public function get maxDepth():int {
-				if (this.mMaxDepth != -1) return this.mMaxDepth; 
 				if (this.mChildrens.length <= 0) return 1;
 				var max:int = 1;
 				for (var i:int = 0; i < this.mChildrens.length; i++) {
@@ -1120,19 +1246,16 @@
 						max = depth;
 					}
 				}
-				this.mMaxDepth = max+1;
 				return max+1;
 			}
 			
 			public function get maxSiblings():int {
-				if (this.mMaxSiblings != -1) return this.mMaxSiblings; 
 				if (!this.mChildrens || this.mChildrens.length <= 0) return 1;
 				var max:int = 0;
 				for (var i:int = 0; i < this.mChildrens.length; i++) {
 					var s:int = this.mChildrens[i].maxSiblings;
 					max += s;
 				}
-				this.mMaxSiblings = max;
 				return max;
 			}
 			
@@ -1175,6 +1298,7 @@
 			
 			public function get type():int { return this.mType; }
 			public function get nodeParent():BTNode { return this.mParent; }
+			public function set nodeParent(value:BTNode):void { this.mParent = value; }
 			public function get nodeChildrens():Vector.<BTNode> { return this.mChildrens; }
 			public function get nodeName():String { return this.mName; }
 			public function set nodeName(value:String):void { this.mName = value; }
@@ -1223,8 +1347,8 @@
 		<s:Label id="mVar6" x="0" y="155" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
 				 textAlign="center" verticalAlign="middle"/>
 	</s:BorderContainer>
-	<s:Button id="mNext" x="200" y="0" width="50" height="50" label="可接节点" 
+	<s:Button id="mNext" x="175" y="0" width="50" height="50" label="可接节点" 
 			  click="onPressNext(event)" middleClick="onPressNext(event)" cornerRadius="0" fontFamily="Arial" fontStyle="normal"
 			  fontWeight="normal" icon="@Embed('assets/zhixing.png')"/>
-	<mx:HRule id="mNextLine" x="150" y="25" width="50"/>
+	<mx:HRule id="mNextLine" x="150" y="25" width="25"/>
 </s:BorderContainer>

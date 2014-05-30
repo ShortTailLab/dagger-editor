@@ -150,7 +150,7 @@
 				</s:VGroup>
 			</s:HGroup>
 		</s:NavigatorContent>
-		<s:NavigatorContent width="100%" height="100%" label="行为库">
+		<s:NavigatorContent width="100%" height="100%" label="行为库" visible="false">
 			<s:List id="mLibraryList" x="0" y="0" width="100%" height="100%" change="onSelectLibrary(event)"></s:List>
 		</s:NavigatorContent>
 	</mx:TabNavigator>
