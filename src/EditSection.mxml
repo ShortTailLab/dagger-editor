@@ -37,7 +37,7 @@
 			public static var kSceneHeight:Number 	= 640;
 			
 			public static var kGridWidth:Number 	= 35;
-			public static var kGridHeight:Number 	= 46;
+			public static var kGridHeight:Number 	= 50;
 			
 			// ---------------------------------------------------------
 			////// 
@@ -317,6 +317,7 @@
 					for each( item in this.mSelectedComponents )
 					{
 						var now:Point = EditSection.getGridPos( new Point(item.x, item.y) );
+						trace( item.x+", "+item.y +" -> "+now.x+", "+now.y);
 						item.x = now.x;
 						item.y = now.y;	
 					}
@@ -928,7 +929,7 @@
 				}
 				
 				coord.graphics.lineStyle(2);
-				var markTick:Number = 80;
+				var markTick:Number = 50;
 				for( i=0; i<=(EditSection.kSceneHeight/markTick); i++ )
 				{
 					tmp = EditSection.kSceneHeight - i*markTick;
@@ -944,10 +945,10 @@
 				}
 				
 				coord.graphics.lineStyle(1.5, 0xFF4444, 0.75);
-				coord.graphics.moveTo( 0, EditSection.kSceneHeight - 240 );
-				coord.graphics.lineTo( EditSection.kSceneWidth, EditSection.kSceneHeight - 240 );
-				coord.graphics.moveTo( 0, EditSection.kSceneHeight - 540 );
-				coord.graphics.lineTo( EditSection.kSceneWidth, EditSection.kSceneHeight - 540 );
+				coord.graphics.moveTo( 0, EditSection.kSceneHeight - 250 );
+				coord.graphics.lineTo( EditSection.kSceneWidth, EditSection.kSceneHeight - 250 );
+				coord.graphics.moveTo( 0, EditSection.kSceneHeight - 550 );
+				coord.graphics.lineTo( EditSection.kSceneWidth, EditSection.kSceneHeight - 550 );
 			};
 			
 			
@@ -973,7 +974,7 @@
 				var dst:Point = new Point();
 				var postWidth:Number = EditSection.kGridWidth*0.5;
 				dst.x = (Math.floor(src.x / postWidth))*postWidth;
-				dst.y = (Math.floor(src.y / EditSection.kGridHeight))*EditSection.kGridHeight;
+				dst.y = (Math.floor((src.y+10) / EditSection.kGridHeight))*EditSection.kGridHeight-10;
 				return dst;
 			}
 		]]>
