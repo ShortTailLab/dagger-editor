@@ -78,6 +78,23 @@
 				this.mMonsterList.labelField = "name";
 				this.mMonsterList.focusEnabled = false;
 				
+				// double click to edit data.
+				this.mMonsterList.addEventListener(MouseEvent.DOUBLE_CLICK, 
+					function(evt:MouseEvent):void
+					{
+						if(self.mEditData.enabled)
+						{
+							evt.stopImmediatePropagation();
+							
+							MapEditor.getInstance().mEditMonster.onEditEnemy( 
+								Runtime.getInstance().currentLevelID, 
+								self.mSelectedLabel.text
+							);
+						}
+					}
+				);
+				this.mMonsterList.doubleClickEnabled = true;
+				
 				this.mEditData.addEventListener(MouseEvent.CLICK, 
 					function(evt:MouseEvent):void
 					{
@@ -98,7 +115,8 @@
 							self.mSelectedLabel.text
 						);
 						
-						if( !enemy || enemy.type != EditMonster.kCONFIGURABLE )
+						if( !enemy ||
+							!EditMonster.isCustomBehaviorType(enemy.type))
 							return;
 						
 						if(self.mSelection) 
@@ -206,7 +224,9 @@
 				this.mEraseSelf.enabled 	= false;
 				this.mCopy.enabled 			= false;
 				
-				if( this.mMonsterList.selectedIndex == -1 ) return;	
+				if( this.mMonsterList.selectedIndex == -1 ) 
+					return;
+				
 				var id:String = this.mMonsterList.selectedItem.id;
 				this.mSelectedLabel.text = id;
 				
@@ -222,11 +242,8 @@
 				this.mEraseSelf.enabled 	= true;
 				this.mCopy.enabled 			= true;
 				
-				if( Data.getInstance().isMonster( profile.type ) )
-					this.mEditTrigger.enabled = true;
-				
-				if( profile.type == EditMonster.kCONFIGURABLE )
-					this.mEditBehavior.enabled = true;
+				this.mEditTrigger.enabled = Data.getInstance().isMonster( profile.type );
+				this.mEditBehavior.enabled = EditMonster.isCustomBehaviorType(profile.type);
 				
 				this.mSelection.setSize( 70 );
 				this.mDetailsContent.addElement( this.mSelection );
@@ -313,16 +330,16 @@
 		<s:RadioButtonGroup id="mRadioGroup"/>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
-	<s:List id="mMonsterList" x="0" top="60" bottom="145" width="100%" borderVisible="false">
+	<s:List id="mMonsterList" x="0" top="65" bottom="145" width="100%" borderVisible="false">
 	</s:List>
 	<s:TextInput id="mSearchBox" left="5" right="5" top="5" height="25" borderColor="#C3C3C3"
 				 borderVisible="true" prompt="请输入搜索内容"/>
-	<s:HGroup left="5" right="5" top="35" height="25">
-		<s:RadioButton id="mRadioMonster" width="33%" height="25" label="怪物" enabled="true"
+	<s:HGroup left="5" right="5" top="35" height="35">
+		<s:RadioButton id="mRadioMonster" width="33%" height="30" label="怪物" enabled="true"
 					   groupName="mRadioGroup" selected="true"/>
-		<s:RadioButton id="mRadioBullet" width="33%" height="25" label="子弹" enabled="true"
+		<s:RadioButton id="mRadioBullet" width="33%" height="30" label="子弹" enabled="true"
 					   groupName="mRadioGroup"/>
-		<s:RadioButton id="mRadioTrap" width="33%" height="25" label="陷阱" enabled="true"
+		<s:RadioButton id="mRadioTrap" width="33%" height="30" label="陷阱" enabled="true"
 					   groupName="mRadioGroup"/>
 	</s:HGroup>
 	<s:BorderContainer id="mDetailsContent" left="5" right="5" bottom="5" height="135"
