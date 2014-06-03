@@ -406,11 +406,9 @@
 				{
 					if( item[kTYPE] == "MonsterType" )
 					{
-						var monsterList:Array = [EditMonster.kCONFIGURABLE];
+						var monsterList:Array = [];
 						if( Data.getInstance().dynamicArgs.MonsterType )
-						{
 							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.MonsterType as Array));
-						}
 					}
 					else if( item[kTYPE] == "BulletType") 
 					{
