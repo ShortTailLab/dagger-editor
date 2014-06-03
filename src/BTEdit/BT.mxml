@@ -173,6 +173,7 @@
 			}
 			
 			private function onMouseRightDown(event:Event):void {
+				if (!this.stage) return;
 				this.stage.removeEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 				this.stage.removeEventListener(MouseEvent.RIGHT_CLICK, onMouseRightDown);
 				clearSelected();

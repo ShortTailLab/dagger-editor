@@ -839,7 +839,9 @@
 								newData.data.parm.push(event.data.name.args[i]);
 							}
 						}
-						this.setData(TYPE_FUNC, FUNC_NODE_EXEC, newData, this.mCanvas, this.mParent);
+						this.mType = TYPE_FUNC;
+						this.mName = FUNC_NODE_EXEC;
+						this.mData = newData;
 						break;
 					case TYPE_FUNC:
 						newData = {type:event.data.name, data:null, children:this.mData.children};
@@ -856,7 +858,9 @@
 								newData.weights.push(1);
 							}
 						}
-						this.setData(TYPE_FUNC, event.data.name, newData, this.mCanvas, this.mParent);
+						this.mType = TYPE_FUNC;
+						this.mName = event.data.name;
+						this.mData = newData;
 						break;
 				}
 				this.writeDataBackToParent();
