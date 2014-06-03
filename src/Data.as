@@ -786,7 +786,9 @@ package
 		
 		public function isMonster( type:String ):Boolean
 		{
-			if( type == EditMonster.kCONFIGURABLE ) return true;
+			if(EditMonster.isCustomBehaviorType(type))
+				return true;
+			
 			for each( var item:String in (this.mDynamicArgs.MonsterType || {}) )
 			{
 				if( type == item ) return true;
@@ -969,7 +971,8 @@ package
 				var monsters:Object = profile.monsters || {};
 				for each( var item:Object in monsters )
 				{
-					if( !("type" in item) ) item.type = EditMonster.kCONFIGURABLE;
+					if( !("type" in item) ) 
+						item.type = EditMonster.CUSTOM_BEHAVIOR_TYPES[0];
 				}
 				
 				for( var iter:int = data.length-1; iter>=0; iter-- )
@@ -1118,7 +1121,7 @@ package
 				export.profile[index] = item;
 				export.profile[index].triggers = this.mLevelInstancesTable[lid].trigger[index] || [];
 				
-				if( item.type == EditMonster.kCONFIGURABLE )
+				if(EditMonster.isCustomBehaviorType(item.type))
 				{
 					if( !this.mLevelInstancesTable[lid].behavior.hasOwnProperty(index) ||
 						this.mLevelInstancesTable[lid].behavior[index].length == 0 )
