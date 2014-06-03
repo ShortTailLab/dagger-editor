@@ -117,14 +117,13 @@
 				if (this.mContainer.contains(node)) {
 					this.mContainer.removeElement(node);
 					this.mNodes.splice(this.mNodes.indexOf(node), 1);
-					node.reset();
-					BT.POOL.push(node);
+//					node.reset();
+//					BT.POOL.push(node);
 				}
 			}
 			
 			public static function POOL_POP():BTNode {
-				var node:BTNode = BT.POOL.pop();
-				if (!node) node = new BTNode();
+				var node:BTNode = new BTNode();
 				return node;
 			}
 			

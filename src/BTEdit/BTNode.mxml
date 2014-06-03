@@ -14,10 +14,14 @@
 			import manager.EventType;
 			import manager.GameEvent;
 			
+			import mx.controls.HRule;
 			import mx.managers.PopUpManager;
 			
+			import spark.components.Button;
 			import spark.components.Group;
+			import spark.components.Label;
 			import spark.components.RichEditableText;
+			import spark.components.TextInput;
 			import spark.events.TextOperationEvent;
 			import spark.filters.GlowFilter;
 			
@@ -64,6 +68,84 @@
 			private var mName:String;
 			private var mIsDetached:Boolean = false;
 			
+			// components
+			public var mBtn:Button;
+			public var mTitle:Label;
+			public var mExecVars:Array = [];
+			public var mExecInputs:Array = [];
+			public var mNext:Button;
+			public var mNextLine:HRule;
+			
+			private function checkAndCreate(id:String, num:int=0):void {
+				switch (id) {
+					case "mBtn":
+						if (!this.mBtn) {
+							this.mBtn = new Button();
+							this.mBtn.id = "mBtn"; this.mBtn.width = 50; this.mBtn.height = 50; this.mBtn.setStyle("icon", new BTPanel.ICON_EXEC());
+							this.mSubContainer.addElement(this.mBtn);
+							
+							this.mBtn.addEventListener(MouseEvent.MOUSE_OVER, onMouseOverNode);
+							this.mBtn.addEventListener(MouseEvent.MOUSE_OUT, onMouseOutNode);
+							this.mBtn.addEventListener(MouseEvent.CLICK, onMouseClickNode);
+						}
+						break;
+					case "mNext":
+						if (!this.mNext) {
+							this.mNext = new Button();
+							this.mNext.id = "mNext"; this.mNext.width = 50; this.mNext.height = 50; this.mNext.setStyle("icon", new BTPanel.ICON_EXEC()); 
+							this.mNext.label = "可接节点"; this.mNext.x = 175; this.mNext.y = 0;
+							this.addElement(this.mNext);
+							
+							var menu:ContextMenu = new ContextMenu();
+							var item:ContextMenuItem = new ContextMenuItem("更换");
+							item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPressNext);
+							menu.addItem(item);
+							item = new ContextMenuItem("粘贴");
+							item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteNodeToNext);
+							menu.addItem(item);
+							this.mNext.contextMenu = menu;
+							
+							this.mNext.addEventListener(MouseEvent.ROLL_OVER, onMouseOverNext);
+							this.mNext.addEventListener(MouseEvent.ROLL_OUT, onMouseOutNext);
+							this.mNext.addEventListener(MouseEvent.CLICK, onPressNext);
+							this.mNext.addEventListener(MouseEvent.MIDDLE_CLICK, onPressNext);
+						}
+						break;
+					case "mTitle":
+						if (!this.mTitle) {
+							this.mTitle = new Label();
+							this.mSubContainer.addElement(this.mTitle);
+							this.mTitle.percentWidth = 100; this.mTitle.id = "mTitle"; this.mTitle.setStyle("color", "#FFFFFF"); this.mTitle.setStyle("fontSize", 12); 
+							this.mTitle.text = "StayOnMap"; this.mTitle.setStyle("textAlign", "center"); this.mTitle.setStyle("verticalAlign", "middle");
+						}
+						break;
+					case "mNextLine":
+						if (!this.mNextLine) {
+							this.mNextLine = new HRule();
+							this.addElement(this.mNextLine);
+							this.mNextLine.id = "mNextLine"; this.mNextLine.x = 150; this.mNextLine.y = 25; this.mNextLine.width = 25;
+						}
+						break;
+					case "mVar":
+					case "mInput":
+						for (var i:int = this.mExecVars.length; i < num; i++) {
+							var execVar:Label = new Label();
+							execVar.percentWidth = 50; execVar.id = "mVar"+i; this.mTitle.setStyle("color", "#FFFFFF"); this.mTitle.setStyle("fontSize", 14); 
+							execVar.text = "variable"; execVar.setStyle("textAlign", "center"); execVar.setStyle("verticalAlign", "middle");
+							execVar.y = 30+25*i;
+							this.mSubContainer.addElement(execVar);
+							this.mExecVars.push(execVar);
+							
+							var execInput:TextInput = new TextInput();
+							execInput.id = "mInput"+i; execInput.x = 75; execInput.y = 25*(i+1); execInput.percentWidth = 50; execInput.setStyle("textAlign", "center");
+							execInput.addEventListener(TextOperationEvent.CHANGE, onValueChanged);
+							this.mSubContainer.addElement(execInput);
+							this.mExecInputs.push(execInput);
+						}
+						break;
+				}
+			}
+			
 			private function onCreate():void {
 				trace("created ");
 				this.mCreated = true;
@@ -88,23 +170,9 @@
 				menu.addItem(item);
 				this.mSubContainer.contextMenu = menu;
 				
-				menu = new ContextMenu();
-				item = new ContextMenuItem("更换");
-				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPressNext);
-				menu.addItem(item);
-				item = new ContextMenuItem("粘贴");
-				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteNodeToNext);
-				menu.addItem(item);
-				this.mNext.contextMenu = menu;
-				
-				this.mBtn.addEventListener(MouseEvent.MOUSE_OVER, onMouseOverNode);
-				this.mBtn.addEventListener(MouseEvent.MOUSE_OUT, onMouseOutNode);
-				this.mBtn.addEventListener(MouseEvent.CLICK, onMouseClickNode);
 				this.mSubContainer.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDownContainer);
 				this.mSubContainer.addEventListener(MouseEvent.ROLL_OVER, onMouseOverContainer);
 				this.mSubContainer.addEventListener(MouseEvent.ROLL_OUT, onMouseOutContainer);
-				this.mNext.addEventListener(MouseEvent.ROLL_OVER, onMouseOverNext);
-				this.mNext.addEventListener(MouseEvent.ROLL_OUT, onMouseOutNext);
 				
 				this.addEventListener(KeyboardEvent.KEY_DOWN, function(evt:KeyboardEvent):void
 				{
@@ -271,8 +339,8 @@
 			
 			private function onInput1Click(event:Event):void {
 				var id:String = event.currentTarget.id;
-				var index:int = int(id.charAt(id.length-1));
-				var data:Object = this.mData.data.parm[index-1];
+				var index:int = Utils.getLastInt(id);
+				var data:Object = this.mData.data.parm[index];
 				
 				var window:PathEditPanel = new PathEditPanel(name, data.path, data.type=="array_ccp_curve");
 				
@@ -282,13 +350,13 @@
 			}
 			
 			private function onPathEditPanelClose(e:MsgEvent):void {
-				for (var i:int = 1; i < 7; i++) {
-					if (this["mVar"+i].text == "path") {
+				for (var i:int = 0; i < this.mExecVars.length; i++) {
+					if (this.mExecVars[i].text == "path") {
 						break;
 					}
 				}
-				this["mInput"+i].text =  JSON.stringify(e.hintData);
-				this.mData.data.parm[i-1].path = e.hintData;
+				this.mExecInputs[i].text =  JSON.stringify(e.hintData);
+				this.mData.data.parm[i].path = e.hintData;
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
 			}
@@ -469,16 +537,19 @@
 				}
 				this.mNodeVars.length = 0;
 				this.mNodeInputs.length = 0;
+				
+				this.checkAndCreate("mBtn");
+				this.checkAndCreate("mNext");
+				this.checkAndCreate("mNextLine");
 				switch (this.mType) {
 					case TYPE_ROOT:
 						this.mBtn.visible = true;
 						this.mBtn.setStyle("icon", new BTPanel.ICON_ROOT());
 						this.mSubContainer.width = this.mSubContainer.height = 50;
-						for (i = 1; i < 7; i++) {
-							this["mVar"+i].visible = false;
-							this["mInput"+i].visible = false;
+						for (i = 0; i < this.mExecVars.length; i++) {
+							this.mExecVars[i].visible = false;
+							this.mExecInputs[i].visible = false;
 						}
-						this.mTitle.visible = false;
 						if (this.isFolded()) {
 							this.mNextLine.visible = true;
 							this.mNext.visible = true;
@@ -491,16 +562,17 @@
 							this.mNext.visible = false;
 						}
 						break;
-					case TYPE_FUNC: 
+					case TYPE_FUNC:
+						this.checkAndCreate("mTitle");
 						if (this.mName == FUNC_NODE_EXEC) {
 							// empty node
 							if (this.mData.args || !this.mData.data) {
 								this.mBtn.visible = true;
 								this.mBtn.setStyle("icon", new ICON_FUNC_NODE[this.mName]());
 								this.mSubContainer.width = this.mSubContainer.height = 50;
-								for (i = 1; i < 7; i++) {
-									this["mVar"+i].visible = false;
-									this["mInput"+i].visible = false;
+								for (i = 0; i < this.mExecVars.length; i++) {
+									this.mExecVars[i].visible = false;
+									this.mExecInputs[i].visible = false;
 								}
 								this.mTitle.visible = false;
 								this.mNext.visible = false;
@@ -535,23 +607,24 @@
 										hasNextNode = true;
 									}
 									else {
-										this["mVar"+j].visible = true;
-										this["mInput"+j].visible = true;
-										this["mVar"+j].text = this.mData.data.parm[i].name;
-										this["mInput"+j].text = this.mData.data.parm[i].value || JSON.stringify(this.mData.data.parm[i].path);
+										this.checkAndCreate("mVar", j);
+										this.mExecVars[j-1].visible = true;
+										this.mExecInputs[j-1].visible = true;
+										this.mExecVars[j-1].text = this.mData.data.parm[i].name;
+										this.mExecInputs[j-1].text = this.mData.data.parm[i].value || JSON.stringify(this.mData.data.parm[i].path);
 										if (this.mData.data.parm[i].path) {
-											this["mInput"+j].addEventListener(MouseEvent.CLICK, onInput1Click);
+											this.mExecInputs[j-1].addEventListener(MouseEvent.CLICK, onInput1Click);
 										}
 										else {
-											this["mInput"+j].removeEventListener(MouseEvent.CLICK, onInput1Click);
+											this.mExecInputs[j-1].removeEventListener(MouseEvent.CLICK, onInput1Click);
 										}
 										j++;
 									}
 								}
 								numParams = j;
-								for (; j < 7; j++) {
-									this["mVar"+j].visible = false;
-									this["mInput"+j].visible = false;
+								for (; j <= this.mExecVars.length; j++) {
+									this.mExecVars[j-1].visible = false;
+									this.mExecInputs[j-1].visible = false;
 								}
 								if (this.isFolded()) {
 									this.mNextLine.visible = true;
@@ -573,7 +646,7 @@
 								}
 								this.mSubContainer.width = 150;
 								numParams = numParams<2?2:numParams;
-								this.mSubContainer.height = 185-(7-numParams)*25;
+								this.mSubContainer.height = 60+(numParams-2)*25;
 							}
 						}
 						else {
@@ -646,9 +719,9 @@
 							this.mBtn.visible = true;
 							this.mBtn.setStyle("icon", new ICON_FUNC_NODE[this.mName]());
 							this.mSubContainer.width = this.mSubContainer.height = 50;
-							for (i = 1; i < 7; i++) {
-								this["mVar"+i].visible = false;
-								this["mInput"+i].visible = false;
+							for (i = 0; i < this.mExecVars.length; i++) {
+								this.mExecVars[i].visible = false;
+								this.mExecInputs[i].visible = false;
 							}
 							if (this.isFolded()) {
 								this.mNextLine.visible = true;
@@ -912,8 +985,8 @@
 					}
 				}
 				else {
-					index = int(id.charAt(id.length-1));
-					this.mData.data.parm[index-1].value = (event.currentTarget as TextInput).text;
+					index = Utils.getLastInt(id);
+					this.mData.data.parm[index].value = (event.currentTarget as TextInput).text;
 				}
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
@@ -1070,38 +1143,5 @@
 	<s:BorderContainer id="mSubContainer" width="150" height="180" backgroundColor="#3A9CFF"
 					   borderVisible="true" dropShadowVisible="true"
 					   middleClick="onPressBtn(event)">
-		<s:Button id="mBtn" width="50" height="50" 
-				  cornerRadius="0" fontFamily="Arial" fontStyle="normal" fontWeight="normal"
-				  icon="assets/zhixing.png"/>
-		<s:Label id="mTitle" x="0" y="0" width="100%" color="#FFFFFF" fontSize="12" text="StayOnMap"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar1" x="0" y="30" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar2" x="0" y="55" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:TextInput id="mInput1" x="75" y="25" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:TextInput id="mInput2" x="75" y="50" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:TextInput id="mInput3" x="75" y="75" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:TextInput id="mInput4" x="75" y="100" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:TextInput id="mInput5" x="75" y="125" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:TextInput id="mInput6" x="75" y="150" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:Label id="mVar3" x="0" y="80" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar4" x="0" y="105" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar5" x="0" y="130" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar6" x="0" y="155" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
 	</s:BorderContainer>
-	<s:Button id="mNext" x="175" y="0" width="50" height="50" label="可接节点" 
-			  click="onPressNext(event)" middleClick="onPressNext(event)" cornerRadius="0" fontFamily="Arial" fontStyle="normal"
-			  fontWeight="normal" icon="@Embed('assets/zhixing.png')"/>
-	<mx:HRule id="mNextLine" x="150" y="25" width="25"/>
 </s:BorderContainer>

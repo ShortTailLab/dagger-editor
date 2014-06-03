@@ -297,6 +297,7 @@
 				this.mPhoto = new UIComponent();
 				if (bitmapData) {
 					var bmp:Bitmap = new Bitmap(bitmapData);
+					bmp.scaleX = bmp.scaleY = bmp.width>200?200/bmp.width:1;
 					bmp.x = -bmp.width/2;
 					bmp.y = -bmp.height/2;
 					this.mPhoto.addChild(bmp);
@@ -363,7 +364,7 @@
 			
 			private function onPressAutoLayout(event:Event):void {
 				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
-				this.mTabDict[current].bt.updateTree(true);
+				this.mTabDict[current].bt.autoLayout();
 			}
 			
 			private function onSearchChanged(event:Event):void {
