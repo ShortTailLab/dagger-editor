@@ -104,7 +104,7 @@
 						node.x = col*300;
 						node.y = row*200;
 					}
-					node.visible = !node.isInFoldedTree();
+					node.visible = !node.isInFoldedTree;
 					if (this.mNodes.length >= this.mNumTotalNodes) {
 						trace("init tree done");
 						this.mNumTotalNodes = int.MAX_VALUE;
@@ -249,7 +249,7 @@
 					var col:int = this.mNodes[i].nodeDepth;
 //					trace("name "+this.mNodes[i].nodeName+" row "+row+" col "+col+" w "+this.mNodes[i].nodeWidth+" h "+this.mNodes[i].nodeHeight);
 					this.mNodesInfo.push({r:row, c:col});
-					if (this.mNodes[i].isInFoldedTree()) {
+					if (this.mNodes[i].isInFoldedTree) {
 						this.mNodes[i].visible = false;
 						continue;
 					}
@@ -311,7 +311,7 @@
 //				}
 				this.mLineSprite.graphics.lineStyle(2, 0xA1AFC9);
 				for (var i:int = 0; i < this.mNodes.length; i++) {
-					if (this.mNodes[i].nodeParent && !this.mNodes[i].isInFoldedTree()) {
+					if (this.mNodes[i].nodeParent && !this.mNodes[i].isInFoldedTree) {
 						this.drawBetween2Nodes(this.mNodes[i].nodeParent, this.mNodes[i]);
 					}
 				}
