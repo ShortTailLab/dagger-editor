@@ -16,7 +16,7 @@
 			import bgedit.BgModel;
 			
 			import excel.ExchangeManager;
-			import excel.SkillConfigReader;
+			import excel.ExcelConfigReader;
 			
 			import manager.EventManager;
 			import manager.EventType;
@@ -159,10 +159,10 @@
 					});
 			}
 			
-			private function parseSkillConfigFile(e:Event):void
+			private function parseConfigFile(e:Event):void
 			{
 				var browser:File = new File(Data.getInstance().conf.skillPathCache);
-				browser.browseForOpen("请选择上传的技能配置文件(.xlsx)");
+				browser.browseForOpen("请选择上传的配置文件(.xlsx)");
 				
 				var self:* = this;
 				browser.addEventListener(Event.SELECT, function (e:Event):void 
@@ -171,12 +171,12 @@
 					Data.getInstance().setEditorConfig("skillPathCache", file.nativePath);
 					
 					var mask:* = Utils.makeManualPanel("解析技能配置中，请稍后…", self);	
-					SkillConfigReader.parseSkillConfigFromPath(file.nativePath, 
-						function(skillDict:*):void
+					ExcelConfigReader.parse(file.nativePath, 
+						function(data:*, name:String):void
 						{
-							var jsonOut:String = JSON.stringify(skillDict, null, "\t");
+							var jsonOut:String = JSON.stringify(data, null, "\t");
 
-							var saved:File = Data.getInstance().resolvePath("config/skill.json");
+							var saved:File = Data.getInstance().resolvePath("config/"+name+".json");
 							Utils.WriteRawFile( saved, jsonOut );
 							
 							SyncManager.getInstance().uploadConfigFileToOSSFromPath(
@@ -301,7 +301,7 @@
 				<s:Button id="set_project_path" label="重设路径" click="setPathRoot(event)"/>
 				<s:Label text="配置项目" color="0x777777"/>
 				<s:Button id="config" label="JSON配置" click="uploadConfigFile(event)"/>
-				<s:Button id="configSkill" label="技能配置" click="parseSkillConfigFile(event)"/>
+				<s:Button id="configSkill" label="配置上传" click="parseConfigFile(event)"/>
 			</s:HGroup>
 			
 		</s:HGroup>

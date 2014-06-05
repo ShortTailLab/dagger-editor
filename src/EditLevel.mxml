@@ -14,7 +14,7 @@
 			import bgedit.BgEditView;
 			import bgedit.BgModel;
 			
-			import excel.SkillConfigReader;
+			import excel.ExcelConfigReader;
 			
 			import manager.EventManager;
 			import manager.EventType;
