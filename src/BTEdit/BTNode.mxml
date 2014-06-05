@@ -8,28 +8,26 @@
 		<![CDATA[
 			import behaviorEdit.PathEditPanel;
 			
+			import com.hurlant.crypto.symmetric.NullPad;
+			
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.GameEvent;
 			
-			import mx.controls.Alert;
+			import mx.controls.HRule;
 			import mx.managers.PopUpManager;
 			
+			import spark.components.Button;
 			import spark.components.Group;
+			import spark.components.Label;
 			import spark.components.RichEditableText;
+			import spark.components.TextInput;
 			import spark.events.TextOperationEvent;
 			import spark.filters.GlowFilter;
 			
 			private var mCreated:Boolean = false;
 			private var mData:Object;
 			private var mType:int;
-			
-			// cache
-			private var mMaxDepth:int = -1;
-			private var mMaxSiblings:int = -1;
-			private var mSiblingIndex:int = -1;
-			private var mNodeDepth:int = -1;
-			private var mIsInSubTree:int = -1;
 			
 			// node vars
 			private var mNodeVars:Array = [];
@@ -39,15 +37,9 @@
 			public static const TYPE_ROOT:int = 1;
 			/** function node from 6 defined types */
 			public static const TYPE_FUNC:int = 3;
-			/** editable leaf */
+			/** editable leaf, only used to mark in node selection ui */
 			public static const TYPE_EXEC:int = 4;
-			
-			
-			/** sub bt from other library, not editable */
-			public static const TYPE_SUB_BT:int = 2;
-			/** detached node */
-			public static const TYPE_DETACHED:int = 5;
-			
+						
 			public static const FUNC_NODE_EXEC:String = "执行";
 			public static const FUNC_NODE_SEQ:String = "顺序";
 			public static const FUNC_NODE_PRIO:String = "优先";
@@ -74,8 +66,85 @@
 			private var mParent:BTNode;
 			private var mCanvas:BT;
 			private var mName:String;
-			private var mIsSubBT:Boolean = false;
 			private var mIsDetached:Boolean = false;
+			
+			// components
+			public var mBtn:Button;
+			public var mTitle:Label;
+			public var mExecVars:Array = [];
+			public var mExecInputs:Array = [];
+			public var mNext:Button;
+			public var mNextLine:HRule;
+			
+			private function checkAndCreate(id:String, num:int=0):void {
+				switch (id) {
+					case "mBtn":
+						if (!this.mBtn) {
+							this.mBtn = new Button();
+							this.mBtn.id = "mBtn"; this.mBtn.width = 50; this.mBtn.height = 50; this.mBtn.setStyle("icon", new BTPanel.ICON_EXEC());
+							this.mSubContainer.addElement(this.mBtn);
+							
+							this.mBtn.addEventListener(MouseEvent.MOUSE_OVER, onMouseOverNode);
+							this.mBtn.addEventListener(MouseEvent.MOUSE_OUT, onMouseOutNode);
+							this.mBtn.addEventListener(MouseEvent.CLICK, onMouseClickNode);
+						}
+						break;
+					case "mNext":
+						if (!this.mNext) {
+							this.mNext = new Button();
+							this.mNext.id = "mNext"; this.mNext.width = 50; this.mNext.height = 50; this.mNext.setStyle("icon", new BTPanel.ICON_EXEC()); 
+							this.mNext.label = "可接节点"; this.mNext.x = 175; this.mNext.y = 0;
+							this.addElement(this.mNext);
+							
+							var menu:ContextMenu = new ContextMenu();
+							var item:ContextMenuItem = new ContextMenuItem("更换");
+							item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPressNext);
+							menu.addItem(item);
+							item = new ContextMenuItem("粘贴");
+							item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteNodeToNext);
+							menu.addItem(item);
+							this.mNext.contextMenu = menu;
+							
+							this.mNext.addEventListener(MouseEvent.ROLL_OVER, onMouseOverNext);
+							this.mNext.addEventListener(MouseEvent.ROLL_OUT, onMouseOutNext);
+							this.mNext.addEventListener(MouseEvent.CLICK, onPressNext);
+							this.mNext.addEventListener(MouseEvent.MIDDLE_CLICK, onPressNext);
+						}
+						break;
+					case "mTitle":
+						if (!this.mTitle) {
+							this.mTitle = new Label();
+							this.mSubContainer.addElement(this.mTitle);
+							this.mTitle.percentWidth = 100; this.mTitle.id = "mTitle"; this.mTitle.setStyle("color", "#FFFFFF"); this.mTitle.setStyle("fontSize", 12); 
+							this.mTitle.text = "StayOnMap"; this.mTitle.setStyle("textAlign", "center"); this.mTitle.setStyle("verticalAlign", "middle");
+						}
+						break;
+					case "mNextLine":
+						if (!this.mNextLine) {
+							this.mNextLine = new HRule();
+							this.addElement(this.mNextLine);
+							this.mNextLine.id = "mNextLine"; this.mNextLine.x = 150; this.mNextLine.y = 25; this.mNextLine.width = 25;
+						}
+						break;
+					case "mVar":
+					case "mInput":
+						for (var i:int = this.mExecVars.length; i < num; i++) {
+							var execVar:Label = new Label();
+							execVar.percentWidth = 50; execVar.id = "mVar"+i; this.mTitle.setStyle("color", "#FFFFFF"); this.mTitle.setStyle("fontSize", 14); 
+							execVar.text = "variable"; execVar.setStyle("textAlign", "center"); execVar.setStyle("verticalAlign", "middle");
+							execVar.y = 30+25*i;
+							this.mSubContainer.addElement(execVar);
+							this.mExecVars.push(execVar);
+							
+							var execInput:TextInput = new TextInput();
+							execInput.id = "mInput"+i; execInput.x = 75; execInput.y = 25*(i+1); execInput.percentWidth = 50; execInput.setStyle("textAlign", "center");
+							execInput.addEventListener(TextOperationEvent.CHANGE, onValueChanged);
+							this.mSubContainer.addElement(execInput);
+							this.mExecInputs.push(execInput);
+						}
+						break;
+				}
+			}
 			
 			private function onCreate():void {
 				trace("created ");
@@ -96,28 +165,14 @@
 				var item1:ContextMenuItem = new ContextMenuItem("删除");
 				item1.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteNode);
 				menu.addItem(item1);
-				var item2:ContextMenuItem = new ContextMenuItem("解锁子行为");
-				item2.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onUnlockNode);
-				menu.addItem(item2);
+				item = new ContextMenuItem("折叠/展开");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onFoldNode);
+				menu.addItem(item);
 				this.mSubContainer.contextMenu = menu;
 				
-				menu = new ContextMenu();
-				item = new ContextMenuItem("更换");
-				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPressNext);
-				menu.addItem(item);
-				item = new ContextMenuItem("粘贴");
-				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteNodeToNext);
-				menu.addItem(item);
-				this.mNext.contextMenu = menu;
-				
-				this.mBtn.addEventListener(MouseEvent.MOUSE_OVER, onMouseOverNode);
-				this.mBtn.addEventListener(MouseEvent.MOUSE_OUT, onMouseOutNode);
-				this.mBtn.addEventListener(MouseEvent.CLICK, onMouseClickNode);
 				this.mSubContainer.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDownContainer);
 				this.mSubContainer.addEventListener(MouseEvent.ROLL_OVER, onMouseOverContainer);
 				this.mSubContainer.addEventListener(MouseEvent.ROLL_OUT, onMouseOutContainer);
-				this.mNext.addEventListener(MouseEvent.ROLL_OVER, onMouseOverNext);
-				this.mNext.addEventListener(MouseEvent.ROLL_OUT, onMouseOutNext);
 				
 				this.addEventListener(KeyboardEvent.KEY_DOWN, function(evt:KeyboardEvent):void
 				{
@@ -153,14 +208,12 @@
 				filter.strength = 50;
 				filter.blurX = 20;
 				filter.blurY = 20;
-				var node:BTNode;
-				if (this.isInSubBT()) node = this.rootSubBT;
-				else node = this;
+				var node:BTNode = this;
 				node.mSubContainer.filters = [filter];
 				this.mCanvas.CURRENT_EDIT_NODE = node;
 				
 				if (!this.mParent) return;
-				this.mCanvas.DRAGGING_NODES = node.getAllChildrens();
+				this.mCanvas.DRAGGING_NODES = [node];
 				this.mCanvas.DRAGGING_INFOS = [];
 				for each (var n:BTNode in this.mCanvas.DRAGGING_NODES) {
 					this.mCanvas.DRAGGING_INFOS.push({x:n.x, y:n.y, index:(n.parent as Group).getChildIndex(n)});
@@ -202,55 +255,46 @@
 					n.mouseEnabled = true;
 					i++;
 				}
-				var node:BTNode = this.mCanvas.DRAGGING_NODES[0];
+				var srcNode:BTNode = this.mCanvas.DRAGGING_NODES[0];
+				var dstNode:BTNode = this.mCanvas.TARGET_NODE;
 				if (this.mCanvas.TARGET_NODE && this.mCanvas.TARGET_TYPE == 1) {
-					var tData:Object;
-					if (this.mCanvas.TARGET_NODE.isSubBT) {
-						tData = {subTree:this.mCanvas.TARGET_NODE.nodeName};
+					srcNode.mSubContainer.filters = [];
+					dstNode.mSubContainer.filters = [];
+					var p1:BTNode = srcNode.nodeParent;
+					var p2:BTNode = dstNode.nodeParent;
+					var index1:int = p1.nodeChildrens.indexOf(srcNode);
+					var index2:int = p2.nodeChildrens.indexOf(dstNode);
+					p1.removeChildNode(srcNode);
+					p2.removeChildNode(dstNode);
+					if (index1 < index2) {
+						p1.insertChildNodeAt(dstNode, index1);
+						p2.insertChildNodeAt(srcNode, index2);
 					}
 					else {
-						tData = Utils.cloneObjectData(this.mCanvas.TARGET_NODE.nodeData);
+						p2.insertChildNodeAt(srcNode, index2);
+						p1.insertChildNodeAt(dstNode, index1);
 					}
-					var sData:Object;
-					if (node.isSubBT) {
-						sData = {subTree:node.nodeName};
-					}
-					else {
-						sData = Utils.cloneObjectData(node.nodeData);
-					}
-					var tName:String = this.mCanvas.TARGET_NODE.nodeName;
-					var tIsSubBT:Boolean = this.mCanvas.TARGET_NODE.isSubBT;
-					this.mCanvas.TARGET_NODE.mSubContainer.filters = [];
-					this.mCanvas.TARGET_NODE.isSubBT = node.isSubBT;
-					this.mCanvas.TARGET_NODE.nodeName = node.nodeName;
-					this.mCanvas.TARGET_NODE.nodeData = sData;
-					this.mCanvas.TARGET_NODE.writeDataBackToParent();
-					node.isSubBT = tIsSubBT;
-					node.nodeName = tName;
-					node.nodeData = tData;
-					node.writeDataBackToParent();
-					this.mCanvas.updateTree(true);
-					this.mCanvas.setModified(true);
+					p1.updateComponents();
+					p2.updateComponents();
+					this.mCanvas.autoLayout();
 				}
 				else if (this.mCanvas.TARGET_NODE && this.mCanvas.TARGET_TYPE == 2) {
-					this.mCanvas.TARGET_NODE.mNext.filters = [];
-					if (node.isSubBT) {
-						sData = {subTree:node.nodeName};
-					}
-					else {
-						sData = Utils.cloneObjectData(node.nodeData);
-					}
-					this.mCanvas.TARGET_NODE.nodeData.children.push(sData);
-					this.mCanvas.TARGET_NODE.writeDataBackToParent();
-					node.onDeleteNode();
+					dstNode.mNext.filters = [];
+					p1 = srcNode.nodeParent;
+					p1.removeChildNode(srcNode);
+					p1.updateComponents();
+					dstNode.insertChildNodeAt(srcNode, 0);
+					dstNode.updateComponents();
+					this.mCanvas.autoLayout();
 				}
+				this.mCanvas.setModified(true);
 				this.mCanvas.TARGET_NODE = null;
 				this.mCanvas.DRAGGING_NODES = null;
 				this.mCanvas.DRAGGING_INFOS = null;
 			}
 			
 			public function onMouseOverContainer(event:Event):void {
-				if (this.mCanvas.DRAGGING_NODES && this.mCanvas.DRAGGING_NODES[0] != this && !(this.isInSubBT() && this.type != TYPE_ROOT) 
+				if (this.mCanvas.DRAGGING_NODES && this.mCanvas.DRAGGING_NODES[0] != this 
 					&& !this.containsChild(this.mCanvas.DRAGGING_NODES[0]) && !this.mCanvas.DRAGGING_NODES[0].containsChild(this)) {
 					var filter:spark.filters.GlowFilter = new spark.filters.GlowFilter();
 					filter.color = 0x00FF00;
@@ -264,7 +308,7 @@
 			}
 			
 			public function onMouseOutContainer(event:Event):void {
-				if (this.mCanvas.DRAGGING_NODES && this.mCanvas.DRAGGING_NODES[0] != this && !(this.isInSubBT() && this.type != TYPE_ROOT) 
+				if (this.mCanvas.DRAGGING_NODES && this.mCanvas.DRAGGING_NODES[0] != this
 					&& !this.containsChild(this.mCanvas.DRAGGING_NODES[0]) && !this.mCanvas.DRAGGING_NODES[0].containsChild(this)) {
 					this.mSubContainer.filters = [];
 					this.mCanvas.TARGET_NODE = null;
@@ -272,6 +316,7 @@
 			}
 			
 			private function onMouseOverNext(event:Event):void {
+				if (this.isFolded()) return;
 				if (this.mCanvas.DRAGGING_NODES) {
 					var filter:spark.filters.GlowFilter = new spark.filters.GlowFilter();
 					filter.color = 0x00FF00;
@@ -285,6 +330,7 @@
 			}
 			
 			private function onMouseOutNext(event:Event):void {
+				if (this.isFolded()) return;
 				if (this.mCanvas.DRAGGING_NODES) {
 					this.mNext.filters = [];
 					this.mCanvas.TARGET_NODE = null;
@@ -292,10 +338,9 @@
 			}
 			
 			private function onInput1Click(event:Event):void {
-				if (this.isInSubBT()) return;
 				var id:String = event.currentTarget.id;
-				var index:int = int(id.charAt(id.length-1));
-				var data:Object = this.mData.data.parm[index-1];
+				var index:int = Utils.getLastInt(id);
+				var data:Object = this.mData.data.parm[index];
 				
 				var window:PathEditPanel = new PathEditPanel(name, data.path, data.type=="array_ccp_curve");
 				
@@ -305,19 +350,19 @@
 			}
 			
 			private function onPathEditPanelClose(e:MsgEvent):void {
-				for (var i:int = 1; i < 7; i++) {
-					if (this["mVar"+i].text == "path") {
+				for (var i:int = 0; i < this.mExecVars.length; i++) {
+					if (this.mExecVars[i].text == "path") {
 						break;
 					}
 				}
-				this["mInput"+i].text =  JSON.stringify(e.hintData);
-				this.mData.data.parm[i-1].path = e.hintData;
+				this.mExecInputs[i].text =  JSON.stringify(e.hintData);
+				this.mData.data.parm[i].path = e.hintData;
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
 			}
 			
 			private function onMouseOverNode(event:Event):void {
-				if (this.mCanvas.SELECTED_NODE && !this.isInSubBT()) {
+				if (this.mCanvas.SELECTED_NODE) {
 					var filter:spark.filters.GlowFilter = new spark.filters.GlowFilter();
 					filter.color = 0x00FF00;
 					filter.strength = 50;
@@ -328,13 +373,13 @@
 			}
 			
 			private function onMouseOutNode(event:Event):void {
-				if (this.mCanvas.SELECTED_NODE && !this.isInSubBT()) {
+				if (this.mCanvas.SELECTED_NODE) {
 					this.mBtn.filters = [];
 				}
 			}
 			
 			private function onMouseClickNode(event:Event):void {
-				if (this.mCanvas.SELECTED_NODE && !this.isInSubBT()) {
+				if (this.mCanvas.SELECTED_NODE) {
 					var data:Object = {type:this.mCanvas.SELECTED_NODE, data:null, children:[]};
 					if (this.mCanvas.SELECTED_NODE == FUNC_NODE_LOOP) {
 						data.times = 1;
@@ -348,12 +393,7 @@
 					}
 					if (this.type == TYPE_ROOT) {
 						if (!this.mData.children || this.mData.children.length < 1) {
-							if (this.mData.subTree) {
-								this.mData.children = [data];
-							}
-							else {
-								this.mData = data;
-							}
+							this.mData = data;
 						}
 						else {
 							this.mData.children.push(data);
@@ -367,10 +407,10 @@
 						else {
 							this.mData.children.push(data);
 						}
-						this.clearChildrens();
 						this.writeDataBackToParent();
 					}
-					this.mCanvas.updateTree(true);
+					this.addChildNodeWithData(data);
+					this.mCanvas.autoLayout();
 					this.mCanvas.clearSelected();
 					this.mCanvas.setModified(true);
 					this.mBtn.filters = [];
@@ -384,102 +424,65 @@
 			}
 			
 			public function onDeleteNode(event:Event=null):void {
-				if (this.isInSubBT()) {
-					var root:BTNode = this.rootSubBT;
-					if (root.nodeParent.type == TYPE_ROOT) {
-						root.nodeParent.nodeData = {type:"执行", children:[], data:null};
+				this.clearChildrens();
+				if (this.mParent) {
+					this.mCanvas.removeNodeFromCanvas(this);
+					if (this.mParent.type == TYPE_ROOT && this.mParent.nodeChildrens.length == 1) {
+						this.mParent.nodeData = {type:"执行", children:[], data:null};
+						this.mCanvas.updateTree(true);
 					}
 					else {
-						var index:int = root.nodeParent.nodeChildrens.indexOf(root);
-						root.nodeParent.nodeData.children.splice(index, 1);
+						var index:int = this.mParent.nodeChildrens.indexOf(this);
+						this.mParent.nodeChildrens.splice(index, 1);
+						this.mParent.nodeData.children.splice(index, 1);
+						this.mParent.writeDataBackToParent();
+						this.mParent.updateComponents();
+						this.mCanvas.autoLayout();
 					}
-					root.nodeParent.writeDataBackToParent();
-//					root.nodeParent.updateComponents();
-					root.clearChildrens();
-					this.mCanvas.removeNodeFromCanvas(root);
 				}
 				else {
-					this.clearChildrens();
-					if (this.mParent) {
-						this.mCanvas.removeNodeFromCanvas(this);
-						if (this.mParent.type == TYPE_ROOT && this.mParent.nodeChildrens.length == 1) {
-							this.mParent.nodeData = {type:"执行", children:[], data:null};
-						}
-						else {
-							index = this.mParent.nodeChildrens.indexOf(this);
-							this.mParent.nodeData.children.splice(index, 1);
-						}
-						this.mParent.writeDataBackToParent();
-//						this.mParent.updateComponents();
-					}
-					else {
-						this.mData = {type:"执行", children:[], data:null};
-//						this.updateComponents();
-					}
+					this.mData = {type:"执行", children:[], data:null};
+					this.mCanvas.updateTree(true);
 				}
-				this.mCanvas.updateTree(true);
 				this.mCanvas.setModified(true);
 			}
 			
-			private function onUnlockNode(event:Event):void {
-				var root:BTNode = this.rootSubBT;
-				if (!root) {
-					Alert.show("节点不在子行为上，无需解锁");
+			private function onFoldNode(event:Event):void {
+				if (!this.mData.children || this.mData.children.length == 0 || this.type == TYPE_ROOT) {
+					return;
+				}
+				if (!this.isFolded()) {
+					this.mData.fold = true;
 				}
 				else {
-					if (root.nodeParent.type == TYPE_ROOT) {
-						root.nodeParent.nodeData = root.nodeData;
-					}
-					else {
-						var index:int = root.nodeParent.nodeChildrens.indexOf(root);
-						root.nodeParent.nodeData.children[index] = root.nodeData;
-					}
-					root.nodeParent.writeDataBackToParent();
-					this.mCanvas.removeNodeFromCanvas(root);
-					this.mCanvas.setModified(true);
-					this.mCanvas.updateTree(true);
+					this.mData.fold = false;
 				}
+				this.writeDataBackToParent();
+				this.mCanvas.setModified(true);
+				this.updateComponents();
+				this.mCanvas.autoLayout();
 			}
 			
 			public function onPasteNode(event:Event=null):void {
 				if (BTPanel.CLIPPING) {
 					var clipping:Object = Utils.cloneObjectData(BTPanel.CLIPPING);
-					if (this.isInSubBT()) {
-						if (this.type == TYPE_ROOT) {
-							this.mCanvas.setModified(true);
-							if (this.mParent.type == TYPE_ROOT) {
-								this.mParent.nodeData = clipping;
-								this.mParent.clearChildrens();
-							}
-							else {
-								var index:int = this.mParent.mChildrens.indexOf(this);
-								this.mParent.nodeData.children[index] = clipping;
-							}
-							this.mParent.writeDataBackToParent();
-//							this.mParent.updateComponents();
-							this.mCanvas.updateTree(true);
-						}
+					this.mCanvas.setModified(true);
+					if (!this.mParent) {
+						this.mData = clipping;
+						this.mCanvas.updateTree(true);
 					}
 					else {
-						this.mCanvas.setModified(true);
-						if (!this.mParent) {
-							this.mData = clipping;
-							this.clearChildrens();
-//							this.updateComponents();
+						if (this.mParent.type == TYPE_ROOT) {
+							this.mParent.nodeData = clipping;
+							this.mCanvas.updateTree(true);
 						}
 						else {
-							if (this.mParent.type == TYPE_ROOT) {
-								this.mParent.nodeData = clipping;
-								this.mParent.clearChildrens();
-							}
-							else {
-								index = this.mParent.mChildrens.indexOf(this);
-								this.mParent.nodeData.children[index] = clipping;
-							}
-							this.mParent.writeDataBackToParent();
-//							this.mParent.updateComponents();
+							var index:int = this.mParent.mChildrens.indexOf(this);
+							this.mParent.nodeData.children[index] = clipping;
+							this.setData(TYPE_FUNC, clipping.type, clipping, this.mCanvas, this.mParent);
+							this.updateChildrens();
+							this.mCanvas.autoLayout();
 						}
-						this.mCanvas.updateTree(true);
 					}
 				}
 			}
@@ -490,18 +493,20 @@
 			}
 			
 			private function onPasteNodeToNext(event:Event):void {
+				if (this.isFolded()) return;
 				if (BTPanel.CLIPPING) {
 					var clipping:Object = Utils.cloneObjectData(BTPanel.CLIPPING);
 					if (this.type == TYPE_ROOT) {
 						this.mData = clipping;
+						this.mCanvas.updateTree(true);
 					}
 					else {
 						this.mData.children.push(clipping);
+						this.writeDataBackToParent();
+						this.addChildNodeWithData(clipping);
+						this.mCanvas.autoLayout();
 					}
-					this.writeDataBackToParent();
 					this.mCanvas.setModified(true);
-//					this.updateComponents();
-					this.mCanvas.updateTree(true);
 				}
 			}
 			
@@ -532,41 +537,57 @@
 				}
 				this.mNodeVars.length = 0;
 				this.mNodeInputs.length = 0;
+				
+				this.checkAndCreate("mBtn");
+				this.checkAndCreate("mNext");
+				this.checkAndCreate("mNextLine");
 				switch (this.mType) {
 					case TYPE_ROOT:
 						this.mBtn.visible = true;
-						this.mBtn.setStyle("icon", this.isSubBT?new BTPanel.ICON_SUBTREE():new BTPanel.ICON_ROOT());
+						this.mBtn.setStyle("icon", new BTPanel.ICON_ROOT());
 						this.mSubContainer.width = this.mSubContainer.height = 50;
-						for (i = 1; i < 7; i++) {
-							this["mVar"+i].visible = false;
-							this["mInput"+i].visible = false;
+						for (i = 0; i < this.mExecVars.length; i++) {
+							this.mExecVars[i].visible = false;
+							this.mExecInputs[i].visible = false;
 						}
-						this.mTitle.visible = false;
-//						if (!this.mData.children || (!this.mData.data && this.mData.children.length == 0 && !this.mData.type)) {
-//							this.mNextLine.visible = true;
-//							this.mNext.visible = true;
-//							this.mNextLine.x = 50;
-//							this.mNext.x = 100;
-//						}
-//						else {
+						if (this.isFolded()) {
+							this.mNextLine.visible = true;
+							this.mNext.visible = true;
+							this.mNextLine.x = 50;
+							this.mNext.x = 75;
+							this.mNext.setStyle("icon", new BTPanel.ICON_FOLD());
+						}
+						else {
 							this.mNextLine.visible = false;
 							this.mNext.visible = false;
-//						}
+						}
 						break;
-					case TYPE_FUNC: 
+					case TYPE_FUNC:
+						this.checkAndCreate("mTitle");
 						if (this.mName == FUNC_NODE_EXEC) {
 							// empty node
 							if (this.mData.args || !this.mData.data) {
 								this.mBtn.visible = true;
 								this.mBtn.setStyle("icon", new ICON_FUNC_NODE[this.mName]());
 								this.mSubContainer.width = this.mSubContainer.height = 50;
-								for (i = 1; i < 7; i++) {
-									this["mVar"+i].visible = false;
-									this["mInput"+i].visible = false;
+								for (i = 0; i < this.mExecVars.length; i++) {
+									this.mExecVars[i].visible = false;
+									this.mExecInputs[i].visible = false;
 								}
 								this.mTitle.visible = false;
 								this.mNext.visible = false;
 								this.mNextLine.visible = false;
+								if (this.isFolded()) {
+									this.mNextLine.visible = true;
+									this.mNext.visible = true;
+									this.mNextLine.x = 50;
+									this.mNext.x = 75;
+									this.mNext.setStyle("icon", new BTPanel.ICON_FOLD());
+								}
+								else {
+									this.mNext.visible = false;
+									this.mNextLine.visible = false;
+								}
 							}
 							// contains children, replace it
 							else {
@@ -586,30 +607,38 @@
 										hasNextNode = true;
 									}
 									else {
-										this["mVar"+j].visible = true;
-										this["mInput"+j].visible = true;
-										this["mVar"+j].text = this.mData.data.parm[i].name;
-										this["mInput"+j].text = this.mData.data.parm[i].value || JSON.stringify(this.mData.data.parm[i].path);
+										this.checkAndCreate("mVar", j);
+										this.mExecVars[j-1].visible = true;
+										this.mExecInputs[j-1].visible = true;
+										this.mExecVars[j-1].text = this.mData.data.parm[i].name;
+										this.mExecInputs[j-1].text = this.mData.data.parm[i].value || JSON.stringify(this.mData.data.parm[i].path);
 										if (this.mData.data.parm[i].path) {
-											this["mInput"+j].addEventListener(MouseEvent.CLICK, onInput1Click);
+											this.mExecInputs[j-1].addEventListener(MouseEvent.CLICK, onInput1Click);
 										}
 										else {
-											this["mInput"+j].removeEventListener(MouseEvent.CLICK, onInput1Click);
+											this.mExecInputs[j-1].removeEventListener(MouseEvent.CLICK, onInput1Click);
 										}
-										(this["mInput"+j] as TextInput).editable = !this.isInSubBT();
 										j++;
 									}
 								}
 								numParams = j;
-								for (; j < 7; j++) {
-									this["mVar"+j].visible = false;
-									this["mInput"+j].visible = false;
+								for (; j <= this.mExecVars.length; j++) {
+									this.mExecVars[j-1].visible = false;
+									this.mExecInputs[j-1].visible = false;
 								}
-								if (hasNextNode && (!this.mData.children || this.mData.children.length < 1)) {
+								if (this.isFolded()) {
+									this.mNextLine.visible = true;
+									this.mNext.visible = true;
+									this.mNextLine.x = 150;
+									this.mNext.x = 175;
+									this.mNext.setStyle("icon", new BTPanel.ICON_FOLD());
+								}
+								else if (hasNextNode && (!this.mData.children || this.mData.children.length < 1)) {
 									this.mNext.visible = true;
 									this.mNextLine.visible = true;
 									this.mNextLine.x = 150;
-									this.mNext.x = 200;
+									this.mNext.x = 175;
+									this.mNext.setStyle("icon", new BTPanel.ICON_EXEC());
 								}
 								else {
 									this.mNext.visible = false;
@@ -617,7 +646,7 @@
 								}
 								this.mSubContainer.width = 150;
 								numParams = numParams<2?2:numParams;
-								this.mSubContainer.height = 185-(7-numParams)*25;
+								this.mSubContainer.height = 60+(numParams-2)*25;
 							}
 						}
 						else {
@@ -636,7 +665,6 @@
 								if (this.mData.times) {
 									input.text = this.mData.times;
 								}
-								input.editable = !this.isInSubBT();
 							}
 							else if (this.mName == FUNC_NODE_EVERY) {
 								label = new Label();
@@ -653,7 +681,6 @@
 								if (this.mData.interval) {
 									input.text = this.mData.interval;
 								}
-								input.editable = !this.isInSubBT();
 								
 								label = new Label();
 								this.addElement(label);
@@ -669,7 +696,6 @@
 								if (this.mData.hasOwnProperty("skip")) {
 									input.text = this.mData.skip;
 								}
-								input.editable = !this.isInSubBT();
 							}
 							else if (this.mName == FUNC_NODE_RANDOM) {
 								for (i = 0; i < this.mData.children.length; i++) {
@@ -687,82 +713,31 @@
 									if (this.mData.weights.length > i) {
 										input.text = this.mData.weights[i];
 									}
-									input.editable = !this.isInSubBT();
 								}
 							}
 							
 							this.mBtn.visible = true;
 							this.mBtn.setStyle("icon", new ICON_FUNC_NODE[this.mName]());
 							this.mSubContainer.width = this.mSubContainer.height = 50;
-							for (i = 1; i < 7; i++) {
-								this["mVar"+i].visible = false;
-								this["mInput"+i].visible = false;
+							for (i = 0; i < this.mExecVars.length; i++) {
+								this.mExecVars[i].visible = false;
+								this.mExecInputs[i].visible = false;
 							}
-//							if (this.mData.children && this.mData.children.length > 0) {
+							if (this.isFolded()) {
+								this.mNextLine.visible = true;
+								this.mNext.visible = true;
+								this.mNextLine.x = 50;
+								this.mNext.x = 75;
+								this.mNext.setStyle("icon", new BTPanel.ICON_FOLD());
+							}
+							else {
 								this.mNext.visible = false;
 								this.mNextLine.visible = false;
-//							}
-//							else {
-//								this.mNext.visible = true;
-//								this.mNextLine.visible = true;
-//								this.mNextLine.x = 50;
-//								this.mNext.x = 100;
-//							}
+							}
 							this.mTitle.visible = false;
 						}
 						break;
-					case TYPE_EXEC:
-						for each (d in Data.getInstance().behaviorNodes) {
-							if (d.func == this.mData.data.execType) {
-								this.toolTip = d.desc;
-								break;
-							}
-						}
-						this.mBtn.visible = false;
-						this.mTitle.visible = true;
-						this.mTitle.text = this.mName.substr(8);
-						hasNextNode = false;
-						j = 1;
-						var params:Object = this.mData.data.parm;
-						for (i = 0; i < params.length; i++) {
-							if (params[i].type == "node") {
-								hasNextNode = true;
-							}
-							else {
-								this["mVar"+j].visible = true;
-								this["mInput"+j].visible = true;
-								this["mVar"+j].text = params[i].name;
-								this["mInput"+j].text = params[i].value || JSON.stringify(params[i].path);
-								if (params[i].path) {
-									this["mInput"+j].addEventListener(MouseEvent.CLICK, onInput1Click);
-								}
-								else {
-									this["mInput"+j].removeEventListener(MouseEvent.CLICK, onInput1Click);
-								}
-								(this["mInput"+j] as TextInput).editable = !this.isInSubBT();
-								j++;
-							}
-						}
-						numParams = j;
-						for (; j < 7; j++) {
-							this["mVar"+j].visible = false;
-							this["mInput"+j].visible = false;
-						}
-						if (hasNextNode && (this.mData.args || !this.mData.children || this.mData.children.length < 1)) {
-							this.mNext.visible = true;
-							this.mNextLine.visible = true;
-							this.mNextLine.x = 150;
-							this.mNext.x = 200;
-						}
-						else {
-							this.mNext.visible = false;
-							this.mNextLine.visible = false;
-						}
-						this.mSubContainer.width = 150;
-						this.mSubContainer.height = 185-(7-numParams)*25;
-						break;
 				}
-//				this.updateChildrens();
 			}
 			
 			public function clearChildrens():void {
@@ -784,42 +759,38 @@
 				switch (this.mType) {
 					case TYPE_ROOT:
 						if (this.mData.type) {
-							child = BT.POOL_POP();
-							this.mChildrens.push(child);
-							child.setData(TYPE_FUNC, this.mData.type, this.mData, this.mCanvas, this);
-							this.mCanvas.addNodeToCanvas(child);
-						}
-						else if (this.mData.subTree) {
-							child = BT.POOL_POP();
-							this.mChildrens.push(child);
-							var subTreeData:Object = Utils.cloneObjectData(Data.getInstance().behaviorSet[this.mData.subTree]);
-							child.isSubBT = true;
-							child.setData(TYPE_ROOT, this.mData.subTree, subTreeData, this.mCanvas, this);
-							this.mCanvas.addNodeToCanvas(child);
-						}
-						else if (this.mData.execType) {
-							// error
+							this.addChildNodeWithData(this.mData);
 						}
 						break;
 					case TYPE_FUNC:
 						for each (var data:Object in this.mData.children) {
-							child = BT.POOL_POP();
-							this.mChildrens.push(child);
-							if (data.type) {
-								child.setData(TYPE_FUNC, data.type, data, this.mCanvas, this);
-							}
-							else if (data.subTree) {
-								subTreeData = Utils.cloneObjectData(Data.getInstance().behaviorSet[data.subTree]);
-								child.isSubBT = true;
-								child.setData(TYPE_ROOT, data.subTree, subTreeData, this.mCanvas, this);
-							}
-							else if (data.execType) {
-								// error
-							}
-							this.mCanvas.addNodeToCanvas(child);
+							this.addChildNodeWithData(data);
 						}
 						break;
 				}
+			}
+			
+			private function addChildNodeWithData(data:Object):void {
+				var child:BTNode = BT.POOL_POP();
+				this.mChildrens.push(child);
+				child.setData(TYPE_FUNC, data.type, data, this.mCanvas, this);
+				this.mCanvas.addNodeToCanvas(child);
+			}
+			
+			private function removeChildNode(node:BTNode):void {
+				var index:int = this.mChildrens.indexOf(node);
+				if (index >= 0) {
+					node.mParent = null;
+					this.mData.children.splice(index, 1);
+					this.mChildrens.splice(index, 1);
+				}
+			}
+			
+			private function insertChildNodeAt(node:BTNode, index:int):void {
+				node.nodeParent = this;
+				this.mChildrens.splice(index, 0, node);
+				this.mData.children.splice(index, 0, node.nodeData);
+				node.writeDataBackToParent();
 			}
 			
 			private function onBtnIconLoad(event:Event):void {
@@ -828,12 +799,8 @@
 			}
 			
 			private function onPressBtn(event:Event):void {
-				if (this.mType == TYPE_ROOT && !this.isInSubBT()) return;
-				if (this.mType != TYPE_ROOT && this.isInSubBT()) {
-					Alert.show("子行为已锁定，解锁后可编辑");
-					return;
-				}
-				
+				if (this.mType == TYPE_ROOT) return;
+
 				EventManager.getInstance().addEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNodeSelected);
 				var selection:BTNodeSelection = new BTNodeSelection();
 				PopUpManager.addPopUp(selection, MapEditor.getInstance(), true);
@@ -852,7 +819,6 @@
 							this.clearChildrens();
 							this.mData.children = [];
 //						}
-						this.isSubBT = false;
 						newData = {type:"执行", children:this.mData.children, data:{execType:event.data.name.func, parm:[]}};
 						for (var i:int = 0; i < event.data.name.args.length; i++) {
 							if (event.data.name.args[i].type == "ccp") {
@@ -873,14 +839,11 @@
 								newData.data.parm.push(event.data.name.args[i]);
 							}
 						}
-						this.setData(TYPE_EXEC, event.data.name.func, newData, this.mCanvas, this.mParent);
+						this.mType = TYPE_FUNC;
+						this.mName = FUNC_NODE_EXEC;
+						this.mData = newData;
 						break;
 					case TYPE_FUNC:
-						if (this.isSubBT) {
-							this.clearChildrens();
-							this.mData.children = [];
-						}
-						this.isSubBT = false;
 						newData = {type:event.data.name, data:null, children:this.mData.children};
 						if (event.data.name == FUNC_NODE_LOOP) {
 							newData.times = 1;
@@ -895,22 +858,15 @@
 								newData.weights.push(1);
 							}
 						}
-						this.setData(TYPE_FUNC, event.data.name, newData, this.mCanvas, this.mParent);
-						break;
-					case TYPE_SUB_BT:
-						if (event.data.name == this.rootNode.nodeName) {
-							Alert.show("不能递归嵌套行为！");
-							return;
-						}
-						this.isSubBT = true;
-						this.clearChildrens();
-						newData = Utils.cloneObjectData(Data.getInstance().behaviorSet[event.data.name]);;
-						this.setData(TYPE_ROOT, event.data.name, newData, this.mCanvas, this.mParent);
+						this.mType = TYPE_FUNC;
+						this.mName = event.data.name;
+						this.mData = newData;
 						break;
 				}
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
-				this.mCanvas.updateTree(true);
+				this.updateComponents();
+				this.mCanvas.autoLayout();
 			}
 			
 			public function writeDataBackToParent():void {
@@ -922,17 +878,8 @@
 					}
 				}
 				if (this.mParent) {
-					if (this.isSubBT) {
-						if (this.mParent.type == TYPE_ROOT) {
-							this.mParent.nodeData = {subTree:this.mName};
-						}
-						else {
-							var index:int = this.mParent.nodeChildrens.indexOf(this);
-							this.mParent.nodeData.children[index] = {subTree:this.mName};
-						}
-					}
-					else if (this.mParent.type != TYPE_ROOT) {
-						index = this.mParent.nodeChildrens.indexOf(this);
+					if (this.mParent.type != TYPE_ROOT) {
+						var index:int = this.mParent.nodeChildrens.indexOf(this);
 						this.mParent.nodeData.children[index] = this.mData;
 						this.mParent.writeDataBackToParent();
 					}
@@ -946,7 +893,10 @@
 			}
 			
 			private function onPressNext(event:Event):void {
-				if (this.isInSubBT()) return;
+				if (this.isFolded()) {
+					this.onFoldNode(event);
+					return;
+				}
 				
 				EventManager.getInstance().addEventListener(EventType.BT_NODE_SELECTION_COMPLETE, onNextNodeSelected);
 				var selection:BTNodeSelection = new BTNodeSelection();
@@ -1011,13 +961,12 @@
 							this.mData.children.push(newData);
 						}
 						break;
-					case TYPE_SUB_BT:
-						this.mData.children.push({subTree:event.data.name});
-						break;
 				}
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
-				this.mCanvas.updateTree(true);
+				this.updateComponents();
+				this.addChildNodeWithData(newData);
+				this.mCanvas.autoLayout();
 			}
 			
 			private function onValueChanged(event:TextOperationEvent):void {
@@ -1040,34 +989,30 @@
 					}
 				}
 				else {
-					index = int(id.charAt(id.length-1));
-					this.mData.data.parm[index-1].value = (event.currentTarget as TextInput).text;
+					index = Utils.getLastInt(id);
+					this.mData.data.parm[index].value = (event.currentTarget as TextInput).text;
 				}
 				this.writeDataBackToParent();
 				this.mCanvas.setModified(true);
 			}
 			
 			public function reset():void {
-				this.mMaxDepth = -1;
-				this.mMaxSiblings = -1;
-				this.mSiblingIndex = -1;
-				this.mNodeDepth = -1;
-				this.mIsInSubTree = -1;
-				this.mIsSubBT = false;
+
 			}
 			
-			public function isInSubBT():Boolean {
-				if (this.mIsInSubTree != -1) return this.mIsInSubTree==1;
-				if (this.mIsSubBT) {
-					this.mIsInSubTree = 1;
+			public function get isInFoldedTree():Boolean {
+				if (this.mParent && this.mParent.isFolded() && this.mParent.nodeParent) {
 					return true;
 				}
-				if (this.mParent) {
-					this.mIsInSubTree = this.mParent.isInSubBT()?1:0;
-					return this.mIsInSubTree==1;
+				if (!this.mParent) {
+					return false;
 				}
-				this.mIsInSubTree = 0;
-				return this.mIsInSubTree==1;
+				return this.mParent.isInFoldedTree;
+			}
+			
+			public function isFolded():Boolean {
+				if (this.mData.fold) return true;
+				return false;
 			}
 			
 			public function containsChild(node:BTNode):Boolean {
@@ -1080,38 +1025,61 @@
 				return false;
 			}
 			
+			public function checkNearestRootNode(node:BTNode):BTNode {
+				if (this == node) return this;
+				var node1:BTNode;
+				var node2:BTNode;
+				var depth1:int = this.nodeDepth;
+				var depth2:int = node.nodeDepth;
+				if (depth1 <= depth2) {
+					node1 = this;
+					node2 = node;
+				}
+				else {
+					node1 = node;
+					node2 = this;
+					var tmp:int = depth1;
+					depth1 = depth2;
+					depth2 = tmp;
+				}
+				while (depth2 > depth1) {
+					node2 = node2.nodeParent;
+					depth2--;
+				}
+				if (node2 == node1) return node2;
+				else {
+					node2 = node2.nodeParent;
+					node1 = node1.nodeParent;
+					if (node2 == node1) return node2;
+				}
+				return null;
+			}
+			
 			public function get nodeDepth():int {
-				if (this.mNodeDepth != -1) return this.mNodeDepth;
 				var depth:int = 0;
 				var p:BTNode = this.mParent;
 				while (p) {
 					depth++;
 					p = p.nodeParent;
 				}
-				this.mNodeDepth = depth;
 				return depth;
 			}
 			
 			public function get siblingIndex():int {
-				if (this.mSiblingIndex != -1) return this.mSiblingIndex;
 				if (this.mParent) { 
 					var index:int = this.mParent.nodeChildrens.indexOf(this);
 					if (index <= 0) {
-						this.mSiblingIndex = this.mParent.siblingIndex;
-						return this.mSiblingIndex;
+						return this.mParent.siblingIndex;
 					}
 					else {
-						this.mSiblingIndex = this.mParent.nodeChildrens[index-1].maxSiblings + this.mParent.nodeChildrens[index-1].siblingIndex;
-						return this.mSiblingIndex;
+						return this.mParent.nodeChildrens[index-1].maxSiblings + this.mParent.nodeChildrens[index-1].siblingIndex;
 					}
 				}
-				this.mSiblingIndex = 0;
 				return 0;
 			}
 			
 			/** max depth count from current node */
 			public function get maxDepth():int {
-				if (this.mMaxDepth != -1) return this.mMaxDepth; 
 				if (this.mChildrens.length <= 0) return 1;
 				var max:int = 1;
 				for (var i:int = 0; i < this.mChildrens.length; i++) {
@@ -1120,19 +1088,16 @@
 						max = depth;
 					}
 				}
-				this.mMaxDepth = max+1;
 				return max+1;
 			}
 			
 			public function get maxSiblings():int {
-				if (this.mMaxSiblings != -1) return this.mMaxSiblings; 
 				if (!this.mChildrens || this.mChildrens.length <= 0) return 1;
 				var max:int = 0;
 				for (var i:int = 0; i < this.mChildrens.length; i++) {
 					var s:int = this.mChildrens[i].maxSiblings;
 					max += s;
 				}
-				this.mMaxSiblings = max;
 				return max;
 			}
 			
@@ -1141,16 +1106,6 @@
 					return this.mParent.rootNode;
 				}
 				return this;
-			}
-			
-			public function get rootSubBT():BTNode {
-				if (!this.mParent) {
-					return null;
-				}
-				if (this.isSubBT && this.type == TYPE_ROOT) {
-					return this;
-				}
-				return this.mParent.rootSubBT;
 			}
 			
 			public function get nodeWidth():Number {
@@ -1175,13 +1130,12 @@
 			
 			public function get type():int { return this.mType; }
 			public function get nodeParent():BTNode { return this.mParent; }
+			public function set nodeParent(value:BTNode):void { this.mParent = value; }
 			public function get nodeChildrens():Vector.<BTNode> { return this.mChildrens; }
 			public function get nodeName():String { return this.mName; }
 			public function set nodeName(value:String):void { this.mName = value; }
 			public function get nodeData():Object { return this.mData; }
 			public function set nodeData(value:Object):void { this.mData = value; }
-			public function get isSubBT():Boolean { return this.mIsSubBT};
-			public function set isSubBT(value:Boolean):void { this.mIsSubBT = value; }
 			public function get isDetached():Boolean { return this.mIsDetached};
 			public function set isDetached(value:Boolean):void { this.isDetached = value; }
 			
@@ -1193,38 +1147,5 @@
 	<s:BorderContainer id="mSubContainer" width="150" height="180" backgroundColor="#3A9CFF"
 					   borderVisible="true" dropShadowVisible="true"
 					   middleClick="onPressBtn(event)">
-		<s:Button id="mBtn" width="50" height="50" 
-				  cornerRadius="0" fontFamily="Arial" fontStyle="normal" fontWeight="normal"
-				  icon="assets/zhixing.png"/>
-		<s:Label id="mTitle" x="0" y="0" width="100%" color="#FFFFFF" fontSize="12" text="StayOnMap"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar1" x="0" y="30" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar2" x="0" y="55" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:TextInput id="mInput1" x="75" y="25" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:TextInput id="mInput2" x="75" y="50" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:TextInput id="mInput3" x="75" y="75" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:TextInput id="mInput4" x="75" y="100" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:TextInput id="mInput5" x="75" y="125" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:TextInput id="mInput6" x="75" y="150" width="50%" change="onValueChanged(event)"
-					 textAlign="center"/>
-		<s:Label id="mVar3" x="0" y="80" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar4" x="0" y="105" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar5" x="0" y="130" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
-		<s:Label id="mVar6" x="0" y="155" width="50%" color="#FFFFFF" fontSize="14" text="variable1:"
-				 textAlign="center" verticalAlign="middle"/>
 	</s:BorderContainer>
-	<s:Button id="mNext" x="200" y="0" width="50" height="50" label="可接节点" 
-			  click="onPressNext(event)" middleClick="onPressNext(event)" cornerRadius="0" fontFamily="Arial" fontStyle="normal"
-			  fontWeight="normal" icon="@Embed('assets/zhixing.png')"/>
-	<mx:HRule id="mNextLine" x="150" y="25" width="50"/>
 </s:BorderContainer>

@@ -62,6 +62,8 @@
 			public static const ICON_EVERY:Class;
 			[Embed(source="assets/random.png")] 
 			public static const ICON_RANDOM:Class;
+			[Embed(source="assets/fold.png")] 
+			public static const ICON_FOLD:Class;
 			
 			private function onCreation():void {
 				this.mTabDict = new Object();
@@ -295,8 +297,9 @@
 				this.mPhoto = new UIComponent();
 				if (bitmapData) {
 					var bmp:Bitmap = new Bitmap(bitmapData);
-					bmp.x = bmp.width/2;
-					bmp.y = bmp.height/2;
+					bmp.scaleX = bmp.scaleY = bmp.width>200?200/bmp.width:1;
+					bmp.x = -bmp.width/2;
+					bmp.y = -bmp.height/2;
 					this.mPhoto.addChild(bmp);
 				} 
 				else {
@@ -307,6 +310,8 @@
 					this.mPhoto.addChild(tf);
 				}
 				this.mPhotoContainer.addElement(this.mPhoto);
+				this.mPhoto.x = this.mPhotoContainer.width/2;
+				this.mPhoto.y = this.mPhotoContainer.height/2;
 			}
 			
 			private function onPressClose(event:Event):void {

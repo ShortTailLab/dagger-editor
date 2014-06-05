@@ -37,15 +37,15 @@
 			}
 			
 			private function onTabChanged(event:IndexChangedEvent):void {
-				if (event.newIndex == 2 && this.mLibraryList && this.mLibraryList.dataProvider == null) {
-					this.mTab3Data = new ArrayCollection();
-					for (var b:String in Data.getInstance().behaviorSet) {
-						mTab3Data.addItem(b);
-					}
-					mTab3Data.sort = new Sort();
-					mTab3Data.refresh();
-					this.mLibraryList.dataProvider = mTab3Data;
-				}
+//				if (event.newIndex == 2 && this.mLibraryList && this.mLibraryList.dataProvider == null) {
+//					this.mTab3Data = new ArrayCollection();
+//					for (var b:String in Data.getInstance().behaviorSet) {
+//						mTab3Data.addItem(b);
+//					}
+//					mTab3Data.sort = new Sort();
+//					mTab3Data.refresh();
+//					this.mLibraryList.dataProvider = mTab3Data;
+//				}
 			}
 			
 			private function onPressClose(event:Event=null):void {
@@ -57,12 +57,7 @@
 				mSelectedData = {type:BTNode.TYPE_EXEC, name:this.mTab1Data[event.rowIndex]};
 				this.onPressClose();
 			}
-			
-			private function onSelectLibrary(event:IndexChangeEvent):void {
-				mSelectedData = {type:BTNode.TYPE_SUB_BT, name:this.mTab3Data[event.newIndex]};
-				this.onPressClose();
-			}
-			
+						
 			private function onPressFunc1(event:MouseEvent):void {
 				mSelectedData = {type:BTNode.TYPE_FUNC, name:BTNode.FUNC_NODE_EXEC};
 				this.onPressClose();
@@ -149,9 +144,6 @@
 							  icon="@Embed('assets/random.png')"/>
 				</s:VGroup>
 			</s:HGroup>
-		</s:NavigatorContent>
-		<s:NavigatorContent width="100%" height="100%" label="行为库">
-			<s:List id="mLibraryList" x="0" y="0" width="100%" height="100%" change="onSelectLibrary(event)"></s:List>
 		</s:NavigatorContent>
 	</mx:TabNavigator>
 </s:TitleWindow>
