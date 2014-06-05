@@ -9,20 +9,20 @@ package excel
 	
 	import excel.Grid;
 	
-	public class SkillConfigReader
+	public class ExcelConfigReader
 	{
-		public static function parseSkillConfigFromPath(path:String, onComplete) : void
+		public static function parse(path:String, onComplete:Function) : void
 		{
 			var file:File = new File(path);
 			
 			file.addEventListener(Event.COMPLETE, function(e:Event):void 
 			{
-				parseSkillConfigFromBytes(file.data, onComplete);
+				parseConfigFromBytes(file.data, onComplete);
 			});
 			file.load();
 		}
 		
-		public static function parseSkillConfigFromBytes(bytes:ByteArray, onComplete:Function) : void
+		public static function parseConfigFromBytes(bytes:ByteArray, onComplete:Function) : void
 		{
 			var loader:XLSXLoader = new XLSXLoader;
 			
@@ -31,13 +31,13 @@ package excel
 				var sheetNames:Vector.<String> = loader.getSheetNames();
 				
 				// check if we can find desired sheets
-				if(sheetNames.indexOf("技能导表") < 0)
+				if( sheetNames.length <= 0)
 				{
-					trace("cannot find skill sheet");
+					trace("cannot find sheet");
 					return;
 				}
 		
-				var skillSheet:Worksheet = loader.worksheet("技能导表");
+				var skillSheet:Worksheet = loader.worksheet(sheetNames[0]);
 				
 				// get table range
 				var height:int = skillSheet.getMaxRowCount("A");
@@ -73,26 +73,24 @@ package excel
 						dict[keyList[k]] = val;
 					}
 					
-					if( !skillDict.hasOwnProperty(dict["id"]) )
-						skillDict[ dict["id"] ] = {};
-					skillDict[ dict["id"] ][ dict["level"] ] = dict;
+					skillDict[ dict["id"] ] = dict;
 				}
 				
-				for( var item:String in skillDict )
-				{
-					var max:Number = -1, max_level:int = 1;
-					for( var level:String in skillDict[item] )
-					{
-						if( max < Number(level) )
-						{
-							max = Number(level);
-							max_level = int(level);
-						}
-					}
-					skillDict[item]["max_level"] = max_level;
-				}
+//				for( var item:String in skillDict )
+//				{
+//					var max:Number = -1, max_level:int = 1;
+//					for( var level:String in skillDict[item] )
+//					{
+//						if( max < Number(level) )
+//						{
+//							max = Number(level);
+//							max_level = int(level);
+//						}
+//					}
+//					skillDict[item]["max_level"] = max_level;
+//				}
 				
-				onComplete(skillDict);
+				onComplete(skillDict, sheetNames[0]);
 			});
 			
 			loader.loadFromByteArray(bytes);
