@@ -170,25 +170,33 @@
 					var file:File = e.target as File;
 					Data.getInstance().setEditorConfig("skillPathCache", file.nativePath);
 					
-					var mask:* = Utils.makeManualPanel("解析技能配置中，请稍后…", self);	
-					ExcelConfigReader.parse(file.nativePath, 
-						function(data:*, name:String):void
-						{
-							var jsonOut:String = JSON.stringify(data, null, "\t");
-
-							var saved:File = Data.getInstance().resolvePath("config/"+name+".json");
-							Utils.WriteRawFile( saved, jsonOut );
-							
-							SyncManager.getInstance().uploadConfigFileToOSSFromPath(
-								saved.nativePath, 
-								function(t:String):void 
-								{
+					Utils.makeRenamePanel(function(name:String):void
+					{
+						var mask:* = Utils.makeManualPanel("解析导表中，请稍后…", self);	
+						ExcelConfigReader.parse(file.nativePath, name,
+							function(data:*):void
+							{
+								if( !data ) {
 									Utils.releaseManualPanel( mask );
-									Alert.show( t );
+									Alert.show("无法找到该页");
+									return;
 								}
-							);
-						}
-					);
+								var jsonOut:String = JSON.stringify(data, null, "\t");
+								
+								var saved:File = Data.getInstance().resolvePath("config/"+name+".json");
+								Utils.WriteRawFile( saved, jsonOut );
+								
+								SyncManager.getInstance().uploadConfigFileToOSSFromPath(
+									saved.nativePath, 
+									function(t:String):void 
+									{
+										Utils.releaseManualPanel( mask );
+										Alert.show( t );
+									}
+								);
+							}
+						);
+					}, self, "请输入页名");
 				});
 			}
 			

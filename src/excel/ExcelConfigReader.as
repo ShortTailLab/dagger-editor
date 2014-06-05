@@ -3,41 +3,41 @@ package excel
 	import com.childoftv.xlsxreader.Worksheet;
 	import com.childoftv.xlsxreader.XLSXLoader;
 	
+	import excel.Grid;
+	
 	import flash.events.Event;
 	import flash.filesystem.File;
 	import flash.utils.ByteArray;
 	
-	import excel.Grid;
-	
 	public class ExcelConfigReader
 	{
-		public static function parse(path:String, onComplete:Function) : void
+		public static function parse(path:String, name:String, onComplete:Function) : void
 		{
 			var file:File = new File(path);
 			
 			file.addEventListener(Event.COMPLETE, function(e:Event):void 
 			{
-				parseConfigFromBytes(file.data, onComplete);
+				parseConfigFromBytes(file.data, name, onComplete);
 			});
 			file.load();
 		}
 		
-		public static function parseConfigFromBytes(bytes:ByteArray, onComplete:Function) : void
+		public static function parseConfigFromBytes(bytes:ByteArray, name:String, onComplete:Function) : void
 		{
 			var loader:XLSXLoader = new XLSXLoader;
 			
 			loader.addEventListener(Event.COMPLETE, function(e:Event):void
-			{
-				var sheetNames:Vector.<String> = loader.getSheetNames();
+			{		
 				
-				// check if we can find desired sheets
-				if( sheetNames.length <= 0)
-				{
-					trace("cannot find sheet");
+				var sheetNames:Vector.<String>= loader.getSheetNames(), flag:Boolean = false;
+				for( var i=0; i<sheetNames.length; i++ )
+					if( sheetNames[i] == name ) flag = true;
+				if( !flag ) {
+					onComplete(null);
 					return;
 				}
-		
-				var skillSheet:Worksheet = loader.worksheet(sheetNames[0]);
+				
+				var skillSheet:Worksheet = loader.worksheet(name);
 				
 				// get table range
 				var height:int = skillSheet.getMaxRowCount("A");
@@ -76,21 +76,7 @@ package excel
 					skillDict[ dict["id"] ] = dict;
 				}
 				
-//				for( var item:String in skillDict )
-//				{
-//					var max:Number = -1, max_level:int = 1;
-//					for( var level:String in skillDict[item] )
-//					{
-//						if( max < Number(level) )
-//						{
-//							max = Number(level);
-//							max_level = int(level);
-//						}
-//					}
-//					skillDict[item]["max_level"] = max_level;
-//				}
-				
-				onComplete(skillDict, sheetNames[0]);
+				onComplete(skillDict);
 			});
 			
 			loader.loadFromByteArray(bytes);
