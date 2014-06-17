@@ -632,7 +632,9 @@
 			
 			public static function mergeTo(from:Array, to:Array, rewrite:Boolean = false):void
 			{
-				if( !from ) return;
+				if( !from ) 
+					return;
+				
 				for each( var item:Array in from )
 				{
 					var inside:Boolean = false;

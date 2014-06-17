@@ -145,19 +145,6 @@
 					];
 				}
 				
-				
-				if( "Level" in Data.getInstance().dynamicArgs )
-				{
-										//					for each( var arr:Array in Data.getInstance().dynamicArgs )
-					//					{
-					//						if( arr[ConfigPanel.kKEY] != "level_id" && 
-					//							arr[ConfigPanel.kKEY] != "level_name" )
-					//						{
-					//							data.push( arr );
-					//						}
-					//					}
-				}
-				
 				return data;
 			}
 			

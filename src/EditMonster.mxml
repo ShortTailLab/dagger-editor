@@ -80,11 +80,27 @@
 				return CUSTOM_BEHAVIOR_TYPES.indexOf(type) >= 0;
 			}
 			
+			public static function genArgsTemplate(type:String):Array
+			{
+				var profileType = Data.getInstance().typeToProfileType(type);
+				var args:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[profileType] ) as Array;
+				var extraArgs:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[type] ) as Array;
+				ConfigPanel.mergeTo(extraArgs, args);
+				return args;
+			}
+			
+			public static function genBaseArgsTemplate(profileType:String):Array
+			{
+				return Utils.deepCopy( Data.getInstance().dynamicArgs[profileType] ) as Array; 
+			}
+			
 			public static function genData( type:String, profile_type:String, id:String = null ):Array
 			{
-				var dynamic_data:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[profile_type] ) as Array;
+				var dynamicArgs:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[profile_type] ) as Array;
+				
 				var monster:Object = Data.getInstance().getEnemyProfileById( 
-					Runtime.getInstance().currentLevelID, id
+					Runtime.getInstance().currentLevelID, 
+					id
 				);
 				
 				var skins:Array = [];
@@ -93,76 +109,51 @@
 				skins.sort();
 				
 				// default items
-				if( !id || !monster ) {
+				if( !monster ) 
+				{					
+					var nextId = Data.getInstance().getMaxMonsterId( Runtime.getInstance().currentLevelID );
 					
-					var enemies:Object = Data.getInstance().getLevelProfileById(
-						Runtime.getInstance().currentLevelID 
-					).monsters;
-					 
-					var nextId:int = int(Runtime.getInstance().currentLevelID+"000");
-					for each ( var m:Object in enemies )
-					{
-						nextId = Math.max( nextId, m.monster_id );
-					}
-					
-					var args:Array = [
-						["基础数据", "type", type, -1, "类型" ],
-						["基础数据", "monster_id", "string", String(nextId+1), "Id" ],
-						["基础数据", "monster_name", "string", "实体"+String(nextId+1), "中文名字" ],
-						["基础数据", "face", "combo_box", -1, "资源前缀", [skins, skins]]
-					];
-					
-					// append monster specific args
-					/*
-					if( type in Data.getInstance().dynamicArgs )
-					{
-						var extraArgs :Array = Utils.deepCopy( Data.getInstance().dynamicArgs[monster.type] ) as Array;
-						var extraArgs:Array = Data.getInstance().dynamicArgs[type];
-						args = args.concat(extraArgs);
-					}*/
-					
-					ConfigPanel.mergeTo( dynamic_data, args );
+					setArgEntry(dynamicArgs, "type", ["基础数据", "type", type, -1, "类型" ]);
+					setArgEntry(dynamicArgs, "monster_id", ["基础数据", "monster_id", "string", String(nextId+1), "Id" ]);
+					setArgEntry(dynamicArgs, "monster_name", ["基础数据", "monster_name", "string", "实体"+String(nextId+1), "中文名字" ]);
+					setArgEntry(dynamicArgs, "face", ["基础数据", "face", "combo_box", -1, "资源前缀", [skins, skins]]);
+										
+					return dynamicArgs;
 				} 
 				else 
 				{
-					// make a copy of the default args
-					for each( var item:Array in dynamic_data )
+					var extraArgs:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[monster.type] ) as Array;
+					if(extraArgs)
+						ConfigPanel.mergeTo(extraArgs, dynamicArgs);
+					
+					for each( var item:Array in dynamicArgs )
 					{
-						if( item[ConfigPanel.kKEY] in monster )
+						var argKey = item[ConfigPanel.kKEY];
+						if( argKey in monster )
 						{
-							item[ConfigPanel.kDEFAULT] = monster[item[ConfigPanel.kKEY]];
+							item[ConfigPanel.kDEFAULT] = monster[argKey];
 						}
 					}
 					
-					var args:Array = [
-						["基础数据", "type", type, monster.type, "类型", monster.monster_id ],
-						["基础数据", "monster_id", "string", monster.monster_id, "Id" ],
-						["基础数据", "monster_name", "string", monster.monster_name, "中文名字" ],
-						["基础数据", "face", "combo_box", monster.face, "资源前缀", [skins, skins]]
-					]; 
+					setArgEntry(dynamicArgs, "type", ["基础数据", "type", type, monster.type, "类型", monster.monster_id ]);
+					setArgEntry(dynamicArgs, "monster_id", ["基础数据", "monster_id", "string", monster.monster_id, "Id" ]);
+					setArgEntry(dynamicArgs, "monster_name", ["基础数据", "monster_name", "string", monster.monster_name, "中文名字"]);
+					setArgEntry(dynamicArgs, "face", ["基础数据", "face", "combo_box", monster.face, "资源前缀", [skins, skins]]);
 					
-					if( monster.type in Data.getInstance().dynamicArgs )
-					{
-						var monster:Object = Data.getInstance().getEnemyProfileById( 
-							Runtime.getInstance().currentLevelID, monster.monster_id
-						) || {};
-						
-						var extraArgs :Array = Utils.deepCopy( Data.getInstance().dynamicArgs[monster.type] ) as Array;
-						for each( var sub:Array in extraArgs )
-						{
-							if( extraArgs[ConfigPanel.kKEY] in monster )
-							{
-								sub[ConfigPanel.kDEFAULT] = monster[sub[ConfigPanel.kKEY]];
-							}
-						}
-						
-						args = args.concat(extraArgs);
-					}
-					
-					ConfigPanel.mergeTo( dynamic_data, args );
+					return dynamicArgs;
 				}
-				
-				return args;
+			}
+			
+			public static function setArgEntry(args:Array, key:String, replacement:Array):void
+			{
+				for(var i=0; i<args.length; i++)
+				{
+					if(args[i][ConfigPanel.kKEY] == key)
+					{
+						args[i] = replacement;
+						break;
+					}
+				}
 			}
 			
 			protected function onPaste(e:ContextMenuEvent):void

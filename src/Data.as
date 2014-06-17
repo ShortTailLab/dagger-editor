@@ -1,7 +1,5 @@
 package
 {
-	import excel.ExcelReader;
-	
 	import flash.display.Bitmap;
 	import flash.display.Loader;
 	import flash.display.LoaderInfo;
@@ -19,11 +17,13 @@ package
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
-	import mapEdit.Entity;
-	import mapEdit.SectionManager;
-	
 	import mx.controls.Alert;
 	import mx.utils.object_proxy;
+	
+	import excel.ExcelReader;
+	
+	import mapEdit.Entity;
+	import mapEdit.SectionManager;
 	
 	public class Data extends EventDispatcher
 	{
@@ -906,6 +906,18 @@ package
 				}
 			}
 			return ret;
+		}
+		
+		public function getMaxMonsterId(lid:String): int
+		{
+			var enemies:Object = getLevelProfileById( lid ).monsters;
+			
+			var nextId:int = int(lid+"000");
+			for each ( var m:Object in enemies )
+			{
+				nextId = Math.max( nextId, m.monster_id );
+			}
+			return nextId;
 		}
 		
 		private function loadImage(onComplete:Function):void
