@@ -29,12 +29,15 @@ package
 	{
 		////// entrance
 		private static var gDataInstance:Data = null;
+		
 		public static function getInstance():Data
 		{
 			if(!gDataInstance) gDataInstance = new Data;
 			return gDataInstance;
 		}
+		
 		public function Data(target:IEventDispatcher=null) { super(target); }
+		
 		public function init(onComplete:Function):void {
 			var self:Data = this;
 			self.start( function(m1:String):void
@@ -197,6 +200,7 @@ package
 			return ret;
 		}
 		
+		// create a new chapter entry
 		public function makeChapter( id:String, name:String ):void
 		{
 			if( id in this.mChapterProfiles )
@@ -212,6 +216,7 @@ package
 			};
 		}
 		
+		// update chapter related meta info.
 		public function updateChapter( id:String, data:Object ):void
 		{
 			if( !("chapter_id" in data) || !("chapter_name" in data) )
@@ -222,7 +227,8 @@ package
 				Alert.show("【失败】章节id已存在");
 				return;
 			}
-			if( !(id in this.mChapterProfiles) ) return;
+			if( !(id in this.mChapterProfiles) ) 
+				return;
 			
 			
 			for( var key:String in this.mChapterProfiles[id].levels )
@@ -259,6 +265,7 @@ package
 			delete this.mChapterProfiles[id];
 		}
 		
+		// create a level entry
 		public function makeLevel( chapter_id:String, id:String, data:Object ):void
 		{
 			if( !(chapter_id in this.mChapterProfiles) )
@@ -292,15 +299,12 @@ package
 			this.writeToProfile( id, level );
 		}
 		
+		// update level profile
 		public function updateLevel( id:String, data:Object ):void
 		{
 			var level:Object = this.getLevelProfileById( id );
-			if( !level ) return;
-			
-			if( "level_id" in data )
-			{
-				delete data["level_id"];
-			}
+			if( !level ) 
+				return;
 			
 			if( "chapter_id" in data )
 			{
@@ -319,6 +323,8 @@ package
 			
 			for( var key:String in data )
 			{
+				if(key == "level_id")
+					continue;
 				level[key] = data[key];
 			}
 			this.writeToProfile( id, level );
@@ -343,6 +349,7 @@ package
 			}
 		}
 		
+		
 		public function makeMonster( level_id:String, id:String, data:Object):void
 		{
 			var level:Object = this.getLevelProfileById( level_id );
@@ -351,7 +358,8 @@ package
 				return;
 			}
 			
-			if( "monster_id" in data ) id = data.monster_id;
+			if( "monster_id" in data ) 
+				id = data.monster_id;
 			
 			if( id in level.monsters || !id )
 			{
@@ -423,11 +431,13 @@ package
 			Runtime.getInstance().onProfileDataChange();
 		}
 		
+		
 		public function getLevelProfileById( lid:String ):Object 
 		{
 			for each( var chapter:Object in this.mChapterProfiles )
 			{
-				if( lid in chapter.levels ) return chapter.levels[lid];
+				if( lid in chapter.levels ) 
+					return chapter.levels[lid];
 			}
 			return null;
 		}
@@ -436,7 +446,8 @@ package
 		{
 			for each( var chapter:Object in this.mChapterProfiles )
 			{
-				if( lid in chapter.levels ) return chapter;
+				if( lid in chapter.levels ) 
+					return chapter;
 			}
 			return null;
 		}
@@ -815,6 +826,17 @@ package
 			}
 			
 			return false;
+		}
+		
+		public function typeToProfileType(type:String):String
+		{
+			if(Data.getInstance().isMonster(type))
+				return "MonsterProfile";
+			else if(Data.getInstance().isBullet(type))
+				return "BulletProfile";
+			else if(Data.getInstance().isTrap(type))
+				return "TrapProfile";
+			throw "Unknown object type";
 		}
 		
 		public function isTrigger( type:String ):Boolean
@@ -1210,16 +1232,22 @@ package
 		public function getLevelDataForServer( lid:String ):Object
 		{	
 			var profile:Object = this.getLevelProfileById( lid );
-			if( !profile ) return null;
+			if( !profile ) 
+				return null;
 	
-			if( !(lid in this.mLevelInstancesTable) ) 
+			if( !(lid in this.mLevelInstancesTable) )
+			{
 				return { 
 					id : int(lid),
 					stageId: int(profile.chapter_id),
 					stage: profile.chapter_name,
 					name: profile.level_name,
-					path: "level/"+lid+".js", enemies : [] 
+					path: "level/"+lid+".js", 
+					enemies : [],
+					roleExp: profile.player_exp,
+					heroExp: profile.hero_exp
 				};
+			}
 			
 			var enemies:Object = {};
 			var inst:Array = this.getLevelDataById( lid );
@@ -1253,7 +1281,9 @@ package
 				stageId: int(profile.chapter_id), 
 				stage: profile.chapter_name,
 				name: profile.level_name, path: "level/"+lid+".js", 
-				enemies : array
+				enemies : array,
+				roleExp: profile.player_exp,
+				heroExp: profile.hero_exp
 			};
 			Utils.dumpObject( ret );
 			return ret;

@@ -124,6 +124,10 @@
 				this.mExportChapterToExcel.addEventListener(
 					MouseEvent.CLICK, this.exportToExcel
 				);
+				
+				this.mImportToChapter.addEventListener(
+					MouseEvent.CLICK, this.importChapterFromExcel
+				);
 			}
 			
 			private function exportToExcel(e:MouseEvent):void
@@ -133,6 +137,13 @@
 				);
 				
 				ExchangeManager.serialize( data );
+			}
+			
+			private function importChapterFromExcel(e:MouseEvent):void
+			{
+				ExchangeManager.unserializeChapterFromFile(function(){
+					trace("done loading chapter file");
+				});
 			}
 			
 			private function saveLevel(e:Event):void

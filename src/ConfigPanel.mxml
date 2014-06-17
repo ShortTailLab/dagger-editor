@@ -6,31 +6,24 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import behaviorEdit.PathEditPanel;
-			
-			import mx.collections.ArrayCollection;
 			import mx.collections.ArrayList;
 			import mx.containers.FormItem;
 			import mx.containers.FormItemDirection;
 			import mx.controls.Alert;
-			import mx.controls.ComboBase;
 			import mx.controls.HRule;
 			import mx.controls.TextInput;
 			import mx.core.UIComponent;
-			import mx.events.CloseEvent;
 			import mx.managers.PopUpManager;
 			
+			import spark.components.Button;
 			import spark.components.CheckBox;
-			import spark.components.ComboBox;
 			import spark.components.DropDownList;
 			import spark.components.Form;
-			import spark.components.Group;
 			import spark.components.HGroup;
-			import spark.components.Label;
+			import spark.components.NavigatorContent;
 			import spark.components.VGroup;
-			import spark.components.supportClasses.DropDownController;
-			import spark.components.supportClasses.TextBase;
-			import spark.primitives.Line;
+			
+			import behaviorEdit.PathEditPanel;
 			
 			protected var mCBComplete:Function = null;
 			protected var mCBError:Function = null;
@@ -99,6 +92,7 @@
 						item[kTYPE] == "BulletType" ||
 						item[kTYPE] == "TrapType" )
 					{
+						/*
 						if( item[kDEFAULT] in Data.getInstance().dynamicArgs )
 						{
 							var sub_data:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[item[kDEFAULT]] ) as Array;
@@ -115,7 +109,7 @@
 							}
 							
 							this.refresh_data( sub_data );
-						}
+						}*/
 					}
 				}
 			}

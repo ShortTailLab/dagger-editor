@@ -706,9 +706,14 @@
 				}
 				
 				var self:EditSection = this;
-				new ConfigPanel().init( function ( configs:Object ):void {
-					Data.getInstance().updateLevelConfigsById( lid, configs );
-				}, function(err:String):void { Alert.show( err ); }, template );
+				new ConfigPanel().init( 
+					function ( configs:Object ):void 
+					{
+						Data.getInstance().updateLevelConfigsById( lid, configs );
+					},
+					function(err:String):void { Alert.show( err ); }, 
+					template 
+				);
 			}
 			
 			//

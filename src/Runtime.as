@@ -25,7 +25,7 @@ package
 		
 		//
 		public static const CURRENT_LEVEL_CHANGE:String = "runtime.current.level.change";
-		private var mCurrentLevelID:String = null;
+		private var mCurrentLevelID:String = "100004";
 		public function get currentLevelID(): String {
 			return this.mCurrentLevelID;
 		}

@@ -2,8 +2,6 @@ package excel
 {
 	import com.as3xls.xls.ExcelFile;
 	import com.as3xls.xls.Sheet;
-	import com.childoftv.xlsxreader.Worksheet;
-	import com.childoftv.xlsxreader.XLSXLoader;
 	
 	import flash.events.Event;
 	import flash.filesystem.File;
@@ -37,7 +35,7 @@ package excel
 			}
 		}
 		
-		static public function unserialize( onComplete:Function  ):void
+		static public function unserializeChapterFromFile( onComplete:Function  ):void
 		{
 			var browser:File = new File(Data.getInstance().conf["excel.path.cache"]);
 			browser.browseForOpen("请选择上传的Excel文件");
@@ -52,59 +50,192 @@ package excel
 				fstream.readBytes( bytes, 0, fstream.bytesAvailable );
 				fstream.close();
 				
-				ExchangeManager.unserialize2( bytes, onComplete );
-			});
-		}
-		
-		static protected function unserialize2( bytes:ByteArray, onComplete ):void
-		{
-			var loader:XLSXLoader = new XLSXLoader();
-			loader.addEventListener(Event.COMPLETE, function(e:Event):void
-			{
-				var titles:Vector.<String> = loader.getSheetNames();
-				if( titles.length <= 0 )
-				{
-					onComplete("【错误】无sheet存在");
-					return;
-				}
+				//ExchangeManager.unserialize2( bytes, onComplete );
 				
-				var sheet:Worksheet = loader.worksheet( titles[0] );
-				ExchangeManager.unserialize3( sheet, onComplete );
-				loader.close();
+				var xls:ExcelFile = new ExcelFile();
+				xls.loadFromByteArray(bytes);
+				
+				var sheet:Sheet = xls.sheets[0];
+				ExchangeManager.updateChapterFromSheet(sheet, onComplete);
 			});
-			loader.loadFromByteArray( bytes );
 		}
 		
-		static protected function unserialize3( sheet:Worksheet, onComplete:Function ):void
+		
+		static protected function getRowValues(sheet:Sheet, rowIndex:uint): Array
 		{
-			var i:int = 0, j:int = 0;
-			var monsterFields:Array = [];
-			var monsterData:Array = EditMonster.genData("","MonsterProfile");
-			ExchangeManager.appendFields( monsterData, EditMonster.genData("", "TrapProfile") );
-			ExchangeManager.appendFields( monsterData, EditMonster.genData("", "BulletProfile"));
-			for( i=0; i<monsterData.length; i++ )
-				monsterFields.push( monsterData[i][ConfigPanel.kKEY] );
-			
-			var rowInd = 2;
-			while(true){
+			var row:Array = new Array;
+			for(var i=0; i<sheet.cols; i++)
+			{
+				row.push(sheet.getCell(rowIndex, i).value);
 			}
+			return row;
+		}
+		
+		static protected function parseCellJsonValue(val:String)
+		{
+			if(val == "")
+				return null;
+			else
+				return JSON.parse(val);
+		}
+		
+		static protected function buildLevelInfoFromRow(row:Array, keyMap:Object): Object
+		{
+			var argList = EditLevel.genLevelData();
+			var argKeys:Array = [];
+			var levelInfo = {};
+			
+			for(var i=0; i<argList.length; i++)
+			{
+				var key = argList[i][ConfigPanel.kKEY];
+				var rawValue = row[keyMap[key]];
+				var value = parseCellJsonValue(rawValue);
+				// do not add entry if its value is not defined
+				if(value != null)
+					levelInfo[key] = value; 
+			}
+			
+			levelInfo["monsters"] = {};
+			
+			return levelInfo;
+		}
+		
+		static protected function buildMonsterFromRow(row:Array, keyMap:Object): Object
+		{
+			var type:String = parseCellJsonValue(row[keyMap.type]);
+			if(type == null || type == "")
+				return null;
+			var profileType:String = Data.getInstance().typeToProfileType(type);
+			
+			var argList:Array = EditMonster.genData(type, profileType);
+			var monster:* = {};
+			for(var i=0; i<argList.length; i++)
+			{
+				var key:String = argList[i][ConfigPanel.kKEY];
+				
+				var rawValue = row[keyMap[key]];
+				var value = parseCellJsonValue(rawValue);
+				// do not add entry if its value is not defined
+				if(value != null)
+					monster[key] = value;
+			}
+			
+			return monster;
+		}
+		
+		static protected function updateChapterFromSheet( sheet:Sheet, onComplete:Function ):void
+		{
+			var levelArgs:Array = null;
+			var monsterArgs:Array = EditMonster.genData("","MonsterProfile");
+			var trapArgs:Array = EditMonster.genData("", "TrapProfile");
+			var bulletArgs:Array = EditMonster.genData("", "BulletProfile");
+			
+			var chapterId = sheet.getCell(2, 0);
+			
+			var keys = getRowValues(sheet, 1);
+			
+			// convert array of keys to map of key => col_index
+			var keyMap = {};
+			for(var i=0; i<keys.length; i++)
+				keyMap[keys[i]] = i;
+			
+			var levelList:Array = [];
+			var currentLevel:* = null;
+			
+			// place monster profiles into level buckets
+			for(var rowIndex = 2; rowIndex < sheet.rows; rowIndex++)
+			{
+				var rowData:Array = getRowValues(sheet, rowIndex);
+				if(rowData[keyMap.level_id])
+				{
+					trace("start a new level section");
+					if(currentLevel)
+					{
+						levelList.push(currentLevel); 
+						currentLevel = null;
+					}
+					currentLevel = buildLevelInfoFromRow(rowData, keyMap);
+				}
+
+				trace("parsing monster/bullet");
+				var obj = buildMonsterFromRow(rowData, keyMap);
+				if(obj)
+					currentLevel["monsters"][obj.monster_id] = obj;
+			}
+			
+			for(var i:int=0; i<levelList.length; i++)
+			{
+				var level:* = levelList[i];
+				
+				var monsters = level.monsters;
+				
+				// erase this entry, so updateLevel will not overwrite
+				delete level.monsters; 
+				Data.getInstance().updateLevel(level.level_id, level);
+				
+				for(var m:int=0; m<level.monsters.length; m++)
+				{
+					var monster:* = level.monsters[m];
+					Data.getInstance().updateMonster(level.level_id, monster.monster_id, monster);
+				}
+			}
+		}
+				
+		static public function toStr(o:*, type:String): String
+		{
+			switch(type)
+			{
+				case "string":
+				case "combo_box":
+					return o;
+				default: {
+					var value = JSON.stringify(o);
+					if(o == undefined)
+						value = "";
+					if(value == null)
+						value = "";
+					return value;
+				}
+			}
+			throw "Unknown type";
 		}
 		
 		static public function serialize( chapter:Object ):void 
 		{
-			var i:int = 0, j:int = 0, level:Object = {}, monster:Object = {};
+			var level:Object = {}, monster:Object = {};
 			var sheet:Sheet 	  = new Sheet();
-			var levelFields:Array = [], monsterFields:Array = [];
 			
-			var levelData:Array = EditLevel.genLevelData();
-			for( i=0; i<levelData.length; i++ )
-				levelFields.push( levelData[i][ConfigPanel.kKEY] );
+			var levelArgs:Array = EditLevel.genLevelData();
+			//for(var i=0; i<levelArgs.length; i++ )
+				//levelFields.push( levelArgs[i][ConfigPanel.kKEY] );
 			
-			var monsterData:Array = EditMonster.genData("","MonsterProfile");
-			ExchangeManager.appendFields( monsterData, EditMonster.genData("", "TrapProfile") );
-			ExchangeManager.appendFields( monsterData, EditMonster.genData("", "BulletProfile"));
-			for( i=0; i<monsterData.length; i++ )
-				monsterFields.push( monsterData[i][ConfigPanel.kKEY] );
+			// find the types of all monsters
+			/*
+			var usedMonsterTypes = {};
+			for(var levelId in chapter.levels)
+			{
+				var level = chapter.levels[levelId];
+				for(var monsterId in level.monsters)
+				{
+					var monster = level.monsters[monsterId];
+					usedMonsterTypes[monster.type] = true;
+				}
+			}
+
+			var monsterData:Array = []; 
+			for(var key in usedMonsterTypes)
+			{
+				var data = EditMonster.genData(key, Data.getInstance().typeToProfileType(key));
+				ExchangeManager.appendFields(monsterData, data);
+			}*/
+			
+			// load arguments
+			var monsterArgs:Array = EditMonster.genData("","MonsterProfile");
+			ExchangeManager.appendFields( monsterArgs, EditMonster.genData("", "TrapProfile") );
+			ExchangeManager.appendFields( monsterArgs, EditMonster.genData("", "BulletProfile") );
+
+			//for(var i=0; i<monsterData.length; i++ )
+				//monsterFields.push( monsterData[i][ConfigPanel.kKEY] );
 			
 			var totalRow:int = 10;
 			for each( level in chapter.levels )
@@ -114,26 +245,31 @@ package excel
 					totalRow ++;
 			}
 			
-			sheet.resize( totalRow, monsterData.length + levelData.length );
+			sheet.resize( totalRow, monsterArgs.length + levelArgs.length );
 		
-			for( i=0; i<levelData.length; i++ )
+			for(var i=0; i<levelArgs.length; i++ )
 			{
-				sheet.setCell(0, i, levelData[i][ConfigPanel.kDESC] );
-				sheet.setCell(1, i, levelData[i][ConfigPanel.kKEY] );
+				sheet.setCell(0, i, levelArgs[i][ConfigPanel.kDESC] );
+				sheet.setCell(1, i, levelArgs[i][ConfigPanel.kKEY] );
 			}
 			
-			for( i=levelData.length; i<levelData.length+monsterData.length; i++ )
+			for(var i=levelArgs.length; i<levelArgs.length+monsterArgs.length; i++ )
 			{
-				sheet.setCell(0, i, monsterData[i-levelData.length][ConfigPanel.kDESC] );
-				sheet.setCell(1, i, monsterData[i-levelData.length][ConfigPanel.kKEY] );
+				sheet.setCell(0, i, monsterArgs[i-levelArgs.length][ConfigPanel.kDESC] );
+				sheet.setCell(1, i, monsterArgs[i-levelArgs.length][ConfigPanel.kKEY] );
 			}
 			
 			var rowInd:int = 2;
 			for each( level in chapter.levels )
 			{
 				var colInd:int = 0;
-				for( i=0; i<levelFields.length; i++, colInd++ )
-					sheet.setCell(rowInd, colInd, level[levelFields[i]]); 
+				for(var i=0; i<levelArgs.length; i++, colInd++ )
+				{
+					var argKey = levelArgs[i][ConfigPanel.kKEY];
+					var argType = levelArgs[i][ConfigPanel.kTYPE];
+					var value:String = toStr(level[argKey], argType);
+					sheet.setCell(rowInd, colInd, value); 
+				}
 				
 				var monsters:Object = Data.getInstance().getMonstersByLevelId( level.level_id );
 				var traps:Object = Data.getInstance().getTrapsByLevelId( level.level_id );
@@ -150,20 +286,28 @@ package excel
 				for each( monster in targets )
 				{
 					var nowInd:int = colInd;
-					for( i=0; i<monsterFields.length; i++, nowInd++ )
+					for(var i=0; i<monsterArgs.length; i++, nowInd++ )
 					{
-						if( monsterFields[i] in monster ) 
-							sheet.setCell( rowInd, nowInd, JSON.stringify(monster[monsterFields[i]]) );					
+						var argKey = monsterArgs[i][ConfigPanel.kKEY];
+						
+						if( argKey in monster ) 
+						{
+							var type = monsterArgs[i][ConfigPanel.kTYPE];
+							var value:String = toStr(monster[argKey], type);
+							sheet.setCell( rowInd, nowInd, value);
+						}
 					}
-					rowInd ++;
+					rowInd++;
 				}
 			}
 			
 			var xls:ExcelFile = new ExcelFile();
 			xls.sheets.addItem( sheet );
 			
+			var bytes:ByteArray = xls.saveToByteArray("cn-gb");
+			
 			var fr:FileReference = new FileReference( );
-			fr.save(xls.saveToByteArray(), chapter.id+".xls");
+			fr.save(bytes, chapter.id+".xls");
 		}
 	}
 }
