@@ -52,8 +52,6 @@ package excel
 				fstream.readBytes( bytes, 0, fstream.bytesAvailable );
 				fstream.close();
 				
-				//ExchangeManager.unserialize2( bytes, onComplete );
-				
 				var xls:ExcelFile = new ExcelFile();
 				xls.loadFromByteArray(bytes);
 				
@@ -62,7 +60,7 @@ package excel
 			});
 		}
 		
-		
+		// read a row
 		static protected function getRowValues(sheet:Sheet, rowIndex:uint): Array
 		{
 			var row:Array = new Array;
@@ -73,8 +71,8 @@ package excel
 			return row;
 		}
 		
-		
-		static protected function buildLevelInfoFromRow(row:Array, keyMap:Object): Object
+		// read a level from a row
+		static protected function readLevelFromRow(row:Array, keyMap:Object): Object
 		{
 			var argList = EditLevel.genLevelData();
 			var argKeys:Array = [];
@@ -96,7 +94,8 @@ package excel
 			return levelInfo;
 		}
 		
-		static protected function buildMonsterFromRow(row:Array, keyMap:Object): Object
+		// read a monster from row
+		static protected function readMonsterFromRow(row:Array, keyMap:Object): Object
 		{
 			var type:String = strToVal(row[keyMap.type], "string");
 			if(type == null || type == "")
@@ -143,20 +142,23 @@ package excel
 				var rowData:Array = getRowValues(sheet, rowIndex);
 				if(rowData[keyMap.level_id])
 				{
-					trace("start a new level section");
 					if(currentLevel)
 					{
 						levelList.push(currentLevel); 
 						currentLevel = null;
 					}
-					currentLevel = buildLevelInfoFromRow(rowData, keyMap);
+					currentLevel = readLevelFromRow(rowData, keyMap);
+					trace("parsing level " + currentLevel.level_id);
 				}
 
-				trace("parsing monster/bullet");
-				var obj = buildMonsterFromRow(rowData, keyMap);
+				var obj = readMonsterFromRow(rowData, keyMap);
 				if(obj)
 					currentLevel["monsters"][obj.monster_id] = obj;
 			}
+
+			// do not forget to push the last level
+			levelList.push(currentLevel);
+			currentLevel = null;
 			
 			for(var i:int=0; i<levelList.length; i++)
 			{
