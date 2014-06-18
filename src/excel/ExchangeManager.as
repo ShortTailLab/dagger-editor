@@ -9,6 +9,8 @@ package excel
 	import flash.filesystem.FileStream;
 	import flash.net.FileReference;
 	import flash.utils.ByteArray;
+	
+	import mx.controls.Alert;
 
 	public class ExchangeManager
 	{
@@ -71,13 +73,6 @@ package excel
 			return row;
 		}
 		
-		static protected function parseCellJsonValue(val:String)
-		{
-			if(val == "")
-				return null;
-			else
-				return JSON.parse(val);
-		}
 		
 		static protected function buildLevelInfoFromRow(row:Array, keyMap:Object): Object
 		{
@@ -88,8 +83,9 @@ package excel
 			for(var i=0; i<argList.length; i++)
 			{
 				var key = argList[i][ConfigPanel.kKEY];
+				var type = argList[i][ConfigPanel.kTYPE];
 				var rawValue = row[keyMap[key]];
-				var value = parseCellJsonValue(rawValue);
+				var value = strToVal(rawValue, type);
 				// do not add entry if its value is not defined
 				if(value != null)
 					levelInfo[key] = value; 
@@ -102,19 +98,18 @@ package excel
 		
 		static protected function buildMonsterFromRow(row:Array, keyMap:Object): Object
 		{
-			var type:String = parseCellJsonValue(row[keyMap.type]);
+			var type:String = strToVal(row[keyMap.type], "string");
 			if(type == null || type == "")
 				return null;
-			var profileType:String = Data.getInstance().typeToProfileType(type);
 			
-			var argList:Array = EditMonster.genData(type, profileType);
+			var argList:Array = EditMonster.genArgsTemplate(type);
 			var monster:* = {};
 			for(var i=0; i<argList.length; i++)
 			{
 				var key:String = argList[i][ConfigPanel.kKEY];
-				
+				var type:String = argList[i][ConfigPanel.kTYPE];
 				var rawValue = row[keyMap[key]];
-				var value = parseCellJsonValue(rawValue);
+				var value = strToVal(rawValue, type);
 				// do not add entry if its value is not defined
 				if(value != null)
 					monster[key] = value;
@@ -126,9 +121,9 @@ package excel
 		static protected function updateChapterFromSheet( sheet:Sheet, onComplete:Function ):void
 		{
 			var levelArgs:Array = null;
-			var monsterArgs:Array = EditMonster.genData("","MonsterProfile");
-			var trapArgs:Array = EditMonster.genData("", "TrapProfile");
-			var bulletArgs:Array = EditMonster.genData("", "BulletProfile");
+			var monsterArgs:Array = EditMonster.genBaseArgsTemplate("MonsterProfile");
+			var trapArgs:Array = EditMonster.genBaseArgsTemplate("TrapProfile");
+			var bulletArgs:Array = EditMonster.genBaseArgsTemplate("BulletProfile");
 			
 			var chapterId = sheet.getCell(2, 0);
 			
@@ -172,16 +167,34 @@ package excel
 				// erase this entry, so updateLevel will not overwrite
 				delete level.monsters; 
 				Data.getInstance().updateLevel(level.level_id, level);
-				
-				for(var m:int=0; m<level.monsters.length; m++)
-				{
-					var monster:* = level.monsters[m];
+
+				for each(var monster:* in monsters)
+				{ 
 					Data.getInstance().updateMonster(level.level_id, monster.monster_id, monster);
 				}
 			}
 		}
-				
-		static public function toStr(o:*, type:String): String
+		
+		static protected function strToVal(val:String, type:String)
+		{
+			switch(type)
+			{
+				case "string":
+				case "combo_box":
+					return val;
+				default:
+				{
+					if(val == "" || val == null)
+						return null;
+					else
+						return JSON.parse(val);
+				}
+			}
+			
+			throw "Unknown type";
+		}
+		
+		static public function valToStr(o:*, type:String): String
 		{
 			switch(type)
 			{
@@ -206,11 +219,9 @@ package excel
 			var sheet:Sheet 	  = new Sheet();
 			
 			var levelArgs:Array = EditLevel.genLevelData();
-			//for(var i=0; i<levelArgs.length; i++ )
-				//levelFields.push( levelArgs[i][ConfigPanel.kKEY] );
+						
 			
 			// find the types of all monsters
-			/*
 			var usedMonsterTypes = {};
 			for(var levelId in chapter.levels)
 			{
@@ -221,22 +232,19 @@ package excel
 					usedMonsterTypes[monster.type] = true;
 				}
 			}
-
-			var monsterData:Array = []; 
-			for(var key in usedMonsterTypes)
+			
+			var monsterArgs:Array = []; 
+			for(var key:String in usedMonsterTypes)
 			{
-				var data = EditMonster.genData(key, Data.getInstance().typeToProfileType(key));
-				ExchangeManager.appendFields(monsterData, data);
-			}*/
+				var args = EditMonster.genArgsTemplate(key); //EditMonster.genData(key, Data.getInstance().typeToProfileType(key));
+				ExchangeManager.appendFields(monsterArgs, args);
+			}
 			
 			// load arguments
-			var monsterArgs:Array = EditMonster.genData("","MonsterProfile");
-			ExchangeManager.appendFields( monsterArgs, EditMonster.genData("", "TrapProfile") );
-			ExchangeManager.appendFields( monsterArgs, EditMonster.genData("", "BulletProfile") );
+			//var monsterArgs:Array = EditMonster.genBaseArgsTemplate("MonsterProfile");
+			ExchangeManager.appendFields( monsterArgs, EditMonster.genBaseArgsTemplate("TrapProfile") );
+			ExchangeManager.appendFields( monsterArgs, EditMonster.genBaseArgsTemplate("BulletProfile") );
 
-			//for(var i=0; i<monsterData.length; i++ )
-				//monsterFields.push( monsterData[i][ConfigPanel.kKEY] );
-			
 			var totalRow:int = 10;
 			for each( level in chapter.levels )
 			{
@@ -267,7 +275,7 @@ package excel
 				{
 					var argKey = levelArgs[i][ConfigPanel.kKEY];
 					var argType = levelArgs[i][ConfigPanel.kTYPE];
-					var value:String = toStr(level[argKey], argType);
+					var value:String = valToStr(level[argKey], argType);
 					sheet.setCell(rowInd, colInd, value); 
 				}
 				
@@ -293,7 +301,7 @@ package excel
 						if( argKey in monster ) 
 						{
 							var type = monsterArgs[i][ConfigPanel.kTYPE];
-							var value:String = toStr(monster[argKey], type);
+							var value:String = valToStr(monster[argKey], type);
 							sheet.setCell( rowInd, nowInd, value);
 						}
 					}

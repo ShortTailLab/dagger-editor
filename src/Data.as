@@ -649,6 +649,27 @@ package
 			}
 		}
 		
+		// HACK: some data is corrupted. id mismatches. 
+		private function CORRECT_MONSTER_ID_MISMATCH(chapters)
+		{
+			for each(var chapter in chapters)
+			{
+				for each(var level in chapter.levels)
+				{
+					for(var idAsKey in level.monsters)
+					{
+						var monster_id = level.monsters[idAsKey].monster_id;
+						if(idAsKey != monster_id)
+						{
+							trace("found a monster id mismatch: " + idAsKey + " vs " + monster_id);
+							level.monsters[monster_id] = level.monsters[idAsKey];
+							delete level.monsters[idAsKey];
+						}
+					}
+				}
+			}
+		}
+		
 		private function parseLocalData(onComplete:Function):void
 		{
 			this.mDynamicArgs = this.loadJson(
@@ -678,6 +699,9 @@ package
 						= Utils.LoadJSONToObject( file );
 				}
 			}
+			
+			CORRECT_MONSTER_ID_MISMATCH(this.mChapterProfiles);
+			
 			// chapter profiles
 
 			this.mLevelInstancesTable = {};
@@ -836,6 +860,17 @@ package
 				return "BulletProfile";
 			else if(Data.getInstance().isTrap(type))
 				return "TrapProfile";
+			throw "Unknown object type";
+		}
+		
+		public function getTypeListFromType(type:String):Array
+		{
+			if(Data.getInstance().isMonster(type))
+				return this.mDynamicArgs["MonsterType"];
+			else if(Data.getInstance().isBullet(type))
+				return this.mDynamicArgs["BulletType"];
+			else if(Data.getInstance().isTrap(type))
+				return this.mDynamicArgs["TrapType"];
 			throw "Unknown object type";
 		}
 		
@@ -1052,7 +1087,8 @@ package
 			var profile:Object = this.getLevelProfileById( lid );
 			if( !(lid in this.mLevelInstancesTable ) || !profile  ) return "【失败】无相关地图数据存在";
 			
-			function adjust( name:String, itype:String, item:Object ):Array {
+			function adjust( name:String, itype:String, item:Object ):Array 
+			{
 				
 				var monsters:Object = Data.getInstance().getMonstersByLevelId( lid );
 				var bullets:Object = Data.getInstance().getBulletsByLevelId( lid );
@@ -1257,7 +1293,11 @@ package
 					path: "level/"+lid+".js", 
 					enemies : [],
 					roleExp: profile.player_exp,
-					heroExp: profile.hero_exp
+					heroExp: profile.hero_exp,
+					energy : profile.spirit_cost,
+					enabled : profile.enabled,
+					requirement: int(profile.requirement),
+					min_level : int(profile.min_level)
 				};
 			}
 			
@@ -1295,7 +1335,8 @@ package
 				name: profile.level_name, path: "level/"+lid+".js", 
 				enemies : array,
 				roleExp: profile.player_exp,
-				heroExp: profile.hero_exp
+				heroExp: profile.hero_exp,
+				drop_items : profile.drop_items
 			};
 			Utils.dumpObject( ret );
 			return ret;

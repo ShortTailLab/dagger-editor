@@ -10,6 +10,7 @@
 			import mx.containers.FormItem;
 			import mx.containers.FormItemDirection;
 			import mx.controls.Alert;
+			import mx.controls.ComboBox;
 			import mx.controls.HRule;
 			import mx.controls.TextInput;
 			import mx.core.UIComponent;
@@ -87,30 +88,6 @@
 					var rule:HRule = new HRule;
 					rule.percentWidth = 100; rule.height = 1; rule.x = 75;
 					this.mKey2Group[item[kTAG]].addElement( rule );
-					
-					if( item[kTYPE] == "MonsterType" || 
-						item[kTYPE] == "BulletType" ||
-						item[kTYPE] == "TrapType" )
-					{
-						/*
-						if( item[kDEFAULT] in Data.getInstance().dynamicArgs )
-						{
-							var sub_data:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[item[kDEFAULT]] ) as Array;
-							var monster:Object = Data.getInstance().getEnemyProfileById( 
-								Runtime.getInstance().currentLevelID, item[kOTHER]
-							) || {};
-							
-							for each( var sub:Array in sub_data )
-							{
-								if( sub[kKEY] in monster )
-								{
-									sub[kDEFAULT] = monster[sub[kKEY]];
-								}
-							}
-							
-							this.refresh_data( sub_data );
-						}*/
-					}
 				}
 			}
 			
@@ -175,7 +152,7 @@
 						{
 							ret[key] = [JSON.parse(item[0].text), JSON.parse(item[1].text)];
 						}
-						else if( data[kTYPE] == "array_int" ) 
+						else if( data[kTYPE] == "array_int_weight" ) 
 						{
 							ret[key] = JSON.parse( item[0].text ) as Array;
 							var weight:int = 0;
@@ -188,10 +165,14 @@
 									return null;
 								}
 							}
-						} 
+						}
+						else if( data[kTYPE] == "array_int" ) 
+						{
+							ret[key] = JSON.parse( item[0].text ) as Array;
+						}
 						else if( data[kTYPE] == "combo_box" )
 						{
-							var ind:int = (item[0] as DropDownList).selectedIndex;
+							var ind:int = (item[0] as ComboBox).selectedIndex;
 							
 							if( ind < 0 || ind >= data[kOTHER][1].length )
 							{
@@ -202,12 +183,10 @@
 							}else
 								ret[key] = data[kOTHER][1][ind];
 						} 
-						else if( data[kTYPE] == "MonsterType" || 
-							data[kTYPE] == "TrapType" || 
-							data[kTYPE] == "BulletType" )
+						else if( data[kTYPE] == "string" && data[kKEY] == "type" )
 						{
-							var target:DropDownList = item[0] as DropDownList;
-							ind = target.selectedIndex;
+							var target:ComboBox = item[0];
+							var ind:int = target.selectedIndex;
 							if( ind == -1 ) {
 								if( warn ) 
 								{
@@ -215,12 +194,13 @@
 									return null;
 								} 
 							}
-							else ret[key] = target.selectedItem as String;
+							else 
+								ret[key] = target.selectedItem as String;
 						}
 						else if ( data[kTYPE] == "bullet" || data[kTYPE] == "actor" || data[kTYPE] == "trap" )
 						{
-							target = item[0] as DropDownList;
-							ind = target.selectedIndex;
+							var target:ComboBox = item[0];
+							var ind = target.selectedIndex;
 							if( ind == -1 ) {
 								if( warn ) this.mCBError("请选择："+data[kDESC]);
 								return null;
@@ -232,10 +212,10 @@
 						{
 							var nameList:Array = [];
 							var containner:VGroup = item[0] as VGroup;
-							var subTarget:DropDownList = null;
+							var subTarget:ComboBox = null;
 							for( i=0; i<containner.numElements; i++ )
 							{
-								subTarget = containner.getElementAt( i ) as DropDownList;
+								subTarget = containner.getElementAt( i ) as ComboBox;
 								if( !subTarget ) continue;
 								ind = subTarget.selectedIndex;
 								if( ind == -1 )
@@ -254,7 +234,7 @@
 							subTarget = null;
 							for( i=0; i<containner.numElements; i++ )
 							{
-								subTarget = containner.getElementAt( i ) as DropDownList;
+								subTarget = containner.getElementAt( i ) as ComboBox;
 								if( !subTarget ) continue;
 								ind = subTarget.selectedIndex;
 								if( ind == -1 )
@@ -322,16 +302,6 @@
 					head.addElement( input );
 					this.mKey2UIComponents[item[kKEY]].push(input);
 				} 
-				else if ( item[kTYPE] == "string" )
-				{
-					var str_input:TextInput = new TextInput;
-					str_input.text = item[kDEFAULT];
-					str_input.width = 100;
-					str_input.editable = true;
-					
-					head.addElement( str_input );
-					this.mKey2UIComponents[item[kKEY]].push( str_input );
-				}
 				else if ( item[kTYPE] == "bool" )
 				{
 					var check:CheckBox = new CheckBox;
@@ -365,7 +335,7 @@
 					this.mKey2UIComponents[item[kKEY]].push(x_width);
 					this.mKey2UIComponents[item[kKEY]].push(y_height);
 				}
-				else if ( item[kTYPE] == "array_int" )
+				else if ( item[kTYPE] == "array_int_weight" )
 				{				
 					var array:TextInput = new TextInput;
 					array.text = String(JSON.stringify( item[kDEFAULT] ));
@@ -375,12 +345,23 @@
 					head.addElement( array );
 					this.mKey2UIComponents[item[kKEY]].push( array );
 				}
+				else if( item[kTYPE] == "array_int" )
+				{
+					var array:TextInput = new TextInput;
+					array.text = String(JSON.stringify( item[kDEFAULT] ));
+					array.restrict = "\[\]\,\0-9\\- ";
+					array.width = 150;
+					
+					head.addElement( array );
+					this.mKey2UIComponents[item[kKEY]].push( array );					
+				}
 				else if ( item[kTYPE] == "combo_box" )
 				{	
-					var comboBox:DropDownList = new DropDownList;
+					var comboBox:ComboBox = new ComboBox;
 					comboBox.dataProvider = new ArrayList( item[kOTHER][0] );
 					comboBox.prompt = "请选择";
 					comboBox.width = 150;
+					comboBox.rowCount = 15;
 					
 					var ind:int = -1, countor:int = 0;
 					for each( var mlk:String in item[kOTHER][1] )
@@ -396,68 +377,51 @@
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
 				}
-				else if( item[kTYPE] == "MonsterType" || item[kTYPE] == "BulletType" || item[kTYPE] == "TrapType" )
+				else if( item[kTYPE] == "string" && item[kKEY] == "type") // special handling of key type
 				{
-					if( item[kTYPE] == "MonsterType" )
-					{
-						var monsterList:Array = [];
-						if( Data.getInstance().dynamicArgs.MonsterType )
-							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.MonsterType as Array));
-					}
-					else if( item[kTYPE] == "BulletType") 
-					{
-						monsterList = [];
-						if( Data.getInstance().dynamicArgs.BulletType )
-							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.BulletType as Array));
-					}
-					else if( item[kTYPE] == "TrapType")
-					{
-						monsterList = [];
-						if( Data.getInstance().dynamicArgs.TrapType )
-							monsterList = monsterList.concat((Data.getInstance().dynamicArgs.TrapType as Array));
-					}
+					var type = item[kDEFAULT];
+					var typeList:Array = Data.getInstance().getTypeListFromType(type);
+					var ind:int = typeList.indexOf(type);
 					
-					ind = -1, countor = 0;
-					for each( mlk in monsterList )
-					{
-						if( mlk == item[kDEFAULT] ) {
-							ind = countor;
-							break;
-						}
-						countor ++;
-					}
-					
-					comboBox = new DropDownList;
+					var comboBox:ComboBox = new ComboBox;
 					comboBox.width = 150;
-					comboBox.dataProvider = new ArrayList( monsterList );
+					comboBox.dataProvider = new ArrayList( typeList );
 					comboBox.prompt = "请选择";
+					comboBox.rowCount = 10;
 					comboBox.selectedIndex = ind;
 					
 					comboBox.addEventListener(Event.CHANGE, function(evt:Event):void
-					{	
-						var data:Array = Utils.deepCopy(self.mData) as Array;
-						var oldData:Object = self.parse( false );
-						if( oldData ) 
+					{
+						// assume 'type' change is already commited to combobox.
+						// otherwise, ready from   typeList[comboBox.selectedIndex]
+						var monsterInst:Object = self.parse( false );
+						var newType:String = monsterInst.type;
+						
+						var args:Array = EditMonster.genArgsTemplate(newType);
+						for each(var argEntry:Array in args )
 						{
-							for each( inn in data )
-							{
-								if( inn[kKEY] in oldData )
-									inn[kDEFAULT] = oldData[inn[kKEY]];
-							}
+							var argKey = argEntry[kKEY]; 
+							if(argKey in monsterInst )
+								argEntry[kDEFAULT] = monsterInst[argKey];
 						}
-						for each( var inn:Array in self.mData )
-						{
-							if( inn[kKEY] == item[kKEY] )
-								inn[kDEFAULT] = monsterList[comboBox.selectedIndex];
-						}
-						self.refresh( data );
+
+						self.refresh( args );
 						self.stage.focus = self;
 					});
 					
 					head.addElement( comboBox );
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
-					
 				} 
+				else if ( item[kTYPE] == "string" )
+				{
+					var str_input:TextInput = new TextInput;
+					str_input.text = item[kDEFAULT];
+					str_input.width = 100;
+					str_input.editable = true;
+					
+					head.addElement( str_input );
+					this.mKey2UIComponents[item[kKEY]].push( str_input );
+				}
 				else if ( item[kTYPE] == "bullet" || item[kTYPE] == "actor" || item[kTYPE] == "trap" )
 				{
 					var sources:Object = {};
@@ -486,7 +450,7 @@
 						itemList[1].push( one.monster_id );
 					}
 					
-					comboBox = new DropDownList;
+					var comboBox:ComboBox = new ComboBox;
 					comboBox.width = 150;
 					comboBox.dataProvider = new ArrayList( itemList[0] );
 					comboBox.prompt = "请选择";
@@ -578,7 +542,7 @@
 				var comboList:Array = [];
 				function makeAComboBox( cmp:String ) 
 				{
-					var comboBox:DropDownList = new DropDownList;
+					var comboBox:ComboBox = new ComboBox;
 					comboBox.width = 150;
 					comboBox.dataProvider = new ArrayList( data[0] );
 					comboBox.prompt = "请选择";
