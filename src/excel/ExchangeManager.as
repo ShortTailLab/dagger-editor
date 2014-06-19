@@ -89,8 +89,6 @@ package excel
 					levelInfo[key] = value; 
 			}
 			
-			levelInfo["monsters"] = {};
-			
 			return levelInfo;
 		}
 		
@@ -134,6 +132,7 @@ package excel
 				keyMap[keys[i]] = i;
 			
 			var levelList:Array = [];
+			var levelToMonsters = {};
 			var currentLevel:* = null;
 			
 			// place monster profiles into level buckets
@@ -147,13 +146,19 @@ package excel
 						levelList.push(currentLevel); 
 						currentLevel = null;
 					}
+					// level does not have level.monsters entry.
+					// monsters are stored in levelToMonsters.
 					currentLevel = readLevelFromRow(rowData, keyMap);
 					trace("parsing level " + currentLevel.level_id);
+					// create monster entry
+					levelToMonsters[currentLevel.level_id] = {}; 
 				}
 
 				var obj = readMonsterFromRow(rowData, keyMap);
 				if(obj)
-					currentLevel["monsters"][obj.monster_id] = obj;
+				{
+					levelToMonsters[currentLevel.level_id][obj.monster_id] = obj;
+				}
 			}
 
 			// do not forget to push the last level
@@ -163,18 +168,28 @@ package excel
 			for(var i:int=0; i<levelList.length; i++)
 			{
 				var level:* = levelList[i];
-				
-				var monsters = level.monsters;
-				
-				// erase this entry, so updateLevel will not overwrite
-				delete level.monsters; 
-				Data.getInstance().updateLevel(level.level_id, level);
+				if(Data.getInstance().levelExists(level.level_id))
+					Data.getInstance().updateLevel(level.level_id, level);
+				else
+					Data.getInstance().makeLevel(chapterId, level.level_id, level);
 
-				for each(var monster:* in monsters)
+				var monsters = levelToMonsters[level.level_id];
+				for(var idAsKey:String in monsters)
 				{ 
-					Data.getInstance().updateMonster(level.level_id, monster.monster_id, monster);
+					var monster:* = monsters[idAsKey];
+					
+					if(Data.getInstance().monsterExists(level.level_id, monster.monster_id))
+					{
+						Data.getInstance().updateMonster(level.level_id, monster);
+					}
+					else
+					{
+						Data.getInstance().makeMonster(level.level_id, monster);
+					}
 				}
 			}
+			
+			MapEditor.getInstance().mEditLevel.refresh();
 		}
 		
 		static protected function strToVal(val:String, type:String)

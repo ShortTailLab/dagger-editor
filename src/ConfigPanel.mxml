@@ -152,7 +152,7 @@
 						{
 							ret[key] = [JSON.parse(item[0].text), JSON.parse(item[1].text)];
 						}
-						else if( data[kTYPE] == "array_int_weight" ) 
+						else if( data[kTYPE] == "array_int_weight" )
 						{
 							ret[key] = JSON.parse( item[0].text ) as Array;
 							var weight:int = 0;
@@ -180,7 +180,8 @@
 									this.mCBError("请选择："+data[kDESC]);
 									return null;
 								}
-							}else
+							}
+							else
 								ret[key] = data[kOTHER][1][ind];
 						} 
 						else if( data[kTYPE] == "string" && data[kKEY] == "type" )
@@ -202,8 +203,11 @@
 							var target:ComboBox = item[0];
 							var ind = target.selectedIndex;
 							if( ind == -1 ) {
-								if( warn ) this.mCBError("请选择："+data[kDESC]);
-								return null;
+								if( warn )
+								{
+									this.mCBError("请选择："+data[kDESC]);
+									return null;
+								}
 							} else {
 								ret[key] = data[kOTHER][1][ind];
 							}
@@ -220,8 +224,11 @@
 								ind = subTarget.selectedIndex;
 								if( ind == -1 )
 								{
-									if( warn ) this.mCBError("请选择："+data[kDESC]);
-									return null;
+									if( warn )
+									{
+										this.mCBError("请选择："+data[kDESC]);
+										return null;
+									}
 								}
 								nameList.push( data[kOTHER][1][ind] );
 							}
@@ -235,12 +242,16 @@
 							for( i=0; i<containner.numElements; i++ )
 							{
 								subTarget = containner.getElementAt( i ) as ComboBox;
-								if( !subTarget ) continue;
+								if( !subTarget ) 
+									continue;
 								ind = subTarget.selectedIndex;
 								if( ind == -1 )
 								{
-									if( warn ) this.mCBError("请选择："+data[kDESC]);
-									return null;
+									if( warn )
+									{
+										this.mCBError("请选择："+data[kDESC]);
+										return null;
+									}
 								}
 								actorList.push( data[kOTHER][1][ind] );
 							}
@@ -391,20 +402,20 @@
 					comboBox.selectedIndex = ind;
 					
 					comboBox.addEventListener(Event.CHANGE, function(evt:Event):void
-					{
-						// assume 'type' change is already commited to combobox.
-						// otherwise, ready from   typeList[comboBox.selectedIndex]
-						var monsterInst:Object = self.parse( false );
-						var newType:String = monsterInst.type;
+					{						
+						var newType:String = typeList[comboBox.selectedIndex];
+						var args:Array = EditMonster.genData(newType);
 						
-						var args:Array = EditMonster.genArgsTemplate(newType);
-						for each(var argEntry:Array in args )
+						var monsterInst:Object = self.parse( false );
+						if(monsterInst)
 						{
-							var argKey = argEntry[kKEY]; 
-							if(argKey in monsterInst )
-								argEntry[kDEFAULT] = monsterInst[argKey];
+							for each(var argEntry:Array in args )
+							{
+								var argKey = argEntry[kKEY]; 
+								if(argKey in monsterInst )
+									argEntry[kDEFAULT] = monsterInst[argKey];
+							}
 						}
-
 						self.refresh( args );
 						self.stage.focus = self;
 					});

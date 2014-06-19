@@ -128,7 +128,7 @@
 				} 
 				else 
 				{
-					var extraArgs:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[monster.type] ) as Array;
+					var extraArgs:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[type] ) as Array;
 					if(extraArgs)
 						ConfigPanel.mergeTo(extraArgs, dynamicArgs);
 					
@@ -167,7 +167,8 @@
 				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
 				
 				var profile:Object = Data.getInstance().getEnemyProfileById( 
-					Runtime.getInstance().pasteTargetLevel, Runtime.getInstance().pasteTarget 
+					Runtime.getInstance().pasteTargetLevel, 
+					Runtime.getInstance().pasteTarget 
 				);
 				
 				if( !profile || !level ) 
@@ -186,7 +187,7 @@
 				t.init( 
 					function( configs:Object ):void {
 						Data.getInstance().makeMonster( 
-							Runtime.getInstance().currentLevelID, configs.monster_id, configs 
+							Runtime.getInstance().currentLevelID, configs 
 						);
 					}, 
 					function (err:String):void {
@@ -208,7 +209,6 @@
 					{
 						Data.getInstance().makeMonster( 
 							Runtime.getInstance().currentLevelID, 
-							configs.monster_id, 
 							configs 
 						);
 					}, 
@@ -228,7 +228,7 @@
 				var t:ConfigPanel = new ConfigPanel( );
 				t.init( 
 					function( configs:Object ):void {	
-						Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs.monster_id, configs );
+						Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs );
 						
 					}, 
 					function (err:String):void {
@@ -246,7 +246,7 @@
 				t.init( 
 					function( configs:Object ):void 
 					{
-						Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs.monster_id, configs );
+						Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs );
 					}, 
 					function (err:String):void {
 						Alert.show( err );
@@ -260,15 +260,42 @@
 				if( !level || !( id in level.monsters ) ) 
 					return;
 								
+				var oldMonsterId = id;
+				
 				var t:ConfigPanel = new ConfigPanel( );
 				t.init( 
-					function( configs:Object ):void {
-					
-						Data.getInstance().updateMonster(lid, id, configs);
-						Runtime.getInstance().currentLevelID = Runtime.getInstance().currentLevelID;
-					
+					function( configs:Object ):void 
+					{
+						if(oldMonsterId == configs.monster_id)
+						{
+							// no id change, simple update
+							Data.getInstance().updateMonster(lid, configs);
+						}
+						else if( Data.getInstance().monsterExists(lid, configs.monster_id))
+						{
+							// id change and exsiting, no action
+							Alert.show("单位ID已经存在，无法更改单位", "错误");
+						}
+						else
+						{
+							Alert.show(
+								"变更了单位的ID，已经布置好的该单位会丢失，是否继续？", 
+								"变更单位ID", 
+								Alert.OK | Alert.CANCEL, 
+								null, 
+								function(evt:Object){
+									if (evt.detail == Alert.OK) 
+									{
+										Data.getInstance().makeMonster(lid, configs);
+										Data.getInstance().eraseMonster(lid, oldMonsterId);
+									}
+								}
+							);
+						}
+						Runtime.getInstance().forceLevelChangeEvent();
 					}, 
-					function (err:String):void {
+					function (err:String):void 
+					{
 						Alert.show( err );
 					}, 
 					EditMonster.genData( level.monsters[id].type, id)

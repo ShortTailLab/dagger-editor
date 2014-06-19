@@ -34,6 +34,10 @@ package
 			this.dispatchEvent( new Event(Runtime.CURRENT_LEVEL_CHANGE) );
 		}
 		
+		public function forceLevelChangeEvent() {
+			this.dispatchEvent( new Event(Runtime.CURRENT_LEVEL_CHANGE) );
+		}
+		
 		//
 		public static const SELECT_DATA_CHANGE:String = "runtime.select.data.change";
 		private var mSelectedComponentType:String = null;
