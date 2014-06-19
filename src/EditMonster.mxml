@@ -80,11 +80,29 @@
 				return CUSTOM_BEHAVIOR_TYPES.indexOf(type) >= 0;
 			}
 			
-			public static function genData( type:String, profile_type:String, id:String = null ):Array
+			public static function genArgsTemplate(type:String):Array
 			{
-				var dynamic_data:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[profile_type] ) as Array;
+				var profileType = Data.getInstance().typeToProfileType(type);
+				var args:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[profileType] ) as Array;
+				var extraArgs:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[type] ) as Array;
+				ConfigPanel.mergeTo(extraArgs, args);
+				return args;
+			}
+			
+			public static function genBaseArgsTemplate(profileType:String):Array
+			{
+				return Utils.deepCopy( Data.getInstance().dynamicArgs[profileType] ) as Array; 
+			}
+			
+			//public static function genData( type:String, profile_type:String, id:String = null ):Array
+			public static function genData( type:String, id:String = null ):Array
+			{
+				var profileType = Data.getInstance().typeToProfileType(type);
+				var dynamicArgs:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[profileType] ) as Array;
+				
 				var monster:Object = Data.getInstance().getEnemyProfileById( 
-					Runtime.getInstance().currentLevelID, id
+					Runtime.getInstance().currentLevelID, 
+					id
 				);
 				
 				var skins:Array = [];
@@ -93,47 +111,55 @@
 				skins.sort();
 				
 				// default items
-				if( !id || !monster ) {
+				if( !monster ) 
+				{					
+					var nextId = Data.getInstance().getMaxMonsterId( Runtime.getInstance().currentLevelID );
+
+					var extraArgs:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[type] ) as Array;
+					if(extraArgs)
+						ConfigPanel.mergeTo(extraArgs, dynamicArgs);
 					
-					var enemies:Object = Data.getInstance().getLevelProfileById(
-						Runtime.getInstance().currentLevelID 
-					).monsters;
-					 
-					var nextId:int = int(Runtime.getInstance().currentLevelID+"000");
-					for each ( var m:Object in enemies )
+					setArgEntry(dynamicArgs, "type", ["基础数据", "type", "string", type, "类型" ]);
+					setArgEntry(dynamicArgs, "monster_id", ["基础数据", "monster_id", "string", String(nextId+1), "Id" ]);
+					setArgEntry(dynamicArgs, "monster_name", ["基础数据", "monster_name", "string", "实体"+String(nextId+1), "中文名字" ]);
+					setArgEntry(dynamicArgs, "face", ["基础数据", "face", "combo_box", -1, "资源前缀", [skins, skins]]);
+										
+					return dynamicArgs;
+				} 
+				else 
+				{
+					var extraArgs:Array = Utils.deepCopy( Data.getInstance().dynamicArgs[type] ) as Array;
+					if(extraArgs)
+						ConfigPanel.mergeTo(extraArgs, dynamicArgs);
+					
+					for each( var item:Array in dynamicArgs )
 					{
-						nextId = Math.max( nextId, m.monster_id );
-					}
-					
-					var data:Array = [
-						["基础数据", "type", type, -1, "类型" ],
-						["基础数据", "monster_id", "string", String(nextId+1), "Id" ],
-						["基础数据", "monster_name", "string", "实体"+String(nextId+1), "中文名字" ],
-						["基础数据", "face", "combo_box", -1, "资源前缀", [skins, skins]]
-					];
-					
-					ConfigPanel.mergeTo( dynamic_data, data );
-				} else {
-					
-					for each( var item:Array in dynamic_data )
-					{
-						if( item[ConfigPanel.kKEY] in monster )
+						var argKey = item[ConfigPanel.kKEY];
+						if( argKey in monster )
 						{
-							item[ConfigPanel.kDEFAULT] = monster[item[ConfigPanel.kKEY]];
+							item[ConfigPanel.kDEFAULT] = monster[argKey];
 						}
 					}
 					
-					data = [
-						["基础数据", "type", type, monster.type, "类型", monster.monster_id ],
-						["基础数据", "monster_id", "string", monster.monster_id, "Id" ],
-						["基础数据", "monster_name", "string", monster.monster_name, "中文名字" ],
-						["基础数据", "face", "combo_box", monster.face, "资源前缀", [skins, skins]]
-					]; 
+					setArgEntry(dynamicArgs, "type", ["基础数据", "type", "string", monster.type, "类型", monster.monster_id ]);
+					setArgEntry(dynamicArgs, "monster_id", ["基础数据", "monster_id", "string", monster.monster_id, "Id" ]);
+					setArgEntry(dynamicArgs, "monster_name", ["基础数据", "monster_name", "string", monster.monster_name, "中文名字"]);
+					setArgEntry(dynamicArgs, "face", ["基础数据", "face", "combo_box", monster.face, "资源前缀", [skins, skins]]);
 					
-					ConfigPanel.mergeTo( dynamic_data, data );
+					return dynamicArgs;
 				}
-				
-				return data;
+			}
+			
+			public static function setArgEntry(args:Array, key:String, replacement:Array):void
+			{
+				for(var i=0; i<args.length; i++)
+				{
+					if(args[i][ConfigPanel.kKEY] == key)
+					{
+						args[i] = replacement;
+						break;
+					}
+				}
 			}
 			
 			protected function onPaste(e:ContextMenuEvent):void
@@ -141,27 +167,16 @@
 				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
 				
 				var profile:Object = Data.getInstance().getEnemyProfileById( 
-					Runtime.getInstance().pasteTargetLevel, Runtime.getInstance().pasteTarget 
+					Runtime.getInstance().pasteTargetLevel, 
+					Runtime.getInstance().pasteTarget 
 				);
 				
-				if( !profile || !level ) return;
+				if( !profile || !level ) 
+					return;
 				
-				var data:Array = [];
-				if( Data.getInstance().isMonster( profile.type ) )
-				{
-					data = EditMonster.genData( "MonsterType", "MonsterProfile" );
-				} 
-				else if ( Data.getInstance().isBullet( profile.type ) ) 
-				{
-					data = EditMonster.genData( "BulletType", "BulletProfile" );
-				}
-				else if ( Data.getInstance().isTrap( profile.type ) )
-				{
-					data = EditMonster.genData( "TrapType", "TrapProfile" );
-				}
-				else return;
+				var args:Array = EditMonster.genData(profile.type);
 				
-				for each( var item:Array in data )
+				for each( var item:Array in args )
 				{
 					var key:String = item[ConfigPanel.kKEY];
 					if( key in profile )
@@ -169,30 +184,40 @@
 				}
 				
 				var t:ConfigPanel = new ConfigPanel( );
-				t.init( function( configs:Object ):void {
-					
-					Data.getInstance().makeMonster( 
-						Runtime.getInstance().currentLevelID, configs.monster_id, configs 
-					);
-					
-				}, function (err:String):void {
-					Alert.show( err );
-				}, data);
+				t.init( 
+					function( configs:Object ):void {
+						Data.getInstance().makeMonster( 
+							Runtime.getInstance().currentLevelID, configs 
+						);
+					}, 
+					function (err:String):void {
+						Alert.show( err );
+					}, 
+					args
+				);
 			}
 		
 			protected function onCreateMonster(evt:Event):void
 			{				
 				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
-				if( !level ) return ;
+				if( !level ) 
+					return ;
 				
 				var t:ConfigPanel = new ConfigPanel( );
-				t.init( function( configs:Object ):void {
-		
-					Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs.monster_id, configs );
-					
-				}, function (err:String):void {
-					Alert.show( err );
-				}, EditMonster.genData( "MonsterType", "MonsterProfile" ));
+				t.init( 
+					function( configs:Object ):void 
+					{
+						Data.getInstance().makeMonster( 
+							Runtime.getInstance().currentLevelID, 
+							configs 
+						);
+					}, 
+					function (err:String):void 
+					{
+						Alert.show( err );
+					}, 
+					EditMonster.genData( "Spearman")
+				);
 			}
 			
 			protected function onCreateBullet(evt:Event):void
@@ -201,13 +226,15 @@
 				if( !level ) return ;
 				
 				var t:ConfigPanel = new ConfigPanel( );
-				t.init( function( configs:Object ):void {
-					
-					Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs.monster_id, configs );
-					
-				}, function (err:String):void {
-					Alert.show( err );
-				}, EditMonster.genData( "BulletType", "BulletProfile" ));
+				t.init( 
+					function( configs:Object ):void {	
+						Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs );
+						
+					}, 
+					function (err:String):void {
+						Alert.show( err );
+					}, EditMonster.genData( Data.getInstance().dynamicArgs.BulletType[0] )
+				);
 			}
 			
 			protected function onCreateTrap(evt:Event):void
@@ -216,44 +243,64 @@
 				if( !level ) return ;
 				
 				var t:ConfigPanel = new ConfigPanel( );
-				t.init( function( configs:Object ):void {
-					
-					Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs.monster_id, configs );
-					
-				}, function (err:String):void {
-					Alert.show( err );
-				}, EditMonster.genData( "TrapType", "TrapProfile" ));
+				t.init( 
+					function( configs:Object ):void 
+					{
+						Data.getInstance().makeMonster( Runtime.getInstance().currentLevelID, configs );
+					}, 
+					function (err:String):void {
+						Alert.show( err );
+					}, EditMonster.genData( Data.getInstance().dynamicArgs.TrapType[0] )
+				);
 			}
 			
 			public function onEditEnemy( lid:String, id:String ):void
 			{
 				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
-				if( !level || !( id in level.monsters ) ) return ;
-				
-				var type:String = "", profile:String = "";
-				if( Data.getInstance().isMonster( level.monsters[id].type ) )
-				{
-					type = "MonsterType"; profile = "MonsterProfile";
-				} 
-				else if ( Data.getInstance().isTrap( level.monsters[id].type ) )
-				{
-					type = "TrapType"; profile = "TrapProfile";
-				}
-				else if ( Data.getInstance().isBullet( level.monsters[id].type ) )
-				{
-					type = "BulletType"; profile = "BulletProfile";
-				} else return;
+				if( !level || !( id in level.monsters ) ) 
+					return;
+								
+				var oldMonsterId = id;
 				
 				var t:ConfigPanel = new ConfigPanel( );
-				t.init( function( configs:Object ):void {
-					
-					Data.getInstance().updateMonster(lid, id, configs);
-					Runtime.getInstance().currentLevelID = Runtime.getInstance().currentLevelID;
-					
-				}, function (err:String):void {
-					Alert.show( err );
-				},EditMonster.genData( type, profile, id ));
-				t.mRootPanel.title = profile;
+				t.init( 
+					function( configs:Object ):void 
+					{
+						if(oldMonsterId == configs.monster_id)
+						{
+							// no id change, simple update
+							Data.getInstance().updateMonster(lid, configs);
+						}
+						else if( Data.getInstance().monsterExists(lid, configs.monster_id))
+						{
+							// id change and exsiting, no action
+							Alert.show("单位ID已经存在，无法更改单位", "错误");
+						}
+						else
+						{
+							Alert.show(
+								"变更了单位的ID，已经布置好的该单位会丢失，是否继续？", 
+								"变更单位ID", 
+								Alert.OK | Alert.CANCEL, 
+								null, 
+								function(evt:Object){
+									if (evt.detail == Alert.OK) 
+									{
+										Data.getInstance().makeMonster(lid, configs);
+										Data.getInstance().eraseMonster(lid, oldMonsterId);
+									}
+								}
+							);
+						}
+						Runtime.getInstance().forceLevelChangeEvent();
+					}, 
+					function (err:String):void 
+					{
+						Alert.show( err );
+					}, 
+					EditMonster.genData( level.monsters[id].type, id)
+				);
+				t.mRootPanel.title = level.monsters[id].type;
 			}
 		]]>
 	</fx:Script>

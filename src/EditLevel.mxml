@@ -9,27 +9,9 @@
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
-			import DecoEdit.DecoPanel;
-			
-			import bgedit.BgEditView;
-			import bgedit.BgModel;
-			
-			import excel.ExcelConfigReader;
-			
-			import manager.EventManager;
-			import manager.EventType;
-			import manager.SyncManager;
+			import mx.controls.Alert;
 			
 			import misc.ConfirmPanel;
-			
-			import mx.collections.ArrayCollection;
-			import mx.controls.Alert;
-			import mx.controls.Tree;
-			import mx.events.ResizeEvent;
-			import mx.managers.PopUpManager;
-			
-			import spark.components.Group;
-			import spark.components.VScrollBar;
 			
 			// ---------------------------------------------------------
 			
@@ -87,6 +69,15 @@
 				this.mCurrentId = item.@id;
 			}
 			
+			static public function SAFE_VAL(val, defaultValue)
+			{
+				if(val === undefined)
+				{
+					return defaultValue;
+				}
+				return val;
+			}
+			
 			static public function genLevelData( lid:String = null ):Array
 			{
 				var ld:Object = Data.getInstance().getLevelProfileById( lid );
@@ -97,17 +88,28 @@
 					chapter[0].push( item.id +"|"+ item.name );
 					chapter[1].push( item.id );
 				}
-					
-				if( ld )
-				{	
-					var data:Array = [
-						[ "配置", "chapter_id", "combo_box", ld.chapter_id, "所属章节", chapter ],
-						[ "配置", "level_id", "string", ld.level_id, "关卡id" ],
-						[ "配置", "level_name", "string", ld.level_name, "关卡名" ]
-					];
-				} else {
-					
 
+				if( ld )
+				{
+					var data:Array = [
+						[ "配置", "chapter_id",   "combo_box", ld.chapter_id,             "所属章节", chapter ],
+						[ "配置", "level_id",     "string",    ld.level_id,               "关卡id" ],
+						[ "配置", "level_name",   "string",    ld.level_name,             "关卡名" ],
+						[ "配置", "enabled",      "float",       SAFE_VAL(ld.enabled, 1),     "激活关卡" ],
+						[ "配置", "difficulty",   "float",     SAFE_VAL(ld.difficulty, 1),  "关卡难度" ],
+						[ "配置", "limit",        "float",     SAFE_VAL(ld.limit, 99),      "每日次数" ],
+						[ "配置", "gold_limit",   "float",     SAFE_VAL(ld.gold_limit, 99), "付费次数" ],
+						[ "配置", "gold_cost",    "float",     SAFE_VAL(ld.gold_cost, 0),   "元宝消耗" ],
+						[ "配置", "spirit_cost",  "float",     SAFE_VAL(ld.spirit_cost, 6), "体力消耗" ],
+						[ "配置", "player_exp",   "float",     SAFE_VAL(ld.player_exp, 0),  "玩家经验" ],
+						[ "配置", "hero_exp",     "float",     SAFE_VAL(ld.hero_exp, 0),    "英雄经验" ],
+						[ "配置", "requirement",  "string",    SAFE_VAL(ld.requirement, ""), "前置条件" ],
+						[ "配置", "min_level",    "float",     SAFE_VAL(ld.min_level, 0), "等级限制" ],
+						[ "配置", "drop_items",   "array_int", SAFE_VAL(ld.drop_items, []),	"掉落列表"  ]
+					];
+				}
+				else 
+				{
 					var nextId:int = int(Runtime.getInstance().currentLevelID);
 					for each ( var c:Object in Data.getInstance().chapters )
 					{
@@ -116,23 +118,21 @@
 					}
 					
 					data = [
-						[ "配置", "chapter_id", 	"combo_box", -1, "所属章节", chapter ],
-						[ "配置", "level_id", 	"string", String(nextId+1), "关卡id" ],
-						[ "配置", "level_name", 	"string", "关卡"+String(nextId+1), "关卡名" ]
+						[ "配置", "chapter_id", 	 "combo_box", -1,               "所属章节", chapter ],
+						[ "配置", "level_id", 	 "string",   String(nextId+1), "关卡id" ],
+						[ "配置", "level_name", 	 "string",   "关卡"+String(nextId+1), "关卡名" ],
+						[ "配置", "enabled",      "float",    1,     			"激活关卡" ],
+						[ "配置", "difficulty",   "float",    1,  				"关卡难度" ],
+						[ "配置", "limit",        "float",    99,      			"每日次数" ],
+						[ "配置", "gold_limit",   "float",    99, 				"付费次数" ],
+						[ "配置", "gold_cost",    "float",    0,   				"元宝消耗" ],
+						[ "配置", "spirit_cost",  "float",    6, 				"体力消耗" ], 
+						[ "配置", "player_exp",   "float",    0,  				"玩家经验" ],
+						[ "配置", "hero_exp",     "float",    0,    				"英雄经验" ],
+						[ "配置", "requirement",  "string",  "", 				"前置条件" ],
+						[ "配置", "min_level",    "float",      0, 				"等级限制" ],
+						[ "配置", "drop_items",   "array_int",  [],				"掉落列表"  ]
 					];
-				}
-				
-				
-				if( "Level" in Data.getInstance().dynamicArgs )
-				{
-					//					for each( var arr:Array in Data.getInstance().dynamicArgs )
-					//					{
-					//						if( arr[ConfigPanel.kKEY] != "level_id" && 
-					//							arr[ConfigPanel.kKEY] != "level_name" )
-					//						{
-					//							data.push( arr );
-					//						}
-					//					}
 				}
 				
 				return data;
@@ -210,16 +210,22 @@
 					data = EditLevel.genChapterData( item.@id );
 				
 				var self:EditLevel = this;
-				new ConfigPanel().init( function( configs:Object ) : void {
-					if( item.name() == "level" )
-						Data.getInstance().updateLevel( item.@id, configs );	
-					else 
-						Data.getInstance().updateChapter( item.@id, configs );
-					
-					self.refresh();
-				}, function ( err:String ):void {
-					Alert.show( err );
-				}, data );
+				
+				new ConfigPanel().init( 
+					function( configs:Object ) : void 
+					{
+						if( item.name() == "level" )
+							Data.getInstance().updateLevel( item.@id, configs );	
+						else 
+							Data.getInstance().updateChapter( item.@id, configs );
+						
+						self.refresh();
+					},
+					function ( err:String ):void {
+						Alert.show( err );
+					},
+					data 
+				);
 			}
 			
 			protected function onErase( evt:Event ):void

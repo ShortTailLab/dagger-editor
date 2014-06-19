@@ -1,7 +1,5 @@
 package
 {
-	import excel.ExcelReader;
-	
 	import flash.display.Bitmap;
 	import flash.display.Loader;
 	import flash.display.LoaderInfo;
@@ -19,22 +17,27 @@ package
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
-	import mapEdit.Entity;
-	import mapEdit.SectionManager;
-	
 	import mx.controls.Alert;
 	import mx.utils.object_proxy;
+	
+	import excel.ExcelReader;
+	
+	import mapEdit.Entity;
+	import mapEdit.SectionManager;
 	
 	public class Data extends EventDispatcher
 	{
 		////// entrance
 		private static var gDataInstance:Data = null;
+		
 		public static function getInstance():Data
 		{
 			if(!gDataInstance) gDataInstance = new Data;
 			return gDataInstance;
 		}
+		
 		public function Data(target:IEventDispatcher=null) { super(target); }
+		
 		public function init(onComplete:Function):void {
 			var self:Data = this;
 			self.start( function(m1:String):void
@@ -197,6 +200,7 @@ package
 			return ret;
 		}
 		
+		// create a new chapter entry
 		public function makeChapter( id:String, name:String ):void
 		{
 			if( id in this.mChapterProfiles )
@@ -212,6 +216,7 @@ package
 			};
 		}
 		
+		// update chapter related meta info.
 		public function updateChapter( id:String, data:Object ):void
 		{
 			if( !("chapter_id" in data) || !("chapter_name" in data) )
@@ -222,7 +227,8 @@ package
 				Alert.show("【失败】章节id已存在");
 				return;
 			}
-			if( !(id in this.mChapterProfiles) ) return;
+			if( !(id in this.mChapterProfiles) ) 
+				return;
 			
 			
 			for( var key:String in this.mChapterProfiles[id].levels )
@@ -259,6 +265,14 @@ package
 			delete this.mChapterProfiles[id];
 		}
 		
+		
+		public function levelExists(id:String):Boolean
+		{
+			var level:Object = this.getLevelProfileById( id );
+			return !!level;
+		}
+		
+		// create a level entry
 		public function makeLevel( chapter_id:String, id:String, data:Object ):void
 		{
 			if( !(chapter_id in this.mChapterProfiles) )
@@ -292,15 +306,12 @@ package
 			this.writeToProfile( id, level );
 		}
 		
+		// update level profile
 		public function updateLevel( id:String, data:Object ):void
 		{
 			var level:Object = this.getLevelProfileById( id );
-			if( !level ) return;
-			
-			if( "level_id" in data )
-			{
-				delete data["level_id"];
-			}
+			if( !level )
+				return;
 			
 			if( "chapter_id" in data )
 			{
@@ -309,7 +320,7 @@ package
 					Alert.show("【创建失败】章节id不存在");
 					return;
 				}
-				
+
 				if( this.mChapterProfiles[level.chapter_id].levels[id] != level )
 				{
 					this.mChapterProfiles[data.chapter_id].levels[id] = level;
@@ -319,6 +330,8 @@ package
 			
 			for( var key:String in data )
 			{
+				if(key == "level_id")
+					continue;
 				level[key] = data[key];
 			}
 			this.writeToProfile( id, level );
@@ -343,61 +356,59 @@ package
 			}
 		}
 		
-		public function makeMonster( level_id:String, id:String, data:Object):void
+		public function monsterExists(levelId:String, monsterId:String):Boolean
 		{
-			var level:Object = this.getLevelProfileById( level_id );
+			var level:Object = this.getLevelProfileById( levelId );
+			if( !level )
+				return false;
+			
+			return monsterId in level.monsters;			
+		}
+		
+		public function makeMonster( levelId:String, newMonster:Object):void
+		{
+			var level:Object = this.getLevelProfileById( levelId );
 			if( !level ) {
 				Alert.show("【创建失败】关卡id不存在 ");
 				return;
 			}
 			
-			if( "monster_id" in data ) id = data.monster_id;
-			
-			if( id in level.monsters || !id )
+			if( newMonster.monster_id in level.monsters )
 			{
 				Alert.show("【创建失败】怪物id已经存在");
 				return;
 			}
-			
-			var monster:Object = {
-				monster_id : id
-			};
-			for( var key:String in data )
-				monster[key] = data[key];
-			
-			level.monsters[id] = monster;
-			this.writeToProfile( level_id, level );
+
+			level.monsters[newMonster.monster_id] = Utils.deepCopy(newMonster);
+			this.writeToProfile( levelId, level );
 			
 			Runtime.getInstance().onProfileDataChange();
 		}
 		
-		public function updateMonster( level_id:String, id:String, data:Object):void
+		public function updateMonster( level_id:String, otherMonster:Object):void
 		{
 			var level:Object = this.getLevelProfileById( level_id );
 			if( !level ) {
-				Alert.show("【创建失败】关卡id不存在 ");
+				Alert.show("【更新失败】关卡id不存在");
 				return;
 			}
 			
-			if( !(id in level.monsters) || !id )
+			if(!otherMonster.monster_id)
 			{
-				Alert.show("【创建失败】怪物不存在");
+				Alert.show("【更新失败】怪物对象没有monster_id字段");
 				return;
 			}
 			
-			var monster:Object = level.monsters[id];
-			
-			if( "monster_id" in data && 
-				data.monster_id in level.monsters &&
-				level.monsters[data.monster_id] != monster )
+			if( !(otherMonster.monster_id in level.monsters) )
 			{
-				Alert.show("【创建失败】怪物id已经存在");
+				Alert.show("【更新失败】怪物不存在");
 				return;
 			}
 			
-			for( var key:String in data )
-				monster[key] = data[key];
-			level.monsters[monster.monster_id] = monster;
+			var monster:Object = level.monsters[otherMonster.monster_id];
+			
+			for( var key:String in otherMonster )
+				monster[key] = otherMonster[key];
 			
 			this.writeToProfile( level_id, level );
 			Runtime.getInstance().onProfileDataChange();
@@ -407,13 +418,13 @@ package
 		{
 			var profile:Object = this.getLevelProfileById( level_id );
 			if( !profile ) {
-				Alert.show("【创建失败】关卡id不存在 ");
+				Alert.show("【删除失败】关卡id不存在 ");
 				return;
 			}
 			
 			if( !(id in profile.monsters) || !id )
 			{
-				Alert.show("【创建失败】怪物不存在");
+				Alert.show("【删除失败】怪物不存在");
 				return;
 			}
 			
@@ -423,11 +434,13 @@ package
 			Runtime.getInstance().onProfileDataChange();
 		}
 		
+		
 		public function getLevelProfileById( lid:String ):Object 
 		{
 			for each( var chapter:Object in this.mChapterProfiles )
 			{
-				if( lid in chapter.levels ) return chapter.levels[lid];
+				if( lid in chapter.levels ) 
+					return chapter.levels[lid];
 			}
 			return null;
 		}
@@ -436,7 +449,8 @@ package
 		{
 			for each( var chapter:Object in this.mChapterProfiles )
 			{
-				if( lid in chapter.levels ) return chapter;
+				if( lid in chapter.levels ) 
+					return chapter;
 			}
 			return null;
 		}
@@ -638,6 +652,27 @@ package
 			}
 		}
 		
+		// HACK: some data is corrupted. id mismatches. 
+		private function CORRECT_MONSTER_ID_MISMATCH(chapters)
+		{
+			for each(var chapter:* in chapters)
+			{
+				for each(var level:* in chapter.levels)
+				{
+					for(var idAsKey:String in level.monsters)
+					{
+						var monster_id:String = level.monsters[idAsKey].monster_id;
+						if(idAsKey != monster_id)
+						{
+							trace("found a monster id mismatch: " + idAsKey + " vs " + monster_id);
+							level.monsters[monster_id] = level.monsters[idAsKey];
+							delete level.monsters[idAsKey];
+						}
+					}
+				}
+			}
+		}
+		
 		private function parseLocalData(onComplete:Function):void
 		{
 			this.mDynamicArgs = this.loadJson(
@@ -667,6 +702,9 @@ package
 						= Utils.LoadJSONToObject( file );
 				}
 			}
+			
+			CORRECT_MONSTER_ID_MISMATCH(this.mChapterProfiles);
+			
 			// chapter profiles
 
 			this.mLevelInstancesTable = {};
@@ -817,6 +855,28 @@ package
 			return false;
 		}
 		
+		public function typeToProfileType(type:String):String
+		{
+			if(Data.getInstance().isMonster(type))
+				return "MonsterProfile";
+			else if(Data.getInstance().isBullet(type))
+				return "BulletProfile";
+			else if(Data.getInstance().isTrap(type))
+				return "TrapProfile";
+			throw "Unknown object type";
+		}
+		
+		public function getTypeListFromType(type:String):Array
+		{
+			if(Data.getInstance().isMonster(type))
+				return this.mDynamicArgs["MonsterType"];
+			else if(Data.getInstance().isBullet(type))
+				return this.mDynamicArgs["BulletType"];
+			else if(Data.getInstance().isTrap(type))
+				return this.mDynamicArgs["TrapType"];
+			throw "Unknown object type";
+		}
+		
 		public function isTrigger( type:String ):Boolean
 		{
 			return type == SectionManager.TRIGGER_TYPE;
@@ -884,6 +944,18 @@ package
 				}
 			}
 			return ret;
+		}
+		
+		public function getMaxMonsterId(lid:String): int
+		{
+			var enemies:Object = getLevelProfileById( lid ).monsters;
+			
+			var nextId:int = int(lid+"000");
+			for each ( var m:Object in enemies )
+			{
+				nextId = Math.max( nextId, m.monster_id );
+			}
+			return nextId;
 		}
 		
 		private function loadImage(onComplete:Function):void
@@ -1018,7 +1090,8 @@ package
 			var profile:Object = this.getLevelProfileById( lid );
 			if( !(lid in this.mLevelInstancesTable ) || !profile  ) return "【失败】无相关地图数据存在";
 			
-			function adjust( name:String, itype:String, item:Object ):Array {
+			function adjust( name:String, itype:String, item:Object ):Array 
+			{
 				
 				var monsters:Object = Data.getInstance().getMonstersByLevelId( lid );
 				var bullets:Object = Data.getInstance().getBulletsByLevelId( lid );
@@ -1210,16 +1283,27 @@ package
 		public function getLevelDataForServer( lid:String ):Object
 		{	
 			var profile:Object = this.getLevelProfileById( lid );
-			if( !profile ) return null;
+			if( !profile ) 
+				return null;
 	
-			if( !(lid in this.mLevelInstancesTable) ) 
+			if( !(lid in this.mLevelInstancesTable) )
+			{
 				return { 
 					id : int(lid),
 					stageId: int(profile.chapter_id),
 					stage: profile.chapter_name,
 					name: profile.level_name,
-					path: "level/"+lid+".js", enemies : [] 
+					path: "level/"+lid+".js", 
+					enemies : [],
+					roleExp: profile.player_exp,
+					heroExp: profile.hero_exp,
+					energy : profile.spirit_cost,
+					drop_items : profile.drop_items,
+					enabled : !!profile.enabled,
+					requirement: int(profile.requirement),
+					min_level : int(profile.min_level)
 				};
+			}
 			
 			var enemies:Object = {};
 			var inst:Array = this.getLevelDataById( lid );
@@ -1246,14 +1330,24 @@ package
 			}
 			
 			var array:Array = [];
-			for each( var monster:* in enemies ) array.push( monster );
+			for each( var monster:* in enemies ) {
+				array.push( monster );
+			}
 			
 			var ret:Object = {
 				id : int(lid),
 				stageId: int(profile.chapter_id), 
 				stage: profile.chapter_name,
-				name: profile.level_name, path: "level/"+lid+".js", 
-				enemies : array
+				name: profile.level_name, 
+				path: "level/"+lid+".js", 
+				enemies : array,
+				roleExp: profile.player_exp,
+				heroExp: profile.hero_exp,
+				energy : profile.spirit_cost,
+				drop_items : profile.drop_items,
+				enabled : !!profile.enabled,
+				requirement: int(profile.requirement),
+				min_level : int(profile.min_level)
 			};
 			Utils.dumpObject( ret );
 			return ret;

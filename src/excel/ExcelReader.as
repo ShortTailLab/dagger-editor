@@ -76,12 +76,22 @@ package excel
 			
 			var enum_type:Array = ["Chapter", "Level", "Monster", "Bullet"];
 			var enum_must:Array = [
-				{"chapter_id":"string", "chapter_name":"string"},
-				{"level_id":"string","level_name":"string"},
 				{
-					"monster_id":"string", "monster_type":"string",
-				 	"monster_name":"string", "face":"string", 
-				 	"coins":"array_int", "items":"array_int", "props":"array_int"
+					"chapter_id":"string", 
+					"chapter_name":"string"
+				},
+				{
+					"level_id":"string",
+					"level_name":"string"
+				},
+				{
+					"monster_id":"string", 
+					"monster_type":"string",
+				 	"monster_name":"string", 
+					"face":"string", 
+				 	"coins":"array_int_weight", 
+					"items":"array_int_weight", 
+					"props":"array_int_weight"
 				}
 			];
 			var enum_key:Array  = ["chapter_id", "level_id", "monster_id"];
@@ -190,7 +200,7 @@ package excel
 				if( value == "" ) return 0;
 				return Number(value);
 			} 
-			else if( argType == "array_int" )
+			else if( argType == "array_int_weight" )
 			{
 				if( value == "" ) return [];
 				return JSON.parse( value );

@@ -25,12 +25,16 @@ package
 		
 		//
 		public static const CURRENT_LEVEL_CHANGE:String = "runtime.current.level.change";
-		private var mCurrentLevelID:String = null;
+		private var mCurrentLevelID:String = "100004";
 		public function get currentLevelID(): String {
 			return this.mCurrentLevelID;
 		}
 		public function set currentLevelID(v:String):void {
 			this.mCurrentLevelID = v;
+			this.dispatchEvent( new Event(Runtime.CURRENT_LEVEL_CHANGE) );
+		}
+		
+		public function forceLevelChangeEvent() {
 			this.dispatchEvent( new Event(Runtime.CURRENT_LEVEL_CHANGE) );
 		}
 		
