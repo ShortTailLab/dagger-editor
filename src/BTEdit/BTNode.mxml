@@ -8,8 +8,6 @@
 		<![CDATA[
 			import behaviorEdit.PathEditPanel;
 			
-			import com.hurlant.crypto.symmetric.NullPad;
-			
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.GameEvent;
@@ -998,6 +996,82 @@
 			
 			public function reset():void {
 
+			}
+			
+			static const DICT:Object = {float:"数字", int:"整数", node:"节点", array_string:"字符串数组", ccp:"数字", string:"字符串", array_ccp:"point数组"};
+			public function validate():Object {
+				if (this.mType != TYPE_ROOT && this.mData && this.mData.data && this.mData.data.parm) {
+					var params:Array = this.mData.data.parm;
+					var execPointer:int = 0;
+					for (var i:int = 0; i < params.length; i++) {
+						switch (params[i].type) {
+							case "float":
+								var v:String = (this.mExecInputs[execPointer] as TextInput).text;
+								if (v.length < 1) return {result:false, expect:DICT["float"], input:v, name:this.mData.data.execType, field:params[i].name};
+								var n:Number = Number(v);
+								execPointer++;
+								if (isNaN(n)) return {result:false, expect:DICT["float"], input:v, name:this.mData.data.execType, field:params[i].name};
+								break;
+							case "int":
+								v = (this.mExecInputs[execPointer] as TextInput).text;
+								if (v.length < 1 || (v.charAt(0) < "0" || v.charAt(0) > "9")) return {result:false, expect:DICT["int"], input:v, name:this.mData.data.execType, field:params[i].name};
+								var vInt:int = parseInt(v, 10);
+								execPointer++;
+								if (isNaN(vInt)) return {result:false, expect:DICT["int"], input:v, name:this.mData.data.execType, field:params[i].name};
+								break;
+							case "node":
+								break;
+							case "array_string":
+								execPointer++;
+								break;
+							case "ccp":
+								v = (this.mExecInputs[execPointer] as TextInput).text;
+								if (v.length < 1) return {result:false, expect:DICT["ccp"], input:v, name:this.mData.data.execType, field:params[i].name};
+								n = Number(v);
+								execPointer++;
+								if (isNaN(n)) return {result:false, expect:DICT["ccp"], input:v, name:this.mData.data.execType, field:params[i].name};
+								v = (this.mExecInputs[execPointer] as TextInput).text;
+								if (v.length < 1) return {result:false, expect:DICT["ccp"], input:v, name:this.mData.data.execType, field:params[i+1].name};
+								n = Number(v);
+								execPointer++;
+								if (isNaN(n)) return {result:false, expect:DICT["ccp"], input:v, name:this.mData.data.execType, field:params[i+1].name};
+								i++;
+								break;
+							case "string":
+								execPointer++;
+								break;
+							case "array_ccp":
+								v = (this.mExecInputs[execPointer] as TextInput).text;
+								var o:Object;
+								try {
+									o = JSON.parse(v);
+									if (!(o is Array)) return {result:false, expect:DICT["array_ccp"], input:v, name:this.mData.data.execType, field:params[i].name};
+									for (var j:int = 0; j < o.length; j++) {
+										if (!o[j].hasOwnProperty("x") || !o[j].hasOwnProperty("y")) {
+											return {result:false, expect:DICT["array_ccp"], input:v, name:this.mData.data.execType, field:params[i].name};
+										}
+										if (!(o[j].x is Number && o[j].y is Number)) {
+											return {result:false, expect:DICT["array_ccp"], input:v, name:this.mData.data.execType, field:params[i].name};
+										}
+									}
+								}
+								catch (e:Error) {
+									return {result:false, expect:DICT["array_ccp"], input:v, name:this.mData.data.execType, field:params[i].name};
+								}
+								execPointer++;
+								break;
+						}
+					}
+				}
+				else if (this.mName == FUNC_NODE_LOOP || this.mName == FUNC_NODE_RANDOM || this.mName == FUNC_NODE_EVERY) {
+					for (var i:int = 0; i < this.mNodeInputs.length; i++) {
+						v = (this.mNodeInputs[i] as TextInput).text;
+						if (v.length < 1) return {result:false, expect:DICT["float"], input:v, name:this.mName, field:this.mNodeVars[i].text};
+						n = Number(v);
+						if (isNaN(n)) return {result:false, expect:DICT["float"], input:v, name:this.mName, field:this.mNodeVars[i].text};
+					}
+				}
+				return {result:true};
 			}
 			
 			public function get isInFoldedTree():Boolean {

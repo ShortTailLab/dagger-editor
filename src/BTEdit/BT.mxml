@@ -330,6 +330,16 @@
 				}
 			}
 			
+			public function validate():Object {
+				for (var i:int = 0; i < this.mNodes.length; i++) {
+					var ret:Object = this.mNodes[i].validate();
+					if (!ret.result) {
+						return ret;
+					}
+				}
+				return {result:true};
+			}
+			
 			public function get data():Array {
 				return this.mData;
 			}

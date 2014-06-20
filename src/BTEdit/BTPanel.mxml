@@ -326,25 +326,40 @@
 			private function onPressSave(event:Event=null):void {
 				if (this.mTabNavigator.selectedIndex == -1) return;
 				var current:String = this.mTabNames[this.mTabNavigator.selectedIndex];
-				if (this.mTabDict[current].modified) {
-					var data:Object = this.mTabDict[current].bt.export();
-					Data.getInstance().updateBehaviorSetById(current, data);
-					setTabModified(current, false);
-					var alert:Alert = Alert.show(current+" 保存成功!");
-					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
-					this.filterLibrary();
-					this.modifiedAndSavedFiles[current] = true;
-				}
+//				if (this.mTabDict[current].modified) {
+					var validate:Object = this.mTabDict[current].bt.validate();
+					if (validate.result) {
+						var data:Object = this.mTabDict[current].bt.export();
+						Data.getInstance().updateBehaviorSetById(current, data);
+						setTabModified(current, false);
+						var alert:Alert = Alert.show(current+" 保存成功!");
+						setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
+						this.filterLibrary();
+						this.modifiedAndSavedFiles[current] = true;
+					}
+					else {
+						var msg:String = "行为名称：\""+current+"\"\n节点名称：\""+validate.name+"\"\n字段名称：\""+validate.field+"\"\n期望类型：\""+validate.expect+"\"\n输入值为：\""+validate.input+"\"";
+						Alert.show(msg, "数据类型不合法", Alert.OK);
+					}
+//				}
 			}
 			
 			private function onPressSaveAll(event:Event=null):void {
 				for (var tabName:String in this.mTabDict) {
-					if (this.mTabDict[tabName].modified) {
-						var data:Object = this.mTabDict[tabName].bt.export();
-						Data.getInstance().updateBehaviorSetById(tabName, data);
-						setTabModified(tabName, false);
-						this.modifiedAndSavedFiles[tabName] = true;
-					}
+//					if (this.mTabDict[tabName].modified) {
+						var validate:Object = this.mTabDict[tabName].bt.validate();
+						if (validate.result) {
+							var data:Object = this.mTabDict[tabName].bt.export();
+							Data.getInstance().updateBehaviorSetById(tabName, data);
+							setTabModified(tabName, false);
+							this.modifiedAndSavedFiles[tabName] = true;
+						}
+						else {
+							var msg:String = "行为名称：\""+tabName+"\"\n节点名称：\""+validate.name+"\"\n字段名称：\""+validate.field+"\"\n期望类型：\""+validate.expect+"\"\n输入值为：\""+validate.input+"\"";
+							Alert.show(msg, "数据类型不合法", Alert.OK);
+							return;
+						}
+//					}
 				}
 				var alert:Alert = Alert.show(" 保存成功!");
 				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
