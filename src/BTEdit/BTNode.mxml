@@ -1017,7 +1017,7 @@
 								if (v.length < 1 || (v.charAt(0) < "0" || v.charAt(0) > "9")) return {result:false, expect:DICT["int"], input:v, name:this.mData.data.execType, field:params[i].name};
 								var vInt:int = parseInt(v, 10);
 								execPointer++;
-								if (isNaN(n)) return {result:false, expect:DICT["int"], input:v, name:this.mData.data.execType, field:params[i].name};
+								if (isNaN(vInt)) return {result:false, expect:DICT["int"], input:v, name:this.mData.data.execType, field:params[i].name};
 								break;
 							case "node":
 								break;
