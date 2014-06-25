@@ -10,15 +10,18 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import emitter.EmitterPanel;
+			
+			import flashx.textLayout.edit.EditingMode;
+			
 			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
 			
 			import spark.components.Group;
 			import spark.components.HGroup;
 			import spark.components.Panel;
 			import spark.components.VGroup;
 			import spark.components.VScrollBar;
-			
-			import flashx.textLayout.edit.EditingMode;
 			// ---------------------------------------------------------
 			
 			var mMonsterPanel:MonsterList = null;
@@ -50,6 +53,12 @@
 					ContextMenuEvent.MENU_ITEM_SELECT, this.onCreateBullet
 				);
 				menu.addItem( createBullet );
+				
+				var createEmitter:ContextMenuItem = new ContextMenuItem("创建发射器");
+				createEmitter.addEventListener(
+					ContextMenuEvent.MENU_ITEM_SELECT, this.onCreateEmitter
+				);
+				menu.addItem( createEmitter );
 				
 				var paste:ContextMenuItem = new ContextMenuItem("粘贴");
 				paste.addEventListener(
@@ -235,6 +244,12 @@
 						Alert.show( err );
 					}, EditMonster.genData( Data.getInstance().dynamicArgs.BulletType[0] )
 				);
+			}
+			
+			protected function onCreateEmitter(event:Event):void {
+				var emitter:EmitterPanel = new EmitterPanel();
+				PopUpManager.addPopUp(emitter, MapEditor.getInstance(), true);
+				PopUpManager.centerPopUp(emitter);
 			}
 			
 			protected function onCreateTrap(evt:Event):void

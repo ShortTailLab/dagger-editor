@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="800" height="800" close="onPressClose(event)" creationComplete="onCreate()"
+			   title="发射器组合编辑">
+	<fx:Declarations>
+		<s:RadioButtonGroup id="radiogroup1"/>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			private function onCreate():void {
+				this.mInput1.toolTip = "等待一定时间后开始发射子弹";
+				this.mInput2.toolTip = "移动速度，单位：像素/秒";
+				this.mInput3.toolTip = "移动加速度，单位：像素/秒^2";
+				this.mInput4.toolTip = "初始面对的角度";
+				this.mInput5.toolTip = "相对于发射组的X坐标";
+				this.mInput6.toolTip = "相对于发射组的Y坐标";
+				this.mInput7.toolTip = "旋转速度，单位：度/秒";
+				this.mInput8.toolTip = "可以旋转到的最大角度";
+				this.mInput9.toolTip = "从开始发射到结束发射的总时间，不包括等待时间";
+				this.mInput10.toolTip = "每隔一定间隔发射一次";
+				this.mInput11.toolTip = "每次发射子弹的基础数量";
+				this.mInput12.toolTip = "每次发射子弹的额外数量";
+				this.mInput13.toolTip = "如果间隔为固定，此值为子弹之间的角度间隔；如果为随机，子弹发射随机取值[0,此值]";
+				this.mInput14.toolTip = "重力X方向大小，>0为向上，<0为向下";
+				this.mInput15.toolTip = "重力Y方向大小，>0为向右，<0为向左";
+				this.mInput16.toolTip = "单个子弹的持续时间";
+				this.mInput17.toolTip = "单个子弹的移动速度，单位：像素/秒";
+				this.mInput18.toolTip = "单个子弹的移动加速度，单位：像素/秒^2";
+				this.mRotateType1.toolTip = "摇摆旋转，当发射器旋转到最大角度时逐渐旋转回到初始角度";
+				this.mRotateType2.toolTip = "循环旋转，当发射器旋转到最大角度时立即回到初始角度";
+				this.mBulletGap1.toolTip = "固定子弹间隔，发射出的子弹两两之间固定有X角度的夹角";
+				this.mBulletGap2.toolTip = "随机子弹间隔，发射出的子弹角度随机取值[0,角度值]";
+				this.mBulletDirection.toolTip = "子弹资源方向朝下时，勾选；反之不勾选";
+			}
+			
+			private function onPressClose(event:Event):void {
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function onPressCreateEmitter(event:Event):void {
+				
+			}
+		]]>
+	</fx:Script>
+	<s:HGroup x="0" y="0" width="100%" height="100%" gap="0">
+		<s:VGroup width="100%" height="100%" gap="0">
+			<s:BorderContainer width="100%" height="100%" borderVisible="false">
+				<s:BorderContainer id="mPreviewerContainer" x="0" y="0" width="100%" height="100%"
+								   borderVisible="false">
+				</s:BorderContainer>
+				<s:Button x="5" y="5" width="45" height="45" label="新建一个发射器" buttonMode="true"
+						  click="onPressCreateEmitter(event)"
+						  icon="@Embed('assets/emitter_button.png')"/>
+				<s:Label x="57" y="18" color="#C8C8C8" fontSize="18" text="创建发射器"/>
+			</s:BorderContainer>
+		</s:VGroup>
+		<s:VGroup width="220" height="100%" paddingLeft="8">
+			<s:Panel width="205" height="100%" borderVisible="false" title="发射器列表">
+				<s:List id="mList" x="0" y="0" width="100%" height="100%" borderVisible="false"></s:List>
+			</s:Panel>
+			<s:Panel width="205" height="460" borderVisible="false" title="发射器参数">
+				<s:Label x="5" y="35" width="84" height="17" fontSize="14" text="初始等待时间"/>
+				<s:Label x="5" y="60" width="84" height="17" fontSize="14" text="速度"
+						 textAlign="right"/>
+				<s:Label x="5" y="85" width="84" height="17" fontSize="14" text="加速度"
+						 textAlign="right"/>
+				<s:Label x="178" y="33" height="17" color="#C8C8C8" fontSize="14" text="s"/>
+				<s:Label x="178" y="58" height="17" color="#C8C8C8" fontSize="14" text="px/s"/>
+				<s:Label x="176" y="83" height="17" color="#C8C8C8" fontSize="12" text="px/s2"/>
+				<s:Label x="5" y="235" width="84" height="17" fontSize="14" text="发射持续时间"
+						 textAlign="right"/>
+				<s:Label x="178" y="233" height="17" color="#C8C8C8" fontSize="14" text="s"/>
+				<s:Label x="178" y="258" height="17" color="#C8C8C8" fontSize="14" text="s"/>
+				<s:TextInput id="mInput9" x="95" y="230" width="80" text="10" textAlign="center"/>
+				<s:Label x="5" y="260" width="84" height="17" fontSize="14" text="发射间隔"
+						 textAlign="right"/>
+				<s:TextInput id="mInput10" x="95" y="255" width="80" text="0.2" textAlign="center"/>
+				<s:Label x="5" y="285" width="84" height="17" fontSize="14" text="单次数量"
+						 textAlign="right"/>
+				<s:TextInput id="mInput11" x="95" y="280" width="80" text="1" textAlign="center"/>
+				<s:Label x="5" y="310" width="84" height="17" fontSize="14" text="数量随机附加"
+						 textAlign="right"/>
+				<s:TextInput id="mInput12" x="95" y="305" width="80" text="0" textAlign="center"/>
+				<s:Label x="5" y="360" width="84" height="17" fontSize="14" text="子弹间隔角度"
+						 textAlign="right"/>
+				<s:TextInput id="mInput13" x="95" y="355" width="80" text="15" textAlign="center"/>
+				<s:Label x="5" y="385" width="84" height="17" fontSize="14" text="重力X"
+						 textAlign="right"/>
+				<s:TextInput id="mInput14" x="95" y="380" width="80" text="0" textAlign="center"/>
+				<s:Label x="5" y="410" width="84" height="17" fontSize="14" text="重力Y"
+						 textAlign="right"/>
+				<s:TextInput id="mInput15" x="95" y="405" width="80" text="0" textAlign="center"/>
+				<s:TextInput id="mInput1" x="95" y="30" width="80" text="0.2" textAlign="center"/>
+				<s:TextInput id="mInput2" x="95" y="55" width="80" text="0" textAlign="center"/>
+				<s:TextInput id="mInput3" x="95" y="80" width="80" text="0" textAlign="center"/>
+				<s:ComboBox id="mEmitterRes" x="95" y="5" width="80" textAlign="center"/>
+				<s:Label x="5" y="10" width="84" fontSize="14" text="资源前缀" textAlign="right"/>
+				<s:Label x="5" y="110" width="84" height="17" fontSize="14" text="初始角度"
+						 textAlign="right"/>
+				<s:TextInput id="mInput4" x="95" y="105" width="80" text="0" textAlign="center"/>
+				<s:Label x="5" y="135" width="20" height="17" fontSize="14" text="X"
+						 textAlign="right"/>
+				<s:Label x="92" y="135" width="20" height="17" fontSize="14" text="Y"
+						 textAlign="right"/>
+				<s:TextInput id="mInput6" x="115" y="130" width="60" text="0" textAlign="center"/>
+				<s:TextInput id="mInput5" x="30" y="130" width="60" text="0" textAlign="center"/>
+				<s:Label x="178" y="108" height="17" color="#C8C8C8" fontSize="14" text="°"/>
+				<s:Label x="5" y="160" width="84" height="17" fontSize="14" text="旋转速度"
+						 textAlign="right"/>
+				<s:TextInput id="mInput7" x="95" y="155" width="80" text="0" textAlign="center"/>
+				<s:Label x="178" y="158" height="17" color="#C8C8C8" fontSize="14" text="°/s"/>
+				<s:Label x="178" y="183" height="17" color="#C8C8C8" fontSize="14" text="°"/>
+				<s:Label x="5" y="185" width="84" height="17" fontSize="14" text="旋转最大角度"
+						 textAlign="right"/>
+				<s:Label x="5" y="208" width="84" height="17" fontSize="14" text="旋转行为"
+						 textAlign="right"/>
+				<s:Label x="5" y="333" width="84" height="17" fontSize="14" text="子弹间隔"
+						 textAlign="right"/>
+				<s:HGroup x="95" y="330">
+					<s:RadioButton id="mBulletGap1" label="固定" fontSize="14" groupName="radiogroup2"
+								   selected="true"/>
+					<s:RadioButton id="mBulletGap2" label="随机" fontSize="14" groupName="radiogroup2"/>
+				</s:HGroup>
+				<s:TextInput id="mInput8" x="95" y="180" width="80" text="0" textAlign="center"/>
+				<s:Label x="178" y="358" height="17" color="#C8C8C8" fontSize="14" text="°"/>
+				<s:HGroup x="95" y="205">
+					<s:RadioButton id="mRotateType1" label="摇摆" fontSize="14" groupName="radiogroup1"
+								   selected="true"/>
+					<s:RadioButton id="mRotateType2" label="循环" fontSize="14" groupName="radiogroup1"/>
+				</s:HGroup>
+			</s:Panel>
+			<s:Panel width="205" height="165" borderVisible="false" title="子弹参数">
+				<s:ComboBox id="mBulletRes" x="95" y="30" width="80" textAlign="center"/>
+				<s:Label x="5" y="35" width="84" fontSize="14" text="资源前缀" textAlign="right"/>
+				<s:Label x="5" y="60" width="84" height="17" fontSize="14" text="持续时间"
+						 textAlign="right"/>
+				<s:Label x="5" y="85" width="84" height="17" fontSize="14" text="速度"
+						 textAlign="right"/>
+				<s:Label x="5" y="110" width="84" height="17" fontSize="14" text="加速度"
+						 textAlign="right"/>
+				<s:Label x="176" y="60" height="17" color="#C8C8C8" fontSize="14" text="s"/>
+				<s:Label x="176" y="85" height="17" color="#C8C8C8" fontSize="14" text="px/s"/>
+				<s:Label x="176" y="110" height="17" color="#C8C8C8" fontSize="12" text="px/s2"/>
+				<s:TextInput id="mInput16" x="95" y="55" width="80" text="5" textAlign="center"/>
+				<s:TextInput id="mInput17" x="95" y="80" width="80" text="200" textAlign="center"/>
+				<s:TextInput id="mInput18" x="95" y="105" width="80" text="0" textAlign="center"/>
+				<s:CheckBox id="mBulletDirection" x="15" y="5" label="资源朝向与速度相同" enabled="true"
+							fontSize="14" selected="true"/>
+			</s:Panel>
+		</s:VGroup>
+	</s:HGroup>
+</s:TitleWindow>
