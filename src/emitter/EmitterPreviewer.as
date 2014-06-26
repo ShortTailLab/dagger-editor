@@ -87,13 +87,16 @@ package emitter
 		
 		public function restart():void {
 			mElapsed = 0;
+			for (var i:int = 0; i < mEmitters.length; i++) {
+				mEmitters[i].reset();
+			}
 			
 			if (!hasEventListener(Event.ENTER_FRAME)) {
 				addEventListener(Event.ENTER_FRAME, onEnterFrame);
 			}
 		}
 		
-		private static const DELTA:Number = 1/60;
+		private static const DELTA:Number = 1/30;
 		private function onEnterFrame(event:Event):void {
 			mElapsed += DELTA;
 			this.mElapsedTf.text = mElapsed.toFixed(2)+"s";
@@ -111,7 +114,6 @@ package emitter
 		
 		public function removeEmitter(index:int):void {
 			mEmitters[index].destroy();
-			mContainer.removeChild(mEmitters[index]);
 			mEmitters.splice(index, 1);
 		}
 		
@@ -129,6 +131,10 @@ package emitter
 			for (var i:int = 0; i < mEmitters.length; i++) {
 				mEmitters[i].setSelected(i == index);
 			}
+		}
+		
+		public function destroy():void {
+			this.removeEventListener(Event.ENTER_FRAME, onEnterFrame);
 		}
 		
 		public function get emitters():Vector.<Emitter> { return mEmitters; }

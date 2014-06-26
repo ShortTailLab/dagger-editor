@@ -3,12 +3,15 @@ package emitter
 	import flash.display.Bitmap;
 	import flash.display.Loader;
 	import flash.display.Sprite;
+	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.filesystem.File;
 	import flash.filters.GlowFilter;
 	import flash.geom.Rectangle;
 	import flash.net.URLRequest;
+	import flash.ui.ContextMenu;
+	import flash.ui.ContextMenuItem;
 	
 	public class Emitter extends Sprite
 	{
@@ -23,6 +26,30 @@ package emitter
 			this.buttonMode = true;
 			
 			addEventListener(Event.ADDED_TO_STAGE, onAdded);
+
+			var menu:ContextMenu = new ContextMenu();
+			var item:ContextMenuItem = new ContextMenuItem("复制");
+			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCopyEmitter);
+			menu.addItem(item);
+			item = new ContextMenuItem("删除");
+			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteEmitter);
+			menu.addItem(item);
+			item = new ContextMenuItem("粘贴");
+			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteEmitter);
+			menu.addItem(item);
+			this.contextMenu = menu;
+		}
+		
+		private function onCopyEmitter(event:Event):void {
+			mPanel.onCopyEmitter(event);
+		}
+		
+		private function onDeleteEmitter(event:Event):void {
+			mPanel.onDeleteEmitter(event);
+		}
+		
+		private function onPasteEmitter(event:Event):void {
+			mPanel.onPasteEmitter(event);
 		}
 		
 		public function setData(data:Object, panel:EmitterPanel):void {
@@ -33,8 +60,115 @@ package emitter
 			updatePosition();
 		}
 		
+		private var mWait:Number;
+		private var mElapsed:Number;
+		private var mInterval:Number;
+		private var mBullets:Vector.<EmitterBullet>;
+		private var mSpeedX:Number;
+		private var mSpeedY:Number;
+		private var mRotateDirection:int;
+		public function reset():void {
+			if (mBullets) {
+				for (var i:int = 0; i < mBullets.length; i++) {
+					this.parent.removeChild(mBullets[i]);
+				}
+				mBullets = null;
+			}
+			mWait = 0;
+			mElapsed = 0;
+			mInterval = 0;
+			mBullets = new Vector.<EmitterBullet>();
+			mSpeedX = -mData.speed*Math.sin(mData.rotation/180*Math.PI)/2;
+			mSpeedY = mData.speed*Math.cos(mData.rotation/180*Math.PI)/2;
+			mRotateDirection = 1;
+			this.updatePosition();
+		}
+		
 		public function update(dt:Number):void {
+			for (i = 0; i < mBullets.length; i++) {
+				mBullets[i].update(dt);
+			}
 			
+			if (mWait >= mData.wait) {
+				// check duration
+				if (mData.duration >= 0) {
+					if (mElapsed >= mData.duration) {
+						return;
+					}
+					else {
+						mElapsed += dt;
+					}
+				}
+				
+				// update self
+				var newR:Number = this.rotation+mData.rotateSpeed*dt*mRotateDirection;
+				if (newR > mData.maxRotation) {
+					if (mData.rotateType == 0) {
+						this.rotation = mData.maxRotation-(newR-mData.maxRotation);
+						mRotateDirection *= -1;
+					}
+					else {
+						this.rotation = (mData.minRotation + newR-mData.maxRotation);
+					}
+				}
+				else if (newR < mData.minRotation) {
+					if (mData.rotateType == 0) {
+						this.rotation = mData.minRotation-(newR-mData.minRotation);
+						mRotateDirection *= -1;
+					}
+					else {
+						// error
+					}
+				}
+				else {
+					this.rotation = newR;
+				}
+				
+				this.x += mSpeedX*dt;
+				this.y += mSpeedY*dt;
+				mSpeedX += mData.ax*dt/2;
+				mSpeedY -= mData.ay*dt/2;
+				
+				// update bullets
+				if (mInterval >= mData.interval) {
+					mInterval = 0;
+					// shoot bullets
+					var num:int = mData.num + int(Math.random()*(mData.numRandom+1));
+					var newBullets:Vector.<EmitterBullet> = new Vector.<EmitterBullet>();
+					for (var i:int = 0; i < num; i++) {
+						var bullet:EmitterBullet = new EmitterBullet();
+						this.parent.addChild(bullet);
+						mBullets.push(bullet);
+						newBullets.push(bullet);
+						bullet.setData(mData, this);
+						if (mData.bulletGapType == 1) {
+							bullet.setPosition(this.x, this.y, this.rotation+Math.random()*mData.bulletGap - mData.bulletGap/2);
+						}
+					}
+					if (num > 0 && mData.bulletGapType == 0) {
+						if (newBullets.length%2 == 0) {
+							for (i = 0; i < newBullets.length; i++) {
+								newBullets[i].setPosition(this.x, this.y, this.rotation+((newBullets.length/2)-1-i)*mData.bulletGap+mData.bulletGap/2);
+							}
+						}
+						else {
+							for (i = 0; i < newBullets.length; i++) {
+								newBullets[i].setPosition(this.x, this.y, this.rotation+((newBullets.length-1)/2-i)*mData.bulletGap);
+							}
+						}
+					}
+				}
+				else {
+					mInterval += dt;
+				}
+			}
+			else {
+				mWait += dt;
+			}
+		}
+		
+		public function removeBullet(bullet:EmitterBullet):void {
+			mBullets.splice(mBullets.indexOf(bullet), 1);
 		}
 		
 		public function setSelected(bool:Boolean):void {
@@ -106,8 +240,13 @@ package emitter
 		}
 		
 		public function destroy():void {
+			for (var i:int = 0; i < mBullets.length; i++) {
+				this.parent.removeChild(mBullets[i]);
+			}
+			mBullets.length = 0;
 			this.stage.removeEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			this.stage.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			this.parent.removeChild(this);
 		}
 	}
 }
