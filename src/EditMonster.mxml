@@ -12,16 +12,11 @@
 		<![CDATA[
 			import emitter.EmitterPanel;
 			
-			import flashx.textLayout.edit.EditingMode;
-			
 			import mx.controls.Alert;
 			import mx.managers.PopUpManager;
 			
-			import spark.components.Group;
-			import spark.components.HGroup;
 			import spark.components.Panel;
 			import spark.components.VGroup;
-			import spark.components.VScrollBar;
 			// ---------------------------------------------------------
 			
 			var mMonsterPanel:MonsterList = null;
@@ -247,9 +242,10 @@
 			}
 			
 			protected function onCreateEmitter(event:Event):void {
-				var emitter:EmitterPanel = new EmitterPanel();
-				PopUpManager.addPopUp(emitter, MapEditor.getInstance(), true);
-				PopUpManager.centerPopUp(emitter);
+				var panel:EmitterPanel = new EmitterPanel();
+				panel.setData();
+				PopUpManager.addPopUp(panel, MapEditor.getInstance(), true);
+				PopUpManager.centerPopUp(panel);
 			}
 			
 			protected function onCreateTrap(evt:Event):void
