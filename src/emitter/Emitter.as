@@ -3,15 +3,12 @@ package emitter
 	import flash.display.Bitmap;
 	import flash.display.Loader;
 	import flash.display.Sprite;
-	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.filesystem.File;
 	import flash.filters.GlowFilter;
 	import flash.geom.Rectangle;
 	import flash.net.URLRequest;
-	import flash.ui.ContextMenu;
-	import flash.ui.ContextMenuItem;
 	
 	public class Emitter extends Sprite
 	{
@@ -26,30 +23,6 @@ package emitter
 			this.buttonMode = true;
 			
 			addEventListener(Event.ADDED_TO_STAGE, onAdded);
-
-			var menu:ContextMenu = new ContextMenu();
-			var item:ContextMenuItem = new ContextMenuItem("复制");
-			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCopyEmitter);
-			menu.addItem(item);
-			item = new ContextMenuItem("删除");
-			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteEmitter);
-			menu.addItem(item);
-			item = new ContextMenuItem("粘贴");
-			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteEmitter);
-			menu.addItem(item);
-			this.contextMenu = menu;
-		}
-		
-		private function onCopyEmitter(event:Event):void {
-			mPanel.onCopyEmitter(event);
-		}
-		
-		private function onDeleteEmitter(event:Event):void {
-			mPanel.onDeleteEmitter(event);
-		}
-		
-		private function onPasteEmitter(event:Event):void {
-			mPanel.onPasteEmitter(event);
 		}
 		
 		public function setData(data:Object, panel:EmitterPanel):void {

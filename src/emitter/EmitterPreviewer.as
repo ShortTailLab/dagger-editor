@@ -1,8 +1,11 @@
 package emitter
 {
 	import flash.display.Sprite;
+	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.text.TextField;
+	import flash.ui.ContextMenu;
+	import flash.ui.ContextMenuItem;
 	
 	public class EmitterPreviewer extends Sprite
 	{
@@ -17,8 +20,39 @@ package emitter
 			mData = data;
 			mPanel = panel;
 			
+			var menu:ContextMenu = new ContextMenu();
+			var item:ContextMenuItem = new ContextMenuItem("复制(Ctrl+C)");
+			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCopyEmitter);
+			menu.addItem(item);
+			item = new ContextMenuItem("删除(Ctrl+D)");
+			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteEmitter);
+			menu.addItem(item);
+			item = new ContextMenuItem("粘贴(Ctrl+V)");
+			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteEmitter);
+			menu.addItem(item);
+			item = new ContextMenuItem("剪切(Ctrl+X)");
+			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCutEmitter);
+			menu.addItem(item);
+			this.contextMenu = menu;
+			
 			init();
 			restart();
+		}
+		
+		private function onCopyEmitter(event:Event):void {
+			mPanel.onCopyEmitter(event);
+		}
+		
+		private function onDeleteEmitter(event:Event):void {
+			mPanel.onDeleteEmitter(event);
+		}
+		
+		private function onPasteEmitter(event:Event):void {
+			mPanel.onPasteEmitter(event);
+		}
+		
+		private function onCutEmitter(event:Event):void {
+			mPanel.onCutEmitter(event);
 		}
 		
 		private function init():void {

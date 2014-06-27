@@ -52,16 +52,20 @@
 				mNamesArray = new ArrayCollection();
 				this.mEmitterList.dataProvider = mNamesArray;
 				var menu:ContextMenu = new ContextMenu();
-				var item:ContextMenuItem = new ContextMenuItem("复制");
+				var item:ContextMenuItem = new ContextMenuItem("复制(Ctrl+C)");
 				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCopyEmitter);
 				menu.addItem(item);
-				item = new ContextMenuItem("删除");
+				item = new ContextMenuItem("删除(Ctrl+D)");
 				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDeleteEmitter);
 				menu.addItem(item);
-				item = new ContextMenuItem("粘贴");
+				item = new ContextMenuItem("粘贴(Ctrl+V)");
 				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onPasteEmitter);
 				menu.addItem(item);
+				item = new ContextMenuItem("剪切(Ctrl+X)");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCutEmitter);
+				menu.addItem(item);
 				this.mEmitterList.contextMenu = menu;
+				this.stage.addEventListener(KeyboardEvent.KEY_DOWN, onPressKeyboard);
 				
 				var skins:ArrayCollection = new ArrayCollection();
 				var skins2:ArrayCollection = new ArrayCollection();
@@ -86,6 +90,34 @@
 				mCreated = true;
 				
 				if (mData) init();
+			}
+			
+			private function onPressKeyboard(event:KeyboardEvent):void {
+				if (event.ctrlKey && event.keyCode == Keyboard.S) {
+					this.onPressSave(event);
+				}
+				else if (event.ctrlKey && event.keyCode == Keyboard.C) {
+					this.onCopyEmitter(event);
+				}
+				else if (event.ctrlKey && event.keyCode == Keyboard.V) {
+					this.onPasteEmitter(event);
+				}
+				else if (event.ctrlKey && event.keyCode == Keyboard.X) {
+					this.onCopyEmitter(event);
+					this.onDeleteEmitter(event);
+				}
+				else if (event.ctrlKey && event.keyCode == Keyboard.D) {
+					this.onDeleteEmitter(event);
+				}
+				else if (event.ctrlKey && event.keyCode == Keyboard.N) {
+					this.onPressCreateEmitter(event);
+				}
+				else if ((event.ctrlKey && event.keyCode == Keyboard.R) || event.keyCode == Keyboard.F5) {
+					this.onPressRestart(event);
+				}
+				else if ((event.ctrlKey && event.keyCode == Keyboard.I)) {
+					this.onPressImport(event);
+				}
 			}
 			
 			private var mNamesArray:ArrayCollection;
@@ -166,6 +198,7 @@
 			}
 			
 			public function onPasteEmitter(event:Event):void {
+				if (!CLIPPING) return;
 				var data:Object = Utils.cloneObjectData(CLIPPING);
 				this.mData.emitters.push(data);
 				mNamesArray.addItem("♢ Emitter "+(mNamesArray.length+1));
@@ -174,6 +207,11 @@
 				mPreviewer.addEmitter(data);
 				mPreviewer.selectIndex(mEmitterList.selectedIndex);
 				mPreviewer.restart();
+			}
+			
+			public function onCutEmitter(event:Event):void {
+				onCopyEmitter(event);
+				onDeleteEmitter(event);
 			}
 			
 			private function readData():void {
@@ -378,6 +416,7 @@
 			}
 			
 			private function onPressClose(event:Event):void {
+				this.stage.removeEventListener(KeyboardEvent.KEY_DOWN, onPressKeyboard);
 				mPreviewer.destroy();
 				PopUpManager.removePopUp(this);
 			}
@@ -410,13 +449,13 @@
 			<s:BorderContainer width="100%" height="100%" borderVisible="false">
 				<s:BorderContainer id="mPreviewerContainer" x="0" y="0" width="100%" height="100%"
 								   borderVisible="false">
-					<s:Button right="10" top="10" width="50" height="30" label="新建"
+					<s:Button right="2" top="10" width="70" height="30" label="新建(N)"
 							  click="onPressCreateEmitter(event)" fontSize="14"/>
-					<s:Button right="10" top="50" width="50" height="30" label="保存"
+					<s:Button right="2" top="50" width="70" height="30" label="保存(S)"
 							  click="onPressSave(event)" fontSize="14"/>
-					<s:Button right="10" top="90" width="50" height="30" label="导入"
+					<s:Button right="2" top="90" width="70" height="30" label="导入(I)"
 							  click="onPressImport(event)" fontSize="14"/>
-					<s:Button right="10" top="130" width="50" height="30" label="重启"
+					<s:Button right="2" top="130" width="70" height="30" label="重启(R)"
 							  click="onPressRestart(event)" fontSize="14"/>
 				</s:BorderContainer>
 			</s:BorderContainer>
