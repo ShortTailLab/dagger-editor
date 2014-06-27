@@ -336,7 +336,7 @@
 				
 				title = "发射器组合编辑 - ["+mFileName+"]";
 				var alert:Alert = Alert.show(" 保存成功!");
-				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
+				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
 			}
 			
 			private var mFileName:String;
@@ -353,6 +353,7 @@
 				var file:File = event.currentTarget as File;
 				var fs:FileStream = new FileStream();
 				fs.open(file, FileMode.READ);
+				fs.close();
 				var str:String = fs.readUTF();
 				try {
 					var data:Object = JSON.parse(str);
@@ -367,7 +368,7 @@
 				mFileName = file.name;
 				title = "发射器组合编辑 - ["+mFileName+"]";
 				alert = Alert.show("导入成功!");
-				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
+				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
 				
 				this.setData(data);
 			}
