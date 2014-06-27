@@ -74,9 +74,10 @@ package emitter
 				}
 				mBullets = null;
 			}
+			this.alpha = 1;
 			mWait = 0;
 			mElapsed = 0;
-			mInterval = 0;
+			mInterval = mData.interval;
 			mBullets = new Vector.<EmitterBullet>();
 			mSpeedX = -mData.speed*Math.sin(mData.rotation/180*Math.PI)/2;
 			mSpeedY = mData.speed*Math.cos(mData.rotation/180*Math.PI)/2;
@@ -93,6 +94,7 @@ package emitter
 				// check duration
 				if (mData.duration >= 0) {
 					if (mElapsed >= mData.duration) {
+						this.alpha = 0.3;
 						return;
 					}
 					else {

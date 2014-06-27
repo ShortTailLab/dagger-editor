@@ -11,6 +11,8 @@
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
+			import flash.utils.setTimeout;
+			
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.core.UIComponent;
@@ -117,17 +119,22 @@
 				if (mCreated) init();
 			}
 			
+			private var mContainer:UIComponent;
 			private function init():void {
+				mNamesArray.removeAll();
 				for (var i:int = 0; i < mData.emitters.length; i++) {
 					mNamesArray.addItem("♢ Emitter "+(i+1));
 				}
 				
-				var container:UIComponent = new UIComponent();
-				mPreviewerContainer.addElement(container);
-				container.x = 100;
-				container.y = mPreviewerContainer.height-50;
+				if (!mContainer) {
+					var mContainer:UIComponent = new UIComponent();
+					mPreviewerContainer.addElement(mContainer);
+					mContainer.x = 100;
+					mContainer.y = mPreviewerContainer.height-50;
+				}
+				if (mPreviewer) mPreviewer.destroy();
 				mPreviewer = new EmitterPreviewer(mData, this);
-				container.addChild(mPreviewer);
+				mContainer.addChild(mPreviewer);
 				
 				mEmitterList.selectedIndex = 0;
 				readData();
@@ -277,6 +284,8 @@
 				data.bulletGapType = this.mBulletGap1.selected?0:1;
 				data.bullet.direction = this.mBulletDirection.selected?0:1;
 				
+				var restart:Array = [mInput1, mInput2, mInput3, mInput19, mInput8, mInput20, 
+					mRotateType1, mRotateType2, mInput9];
 				if (event.currentTarget == mInput5 || event.currentTarget == mInput6) {
 					mPreviewer.emitters[index].updatePosition();
 				}
@@ -287,10 +296,80 @@
 				else {
 					mPreviewer.restart();
 				}
+//				if (restart.indexOf(event.currentTarget) != -1) {
+//					mPreviewer.restart();
+//				}
 			}
 			
 			private function onPressSave(event:Event):void {
+				var fileName:String;
+				var path:String;
+				if (mPath && mFileName) {
+					fileName = mFileName;
+					path = mPath;
+				}
+				else {
+					var dir:File = Data.getInstance().resolvePath("saved/emitter");
+					var files:Array = dir.getDirectoryListing();
+					var serial:int = 1;
+					for each (var f:File in files) {
+						if (f.name.indexOf("emitter_group_") === 0) {
+							var str:String = f.name.substr(14, f.name.length-19);
+							var num:int = int(str);
+							if (num >= serial) {
+								serial = num+1;
+							}
+						}
+					}
+					
+					fileName = "emitter_group_"+serial+".json";
+					path = dir.url+"/"+fileName;
+					mFileName = fileName;
+					mPath = path;
+				}
 				
+				var targetFile:File = new File(path);
+				var fs:FileStream = new FileStream();
+				fs.open(targetFile, FileMode.WRITE);
+				fs.writeUTF(JSON.stringify(mData));
+				fs.close();
+				
+				title = "发射器组合编辑 - ["+mFileName+"]";
+				var alert:Alert = Alert.show(" 保存成功!");
+				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
+			}
+			
+			private var mFileName:String;
+			private var mPath:String;
+			
+			private function onPressImport(event:Event):void {
+				var dir:File = Data.getInstance().resolvePath("saved/emitter");
+				dir.browseForOpen("导入发射器组合文件");
+				dir.addEventListener(Event.SELECT, onOpenFile);
+			}
+			
+			private function onOpenFile(event:Event):void {
+				event.currentTarget.removeEventListener(Event.SELECT, onOpenFile);
+				var file:File = event.currentTarget as File;
+				var fs:FileStream = new FileStream();
+				fs.open(file, FileMode.READ);
+				var str:String = fs.readUTF();
+				try {
+					var data:Object = JSON.parse(str);
+				}
+				catch (e:Error) {
+					var alert:Alert = Alert.show("导入失败!");
+					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
+					return;
+				}
+				
+				mPath = file.url;
+				mFileName = file.name;
+				title = "发射器组合编辑 - ["+mFileName+"]";
+				alert = Alert.show("导入成功!");
+				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
+				
+				this.setData(data);
 			}
 			
 			private function onPressRestart(event:Event):void {
@@ -334,7 +413,9 @@
 							  click="onPressCreateEmitter(event)" fontSize="14"/>
 					<s:Button right="10" top="50" width="50" height="30" label="保存"
 							  click="onPressSave(event)" fontSize="14"/>
-					<s:Button right="10" top="90" width="50" height="30" label="重启"
+					<s:Button right="10" top="90" width="50" height="30" label="导入"
+							  click="onPressImport(event)" fontSize="14"/>
+					<s:Button right="10" top="130" width="50" height="30" label="重启"
 							  click="onPressRestart(event)" fontSize="14"/>
 				</s:BorderContainer>
 			</s:BorderContainer>

@@ -135,6 +135,7 @@ package emitter
 		
 		public function destroy():void {
 			this.removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+			parent.removeChild(this);
 		}
 		
 		public function get emitters():Vector.<Emitter> { return mEmitters; }
