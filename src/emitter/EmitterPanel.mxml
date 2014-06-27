@@ -353,8 +353,8 @@
 				var file:File = event.currentTarget as File;
 				var fs:FileStream = new FileStream();
 				fs.open(file, FileMode.READ);
-				fs.close();
 				var str:String = fs.readUTF();
+				fs.close();
 				try {
 					var data:Object = JSON.parse(str);
 				}
