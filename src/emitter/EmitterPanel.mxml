@@ -93,7 +93,10 @@
 			}
 			
 			private function onPressKeyboard(event:KeyboardEvent):void {
-				if (event.ctrlKey && event.keyCode == Keyboard.S) {
+				if ((event.ctrlKey && event.keyCode == Keyboard.S && event.shiftKey)) {
+					this.onPressSaveAs(event);
+				}
+				else if (event.ctrlKey && event.keyCode == Keyboard.S) {
 					this.onPressSave(event);
 				}
 				else if (event.ctrlKey && event.keyCode == Keyboard.C) {
@@ -377,6 +380,29 @@
 				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
 			}
 			
+			private function onPressSaveAs(event:Event):void {
+				var file:File = Data.getInstance().resolvePath("saved/emitter");
+				file.browseForSave("另存为..");
+				file.addEventListener(Event.SELECT, onSaveAsComplete);
+			}
+			
+			private function onSaveAsComplete(event:Event):void {
+				var file:File = event.currentTarget as File;
+				file.removeEventListener(Event.SELECT, onSaveAsComplete);
+				
+				var f:File = new File(file.url);
+				var fs:FileStream = new FileStream();
+				fs.open(f, FileMode.WRITE);
+				fs.writeUTF(JSON.stringify(mData));
+				fs.close();
+				
+				mPath = file.url;
+				mFileName = file.name;
+				title = "发射器组合编辑 - ["+mFileName+"]";
+				var alert:Alert = Alert.show(" 保存成功!");
+				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
+			}
+			
 			private var mFileName:String;
 			private var mPath:String;
 			
@@ -449,13 +475,15 @@
 			<s:BorderContainer width="100%" height="100%" borderVisible="false">
 				<s:BorderContainer id="mPreviewerContainer" x="0" y="0" width="100%" height="100%"
 								   borderVisible="false">
-					<s:Button right="2" top="10" width="70" height="30" label="新建(N)"
+					<s:Button right="2" top="10" width="70" height="30" label="新建(N)" toolTip="Ctrl+N"
 							  click="onPressCreateEmitter(event)" fontSize="14"/>
-					<s:Button right="2" top="50" width="70" height="30" label="保存(S)"
+					<s:Button right="2" top="50" width="70" height="30" label="保存(S)" toolTip="Ctrl+S"
 							  click="onPressSave(event)" fontSize="14"/>
-					<s:Button right="2" top="90" width="70" height="30" label="导入(I)"
+					<s:Button right="2" top="90" width="70" height="30" label="另存为.." toolTip="Ctrl+Shift+S"
+							  click="onPressSaveAs(event)" fontSize="14"/>
+					<s:Button right="2" top="130" width="70" height="30" label="导入(I)" toolTip="Ctrl+I"
 							  click="onPressImport(event)" fontSize="14"/>
-					<s:Button right="2" top="130" width="70" height="30" label="重启(R)"
+					<s:Button right="2" top="170" width="70" height="30" label="重启(R)" toolTip="Ctrl+R"
 							  click="onPressRestart(event)" fontSize="14"/>
 				</s:BorderContainer>
 			</s:BorderContainer>
