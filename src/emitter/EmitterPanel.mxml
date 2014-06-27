@@ -38,8 +38,8 @@
 				this.mInput11.toolTip = "每次发射子弹的基础数量";
 				this.mInput12.toolTip = "每次发射子弹的额外数量";
 				this.mInput13.toolTip = "取值[0,360]，若为固定，值为子弹间的角度间隔；若为随机，子弹发射随机取值[-值/2, 值/2]";
-				this.mInput14.toolTip = "重力X方向大小，>0为向上，<0为向下";
-				this.mInput15.toolTip = "重力Y方向大小，>0为向右，<0为向左";
+				this.mInput14.toolTip = "重力X方向大小，>0为向上，<0为向下，单位：像素/秒^2";
+				this.mInput15.toolTip = "重力Y方向大小，>0为向右，<0为向左，单位：像素/秒^2";
 				this.mInput16.toolTip = "单个子弹的持续时间，-1为无限";
 				this.mInput17.toolTip = "单个子弹的移动速度，单位：像素/秒";
 				this.mInput18.toolTip = "单个子弹的移动加速度，单位：像素/秒^2";
@@ -439,6 +439,8 @@
 				<s:Label x="5" y="105" width="84" height="17" fontSize="14" text="Y方向加速度"
 						 textAlign="right"/>
 				<s:Label x="176" y="103" height="17" color="#C8C8C8" fontSize="12" text="px/s2"/>
+				<s:Label x="176" y="428" height="17" color="#C8C8C8" fontSize="12" text="px/s2"/>
+				<s:Label x="176" y="453" height="17" color="#C8C8C8" fontSize="12" text="px/s2"/>
 				<s:TextInput id="mInput19" x="95" y="100" width="80" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
 				<s:Label x="5" y="280" width="84" height="17" fontSize="14" text="发射持续时间"
