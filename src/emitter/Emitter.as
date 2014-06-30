@@ -101,8 +101,10 @@ package emitter
 				
 				this.x += mSpeedX*dt;
 				this.y += mSpeedY*dt;
-				mSpeedX += mData.ax*dt/2;
-				mSpeedY -= mData.ay*dt/2;
+				var aax:Number = -mData.a*Math.sin(mData.rotation/180*Math.PI)/2;
+				var aay:Number = -mData.a*Math.cos(mData.rotation/180*Math.PI)/2;
+				mSpeedX += (mData.ax+aax)*dt/2;
+				mSpeedY -= (mData.ay+aay)*dt/2;
 				
 				// update bullets
 				if (mInterval >= mData.interval) {
