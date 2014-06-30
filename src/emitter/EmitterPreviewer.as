@@ -21,7 +21,10 @@ package emitter
 			mPanel = panel;
 			
 			var menu:ContextMenu = new ContextMenu();
-			var item:ContextMenuItem = new ContextMenuItem("复制(Ctrl+C)");
+			var item:ContextMenuItem = new ContextMenuItem("新建(Ctrl+N)");
+			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onNewEmitter);
+			menu.addItem(item);
+			item = new ContextMenuItem("复制(Ctrl+C)");
 			item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCopyEmitter);
 			menu.addItem(item);
 			item = new ContextMenuItem("删除(Ctrl+D)");
@@ -39,6 +42,10 @@ package emitter
 			restart();
 		}
 		
+		private function onNewEmitter(event:Event):void {
+			mPanel.onNewEmitter(event);
+		}
+				
 		private function onCopyEmitter(event:Event):void {
 			mPanel.onCopyEmitter(event);
 		}

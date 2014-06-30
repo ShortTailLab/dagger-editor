@@ -52,7 +52,10 @@
 				mNamesArray = new ArrayCollection();
 				this.mEmitterList.dataProvider = mNamesArray;
 				var menu:ContextMenu = new ContextMenu();
-				var item:ContextMenuItem = new ContextMenuItem("复制(Ctrl+C)");
+				var item:ContextMenuItem = new ContextMenuItem("新建(Ctrl+N)");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onNewEmitter);
+				menu.addItem(item);
+				item = new ContextMenuItem("复制(Ctrl+C)");
 				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onCopyEmitter);
 				menu.addItem(item);
 				item = new ContextMenuItem("删除(Ctrl+D)");
@@ -88,6 +91,7 @@
 				mSkinsArray2 = skins2;
 				
 				mCreated = true;
+				this.updateFileList();
 				
 				if (mData) init();
 			}
@@ -113,7 +117,7 @@
 					this.onDeleteEmitter(event);
 				}
 				else if (event.ctrlKey && event.keyCode == Keyboard.N) {
-					this.onPressCreateEmitter(event);
+					this.onNewEmitter(event);
 				}
 				else if ((event.ctrlKey && event.keyCode == Keyboard.R) || event.keyCode == Keyboard.F5) {
 					this.onPressRestart(event);
@@ -253,7 +257,7 @@
 				this.mBulletDirection.selected = data.bullet.direction==0;
 			}
 			
-			private function onPressCreateEmitter(event:Event):void {
+			public function onNewEmitter(event:Event):void {
 				var data:Object = Utils.cloneObjectData(DEFAULT_EMITTER);
 				this.mData.emitters.push(data);
 				mNamesArray.addItem("♢ Emitter "+(mNamesArray.length+1));
@@ -378,6 +382,7 @@
 				title = "发射器组合编辑 - ["+mFileName+"]";
 				var alert:Alert = Alert.show(" 保存成功!");
 				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
+				updateFileList();
 			}
 			
 			private function onPressSaveAs(event:Event):void {
@@ -401,6 +406,7 @@
 				title = "发射器组合编辑 - ["+mFileName+"]";
 				var alert:Alert = Alert.show(" 保存成功!");
 				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
+				updateFileList();
 			}
 			
 			private var mFileName:String;
@@ -412,9 +418,16 @@
 				dir.addEventListener(Event.SELECT, onOpenFile);
 			}
 			
-			private function onOpenFile(event:Event):void {
-				event.currentTarget.removeEventListener(Event.SELECT, onOpenFile);
-				var file:File = event.currentTarget as File;
+			private function onOpenFile(event:Event, name:String=null):void {
+				var file:File;
+				if (!name) {
+					event.currentTarget.removeEventListener(Event.SELECT, onOpenFile);
+					file = event.currentTarget as File;
+				}
+				else {
+					var dir:File = Data.getInstance().resolvePath("saved/emitter");
+					file = new File(dir.url+"/"+name);
+				}
 				var fs:FileStream = new FileStream();
 				fs.open(file, FileMode.READ);
 				var str:String = fs.readUTF();
@@ -431,9 +444,10 @@
 				mPath = file.url;
 				mFileName = file.name;
 				title = "发射器组合编辑 - ["+mFileName+"]";
-				alert = Alert.show("导入成功!");
-				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
-				
+				if (!name) {
+					alert = Alert.show("导入成功!");
+					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
+				}
 				this.setData(data);
 			}
 			
@@ -459,6 +473,29 @@
 				readData();
 			}
 			
+			private var mFilesArray:ArrayCollection;
+			private function updateFileList():void {
+				var dir:File = Data.getInstance().resolvePath("saved/emitter");
+				var files:Array = dir.getDirectoryListing();
+				mFilesArray = new ArrayCollection();
+				for each (var f:File in files) {
+					if (f.name.indexOf(".json") != -1) {
+						mFilesArray.addItem(f.name);
+					}
+				}
+				mFileList.dataProvider = mFilesArray;
+				if (mFileName) {
+					mFileList.textInput.text = mFileName;
+				}
+			}
+			
+			private function onSelectFile(event:IndexChangeEvent):void {
+				var index:int = mFileList.selectedIndex;
+				if (index < 0) return;
+				var name:String = mFilesArray.getItemAt(index) as String;
+				this.onOpenFile(event, name);
+			}
+			
 			public function updateCurrentEmitter():void {
 				var index:int = this.mEmitterList.selectedIndex;
 				if (index < 0) return;
@@ -468,6 +505,7 @@
 			}
 			
 			public function get previewer():EmitterPreviewer { return mPreviewer; }
+			
 		]]>
 	</fx:Script>
 	<s:HGroup x="0" y="0" width="100%" height="100%" gap="0">
@@ -475,21 +513,23 @@
 			<s:BorderContainer width="100%" height="100%" borderVisible="false">
 				<s:BorderContainer id="mPreviewerContainer" x="0" y="0" width="100%" height="100%"
 								   borderVisible="false">
-					<s:Button right="2" top="10" width="70" height="30" label="新建(N)" toolTip="Ctrl+N"
-							  click="onPressCreateEmitter(event)" fontSize="14"/>
-					<s:Button right="2" top="50" width="70" height="30" label="保存(S)" toolTip="Ctrl+S"
+					<s:Button right="2" top="10" width="70" height="30" label="保存(S)" toolTip="Ctrl+S"
 							  click="onPressSave(event)" fontSize="14"/>
-					<s:Button right="2" top="90" width="70" height="30" label="另存为.." toolTip="Ctrl+Shift+S"
+					<s:Button right="2" top="50" width="70" height="30" label="另存为.." toolTip="Ctrl+Shift+S"
 							  click="onPressSaveAs(event)" fontSize="14"/>
-					<s:Button right="2" top="130" width="70" height="30" label="导入(I)" toolTip="Ctrl+I"
+					<s:Button right="2" top="90" width="70" height="30" label="导入(I)" toolTip="Ctrl+I"
 							  click="onPressImport(event)" fontSize="14"/>
-					<s:Button right="2" top="170" width="70" height="30" label="重启(R)" toolTip="Ctrl+R"
+					<s:Button right="2" top="130" width="70" height="30" label="重启(R)" toolTip="F5或者Ctrl+R"
 							  click="onPressRestart(event)" fontSize="14"/>
+					<s:ComboBox id="mFileList" left="85" top="10" width="150" height="25"
+								change="onSelectFile(event)" contentBackgroundColor="#C8C8C8"
+								fontSize="14"/>
+					<s:Label x="8" y="14" color="#C8C8C8" fontSize="18" text="组合列表"/>
 				</s:BorderContainer>
 			</s:BorderContainer>
 		</s:VGroup>
 		<s:VGroup width="220" height="100%" gap="1" paddingLeft="8">
-			<s:Panel width="205" height="100" borderVisible="false" dropShadowVisible="true"
+			<s:Panel width="205" height="150" borderVisible="false" dropShadowVisible="true"
 					 fontSize="12" title="发射器列表">
 				<s:List id="mEmitterList" x="0" y="0" width="100%" height="100%"
 						borderVisible="false" change="onEmitterSelected(event)"></s:List>
