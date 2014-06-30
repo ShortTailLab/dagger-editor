@@ -71,8 +71,8 @@ package emitter
 			}
 			this.x += mSpeedX*dt;
 			this.y += mSpeedY*dt;
-			mSpeedX += (mData.bullet.ax+mData.gx)*dt/2;
-			mSpeedY -= (mData.bullet.ay+mData.gy)*dt/2;
+			mSpeedX += (mData.bullet.ax)*dt/2;
+			mSpeedY -= (mData.bullet.ay)*dt/2;
 		}
 		
 		public function destroy():void {
