@@ -178,6 +178,19 @@
 				if( !profile || !level ) 
 					return;
 				
+				if (profile.type == EmitterPanel.PROFILE_EMITTER_TYPE) {
+					var nextId:int = Data.getInstance().getMaxMonsterId( Runtime.getInstance().currentLevelID )+1;
+					var data:Object = Utils.cloneObjectData(profile);
+					data.monster_id = nextId.toString();
+					Data.getInstance().makeMonster(Runtime.getInstance().currentLevelID, data);
+					
+					var panel:EmitterPanel = new EmitterPanel();
+					panel.setData(data, nextId.toString());
+					PopUpManager.addPopUp(panel, MapEditor.getInstance(), true);
+					PopUpManager.centerPopUp(panel);
+					return;
+				}
+				
 				var args:Array = EditMonster.genData(profile.type);
 				
 				for each( var item:Array in args )

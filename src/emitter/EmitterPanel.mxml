@@ -134,7 +134,7 @@
 			private var mCreated:Boolean;
 			private var mPreviewer:EmitterPreviewer;
 			private static var CLIPPING:Object;
-			public static const NULL_RES:String = "00无资源00";
+			public static const NULL_RES:String = "";
 			public static const PROFILE_EMITTER_TYPE = "CompositeBulletEmitter";
 			public static const DEFAULT_EMITTER:Object = {
 				type:PROFILE_EMITTER_TYPE,
@@ -162,6 +162,7 @@
 				}
 				for each (var d:Object in mData.emitters) {
 					var save:Boolean = false;
+					// compatibility
 					if (!d.hasOwnProperty("a") || !d.bullet.hasOwnProperty("a")) {
 						if (!d.hasOwnProperty("a")) {
 							d.a = 0;
@@ -171,8 +172,12 @@
 						}
 						save = true;
 					}
+					if (d.res == "00无资源00") {
+						d.res = NULL_RES;
+						save = true;
+					}
 					if (save) {
-						this.onPressSave(null);
+						this.onPressSave(null, false);
 					}
 				}
 				
@@ -273,7 +278,12 @@
 				this.mInput22.text = data.a;
 				this.mInput23.text = data.bullet.a;
 				
-				mEmitterRes.selectedIndex = mSkinsArray.getItemIndex(data.res);
+				if (data.res == "") {
+					mEmitterRes.selectedIndex = 0;
+				}
+				else {
+					mEmitterRes.selectedIndex = mSkinsArray.getItemIndex(data.res);
+				}
 				mBulletRes.selectedIndex = mSkinsArray2.getItemIndex(data.bullet.res);
 				this.mRotateType1.selected = data.rotateType==0;
 				this.mRotateType2.selected = data.rotateType==1;
@@ -347,7 +357,7 @@
 				data.bullet.ax = Number(this.mInput18.text);
 				data.bullet.ay = Number(this.mInput21.text);
 				
-				if (mEmitterRes.selectedIndex < 0) data.res = NULL_RES;
+				if (mEmitterRes.selectedIndex <= 0) data.res = NULL_RES;
 				else data.res = mSkinsArray.getItemAt(mEmitterRes.selectedIndex);
 				data.bullet.res = mSkinsArray2.getItemAt(mBulletRes.selectedIndex);
 				data.rotateType = this.mRotateType1.selected?0:1;
@@ -371,7 +381,7 @@
 //				}
 			}
 			
-			private function onPressSave(event:Event):void {
+			private function onPressSave(event:Event, updateList:Boolean= true):void {
 				var fileName:String;
 				var path:String;
 				if (mPath && mFileName) {
@@ -409,7 +419,7 @@
 					var alert:Alert = Alert.show(" 保存成功!");
 					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
 				}
-				updateFileList();
+				if (updateList) updateFileList();
 			}
 			
 			private function onPressSaveAs(event:Event):void {
@@ -524,10 +534,12 @@
 			}
 			
 			public function onPressUse(event:Event):void {
-				this.onPressSave(null);
+//				this.onPressSave(null);
 				mData.monster_id = mMonsterId;
-				mData.monster_name = mFileName.substr(0, mFileName.length-5);
-				mId2.text = mFileName.substr(0, mFileName.length-5);
+				if (mFileName) {
+					mData.monster_name = mFileName.substr(0, mFileName.length-5);
+					mId2.text = mFileName.substr(0, mFileName.length-5);
+				}
 				Data.getInstance().updateMonster(Runtime.getInstance().currentLevelID, mData);
 			}
 			
@@ -550,7 +562,7 @@
 								   borderVisible="false">
 					<s:Button right="2" top="10" width="70" height="30" label="保存为库" toolTip="Ctrl+S"
 							  click="onPressSave(event)" fontSize="12"/>
-					<s:Button x="239" y="60" width="80" height="30" label="使用当前库"
+					<s:Button x="239" y="60" width="80" height="30" label="保存/使用"
 							  click="onPressUse(event)" fontSize="12" toolTip="当前ID使用此发射器组合，Ctrl+U"/>
 					<s:Button right="2" top="50" width="70" height="30" label="另存为库" toolTip="Ctrl+Shift+S"
 							  click="onPressSaveAs(event)" fontSize="12"/>
