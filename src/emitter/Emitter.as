@@ -59,7 +59,7 @@ package emitter
 		}
 		
 		public function update(dt:Number):void {
-			for (i = 0; i < mBullets.length; i++) {
+			for (var i:int = mBullets.length-1; i >= 0; i--) {
 				mBullets[i].update(dt);
 			}
 			
