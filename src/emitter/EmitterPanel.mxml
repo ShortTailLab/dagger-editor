@@ -134,14 +134,14 @@
 			private var mCreated:Boolean;
 			private var mPreviewer:EmitterPreviewer;
 			private static var CLIPPING:Object;
-			public static const NULL_RES:String = "00无资源00";
+			public static const NULL_RES:String = "";
 			public static const PROFILE_EMITTER_TYPE = "CompositeBulletEmitter";
 			public static const DEFAULT_EMITTER:Object = {
 				type:PROFILE_EMITTER_TYPE,
 				emitters: [{
 					res:NULL_RES, wait:0.2, speed:0, a:0, ax:0, ay:0, rotation:0, x:0, y:0, 
 					rotateSpeed:0, minRotation:-180, maxRotation:180, rotateType:0, duration:-1,
-					interval:1, num:1, numRandom:0, bulletGapType:0, 
+					interval:1, num:1, numRandom:0, bulletGapType:0, w:0, h:0, harm:0,
 					bulletGap:15, 
 					bullet:{
 						res:10000,
@@ -149,7 +149,7 @@
 						duration:-1,
 						speed:200,
 						a:0,
-						ax:0,
+						ax:0, w:0, h:0, harm:0,
 						ay:0
 					}
 				}]
@@ -162,6 +162,31 @@
 				}
 				for each (var d:Object in mData.emitters) {
 					var save:Boolean = false;
+					// for compatibility with older files
+					if (!d.hasOwnProperty("w")) {
+						d.w = 0;
+						save = true;
+					}
+					if (!d.hasOwnProperty("h")) {
+						d.h = 0;
+						save = true;
+					}
+					if (!d.hasOwnProperty("harm")) {
+						d.harm = 0;
+						save = true;
+					}
+					if (!d.bullet.hasOwnProperty("w")) {
+						d.bullet.w = 0;
+						save = true;
+					}
+					if (!d.bullet.hasOwnProperty("h")) {
+						d.bullet.h = 0;
+						save = true;
+					}
+					if (!d.bullet.hasOwnProperty("harm")) {
+						d.bullet.harm = 0;
+						save = true;
+					}
 					if (!d.hasOwnProperty("a") || !d.bullet.hasOwnProperty("a")) {
 						if (!d.hasOwnProperty("a")) {
 							d.a = 0;
@@ -171,8 +196,12 @@
 						}
 						save = true;
 					}
+					if (d.res == "00无资源00") {
+						d.res = NULL_RES;
+						save = true;
+					}
 					if (save) {
-						this.onPressSave(null);
+						this.onPressSave(null, false);
 					}
 				}
 				
@@ -272,8 +301,19 @@
 				this.mInput21.text = data.bullet.ay;
 				this.mInput22.text = data.a;
 				this.mInput23.text = data.bullet.a;
+				this.mInput24.text = data.w;
+				this.mInput25.text = data.h;
+				this.mInput26.text = data.harm;
+				this.mInput27.text = data.bullet.w;
+				this.mInput28.text = data.bullet.h;
+				this.mInput29.text = data.bullet.harm;
 				
-				mEmitterRes.selectedIndex = mSkinsArray.getItemIndex(data.res);
+				if (data.res == "") {
+					mEmitterRes.selectedIndex = 0;
+				}
+				else {
+					mEmitterRes.selectedIndex = mSkinsArray.getItemIndex(data.res);
+				}
 				mBulletRes.selectedIndex = mSkinsArray2.getItemIndex(data.bullet.res);
 				this.mRotateType1.selected = data.rotateType==0;
 				this.mRotateType2.selected = data.rotateType==1;
@@ -341,27 +381,37 @@
 				if (data.bulletGap < 0) data.bulletGap = 0;
 				this.mInput13.text = data.bulletGap;
 				
+				data.w = Number(this.mInput24.text);
+				data.h = Number(this.mInput25.text);
+				data.harm = Number(this.mInput26.text);
+				
 				data.bullet.duration = Number(this.mInput16.text);
 				data.bullet.speed = Number(this.mInput17.text);
 				data.bullet.a = Number(this.mInput23.text);
 				data.bullet.ax = Number(this.mInput18.text);
 				data.bullet.ay = Number(this.mInput21.text);
 				
-				if (mEmitterRes.selectedIndex < 0) data.res = NULL_RES;
+				if (mEmitterRes.selectedIndex <= 0) data.res = NULL_RES;
 				else data.res = mSkinsArray.getItemAt(mEmitterRes.selectedIndex);
 				data.bullet.res = mSkinsArray2.getItemAt(mBulletRes.selectedIndex);
 				data.rotateType = this.mRotateType1.selected?0:1;
 				data.bulletGapType = this.mBulletGap1.selected?0:1;
 				data.bullet.direction = this.mBulletDirection.selected?0:1;
 				
-				var restart:Array = [mInput1, mInput2, mInput3, mInput19, mInput8, mInput20, 
-					mRotateType1, mRotateType2, mInput9];
+				data.bullet.w = Number(this.mInput27.text);
+				data.bullet.h = Number(this.mInput28.text);
+				data.bullet.harm = Number(this.mInput29.text);
+				
+				var none:Array = [mInput24, mInput25, mInput26, mInput27, mInput28, mInput29 ];
 				if (event.currentTarget == mInput5 || event.currentTarget == mInput6) {
 					mPreviewer.emitters[index].updatePosition();
 				}
 				else if (event.currentTarget == mInput4) {
 					mPreviewer.emitters[index].updatePosition();
 					mPreviewer.restart();
+				}
+				else if (none.indexOf(event.currentTarget) != -1) {
+					
 				}
 				else {
 					mPreviewer.restart();
@@ -371,7 +421,7 @@
 //				}
 			}
 			
-			private function onPressSave(event:Event):void {
+			private function onPressSave(event:Event, updateList:Boolean= true):void {
 				var fileName:String;
 				var path:String;
 				if (mPath && mFileName) {
@@ -409,7 +459,7 @@
 					var alert:Alert = Alert.show(" 保存成功!");
 					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
 				}
-				updateFileList();
+				if (updateList) updateFileList();
 			}
 			
 			private function onPressSaveAs(event:Event):void {
@@ -526,8 +576,10 @@
 			public function onPressUse(event:Event):void {
 				this.onPressSave(null);
 				mData.monster_id = mMonsterId;
-				mData.monster_name = mFileName.substr(0, mFileName.length-5);
-				mId2.text = mFileName.substr(0, mFileName.length-5);
+				if (mFileName) {
+					mData.monster_name = mFileName.substr(0, mFileName.length-5);
+					mId2.text = mFileName.substr(0, mFileName.length-5);
+				}
 				Data.getInstance().updateMonster(Runtime.getInstance().currentLevelID, mData);
 			}
 			
@@ -587,7 +639,7 @@
 				<s:Label x="5" y="105" width="84" height="17" fontSize="14" text="X方向加速度"
 						 textAlign="right"/>
 				<s:Label x="178" y="28" height="17" color="#C8C8C8" fontSize="14" text="s"/>
-				<s:Label x="178" y="53" height="17" color="#C8C8C8" fontSize="14" text="px/s"/>
+				<s:Label x="176" y="53" height="17" color="#C8C8C8" fontSize="14" text="px/s"/>
 				<s:Label x="5" y="80" width="84" height="17" fontSize="14" text="朝向加速度"
 						 textAlign="right"/>
 				<s:Label x="176" y="78" height="17" color="#C8C8C8" fontSize="12" text="px/s2"/>
@@ -621,6 +673,10 @@
 						 textAlign="right"/>
 				<s:TextInput id="mInput13" x="95" y="425" width="80" change="onValueChanged(event)"
 							 text="15" textAlign="center"/>
+				<s:Label x="5" y="480" width="84" height="17" fontSize="14" text="伤害"
+						 textAlign="right"/>
+				<s:TextInput id="mInput26" x="95" y="475" width="80" change="onValueChanged(event)"
+							 text="0" textAlign="center"/>
 				<s:TextInput id="mInput1" x="95" y="25" width="80" change="onValueChanged(event)"
 							 text="0.2" textAlign="center"/>
 				<s:TextInput id="mInput2" x="95" y="50" width="80" change="onValueChanged(event)"
@@ -634,11 +690,19 @@
 						 textAlign="right"/>
 				<s:TextInput id="mInput4" x="95" y="150" width="80" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
-				<s:Label x="5" y="185" width="20" height="17" fontSize="14" text="X"
+				<s:Label x="5" y="180" width="20" height="17" fontSize="14" text="X"
 						 textAlign="right"/>
 				<s:Label x="92" y="180" width="20" height="17" fontSize="14" text="Y"
 						 textAlign="right"/>
 				<s:TextInput id="mInput6" x="115" y="175" width="60" change="onValueChanged(event)"
+							 text="0" textAlign="center"/>
+				<s:Label x="5" y="455" width="20" height="17" fontSize="14" text="长"
+						 textAlign="right"/>
+				<s:Label x="92" y="455" width="20" height="17" fontSize="14" text="宽"
+						 textAlign="right"/>
+				<s:TextInput id="mInput25" x="115" y="450" width="60" change="onValueChanged(event)"
+							 text="0" textAlign="center"/>
+				<s:TextInput id="mInput24" x="30" y="450" width="60" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
 				<s:TextInput id="mInput5" x="30" y="175" width="60" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
@@ -676,7 +740,7 @@
 								   fontSize="14" groupName="radiogroup1"/>
 				</s:HGroup>
 			</s:Panel>
-			<s:Panel width="205" height="210" borderVisible="false" title="子弹参数">
+			<s:Panel width="205" height="260" borderVisible="false" title="子弹参数">
 				<s:ComboBox id="mBulletRes" x="95" y="30" width="100" change="onValueChanged(event)"
 							textAlign="center"/>
 				<s:Label x="5" y="35" width="84" fontSize="14" text="资源前缀" textAlign="right"/>
@@ -708,6 +772,18 @@
 				<s:CheckBox id="mBulletDirection" x="15" y="5" label="资源朝向与速度相同"
 							click="onValueChanged(event)" enabled="true" fontSize="14"
 							selected="true"/>
+				<s:Label x="5" y="185" width="20" height="17" fontSize="14" text="长"
+						 textAlign="right"/>
+				<s:Label x="92" y="185" width="20" height="17" fontSize="14" text="宽"
+						 textAlign="right"/>
+				<s:TextInput id="mInput28" x="115" y="180" width="60" change="onValueChanged(event)"
+							 text="0" textAlign="center"/>
+				<s:TextInput id="mInput27" x="30" y="180" width="60" change="onValueChanged(event)"
+							 text="0" textAlign="center"/>
+				<s:Label x="5" y="210" width="84" height="17" fontSize="14" text="伤害"
+						 textAlign="right"/>
+				<s:TextInput id="mInput29" x="95" y="205" width="80" change="onValueChanged(event)"
+							 text="0" textAlign="center"/>
 			</s:Panel>
 		</s:VGroup>
 	</s:HGroup>
