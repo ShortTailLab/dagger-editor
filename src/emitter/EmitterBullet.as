@@ -71,8 +71,18 @@ package emitter
 			}
 			this.x += mSpeedX*dt;
 			this.y += mSpeedY*dt;
-			mSpeedX += (mData.bullet.ax)*dt/2;
-			mSpeedY -= (mData.bullet.ay)*dt/2;
+			var aax:Number = -mData.bullet.a*Math.sin(this.rotation/180*Math.PI)/2;
+			var aay:Number = -mData.bullet.a*Math.cos(this.rotation/180*Math.PI)/2;
+			mSpeedX += (mData.bullet.ax+aax)*dt/2;
+			mSpeedY -= (mData.bullet.ay+aay)*dt/2;
+			if (mSpeedX == 0) {
+				if (mSpeedY > 0) this.rotation = 0;
+				else if (mSpeedY < 0) this.rotation = 180;
+			}
+			else {
+				var degree:Number = Math.atan2(mSpeedY, mSpeedX)*180/Math.PI-90;
+				this.rotation = degree;
+			}
 		}
 		
 		public function destroy():void {

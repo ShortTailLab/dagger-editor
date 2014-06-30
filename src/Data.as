@@ -1,5 +1,9 @@
 package
 {
+	import emitter.EmitterPanel;
+	
+	import excel.ExcelReader;
+	
 	import flash.display.Bitmap;
 	import flash.display.Loader;
 	import flash.display.LoaderInfo;
@@ -17,13 +21,11 @@ package
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
-	import mx.controls.Alert;
-	import mx.utils.object_proxy;
-	
-	import excel.ExcelReader;
-	
 	import mapEdit.Entity;
 	import mapEdit.SectionManager;
+	
+	import mx.controls.Alert;
+	import mx.utils.object_proxy;
 	
 	public class Data extends EventDispatcher
 	{
@@ -837,6 +839,7 @@ package
 		
 		public function isBullet( type:String ):Boolean
 		{
+			if (type == EmitterPanel.PROFILE_EMITTER_TYPE) return true;
 			for each( var item:String in (this.mDynamicArgs.BulletType || {}) )
 			{
 				if( type == item ) return true;
