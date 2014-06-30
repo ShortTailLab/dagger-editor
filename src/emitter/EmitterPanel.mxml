@@ -11,8 +11,6 @@
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
-			import flash.utils.setTimeout;
-			
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.core.UIComponent;
@@ -20,7 +18,6 @@
 			
 			import spark.collections.Sort;
 			import spark.events.IndexChangeEvent;
-			
 			
 			private function onCreate():void {
 				this.mInput1.toolTip = "等待一定时间后开始发射子弹";
@@ -125,6 +122,9 @@
 				else if ((event.ctrlKey && event.keyCode == Keyboard.I)) {
 					this.onPressImport(event);
 				}
+				else if (event.keyCode == Keyboard.ESCAPE) {
+					this.onPressClose(event);
+				}
 			}
 			
 			private var mNamesArray:ArrayCollection;
@@ -135,26 +135,31 @@
 			private var mPreviewer:EmitterPreviewer;
 			private static var CLIPPING:Object;
 			public static const NULL_RES:String = "00无资源00";
-			private static const DEFAULT_EMITTER:Object = {
-				res:NULL_RES, wait:0.2, speed:0, a:0, ax:0, ay:0, rotation:0, x:0, y:0, 
-				rotateSpeed:0, minRotation:-180, maxRotation:180, rotateType:0, duration:-1,
-				interval:1, num:1, numRandom:0, bulletGapType:0, 
-				bulletGap:15, 
-				bullet:{
-					res:10000,
-					direction:0,
-					duration:-1,
-					speed:200,
-					a:0,
-					ax:0,
-					ay:0
-				}
+			public static const PROFILE_EMITTER_TYPE = "CompositeBulletEmitter";
+			public static const DEFAULT_EMITTER:Object = {
+				type:PROFILE_EMITTER_TYPE,
+				emitters: [{
+					res:NULL_RES, wait:0.2, speed:0, a:0, ax:0, ay:0, rotation:0, x:0, y:0, 
+					rotateSpeed:0, minRotation:-180, maxRotation:180, rotateType:0, duration:-1,
+					interval:1, num:1, numRandom:0, bulletGapType:0, 
+					bulletGap:15, 
+					bullet:{
+						res:10000,
+						direction:0,
+						duration:-1,
+						speed:200,
+						a:0,
+						ax:0,
+						ay:0
+					}
+				}]
 			};
-			public function setData(data:Object=null):void {
-				if (!data) {
-					mData = {id:"CompositeBulletEmitter", emitters:[Utils.cloneObjectData(DEFAULT_EMITTER)]};
+			public var mMonsterId:String;
+			public function setData(data:Object, monsterId:String=null):void {
+				mData = data;
+				if (monsterId) {
+					mMonsterId = monsterId;
 				}
-				else mData = Utils.cloneObjectData(data);
 				for each (var d:Object in mData.emitters) {
 					var save:Boolean = false;
 					if (!d.hasOwnProperty("a") || !d.bullet.hasOwnProperty("a")) {
@@ -192,6 +197,10 @@
 				mContainer.addChild(mPreviewer);
 				
 				mEmitterList.selectedIndex = 0;
+				mId1.text = mMonsterId.toString();
+				if (mData.monster_name) {
+					mId2.text = mData.monster_name;
+				}
 				readData();
 				mPreviewer.selectIndex(mEmitterList.selectedIndex);
 			}
@@ -374,8 +383,8 @@
 					var files:Array = dir.getDirectoryListing();
 					var serial:int = 1;
 					for each (var f:File in files) {
-						if (f.name.indexOf("emitter_group_") === 0) {
-							var str:String = f.name.substr(14, f.name.length-19);
+						if (f.name.indexOf("发射器组合") === 0) {
+							var str:String = f.name.substr(10, f.name.length-19);
 							var num:int = int(str);
 							if (num >= serial) {
 								serial = num+1;
@@ -383,7 +392,7 @@
 						}
 					}
 					
-					fileName = "emitter_group_"+serial+".json";
+					fileName = "发射器组合"+serial+".json";
 					path = dir.url+"/"+fileName;
 					mFileName = fileName;
 					mPath = path;
@@ -514,6 +523,14 @@
 				this.onOpenFile(event, name);
 			}
 			
+			public function onPressUse(event:Event):void {
+				this.onPressSave(null);
+				mData.monster_id = mMonsterId;
+				mData.monster_name = mFileName.substr(0, mFileName.length-5);
+				mId2.text = mFileName.substr(0, mFileName.length-5);
+				Data.getInstance().updateMonster(Runtime.getInstance().currentLevelID, mData);
+			}
+			
 			public function updateCurrentEmitter():void {
 				var index:int = this.mEmitterList.selectedIndex;
 				if (index < 0) return;
@@ -531,18 +548,29 @@
 			<s:BorderContainer width="100%" height="100%" borderVisible="false">
 				<s:BorderContainer id="mPreviewerContainer" x="0" y="0" width="100%" height="100%"
 								   borderVisible="false">
-					<s:Button right="2" top="10" width="70" height="30" label="保存(S)" toolTip="Ctrl+S"
-							  click="onPressSave(event)" fontSize="14"/>
-					<s:Button right="2" top="50" width="70" height="30" label="另存为.." toolTip="Ctrl+Shift+S"
-							  click="onPressSaveAs(event)" fontSize="14"/>
-					<s:Button right="2" top="90" width="70" height="30" label="导入(I)" toolTip="Ctrl+I"
-							  click="onPressImport(event)" fontSize="14"/>
-					<s:Button right="2" top="130" width="70" height="30" label="重启(R)" toolTip="F5或者Ctrl+R"
-							  click="onPressRestart(event)" fontSize="14"/>
-					<s:ComboBox id="mFileList" left="85" top="10" width="150" height="25"
+					<s:Button right="2" top="10" width="70" height="30" label="保存为库" toolTip="Ctrl+S"
+							  click="onPressSave(event)" fontSize="12"/>
+					<s:Button x="239" y="60" width="80" height="30" label="使用当前库"
+							  click="onPressUse(event)" fontSize="12" toolTip="当前ID使用此发射器组合，Ctrl+U"/>
+					<s:Button right="2" top="50" width="70" height="30" label="另存为库" toolTip="Ctrl+Shift+S"
+							  click="onPressSaveAs(event)" fontSize="12"/>
+					<s:Button right="2" top="90" width="70" height="30" label="导入库(I)" toolTip="Ctrl+I"
+							  click="onPressImport(event)" fontSize="12"/>
+					<s:Button right="2" top="130" width="70" height="30" label="重启(F5)" toolTip="F5或者Ctrl+R"
+							  click="onPressRestart(event)" fontSize="12"/>
+					<s:ComboBox id="mFileList" left="85" top="62" width="150" height="25"
 								change="onSelectFile(event)" contentBackgroundColor="#C8C8C8"
 								fontSize="14"/>
-					<s:Label x="8" y="14" color="#C8C8C8" fontSize="18" text="组合列表"/>
+					<s:Label x="8" y="66" width="72" color="#969696" fontSize="18" text="库列表"
+							 textAlign="right"/>
+					<s:Label x="8" y="10" width="72" color="#969696" fontSize="18" text="标识ID"
+							 textAlign="right"/>
+					<s:Label id="mId1" x="85" y="10" width="150" color="#000000" fontSize="18"
+							 text="标识ID" textAlign="center"/>
+					<s:Label x="8" y="37" width="72" color="#969696" fontSize="18" text="所使用库"
+							 textAlign="right"/>
+					<s:Label id="mId2" x="85" y="40" width="150" color="#000000" fontSize="14"
+							 text="标识ID" textAlign="center"/>
 				</s:BorderContainer>
 			</s:BorderContainer>
 		</s:VGroup>

@@ -242,8 +242,18 @@
 			}
 			
 			protected function onCreateEmitter(event:Event):void {
+				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
+				if( !level ) 
+					return ;
+				
+				var nextId:int = Data.getInstance().getMaxMonsterId( Runtime.getInstance().currentLevelID )+1;
+				var data:Object = Utils.cloneObjectData(EmitterPanel.DEFAULT_EMITTER);
+				data.monster_id = nextId.toString();
+				data.monster_name = "发射器组合";
+				Data.getInstance().makeMonster(Runtime.getInstance().currentLevelID, data);
+				
 				var panel:EmitterPanel = new EmitterPanel();
-				panel.setData();
+				panel.setData(data, nextId.toString());
 				PopUpManager.addPopUp(panel, MapEditor.getInstance(), true);
 				PopUpManager.centerPopUp(panel);
 			}
@@ -267,6 +277,15 @@
 			
 			public function onEditEnemy( lid:String, id:String ):void
 			{
+				var ld:Object = Data.getInstance().getBulletsByLevelId(lid);
+				if (ld[id] && ld[id].type == EmitterPanel.PROFILE_EMITTER_TYPE) {
+					var panel:EmitterPanel = new EmitterPanel();
+					panel.setData(ld[id], ld[id].monster_id);
+					PopUpManager.addPopUp(panel, MapEditor.getInstance(), true);
+					PopUpManager.centerPopUp(panel);
+					return;
+				}
+				
 				var level:Object = Data.getInstance().getLevelProfileById( Runtime.getInstance().currentLevelID );
 				if( !level || !( id in level.monsters ) ) 
 					return;
