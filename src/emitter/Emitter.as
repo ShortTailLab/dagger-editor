@@ -4,11 +4,14 @@ package emitter
 	import flash.display.Loader;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.events.IOErrorEvent;
 	import flash.events.MouseEvent;
 	import flash.filesystem.File;
 	import flash.filters.GlowFilter;
 	import flash.geom.Rectangle;
 	import flash.net.URLRequest;
+	
+	import mx.controls.Alert;
 	
 	public class Emitter extends Sprite
 	{
@@ -169,6 +172,7 @@ package emitter
 				var file:File = Data.getInstance().resolvePath("skins");
 				var loader:Loader = new Loader();
 				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoad);
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, onLoadError);
 				loader.load(new URLRequest(file.url+"/"+mData.res+".png"));
 			}
 			else {
@@ -176,6 +180,14 @@ package emitter
 				addChild(mImage);
 				mImage.x = -mImage.width/2;
 				mImage.y = -mImage.height/2;
+			}
+		}
+		
+		private static var ERROR_IMAGE:Object = {};
+		private function onLoadError(event:IOErrorEvent):void {
+			if (!ERROR_IMAGE[mData.res]) {
+				ERROR_IMAGE[mData.res] = true;
+				Alert.show("发射器资源"+mData.res+".png未找到，请确认资源", "图片加载错误", Alert.OK);
 			}
 		}
 		

@@ -4,8 +4,11 @@ package emitter
 	import flash.display.Loader;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.events.IOErrorEvent;
 	import flash.filesystem.File;
 	import flash.net.URLRequest;
+	
+	import mx.controls.Alert;
 
 	public class EmitterBullet extends Sprite
 	{
@@ -30,7 +33,16 @@ package emitter
 			var file:File = Data.getInstance().resolvePath("skins");
 			var loader:Loader = new Loader();
 			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoad);
+			loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, onLoadError);
 			loader.load(new URLRequest(file.url+"/"+mData.bullet.res+".png"));
+		}
+		
+		private static var ERROR_IMAGE:Object = {};
+		private function onLoadError(event:IOErrorEvent):void {
+			if (!ERROR_IMAGE[mData.bullet.res]) {
+				ERROR_IMAGE[mData.bullet.res] = true;
+				Alert.show("子弹资源"+mData.bullet.res+".png未找到，请确认资源", "图片加载错误", Alert.OK);
+			}
 		}
 		
 		public function setPosition(xv:Number, yv:Number, r:Number):void {
