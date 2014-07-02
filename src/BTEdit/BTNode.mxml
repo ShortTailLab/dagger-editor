@@ -8,18 +8,24 @@
 		<![CDATA[
 			import behaviorEdit.PathEditPanel;
 			
+			import emitter.EmitterPanel;
+			
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.GameEvent;
 			
+			import mx.collections.ArrayCollection;
 			import mx.controls.HRule;
 			import mx.managers.PopUpManager;
 			
 			import spark.components.Button;
+			import spark.components.ComboBox;
 			import spark.components.Group;
 			import spark.components.Label;
+			import spark.components.List;
 			import spark.components.RichEditableText;
 			import spark.components.TextInput;
+			import spark.events.IndexChangeEvent;
 			import spark.events.TextOperationEvent;
 			import spark.filters.GlowFilter;
 			
@@ -30,6 +36,7 @@
 			// node vars
 			private var mNodeVars:Array = [];
 			private var mNodeInputs:Array = [];
+			private var mBullets:ArrayCollection;
 			
 			/** root node, not editable */
 			public static const TYPE_ROOT:int = 1;
@@ -134,11 +141,45 @@
 							this.mSubContainer.addElement(execVar);
 							this.mExecVars.push(execVar);
 							
-							var execInput:TextInput = new TextInput();
-							execInput.id = "mInput"+i; execInput.x = 75; execInput.y = 25*(i+1); execInput.percentWidth = 50; execInput.setStyle("textAlign", "center");
-							execInput.addEventListener(TextOperationEvent.CHANGE, onValueChanged);
-							this.mSubContainer.addElement(execInput);
-							this.mExecInputs.push(execInput);
+							if (this.mData.data.execType == "BT.Node.SpawnEmitter") {
+								var combo:ComboBox = new ComboBox();
+								combo.id = "mInput"+i; combo.x = 60; combo.y = 25*(i+1); combo.percentWidth = 60; combo.setStyle("textAlign", "left");
+								this.mSubContainer.addElement(combo);
+								this.mExecInputs.push(combo);
+								
+								this.mBullets = new ArrayCollection();
+								var d:Object = Data.getInstance().getBulletsByLevelId(Runtime.getInstance().currentLevelID);
+								for (var key:String in d) {
+									if (d[key].type == EmitterPanel.PROFILE_EMITTER_TYPE) {
+										this.mBullets.addItem(key+":"+d[key].monster_name);
+									}
+								}
+								combo.dataProvider = this.mBullets;
+								combo.addEventListener(IndexChangeEvent.CHANGE, onEmitterChanged);
+							}
+							else if (this.mData.data.execType == "BT.Node.FireBullet" && i == 1) {
+								combo = new ComboBox();
+								combo.id = "mInput"+i; combo.x = 60; combo.y = 25*(i+1); combo.percentWidth = 60; combo.setStyle("textAlign", "left");
+								this.mSubContainer.addElement(combo);
+								this.mExecInputs.push(combo);
+								
+								this.mBullets = new ArrayCollection();
+								d = Data.getInstance().getBulletsByLevelId(Runtime.getInstance().currentLevelID);
+								for (key in d) {
+									if (d[key].type != EmitterPanel.PROFILE_EMITTER_TYPE) {
+										this.mBullets.addItem(key+":"+d[key].monster_name);
+									}
+								}
+								combo.dataProvider = this.mBullets;
+								combo.addEventListener(IndexChangeEvent.CHANGE, onEmitterChanged);
+							}
+							else {
+								var execInput:TextInput = new TextInput();
+								execInput.id = "mInput"+i; execInput.x = 75; execInput.y = 25*(i+1); execInput.percentWidth = 50; execInput.setStyle("textAlign", "center");
+								execInput.addEventListener(TextOperationEvent.CHANGE, onValueChanged);
+								this.mSubContainer.addElement(execInput);
+								this.mExecInputs.push(execInput);
+							}
 						}
 						break;
 				}
@@ -609,12 +650,22 @@
 										this.mExecVars[j-1].visible = true;
 										this.mExecInputs[j-1].visible = true;
 										this.mExecVars[j-1].text = this.mData.data.parm[i].name;
-										this.mExecInputs[j-1].text = this.mData.data.parm[i].value || JSON.stringify(this.mData.data.parm[i].path);
-										if (this.mData.data.parm[i].path) {
-											this.mExecInputs[j-1].addEventListener(MouseEvent.CLICK, onInput1Click);
+										if (this.mExecInputs[j-1] is TextInput) {
+											this.mExecInputs[j-1].text = this.mData.data.parm[i].value || JSON.stringify(this.mData.data.parm[i].path);
+											if (this.mData.data.parm[i].path) {
+												this.mExecInputs[j-1].addEventListener(MouseEvent.CLICK, onInput1Click);
+											}
+											else {
+												this.mExecInputs[j-1].removeEventListener(MouseEvent.CLICK, onInput1Click);
+											}
 										}
 										else {
-											this.mExecInputs[j-1].removeEventListener(MouseEvent.CLICK, onInput1Click);
+											for (var k:int = 0; k < this.mBullets.length; k++) {
+												if ((this.mBullets.getItemAt(k) as String).indexOf(this.mData.data.parm[i].value) == 0) break;
+											}
+											if (this.mBullets.length > 0) {
+												this.mExecInputs[j-1].selectedIndex = k;
+											}
 										}
 										j++;
 									}
@@ -840,6 +891,19 @@
 						this.mType = TYPE_FUNC;
 						this.mName = FUNC_NODE_EXEC;
 						this.mData = newData;
+						// clear exec vars & inputs
+						for (i = 0; i < this.mExecVars.length; i++) {
+							this.mSubContainer.removeElement(this.mExecVars[i]);
+							if (this.mExecInputs[i] is TextInput) {
+								this.mExecInputs[i].removeEventListener(TextOperationEvent.CHANGE, onValueChanged);
+							}
+							else {
+								this.mExecInputs[i].removeEventListener(IndexChangeEvent.CHANGE, onEmitterChanged);
+							}
+							this.mSubContainer.removeElement(this.mExecInputs[i]);
+						}
+						this.mExecVars.length = 0;
+						this.mExecInputs.length = 0;
 						break;
 					case TYPE_FUNC:
 						newData = {type:event.data.name, data:null, children:this.mData.children};
@@ -994,11 +1058,20 @@
 				this.mCanvas.setModified(true);
 			}
 			
+			private function onEmitterChanged(event:IndexChangeEvent):void {
+				var id:String = event.currentTarget.id;
+				var index:int = Utils.getLastInt(id);
+				var text:String = this.mBullets.getItemAt((event.currentTarget as ComboBox).selectedIndex) as String;
+				this.mData.data.parm[index].value = text.substr(0, text.indexOf(":"));
+				this.writeDataBackToParent();
+				this.mCanvas.setModified(true);
+			}
+			
 			public function reset():void {
 
 			}
 			
-			static const DICT:Object = {float:"数字", int:"整数", node:"节点", array_string:"字符串数组", ccp:"数字", string:"字符串", array_ccp:"point数组"};
+			private static const DICT:Object = {float:"数字", int:"整数", node:"节点", array_string:"字符串数组", ccp:"数字", string:"字符串", array_ccp:"point数组"};
 			public function validate():Object {
 				if (this.mType != TYPE_ROOT && this.mData && this.mData.data && this.mData.data.parm) {
 					var params:Array = this.mData.data.parm;
@@ -1064,7 +1137,7 @@
 					}
 				}
 				else if (this.mName == FUNC_NODE_LOOP || this.mName == FUNC_NODE_RANDOM || this.mName == FUNC_NODE_EVERY) {
-					for (var i:int = 0; i < this.mNodeInputs.length; i++) {
+					for (i = 0; i < this.mNodeInputs.length; i++) {
 						v = (this.mNodeInputs[i] as TextInput).text;
 						if (v.length < 1) return {result:false, expect:DICT["float"], input:v, name:this.mName, field:this.mNodeVars[i].text};
 						n = Number(v);
