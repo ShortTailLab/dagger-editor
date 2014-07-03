@@ -92,7 +92,6 @@
 				mSkinsArray2 = skins2;
 				
 				mCreated = true;
-				this.updateFileList();
 				
 				if (mData) init();
 			}
@@ -103,6 +102,11 @@
 				}
 				else if (event.ctrlKey && event.keyCode == Keyboard.S) {
 					this.onPressSave(event);
+				}
+				else if (event.ctrlKey && event.keyCode == Keyboard.L) {
+					if (this.mSaveToLevel.visible) {
+						this.onPressSaveToLevel(event);
+					}
 				}
 				else if (event.ctrlKey && event.keyCode == Keyboard.C) {
 					this.onCopyEmitter(event);
@@ -122,9 +126,6 @@
 				}
 				else if ((event.ctrlKey && event.keyCode == Keyboard.R) || event.keyCode == Keyboard.F5) {
 					this.onPressRestart(event);
-				}
-				else if ((event.ctrlKey && event.keyCode == Keyboard.I)) {
-					this.onPressImport(event);
 				}
 				else if (event.keyCode == Keyboard.ESCAPE) {
 					this.onPressClose(event);
@@ -158,7 +159,8 @@
 					}
 				}]
 			};
-			public var mMonsterId:String;
+			private var mMonsterId:String;
+			private var mMonsterName:String;
 			public function setData(data:Object, monsterId:String=null):void {
 				mData = data;
 				if (monsterId) {
@@ -205,7 +207,7 @@
 						save = true;
 					}
 					if (save) {
-						this.onPressSave(null, false);
+						this.onPressSave(null);
 					}
 				}
 				
@@ -223,7 +225,7 @@
 					var mContainer:UIComponent = new UIComponent();
 					mPreviewerContainer.addElement(mContainer);
 					mContainer.x = 100;
-					mContainer.y = mPreviewerContainer.height-50;
+					mContainer.y = mPreviewerContainer.height-130;
 				}
 				if (mPreviewer) mPreviewer.destroy();
 				mPreviewer = new EmitterPreviewer(mData, this);
@@ -232,10 +234,16 @@
 				mEmitterList.selectedIndex = 0;
 				mId1.text = mMonsterId.toString();
 				if (mData.monster_name) {
+					mMonsterName = mData.monster_name;
 					mId2.text = mData.monster_name;
 				}
 				readData();
 				mPreviewer.selectIndex(mEmitterList.selectedIndex);
+							
+				if (!mFilesArray) {
+					this.updateFileList();
+					this.updateFileIndex();
+				}
 			}
 			
 			public function onCopyEmitter(event:Event):void {
@@ -425,45 +433,31 @@
 //				}
 			}
 			
-			private function onPressSave(event:Event, updateList:Boolean= true):void {
-				var fileName:String;
-				var path:String;
-				if (mPath && mFileName) {
-					fileName = mFileName;
-					path = mPath;
-				}
-				else {
-					var dir:File = Data.getInstance().resolvePath("saved/emitter");
-					var files:Array = dir.getDirectoryListing();
-					var serial:int = 1;
-					for each (var f:File in files) {
-						if (f.name.indexOf("发射器组合") === 0) {
-							var str:String = f.name.substr(10, f.name.length-19);
-							var num:int = int(str);
-							if (num >= serial) {
-								serial = num+1;
-							}
-						}
-					}
-					
-					fileName = "发射器组合"+serial+".json";
-					path = dir.url+"/"+fileName;
-					mFileName = fileName;
-					mPath = path;
-				}
+			private function onPressSaveToLevel(event:Event):void {
+				this.saveDataToLevel();
+				var alert:Alert = Alert.show("写入关卡成功!");
+				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
+			}
+			
+			private function onPressSave(event:Event):void {
+				this.saveDataToLevel();
 				
-				var targetFile:File = new File(path);
+				var dir:File = Data.getInstance().resolvePath("saved/emitter");
+				var targetFile:File = new File(dir.url+"/"+mMonsterName+".json");
+				var mark:Boolean = !targetFile.exists;
 				var fs:FileStream = new FileStream();
 				fs.open(targetFile, FileMode.WRITE);
 				fs.writeUTF(JSON.stringify(mData));
 				fs.close();
 				
-				title = "发射器组合编辑 - ["+mFileName+"]";
 				if (event) {
-					var alert:Alert = Alert.show(" 保存成功!");
+					var alert:Alert = Alert.show("保存成功!");
 					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
 				}
-				if (updateList) updateFileList();
+				if (mark) {
+					updateFileList();
+					updateFileIndex();
+				}
 			}
 			
 			private function onPressSaveAs(event:Event):void {
@@ -482,54 +476,13 @@
 				fs.writeUTF(JSON.stringify(mData));
 				fs.close();
 				
-				mPath = file.url;
-				mFileName = file.name;
-				title = "发射器组合编辑 - ["+mFileName+"]";
 				var alert:Alert = Alert.show(" 保存成功!");
 				setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
+				mMonsterName = f.name.substr(0, f.name.length-5);
+				this.mId2.text = mMonsterName;
+				this.mData.monster_name = this.mMonsterName;
 				updateFileList();
-			}
-			
-			private var mFileName:String;
-			private var mPath:String;
-			
-			private function onPressImport(event:Event):void {
-				var dir:File = Data.getInstance().resolvePath("saved/emitter");
-				dir.browseForOpen("导入发射器组合文件");
-				dir.addEventListener(Event.SELECT, onOpenFile);
-			}
-			
-			private function onOpenFile(event:Event, name:String=null):void {
-				var file:File;
-				if (!name) {
-					event.currentTarget.removeEventListener(Event.SELECT, onOpenFile);
-					file = event.currentTarget as File;
-				}
-				else {
-					var dir:File = Data.getInstance().resolvePath("saved/emitter");
-					file = new File(dir.url+"/"+name);
-				}
-				var fs:FileStream = new FileStream();
-				fs.open(file, FileMode.READ);
-				var str:String = fs.readUTF();
-				fs.close();
-				try {
-					var data:Object = JSON.parse(str);
-				}
-				catch (e:Error) {
-					var alert:Alert = Alert.show("导入失败!");
-					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
-					return;
-				}
-				
-				mPath = file.url;
-				mFileName = file.name;
-				title = "发射器组合编辑 - ["+mFileName+"]";
-				if (!name) {
-					alert = Alert.show("导入成功!");
-					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 500);
-				}
-				this.setData(data);
+				updateFileIndex();
 			}
 			
 			private function onPressRestart(event:Event):void {
@@ -565,8 +518,17 @@
 					}
 				}
 				mFileList.dataProvider = mFilesArray;
-				if (mFileName) {
-					mFileList.textInput.text = mFileName;
+			}
+			
+			private function updateFileIndex():void {
+				var index:int = this.mFilesArray.getItemIndex(mMonsterName+".json");
+				if (index >= 0) {
+					mFileList.textInput.text = mMonsterName+".json";
+					this.mSaveToLevel.visible = false;
+				}
+				else {
+					mFileList.textInput.text = "";
+					this.mSaveToLevel.visible = true;
 				}
 			}
 			
@@ -574,17 +536,37 @@
 				var index:int = mFileList.selectedIndex;
 				if (index < 0) return;
 				var name:String = mFilesArray.getItemAt(index) as String;
-				this.onOpenFile(event, name);
+				
+				var dir:File = Data.getInstance().resolvePath("saved/emitter");
+				var file:File = new File(dir.url+"/"+name);
+				var fs:FileStream = new FileStream();
+				fs.open(file, FileMode.READ);
+				var str:String = fs.readUTF();
+				fs.close();
+				try {
+					var data:Object = JSON.parse(str);
+				}
+				catch (e:Error) {
+					var alert:Alert = Alert.show("导入失败!");
+					setTimeout(function ():void { if (alert && alert.parent) alert.parent.removeChild(alert); }, 1000);
+					return;
+				}
+				
+				this.mMonsterName = name.substr(0, name.length-5);
+				this.mId2.text = this.mMonsterName;
+				data.monster_id = this.mMonsterId;
+				data.monster_name = this.mMonsterName;
+				this.setData(data);
 			}
 			
-			public function onPressUse(event:Event):void {
-				this.onPressSave(null);
-				mData.monster_id = mMonsterId;
-				if (mFileName) {
-					mData.monster_name = mFileName.substr(0, mFileName.length-5);
-					mId2.text = mFileName.substr(0, mFileName.length-5);
-				}
+			private function saveDataToLevel():void {
 				Data.getInstance().updateMonster(Runtime.getInstance().currentLevelID, mData);
+			}
+			
+			private function onNameChanged(event:Event):void {
+				this.mMonsterName = this.mId2.text;
+				this.mData.monster_name = this.mMonsterName;
+				this.updateFileIndex();
 			}
 			
 			public function updateCurrentEmitter():void {
@@ -604,29 +586,27 @@
 			<s:BorderContainer width="100%" height="100%" borderVisible="false">
 				<s:BorderContainer id="mPreviewerContainer" x="0" y="0" width="100%" height="100%"
 								   borderVisible="false">
-					<s:Button right="2" top="10" width="70" height="30" label="保存为库" toolTip="Ctrl+S"
+					<s:Button right="2" top="50" width="95" height="30" label="保存到库(S)" toolTip="保存到本地库，并同时将数据写入关卡，Ctrl+S"
 							  click="onPressSave(event)" fontSize="12"/>
-					<s:Button x="239" y="60" width="80" height="30" label="使用当前库"
-							  click="onPressUse(event)" fontSize="12" toolTip="当前ID使用此发射器组合，Ctrl+U"/>
-					<s:Button right="2" top="50" width="70" height="30" label="另存为库" toolTip="Ctrl+Shift+S"
+					<s:Button right="2" top="90" width="95" height="30" label="另存为库.." toolTip="Ctrl+Shift+S"
 							  click="onPressSaveAs(event)" fontSize="12"/>
-					<s:Button right="2" top="90" width="70" height="30" label="导入库(I)" toolTip="Ctrl+I"
-							  click="onPressImport(event)" fontSize="12"/>
-					<s:Button right="2" top="130" width="70" height="30" label="重启(F5)" toolTip="F5或者Ctrl+R"
+					<s:Button right="2" top="130" width="95" height="30" label="重启(F5/R)" toolTip="重启模拟，F5或者Ctrl+R"
 							  click="onPressRestart(event)" fontSize="12"/>
-					<s:ComboBox id="mFileList" left="85" top="62" width="150" height="25"
+					<s:ComboBox id="mFileList" right="2" top="13" width="130" height="25"
 								change="onSelectFile(event)" contentBackgroundColor="#C8C8C8"
 								fontSize="14"/>
-					<s:Label x="8" y="66" width="72" color="#969696" fontSize="18" text="库列表"
+					<s:Label right="135" top="21" width="72" color="#969696" fontSize="12" text="库列表"
 							 textAlign="right"/>
-					<s:Label x="8" y="10" width="72" color="#969696" fontSize="18" text="标识ID"
+					<s:Label x="8" y="10" width="60" color="#969696" fontSize="18" text="标识ID"
 							 textAlign="right"/>
-					<s:Label id="mId1" x="85" y="10" width="150" color="#000000" fontSize="18"
+					<s:Label id="mId1" x="70" y="10" width="150" color="#000000" fontSize="18"
 							 text="标识ID" textAlign="center"/>
-					<s:Label x="8" y="37" width="72" color="#969696" fontSize="18" text="所使用库"
+					<s:Label x="8" y="37" width="60" color="#969696" fontSize="18" text="名称"
 							 textAlign="right"/>
-					<s:Label id="mId2" x="85" y="40" width="150" color="#000000" fontSize="14"
-							 text="标识ID" textAlign="center"/>
+					<s:TextInput id="mId2" x="70" y="34" width="150" change="onNameChanged(event)" toolTip="发射器组合的名称"
+								 color="#000000" fontSize="14" text="名称" textAlign="center"/>
+					<s:Button id="mSaveToLevel" x="70" y="63" width="150" height="30" toolTip="只将数据写入关卡，不保存到库。Ctrl+L"
+							  label="写入关卡(不保存到库)(L)" click="onPressSaveToLevel(event)" fontSize="11"/>
 				</s:BorderContainer>
 			</s:BorderContainer>
 		</s:VGroup>
