@@ -481,7 +481,7 @@
 					this.mKey2UIComponents[item[kKEY]].push( comboBox );
 					this.mKey2Data[item[kKEY]][kOTHER] = itemList;
 				}
-				else if ( item[kTYPE] == "path" || item[kTYPE] == "path2" )
+				else if ( item[kTYPE] == "path" )
 				{
 					var pathInput:TextInput = new TextInput;
 					pathInput.text 	= JSON.stringify(item[kDEFAULT]);;
