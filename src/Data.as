@@ -1117,17 +1117,6 @@ package
 					}
 					return [true, data];
 				}
-				else if ( itype == "path2" )
-				{
-					data = [];
-					for( var ii:int=1; ii<item.length; ii++ )
-					{
-						var dot1:Array = item[ii-1];
-						var dot2:Array = item[ii];
-						data.push( "@@cc.p("+String(item[ii][0]-item[ii-1][0])+", "+String(item[ii][1]-item[ii-1][1])+")@@" );
-					}
-					return [true, data];
-				}
 				else if ( itype == "bullet" )
 				{
 					if( !(item in bullets) )
