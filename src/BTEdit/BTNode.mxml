@@ -22,7 +22,6 @@
 			import spark.components.ComboBox;
 			import spark.components.Group;
 			import spark.components.Label;
-			import spark.components.List;
 			import spark.components.RichEditableText;
 			import spark.components.TextInput;
 			import spark.events.IndexChangeEvent;
@@ -141,7 +140,7 @@
 							this.mSubContainer.addElement(execVar);
 							this.mExecVars.push(execVar);
 							
-							if (this.mData.data.execType == "BT.Node.SpawnEmitter") {
+							if (this.mData.data.execType == "BT.Node.SpawnEmitter" && mData.data.parm[i].name == "emitterId") {
 								var combo:ComboBox = new ComboBox();
 								combo.id = "mInput"+i; combo.x = 60; combo.y = 25*(i+1); combo.percentWidth = 60; combo.setStyle("textAlign", "left");
 								this.mSubContainer.addElement(combo);
@@ -157,7 +156,7 @@
 								combo.dataProvider = this.mBullets;
 								combo.addEventListener(IndexChangeEvent.CHANGE, onEmitterChanged);
 							}
-							else if (this.mData.data.execType == "BT.Node.FireBullet" && i == 1) {
+							else if (this.mData.data.execType == "BT.Node.FireBullet" && mData.data.parm[i].name == "addr") {
 								combo = new ComboBox();
 								combo.id = "mInput"+i; combo.x = 60; combo.y = 25*(i+1); combo.percentWidth = 60; combo.setStyle("textAlign", "left");
 								this.mSubContainer.addElement(combo);
