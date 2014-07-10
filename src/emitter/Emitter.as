@@ -55,8 +55,8 @@ package emitter
 			mElapsed = 0;
 			mInterval = mData.interval;
 			mBullets = new Vector.<EmitterBullet>();
-			mSpeedX = -mData.speed*Math.sin(mData.rotation/180*Math.PI)/2;
-			mSpeedY = mData.speed*Math.cos(mData.rotation/180*Math.PI)/2;
+			mSpeedX = mData.speedX;
+			mSpeedY = -mData.speedY;
 			mRotateDirection = 1;
 			this.updatePosition();
 		}

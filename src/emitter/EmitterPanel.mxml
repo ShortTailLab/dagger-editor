@@ -144,7 +144,7 @@
 			public static const DEFAULT_EMITTER:Object = {
 				type:PROFILE_EMITTER_TYPE,
 				emitters: [{
-					res:NULL_RES, wait:0.2, speed:0, a:0, ax:0, ay:0, rotation:0, x:0, y:0, 
+					res:NULL_RES, wait:0.2, speedX:0, speedY:0, a:0, ax:0, ay:0, rotation:0, x:0, y:0, 
 					rotateSpeed:0, minRotation:-180, maxRotation:180, rotateType:0, duration:-1,
 					interval:1, num:1, numRandom:0, bulletGapType:0, w:0, h:0, harm:0,
 					bulletGap:15, 
@@ -179,6 +179,17 @@
 					}
 					if (!d.hasOwnProperty("harm")) {
 						d.harm = 0;
+						save = true;
+					}
+					if (!d.hasOwnProperty("speedX")) {
+						d.speedX = -d.speed*Math.sin(d.rotation/180*Math.PI)/2;
+						d.speedY =-d.speed*Math.cos(d.rotation/180*Math.PI)/2;
+						delete d.speed;
+						save = true;
+					}
+					if (d.hasOwnProperty("id")) {
+						d.monster_name = d.id;
+						delete d.id;
 						save = true;
 					}
 					if (!d.bullet.hasOwnProperty("w")) {
@@ -293,7 +304,8 @@
 				var data:Object = mData.emitters[index];
 				
 				this.mInput1.text = data.wait;
-				this.mInput2.text = data.speed;
+				this.mInput2.text = data.speedX;
+				this.mInput30.text = data.speedY;
 				this.mInput3.text = data.ax;
 				this.mInput19.text = data.ay;
 				this.mInput4.text = data.rotation;
@@ -359,7 +371,8 @@
 				var data:Object = mData.emitters[index];
 				
 				data.wait = Number(this.mInput1.text);
-				data.speed = Number(this.mInput2.text);
+				data.speedX = Number(this.mInput2.text);
+				data.speedY = Number(this.mInput30.text);
 				data.a = Number(this.mInput22.text);
 				data.ax = Number(this.mInput3.text);
 				data.ay = Number(this.mInput19.text);
@@ -618,106 +631,111 @@
 			</s:Panel>
 			<s:Panel width="205" height="100%" borderVisible="false" title="发射器参数">
 				<s:Label x="5" y="30" width="84" height="17" fontSize="14" text="初始等待时间"/>
-				<s:Label x="5" y="55" width="84" height="17" fontSize="14" text="初始速度"
+				<s:Label x="5" y="55" width="84" height="17" fontSize="14" text="初始速度X"
 						 textAlign="right"/>
-				<s:Label x="5" y="105" width="84" height="17" fontSize="14" text="X方向加速度"
+				<s:Label x="5" y="130" width="84" height="17" fontSize="14" text="X方向加速度"
 						 textAlign="right"/>
 				<s:Label x="178" y="28" height="17" color="#C8C8C8" fontSize="14" text="s"/>
 				<s:Label x="176" y="53" height="17" color="#C8C8C8" fontSize="14" text="px/s"/>
-				<s:Label x="5" y="80" width="84" height="17" fontSize="14" text="朝向加速度"
+				<s:Label x="5" y="80" width="84" height="17" fontSize="14" text="初始速度Y"
 						 textAlign="right"/>
-				<s:Label x="176" y="78" height="17" color="#C8C8C8" fontSize="12" text="px/s2"/>
-				<s:TextInput id="mInput22" x="95" y="75" width="80" change="onValueChanged(event)"
+				<s:Label x="176" y="78" height="17" color="#C8C8C8" fontSize="14" text="px/s"/>
+				<s:TextInput id="mInput30" x="95" y="75" width="80" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
+				<s:Label x="5" y="105" width="84" height="17" fontSize="14" text="朝向加速度"
+						 textAlign="right"/>
 				<s:Label x="176" y="103" height="17" color="#C8C8C8" fontSize="12" text="px/s2"/>
-				<s:Label x="5" y="130" width="84" height="17" fontSize="14" text="Y方向加速度"
-						 textAlign="right"/>
+				<s:TextInput id="mInput22" x="95" y="100" width="80" change="onValueChanged(event)"
+							 text="0" textAlign="center"/>
 				<s:Label x="176" y="128" height="17" color="#C8C8C8" fontSize="12" text="px/s2"/>
-				<s:TextInput id="mInput19" x="95" y="125" width="80" change="onValueChanged(event)"
-							 text="0" textAlign="center"/>
-				<s:Label x="5" y="305" width="84" height="17" fontSize="14" text="发射持续时间"
+				<s:Label x="5" y="155" width="84" height="17" fontSize="14" text="Y方向加速度"
 						 textAlign="right"/>
-				<s:Label x="178" y="303" height="17" color="#C8C8C8" fontSize="14" text="s"/>
+				<s:Label x="176" y="153" height="17" color="#C8C8C8" fontSize="12" text="px/s2"/>
+				<s:TextInput id="mInput19" x="95" y="150" width="80" change="onValueChanged(event)"
+							 text="0" textAlign="center"/>
+				<s:Label x="5" y="330" width="84" height="17" fontSize="14" text="发射持续时间"
+						 textAlign="right"/>
 				<s:Label x="178" y="328" height="17" color="#C8C8C8" fontSize="14" text="s"/>
-				<s:TextInput id="mInput9" x="95" y="300" width="80" change="onValueChanged(event)"
+				<s:Label x="178" y="353" height="17" color="#C8C8C8" fontSize="14" text="s"/>
+				<s:TextInput id="mInput9" x="95" y="325" width="80" change="onValueChanged(event)"
 							 text="10" textAlign="center"/>
-				<s:Label x="5" y="330" width="84" height="17" fontSize="14" text="发射间隔"
+				<s:Label x="5" y="355" width="84" height="17" fontSize="14" text="发射间隔"
 						 textAlign="right"/>
-				<s:TextInput id="mInput10" x="95" y="325" width="80" change="onValueChanged(event)"
+				<s:TextInput id="mInput10" x="95" y="350" width="80" change="onValueChanged(event)"
 							 text="0.2" textAlign="center"/>
-				<s:Label x="5" y="355" width="84" height="17" fontSize="14" text="单次数量"
+				<s:Label x="5" y="380" width="84" height="17" fontSize="14" text="单次数量"
 						 textAlign="right"/>
-				<s:TextInput id="mInput11" x="95" y="350" width="80" change="onValueChanged(event)"
+				<s:TextInput id="mInput11" x="95" y="375" width="80" change="onValueChanged(event)"
 							 text="1" textAlign="center"/>
-				<s:Label x="5" y="380" width="84" height="17" fontSize="14" text="数量随机附加"
+				<s:Label x="5" y="405" width="84" height="17" fontSize="14" text="数量随机附加"
 						 textAlign="right"/>
-				<s:TextInput id="mInput12" x="95" y="375" width="80" change="onValueChanged(event)"
+				<s:TextInput id="mInput12" x="95" y="400" width="80" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
-				<s:Label x="5" y="430" width="84" height="17" fontSize="14" text="子弹间隔角度"
+				<s:Label x="5" y="455" width="84" height="17" fontSize="14" text="子弹间隔角度"
 						 textAlign="right"/>
-				<s:TextInput id="mInput13" x="95" y="425" width="80" change="onValueChanged(event)"
+				<s:TextInput id="mInput13" x="95" y="450" width="80" change="onValueChanged(event)"
 							 text="15" textAlign="center"/>
-				<s:Label x="5" y="480" width="84" height="17" fontSize="14" text="伤害系数"
+				<s:Label x="5" y="505" width="84" height="17" fontSize="14" text="伤害系数"
 						 textAlign="right"/>
-				<s:TextInput id="mInput26" x="95" y="475" width="80" change="onValueChanged(event)"
+				<s:TextInput id="mInput26" x="95" y="500" width="80" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
 				<s:TextInput id="mInput1" x="95" y="25" width="80" change="onValueChanged(event)"
 							 text="0.2" textAlign="center"/>
 				<s:TextInput id="mInput2" x="95" y="50" width="80" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
-				<s:TextInput id="mInput3" x="95" y="100" width="80" change="onValueChanged(event)"
+				<s:TextInput id="mInput3" x="95" y="125" width="80" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
 				<s:ComboBox id="mEmitterRes" x="95" y="0" width="100" change="onChangeEmitterRes(event)"
 							textAlign="center"/>
 				<s:Label x="5" y="5" width="84" fontSize="14" text="资源前缀" textAlign="right"/>
-				<s:Label x="5" y="155" width="84" height="17" fontSize="14" text="初始角度"
+				<s:Label x="5" y="180" width="84" height="17" fontSize="14" text="初始角度"
 						 textAlign="right"/>
-				<s:TextInput id="mInput4" x="95" y="150" width="80" change="onValueChanged(event)"
+				<s:TextInput id="mInput4" x="95" y="175" width="80" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
-				<s:Label x="5" y="180" width="20" height="17" fontSize="14" text="X"
+				<s:Label x="5" y="205" width="20" height="17" fontSize="14" text="X"
 						 textAlign="right"/>
-				<s:Label x="92" y="180" width="20" height="17" fontSize="14" text="Y"
+				<s:Label x="92" y="205" width="20" height="17" fontSize="14" text="Y"
 						 textAlign="right"/>
-				<s:TextInput id="mInput6" x="115" y="175" width="60" change="onValueChanged(event)"
+				<s:TextInput id="mInput6" x="115" y="200" width="60" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
 				<s:Label x="5" y="455" width="20" height="17" fontSize="14" text="长"
 						 textAlign="right"/>
-				<s:Label x="92" y="455" width="20" height="17" fontSize="14" text="高"
+				<s:Label x="92" y="480" width="20" height="17" fontSize="14" text="高"
 						 textAlign="right"/>
-				<s:TextInput id="mInput25" x="115" y="450" width="60" change="onValueChanged(event)"
+				<s:TextInput id="mInput25" x="115" y="475" width="60" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
-				<s:TextInput id="mInput24" x="30" y="450" width="60" change="onValueChanged(event)"
+				<s:TextInput id="mInput24" x="30" y="475" width="60" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
-				<s:TextInput id="mInput5" x="30" y="175" width="60" change="onValueChanged(event)"
+				<s:TextInput id="mInput5" x="30" y="200" width="60" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
-				<s:Label x="178" y="153" height="17" color="#C8C8C8" fontSize="14" text="°"/>
-				<s:Label x="5" y="205" width="84" height="17" fontSize="14" text="旋转速度"
+				<s:Label x="178" y="178" height="17" color="#C8C8C8" fontSize="14" text="°"/>
+				<s:Label x="5" y="230" width="84" height="17" fontSize="14" text="旋转速度"
 						 textAlign="right"/>
-				<s:TextInput id="mInput7" x="95" y="200" width="80" change="onValueChanged(event)"
+				<s:TextInput id="mInput7" x="95" y="225" width="80" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
-				<s:Label x="178" y="203" height="17" color="#C8C8C8" fontSize="14" text="°/s"/>
+				<s:Label x="178" y="228" height="17" color="#C8C8C8" fontSize="14" text="°/s"/>
+				<s:Label x="178" y="278" height="17" color="#C8C8C8" fontSize="14" text="°"/>
 				<s:Label x="178" y="253" height="17" color="#C8C8C8" fontSize="14" text="°"/>
-				<s:Label x="178" y="228" height="17" color="#C8C8C8" fontSize="14" text="°"/>
-				<s:Label x="5" y="230" width="84" height="17" fontSize="14" text="旋转最小角度"
+				<s:Label x="5" y="255" width="84" height="17" fontSize="14" text="旋转最小角度"
 						 textAlign="right"/>
-				<s:TextInput id="mInput20" x="95" y="225" width="80" change="onValueChanged(event)"
+				<s:TextInput id="mInput20" x="95" y="250" width="80" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
-				<s:Label x="5" y="255" width="84" height="17" fontSize="14" text="旋转最大角度"
+				<s:Label x="5" y="280" width="84" height="17" fontSize="14" text="旋转最大角度"
 						 textAlign="right"/>
-				<s:Label x="5" y="278" width="84" height="17" fontSize="14" text="旋转行为"
+				<s:Label x="5" y="303" width="84" height="17" fontSize="14" text="旋转行为"
 						 textAlign="right"/>
-				<s:Label x="5" y="403" width="84" height="17" fontSize="14" text="子弹间隔"
+				<s:Label x="5" y="428" width="84" height="17" fontSize="14" text="子弹间隔"
 						 textAlign="right"/>
-				<s:HGroup x="95" y="400">
+				<s:HGroup x="95" y="425">
 					<s:RadioButton id="mBulletGap1" label="固定" click="onValueChanged(event)"
 								   fontSize="14" groupName="radiogroup2" selected="true"/>
 					<s:RadioButton id="mBulletGap2" label="随机" click="onValueChanged(event)"
 								   fontSize="14" groupName="radiogroup2"/>
 				</s:HGroup>
-				<s:TextInput id="mInput8" x="95" y="250" width="80" change="onValueChanged(event)"
+				<s:TextInput id="mInput8" x="95" y="275" width="80" change="onValueChanged(event)"
 							 text="0" textAlign="center"/>
-				<s:Label x="178" y="428" height="17" color="#C8C8C8" fontSize="14" text="°"/>
-				<s:HGroup x="95" y="275">
+				<s:Label x="178" y="453" height="17" color="#C8C8C8" fontSize="14" text="°"/>
+				<s:HGroup x="95" y="300">
 					<s:RadioButton id="mRotateType1" label="摇摆" click="onValueChanged(event)"
 								   fontSize="14" groupName="radiogroup1" selected="true"/>
 					<s:RadioButton id="mRotateType2" label="循环" click="onValueChanged(event)"
