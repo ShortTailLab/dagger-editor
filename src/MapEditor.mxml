@@ -10,26 +10,24 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.controls.Text;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Group;
+			
 			import DecoEdit.DecoPanel;
 			
-			import bgedit.BgEditView;
 			import bgedit.BgModel;
 			
-			import excel.ExchangeManager;
 			import excel.ExcelConfigReader;
+			import excel.ExchangeManager;
 			
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.SyncManager;
-			
-			import mx.collections.ArrayCollection;
-			import mx.controls.Alert;
-			import mx.controls.Tree;
-			import mx.events.ResizeEvent;
-			import mx.managers.PopUpManager;
-			
-			import spark.components.Group;
-			import spark.components.VScrollBar;
 			
 			// ---------------------------------------------------------
 			
@@ -47,12 +45,18 @@
 				var self:MapEditor = this;
 				
 				// address project path
-				var mask:* = Utils.makeManualPanel("正在初始化数据（需要联网）…", this);
-				Data.getInstance().init(function():void
-				{
-					Utils.releaseManualPanel( mask );
-					self.onDataReady();	
-				});
+				var mask:TitleWindow = Utils.makeManualPanel("正在初始化数据（需要联网）...", this);
+				Data.getInstance().init(
+					function():void {
+						Utils.releaseManualPanel( mask );
+						self.onDataReady();	
+					},
+					function(errorMsg:String):void
+					{
+						var text:Text = mask.getElementAt(0) as Text;
+						text.text = errorMsg;
+					}
+				);
 
 				BgModel.getInstance().init();
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
@@ -120,17 +124,9 @@
 				
 				this.mEditLevel.refresh();
 				this.mEditMonster.init();
-				
-				this.mExportChapterToExcel.addEventListener(
-					MouseEvent.CLICK, this.exportToExcel
-				);
-				
-				this.mImportToChapter.addEventListener(
-					MouseEvent.CLICK, this.importChapterFromExcel
-				);
 			}
 			
-			private function exportToExcel(e:MouseEvent):void
+			private function exportChapterToExcel(e:MouseEvent):void
 			{
 				var data:Object = Data.getInstance().getChapterProfileById(
 					Runtime.getInstance().currentLevelID
@@ -306,8 +302,8 @@
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
 				<s:Label text="EXCEl" color="0x777777"/>	
-				<s:Button id="mExportChapterToExcel" label="导出章节"/>
-				<s:Button id="mImportToChapter" label="导入章节"/>
+				<s:Button id="mExportChapterToExcel" label="导出章节" click="exportChapterToExcel(event)"/>
+				<s:Button id="mImportToChapter"      label="导入章节" click="importChapterFromExcel(event)"/>
 				<s:Label text="编辑器" color="0x777777"/>
 				<s:Button id="set_project_path" label="重设路径" click="setPathRoot(event)"/>
 				<s:Label text="配置项目" color="0x777777"/>

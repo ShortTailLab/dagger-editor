@@ -319,6 +319,10 @@ package excel
 						{
 							var type = monsterArgs[i][ConfigPanel.kTYPE];
 							var value:String = valToStr(monster[argKey], type);
+							if(value.length > 255)
+							{
+								trace("cell value > 255 bytes.");
+							}
 							sheet.setCell( rowInd, nowInd, value);
 						}
 					}

@@ -1,9 +1,5 @@
 package 
 {
-	import behaviorEdit.BType;
-	
-	import by.blooddy.crypto.MD5;
-	
 	import flash.display.DisplayObject;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
@@ -17,6 +13,8 @@ package
 	
 	import mx.collections.ArrayList;
 	import mx.containers.TitleWindow;
+	import mx.controls.Label;
+	import mx.controls.Text;
 	import mx.controls.TextInput;
 	import mx.core.UIComponent;
 	import mx.events.CloseEvent;
@@ -25,6 +23,10 @@ package
 	import spark.components.Button;
 	import spark.components.ComboBox;
 	import spark.events.IndexChangeEvent;
+	
+	import behaviorEdit.BType;
+	
+	import by.blooddy.crypto.MD5;
 
 	public class Utils
 	{
@@ -432,13 +434,18 @@ package
 			PopUpManager.centerPopUp( panel );
 		}
 		
-		static public function makeManualPanel(msg:String, root:DisplayObject):TitleWindow
+		static public function makeManualPanel(titleMsg:String, root:DisplayObject):TitleWindow
 		{
 			var mask:TitleWindow = new TitleWindow();
 			with( mask ) {
-				width = 300; height = 50;
-				showCloseButton = false; title = msg;
+				width = 400; 
+				height = 500;
+				showCloseButton = false; 
+				title = titleMsg;
 			}
+			
+			var text:Text = new Text;
+			mask.addElement(text);
 			
 			PopUpManager.addPopUp( mask, root, true );
 			PopUpManager.centerPopUp( mask );
