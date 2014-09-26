@@ -714,7 +714,7 @@ package
 					}
 					catch(e:*)
 					{
-						error += (file.name + " " + e + "\n");
+						error += (file.nativePath + " " + e + "\n");
 						trace(e);
 					}
 				}
@@ -747,7 +747,7 @@ package
 					}
 					catch(e:*)
 					{
-						error += (file.name + " " + e + "\n");
+						error += (file.nativePath + " " + e + "\n");
 						trace(e);
 					}
 				}
@@ -777,7 +777,7 @@ package
 					}
 					catch(e:*)
 					{
-						error += (file.name + " " + e + "\n");
+						error += (file.nativePath + " " + e + "\n");
 						trace(e);
 					}
 				}
@@ -807,7 +807,7 @@ package
 					}
 					catch(e:*)
 					{
-						error += (file.name + " " + e + "\n");
+						error += (file.nativePath + " " + e + "\n");
 						trace(e);
 					}
 				}

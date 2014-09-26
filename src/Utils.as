@@ -438,7 +438,7 @@ package
 		{
 			var mask:TitleWindow = new TitleWindow();
 			with( mask ) {
-				width = 400; 
+				width = 600; 
 				height = 500;
 				showCloseButton = false; 
 				title = titleMsg;
