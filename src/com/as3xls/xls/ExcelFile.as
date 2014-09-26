@@ -679,6 +679,10 @@ package com.as3xls.xls {
 						break;
 					}
 					_currIndex += 1;
+					if(dataArr[_currIndex] == null)
+					{
+						trace("unkwnon crap, chars got " + charsGot);
+					}
 					_currData = dataArr[_currIndex];
 					var new_opts:uint = _currData.readByte();
 					compressed = (new_opts & 0x01) == 0;

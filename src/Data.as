@@ -1,9 +1,5 @@
 package
 {
-	import emitter.EmitterPanel;
-	
-	import excel.ExcelReader;
-	
 	import flash.display.Bitmap;
 	import flash.display.Loader;
 	import flash.display.LoaderInfo;
@@ -21,11 +17,15 @@ package
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
-	import mapEdit.Entity;
-	import mapEdit.SectionManager;
-	
 	import mx.controls.Alert;
 	import mx.utils.object_proxy;
+	
+	import emitter.EmitterPanel;
+	
+	import excel.ExcelReader;
+	
+	import mapEdit.Entity;
+	import mapEdit.SectionManager;
 	
 	public class Data extends EventDispatcher
 	{
@@ -40,7 +40,7 @@ package
 		
 		public function Data(target:IEventDispatcher=null) { super(target); }
 		
-		public function init(onComplete:Function):void {
+		public function init(onComplete:Function, onError:Function):void {
 			var self:Data = this;
 			self.start( function(m1:String):void
 			{
@@ -49,9 +49,9 @@ package
 					self.parseLocalData( function(m3:String):void
 					{
 						onComplete( m1+"\n"+m2+"\n"+m3 );
-					});
-				});
-			});
+					}, onError);
+				}, onError);
+			}, onError);
 		}
 		
 		///////////////////////////////////////////////////////////////////////
@@ -61,11 +61,14 @@ package
 		private var mEditorConfigs:Object = null;
 		private var mProjectRoot:File = null;
 		// --------------------------------------------------------------------------
-		public function start(onComplete:Function):void {
+		public function start(onComplete:Function, onError:Function):void 
+		{
 			var config:File = File.applicationStorageDirectory.resolvePath("conf.json");
 			this.mEditorConfigs = this.loadJson(config, false);
 			
-			if( !this.mEditorConfigs ) this.mEditorConfigs = { mapSpeed: 32 };
+			if( !this.mEditorConfigs ) 
+				this.mEditorConfigs = { mapSpeed: 32 };
+			
 			if( !this.mEditorConfigs.projectPath ) {
 				var self:* = this;
 				this.setProjectPath( function(file:File):void
@@ -126,7 +129,7 @@ package
 		public function get dynamicArgs():Object { return this.mDynamicArgs; }
 		public function get behaviorNodes():Object { return this.mBehaviorNode; }
 		
-		private function syncClient(onComplete:Function):void
+		private function syncClient(onComplete:Function, onError:Function):void
 		{
 			// download all the configs of client from oss
 			var self:Data = this, counter:Number = 0, error:Boolean = false;
@@ -145,11 +148,12 @@ package
 				}
 				return handleTEXT;
 			}
+
 			var anyerror:Function = function():void
 			{
 				error = true;
 				MapEditor.getInstance().addLog("下载失败");
-				onComplete("【错误】同步OSS客户端数据出错…");
+				onError("【错误】同步OSS客户端数据出错…");
 			}
 			
 			kSYNC_TARGETS.forEach(function(item:Object, ...args):void
@@ -675,7 +679,7 @@ package
 			}
 		}
 		
-		private function parseLocalData(onComplete:Function):void
+		private function parseLocalData(onComplete:Function, onError:Function):void
 		{
 			this.mDynamicArgs = this.loadJson(
 				File.applicationStorageDirectory.resolvePath("dynamic_args.json"), false
@@ -684,6 +688,9 @@ package
 			this.mBehaviorNode = this.loadJson(
 				File.applicationStorageDirectory.resolvePath("bt_node_format.json"), false
 			) as Object || {};
+			
+			
+			var error:String = "";
 			
 			this.mChapterProfiles = {};
 			var PROFILE:File = this.resolvePath("saved/profile");
@@ -695,20 +702,32 @@ package
 					if( file.name.split(".")[1] != "json" )
 						continue;
 					var name:String = file.name.split(".")[0];
-					var to:Object = Utils.LoadJSONToObject( file );
 					
-					if( !(to.chapter_id in this.mChapterProfiles) )
-						this.makeChapter( to.chapter_id, to.chapter_name );
-					
-					this.mChapterProfiles[to.chapter_id].levels[to.level_id] 
-						= Utils.LoadJSONToObject( file );
+					try{
+						var to:Object = Utils.LoadJSONToObject( file );
+						
+						if( !(to.chapter_id in this.mChapterProfiles) )
+							this.makeChapter( to.chapter_id, to.chapter_name );
+						
+						this.mChapterProfiles[to.chapter_id].levels[to.level_id] 
+							= Utils.LoadJSONToObject( file );
+					}
+					catch(e:*)
+					{
+						error += (file.nativePath + " " + e + "\n");
+						trace(e);
+					}
 				}
+			}
+			if(error.length)
+			{
+				onError(error);
+				return;
 			}
 			
 			CORRECT_MONSTER_ID_MISMATCH(this.mChapterProfiles);
 			
 			// chapter profiles
-
 			this.mLevelInstancesTable = {};
 			var LEVEL:File = this.resolvePath("saved/level");
 			if( LEVEL.exists && LEVEL.isDirectory )
@@ -718,13 +737,26 @@ package
 				{
 					if( file.name.split(".")[1] != "json" )
 						continue;
-					name = file.name.split(".")[0];
-					to = {}; 
-					to[name] = Utils.LoadJSONToObject( file );
 					
-					this.merge( this.mLevelInstancesTable,  to );
+					try{
+						name = file.name.split(".")[0];
+						to = {}; 
+						to[name] = Utils.LoadJSONToObject( file );
+						
+						this.merge( this.mLevelInstancesTable,  to );
+					}
+					catch(e:*)
+					{
+						error += (file.nativePath + " " + e + "\n");
+						trace(e);
+					}
 				}
-				
+			}
+
+			if(error.length)
+			{
+				onError(error);
+				return;
 			}
 			
 			this.mBehaviorSet = {};
@@ -736,12 +768,25 @@ package
 				{
 					if( file.name.split(".")[1] != "json" )
 						continue;
-					name = file.name.split(".")[0];
-					to = {};
-					to[name] = Utils.LoadJSONToObject( file );
-					
-					this.merge( this.mBehaviorSet, to );
+					try{
+						name = file.name.split(".")[0];
+						to = {};
+						to[name] = Utils.LoadJSONToObject( file );
+						
+						this.merge( this.mBehaviorSet, to );
+					}
+					catch(e:*)
+					{
+						error += (file.nativePath + " " + e + "\n");
+						trace(e);
+					}
 				}
+			}
+			
+			if(error.length)
+			{
+				onError(error);
+				return;
 			}
 			
 			this.mFormationSet = {};
@@ -753,12 +798,25 @@ package
 				{
 					if( file.name.split(".")[1] != "json" )
 						continue;
-					name = file.name.split(".")[0];
-					to = {};
-					to[name] = Utils.LoadJSONToObject( file );
-				
-					this.merge( this.mFormationSet, to );
+					try{
+						name = file.name.split(".")[0];
+						to = {};
+						to[name] = Utils.LoadJSONToObject( file );
+					
+						this.merge( this.mFormationSet, to );
+					}
+					catch(e:*)
+					{
+						error += (file.nativePath + " " + e + "\n");
+						trace(e);
+					}
 				}
+			}
+			
+			if(error.length)
+			{
+				onError(error);
+				return;
 			}
 			
 			this.mDecoSet = {};
@@ -801,7 +859,6 @@ package
 					}
 				}
 			}
-			
 			this.loadImage( onComplete );
 		}
 		
