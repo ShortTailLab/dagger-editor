@@ -20,8 +20,6 @@
 			
 			import DecoEdit.DecoPanel;
 			
-			import bgedit.BgModel;
-			
 			import excel.ExcelConfigReader;
 			import excel.ExchangeManager;
 			
@@ -58,7 +56,6 @@
 					}
 				);
 
-				BgModel.getInstance().init();
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 				

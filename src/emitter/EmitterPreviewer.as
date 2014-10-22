@@ -63,66 +63,79 @@ package emitter
 		}
 		
 		private function init():void {
+			
+			var Width:int = 360;
+			var Height:int = 640;
+			
 			var s:Sprite = new Sprite();
 			this.addChild(s);
+			
+			// border line
 			s.graphics.lineStyle(1, 0xAAAAAA);
 			s.graphics.moveTo(0,0);
-			s.graphics.lineTo(400, 0);;
+			s.graphics.lineTo(Width, 0);;
 			s.graphics.moveTo(0,0);
-			s.graphics.lineTo(0, -640);
+			s.graphics.lineTo(0, -Height);
 			
-			for (var i:int = 0; i <= 400; i+=50) {
+			// width marks
+			for (var i:int = 0; i <= Width; i+=60) {
 				s.graphics.moveTo(i,0);
 				s.graphics.lineTo(i, 10);
 				var tf:TextField = new TextField();
 				tf.mouseEnabled = false;
-				tf.text = (i*2-400).toString();
-				s.addChild(tf);
-				tf.x = i-(i==200?0:10);
+				tf.text = (i*2-Width).toString();
+				tf.x = i-(i==Width*0.5?0:10);
 				tf.y = 15;
+				s.addChild(tf);
 			}
 			
-			for (i = 0; i <= 640; i+=40) {
+			// height marks
+			for (i = 0; i <= Height; i+=40) {
 				s.graphics.moveTo(0,-i);
 				s.graphics.lineTo(-10, -i);
+				
 				tf = new TextField();
 				tf.mouseEnabled = false;
-				tf.text = (i*2-640).toString();
-				s.addChild(tf);
+				tf.text = (i*2-Height).toString();
 				tf.x = -35;
 				tf.y = -i-8;
+				s.addChild(tf);
 			}
 			
+			// bg rect
 			s.graphics.beginFill(0xEEEEEE);
-			s.graphics.drawRect(0, -640, 400, 640);
+			s.graphics.drawRect(0, -640, Width, Height);
 			s.graphics.endFill();
-			s.graphics.moveTo(190, -320);
-			s.graphics.lineTo(210, -320);
-			s.graphics.moveTo(200, -310);
-			s.graphics.lineTo(200, -330);
+			s.graphics.moveTo(Width*0.5-10, -Height*0.5);
+			s.graphics.lineTo(Width*0.5+10, -Height*0.5);
+			s.graphics.moveTo(Width*0.5, -(Height*0.5-10));
+			s.graphics.lineTo(Width*0.5, -(Height*0.5+10));
 			
 			tf = new TextField();
 			tf.mouseEnabled = false;
 			tf.text = "已启动时间：";
+			tf.x = 0; 
+			tf.y = -Height-20;
 			s.addChild(tf);
-			tf.x = 0; tf.y = -680;		
 			
 			mElapsedTf = new TextField();
 			mElapsedTf.mouseEnabled = false;
 			mElapsedTf.text = "0.0s";
+			mElapsedTf.x = 70; 
+			mElapsedTf.y = -Height-20;
 			s.addChild(mElapsedTf);
-			mElapsedTf.x = 70; mElapsedTf.y = -680;
 			
 			mContainer = new Sprite();
-			addChild(mContainer);
-			mContainer.x = 200; mContainer.y = -320;
+			mContainer.x = Width*0.5; 
+			mContainer.y = -Height*0.5;
+			this.addChild(mContainer);
 			
 			mEmitters = new Vector.<Emitter>();
 			for (var i:int = 0; i < mData.emitters.length; i++) {
 				var emit:Emitter = new Emitter();
-				mContainer.addChild(emit);
 				emit.setData(mData.emitters[i], this.mPanel);
 				mEmitters.push(emit);
+				mContainer.addChild(emit);
 			}
 		}
 		

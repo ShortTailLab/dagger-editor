@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			public var onValueChanged:Function = null;
+			
+			private function onCreate():void {
+				typeIn.toolTip = "切换发射器类型";
+				//				this.mInput14.toolTip = "重力X方向大小，>0为向上，<0为向下，单位：像素/秒^2";
+				//				this.mInput15.toolTip = "重力Y方向大小，>0为向右，<0为向左，单位：像素/秒^2";
+				durationIn.toolTip = "单个子弹的持续时间，-1为无限";
+				speedIn.toolTip = "单个子弹的移动速度，单位：像素/秒";
+				aIn.toolTip = "单个子弹的移动加速度，单位：像素/秒^2";
+				wIn.toolTip = "碰撞面积的长";
+				hIn.toolTip = "碰撞面积的高";
+				directionIn.toolTip = "子弹资源方向朝下时，勾选；反之不勾选";
+			}
+			
+			public function setData(data:Object):void
+			{
+				durationIn.text = data.bullet.duration;
+				pauseTimeIn.text = data.bullet.pauseTime;
+				
+				speedIn.text = data.bullet.speed;
+				aIn.text = data.bullet.a;
+				
+				speedXIn.text = data.bullet.speedX;
+				speedYIn.text = data.bullet.speedY;
+				rotateSpeedIn.text = data.bullet.rotateSpeed;
+				axIn.text = data.bullet.ax;
+				ayIn.text = data.bullet.ay;
+				
+				wIn.text = data.bullet.w;
+				hIn.text = data.bullet.h;
+				harmIn.text = data.bullet.harm;
+				
+				offsetIn.text = data.bullet.offset;
+				scaleIn.text = data.bullet.scale;
+				scalePerSecIn.text = data.bullet.scalePerSec;
+				
+				resIn.selectedIndex = resIn.dataProvider.getItemIndex(data.bullet.res);
+				directionIn.selected = data.bullet.direction == 0;
+				
+				healthIn.text = data.bullet.health;
+			}
+			
+			public function applyValue(data:Object): void
+			{
+				data.bullet.duration = Number(durationIn.text);
+				data.bullet.pauseTime = Number(pauseTimeIn.text);
+				
+				data.bullet.speed = Number(speedIn.text);
+				data.bullet.speedX = Number(speedXIn.text);
+				data.bullet.speedY = Number(speedYIn.text);
+				
+				data.bullet.rotateSpeed = Number(rotateSpeedIn.text);
+				
+				data.bullet.a = Number(aIn.text);
+				data.bullet.ax = Number(axIn.text);
+				data.bullet.ay = Number(ayIn.text);
+				
+				data.bullet.res = resIn.dataProvider.getItemAt(resIn.selectedIndex);
+				data.bullet.direction = directionIn.selected ? 0 : 1;
+				
+				data.bullet.w = Number(wIn.text);
+				data.bullet.h = Number(hIn.text);
+				data.bullet.harm = Number(harmIn.text);
+				
+				data.bullet.offset = Number(offsetIn.text);
+				data.bullet.scale = Number(scaleIn.text);
+				data.bullet.scalePerSec = Number(scalePerSecIn.text);
+				
+				data.bullet.health = Number(healthIn.text);
+			}
+			
+			public function onTextEnterPressed(event:Event): void
+			{
+				trace("text enter");
+				if(onValueChanged != null)
+					onValueChanged(event);
+			}
+		]]>
+	</fx:Script>
+	
+	
+	<s:Panel borderVisible="true" dropShadowVisible="false" title="子弹参数">
+		<s:TileGroup x="0" y="0" columnWidth="140" requestedColumnCount="2">
+			<s:Label text="子弹类型" textAlign="right" verticalAlign="middle"/>
+			<s:ComboBox id="typeIn"/>
+			<s:Label text="朝向与速度相同" textAlign="right" verticalAlign="middle"/>
+			<s:CheckBox id="directionIn" click="onValueChanged(event)" enabled="true"
+						fontSize="14" selected="true"/>
+			<s:Label width="84" text="资源前缀" textAlign="right" verticalAlign="middle"/>
+			<s:ComboBox id="resIn" width="80" change="onValueChanged(event)"
+						textAlign="center"/>
+			<s:Label text="暂停时间" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="pauseTimeIn" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+			<s:Label text="方向偏移" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="offsetIn" enter="onTextEnterPressed(event)" text="0" textAlign="center"/>
+			<s:Label width="84" height="17" text="持续时间(s)" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="durationIn" width="80" enter="onTextEnterPressed(event)" text="5"
+						 textAlign="center"/>
+			<s:Label width="84" height="17" text="朝向速度(px/s)" textAlign="right"
+					 verticalAlign="middle"/>
+			<s:TextInput id="speedIn" width="80" enter="onTextEnterPressed(event)" text="200"
+						 textAlign="center"/>
+			<s:Label width="84" height="17" text="朝向加速度(px/s2)" textAlign="right"
+					 verticalAlign="middle"/>
+			<s:TextInput id="aIn" width="80" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+			<s:Label text="速度X/Y (px/s)" textAlign="right" verticalAlign="middle"/>
+			<s:HGroup>
+				<s:TextInput id="speedXIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+				<s:Label fontSize="14" text="/" verticalAlign="middle"/>
+				<s:TextInput id="speedYIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+			</s:HGroup>
+			<s:Label width="84" height="17" text="加速度X/Y(px/s2)" textAlign="right"
+					 verticalAlign="middle"/>
+			<s:HGroup verticalAlign="middle">
+				<s:TextInput id="axIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+				<s:Label fontSize="14" text="/" textAlign="right" verticalAlign="middle"/>
+				<s:TextInput id="ayIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+			</s:HGroup>
+			<s:Label text="旋转" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="rotateSpeedIn" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+			<s:Label width="20" height="17" text="碰撞体长/高" textAlign="right" verticalAlign="middle"/>
+			<s:HGroup verticalAlign="middle">
+				<s:TextInput id="wIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+				<s:Label fontSize="12" text="/" textAlign="right" verticalAlign="middle"/>
+				<s:TextInput id="hIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+			</s:HGroup>
+			<s:Label text="速度最小/大(px/s)" textAlign="right" verticalAlign="middle"/>
+			<s:HGroup verticalAlign="middle">
+				<s:TextInput id="speedMinIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+				<s:Label fontSize="12" text="/" textAlign="right" verticalAlign="middle"/>
+				<s:TextInput id="speedMaxIn" width="60" enter="onTextEnterPressed(event)" text="20000"
+							 textAlign="center"/>
+			</s:HGroup>
+			<s:Label width="84" height="17" text="伤害系数" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="harmIn" width="80" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+			<s:Label text="拉伸" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="scaleIn" enter="onTextEnterPressed(event)" text="1" textAlign="center"/>
+			<s:Label text="拉伸速率(x/s)" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="scalePerSecIn" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+			<s:Label text="生命" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="healthIn" enter="onTextEnterPressed(event)" text="-1" textAlign="center"/>
+		</s:TileGroup>
+	</s:Panel>
+</s:Module>

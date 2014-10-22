@@ -36,13 +36,21 @@ package emitter
 			updatePosition();
 		}
 		
+		private var mBullets:Vector.<EmitterBullet>;
+		
 		private var mWait:Number;
 		private var mElapsed:Number;
 		private var mInterval:Number;
-		private var mBullets:Vector.<EmitterBullet>;
+		
+		private var mPosX:Number;
+		private var mPosY:Number;
+		private var mSpeed:Number;
 		private var mSpeedX:Number;
 		private var mSpeedY:Number;
-		private var mRotateDirection:int;
+		
+		private var mRotation:Number;
+		private var mRotationSpeed:Number;
+		
 		public function reset():void {
 			if (mBullets) {
 				for (var i:int = 0; i < mBullets.length; i++) {
@@ -51,15 +59,27 @@ package emitter
 				mBullets = null;
 			}
 			this.alpha = 1;
+			
+			mBullets = new Vector.<EmitterBullet>();
+			
 			mWait = 0;
 			mElapsed = 0;
 			mInterval = mData.interval;
-			mBullets = new Vector.<EmitterBullet>();
+			
+			mPosX = mData.x;
+			mPosY = mData.y;
+			mSpeed = mData.speed;
 			mSpeedX = mData.speedX;
-			mSpeedY = -mData.speedY;
-			mRotateDirection = 1;
+			mSpeedY = mData.speedY;
+			
+			mRotationSpeed = mData.rotateSpeed;
+			mRotation = mData.rotation;
+
 			this.updatePosition();
 		}
+		
+		public function get sPosX():Number { return mPosX; }
+		public function get sPosY():Number { return mPosY; }
 		
 		public function update(dt:Number):void {
 			for (var i:int = mBullets.length-1; i >= 0; i--) {
@@ -68,78 +88,81 @@ package emitter
 			
 			if (mWait >= mData.wait) {
 				// check duration
-				if (mData.duration >= 0) {
-					if (mElapsed >= mData.duration) {
-						this.alpha = 0.3;
-						return;
+				if (mData.duration >= 0 && mElapsed >= mData.duration) {
+					this.alpha = 0.3;
+					return;
+				}
+				mElapsed += dt;
+				
+				// rotation
+				mRotation = mRotation + mRotationSpeed*dt;
+				if(mData.rotateType == 0) // shake
+				{
+					if (mRotation > mData.maxRotation) {
+						mRotation = mData.maxRotation-(mRotation-mData.maxRotation);
+						mRotationSpeed *= -1;
+					}else if (mRotation < mData.minRotation) {
+						mRotation = mData.minRotation-(mRotation-mData.minRotation);
+						mRotationSpeed *= -1;
 					}
-					else {
-						mElapsed += dt;
+				}
+				else if(mData.rotateType == 1) // loop
+				{
+					if (mRotation > mData.maxRotation) {
+						mRotation = (mData.minRotation + mRotation-mData.maxRotation);
+					}
+					else if (mRotation < mData.minRotation) {
+						mRotation = (mData.maxRotation + mRotation-mData.minRotation);
 					}
 				}
 				
-				// update self
-				var newR:Number = this.rotation+mData.rotateSpeed*dt*mRotateDirection;
-				if (newR > mData.maxRotation) {
-					if (mData.rotateType == 0) {
-						this.rotation = mData.maxRotation-(newR-mData.maxRotation);
-						mRotateDirection *= -1;
-					}
-					else {
-						this.rotation = (mData.minRotation + newR-mData.maxRotation);
-					}
-				}
-				else if (newR < mData.minRotation) {
-					if (mData.rotateType == 0) {
-						this.rotation = mData.minRotation-(newR-mData.minRotation);
-						mRotateDirection *= -1;
-					}
-					else {
-						// error
-					}
-				}
-				else {
-					this.rotation = newR;
-				}
+				// movement
+				mSpeed  += mData.a*dt;
+				mSpeedX += mData.ax*dt;
+				mSpeedY += mData.ay*dt;
 				
-				this.x += mSpeedX*dt;
-				this.y += mSpeedY*dt;
-				var aax:Number = -mData.a*Math.sin(mData.rotation/180*Math.PI)/2;
-				var aay:Number = -mData.a*Math.cos(mData.rotation/180*Math.PI)/2;
-				mSpeedX += (mData.ax+aax)*dt/2;
-				mSpeedY -= (mData.ay+aay)*dt/2;
+				var velX:Number = mSpeedX + mSpeed * -Math.sin(mRotation/180*Math.PI)
+				var velY:Number = mSpeedY + mSpeed * -Math.cos(mRotation/180*Math.PI);
+				
+				mPosX += velX * dt;
+				mPosY += velY * dt;
+				
+				// set display object
+				this.rotation = mRotation;
+				this.x =  mPosX*0.5;
+				this.y = -mPosY*0.5;
 				
 				// update bullets
-				if (mInterval >= mData.interval) {
-					mInterval = 0;
+				mInterval += dt;
+				if (mInterval >= mData.interval) 
+				{
+					mInterval -= mData.interval;
+					
 					// shoot bullets
 					var num:int = mData.num + int(Math.random()*(mData.numRandom+1));
-					var newBullets:Vector.<EmitterBullet> = new Vector.<EmitterBullet>();
+						
+					var minAngle = mRotation + -(num-1) * mData.bulletGap * 0.5;
 					for (var i:int = 0; i < num; i++) {
 						var bullet:EmitterBullet = new EmitterBullet();
-						this.parent.addChild(bullet);
+						
+						var angle: Number = 0;
+						if(mData.bulletGapType == 0) // fixed angle
+						{
+							angle = minAngle + i*mData.bulletGap; 
+						}
+						else if(mData.bulletGapType == 1) // random angle
+						{
+							angle = mRotation + (Math.random()-0.5)*mData.bulletGap;
+						}
+						
+						bullet.setData(mData, angle, this);
+						
 						mBullets.push(bullet);
-						newBullets.push(bullet);
-						bullet.setData(mData, this);
-						if (mData.bulletGapType == 1) {
-							bullet.setPosition(this.x, this.y, this.rotation+Math.random()*mData.bulletGap - mData.bulletGap/2);
-						}
-					}
-					if (num > 0 && mData.bulletGapType == 0) {
-						if (newBullets.length%2 == 0) {
-							for (i = 0; i < newBullets.length; i++) {
-								newBullets[i].setPosition(this.x, this.y, this.rotation+((newBullets.length/2)-1-i)*mData.bulletGap+mData.bulletGap/2);
-							}
-						}
-						else {
-							for (i = 0; i < newBullets.length; i++) {
-								newBullets[i].setPosition(this.x, this.y, this.rotation+((newBullets.length-1)/2-i)*mData.bulletGap);
-							}
-						}
+						this.parent.addChild(bullet);
 					}
 				}
 				else {
-					mInterval += dt;
+					
 				}
 			}
 			else {
@@ -148,6 +171,7 @@ package emitter
 		}
 		
 		public function removeBullet(bullet:EmitterBullet):void {
+			parent.removeChild(bullet);
 			mBullets.splice(mBullets.indexOf(bullet), 1);
 		}
 		
@@ -192,8 +216,8 @@ package emitter
 		}
 		
 		public function updatePosition():void {
-			this.x = mData.x/2;
-			this.y = -mData.y/2;
+			this.x =  mData.x*0.5;
+			this.y = -mData.y*0.5;
 			this.rotation = mData.rotation;
 		}
 		
@@ -211,7 +235,10 @@ package emitter
 		
 		private function onMouseDown(event:MouseEvent):void {
 			mPanel.previewer.selectEmitter(this);
-			this.startDrag(false, new Rectangle(-200, -320, 400, 640));
+			
+			var Width:int = 360;
+			
+			this.startDrag(false, new Rectangle(-Width*0.5, -320, Width, 640));
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			this.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 		}
@@ -223,8 +250,8 @@ package emitter
 		}
 		
 		private function onMouseMove(event:MouseEvent):void {
-			mData.x = this.x*2;
-			mData.y = -this.y*2;
+			mData.x = mPosX = this.x*2;
+			mData.y = mPosY = -this.y*2;
 			mPanel.updateCurrentEmitter();
 		}
 		

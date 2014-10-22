@@ -1,5 +1,9 @@
 package 
 {
+	import behaviorEdit.BType;
+	
+	import by.blooddy.crypto.MD5;
+	
 	import flash.display.DisplayObject;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
@@ -11,7 +15,9 @@ package
 	import flash.text.TextFormat;
 	import flash.utils.ByteArray;
 	
+	import mx.collections.ArrayCollection;
 	import mx.collections.ArrayList;
+	import mx.collections.Sort;
 	import mx.containers.TitleWindow;
 	import mx.controls.Label;
 	import mx.controls.Text;
@@ -23,10 +29,6 @@ package
 	import spark.components.Button;
 	import spark.components.ComboBox;
 	import spark.events.IndexChangeEvent;
-	
-	import behaviorEdit.BType;
-	
-	import by.blooddy.crypto.MD5;
 
 	public class Utils
 	{
@@ -479,6 +481,26 @@ package
 			}
 			r = int(str.substr(i+1));
 			return r;
+		}
+		
+		static public function getKeys(o:Object) : Array {
+			var array:Array = new Array;
+			for(var key:String in o)
+				array.push(key);
+			return array;
+		}
+		
+		static public function getKeysAsSortedData(o:Object) : ArrayCollection {
+			var array:Array = getKeys(o);
+			var collection:ArrayCollection = new ArrayCollection(array);
+			collection.sort = new Sort;
+			collection.refresh();
+			return collection;			
+		}
+		
+		static public function clamp(val:Number, min:Number, max:Number): Number
+		{
+			return Math.max(min, Math.min(val, max));
 		}
 	}
 }

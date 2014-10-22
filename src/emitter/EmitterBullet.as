@@ -16,8 +16,16 @@ package emitter
 		private var mImage:Bitmap;
 		private var mEmitter:Emitter;
 		private var mElapsed:Number;
+		
+		private var mSpeed: Number;
 		private var mSpeedX:Number;
 		private var mSpeedY:Number;
+		private var mPosX:Number;
+		private var mPosY:Number;
+		private var mRotation:Number;
+		private var mPauseTime:Number;
+		
+		private var mScale:Number;
 		
 		public function EmitterBullet()
 		{
@@ -25,7 +33,7 @@ package emitter
 			this.mouseChildren = false;
 		}
 		
-		public function setData(data:Object, emit:Emitter):void {
+		public function setData(data:Object, defaultRot:Number, emit:Emitter):void {
 			mData = data;
 			mEmitter = emit;
 			mElapsed = 0;
@@ -35,6 +43,20 @@ package emitter
 			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoad);
 			loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, onLoadError);
 			loader.load(new URLRequest(file.url+"/"+mData.bullet.res+".png"));
+			
+			mSpeed  = data.bullet.speed;
+			mSpeedX = data.bullet.speedX;
+			mSpeedY = data.bullet.speedY;
+						
+			mRotation = defaultRot;
+			mPosX = emit.sPosX + mData.bullet.offset * -Math.sin(mRotation/180*Math.PI);
+			mPosY = emit.sPosY + mData.bullet.offset * -Math.cos(mRotation/180*Math.PI);
+			
+			mScale = data.bullet.scale;
+			
+			mPauseTime = data.bullet.pauseTime;
+			
+			syncView();
 		}
 		
 		private static var ERROR_IMAGE:Object = {};
@@ -43,14 +65,6 @@ package emitter
 				ERROR_IMAGE[mData.bullet.res] = true;
 				Alert.show("子弹资源"+mData.bullet.res+".png未找到，请确认资源", "图片加载错误", Alert.OK);
 			}
-		}
-		
-		public function setPosition(xv:Number, yv:Number, r:Number):void {
-			this.x = xv;
-			this.y = yv;
-			this.rotation = r;
-			mSpeedX = -mData.bullet.speed*Math.sin(rotation/180*Math.PI)/2;
-			mSpeedY = mData.bullet.speed*Math.cos(rotation/180*Math.PI)/2;
 		}
 		
 		private function onImageLoad(event:Event):void  {
@@ -67,39 +81,70 @@ package emitter
 			}
 		}
 		
+		public function setPos(x:Number, y:Number): void {
+			mPosX = x;
+			mPosY = y;
+			syncView();
+		}
+		
+		public function setRot(r:Number): void {
+			mRotation = r;
+			syncView();
+		}
+		
+		private function syncView(): void{
+			this.x = mPosX*0.5;
+			this.y = -mPosY*0.5;
+			this.rotation = mRotation;
+			this.scaleX = this.scaleY = mScale;
+		}
+		
 		public function update(dt:Number):void {
-			if (mData.bullet.duration > 0) {
-				if (mElapsed >= mData.bullet.duration) {
-					destroy();
-				}
-				else {
-					mElapsed += dt;
-				}
+			if(mPauseTime > 0) {
+				mPauseTime -= dt;
+				return;
 			}
-			else {
-				if (this.x < -250 || this.x >= 250 || this.y <= -400 || this.y >= 400) {
-					destroy();
-				}
+			
+			// expired
+			if (mData.bullet.duration >= 0 && mElapsed >= mData.bullet.duration) {
+				destroy();
+				return;		
 			}
-			this.x += mSpeedX*dt;
-			this.y += mSpeedY*dt;
-			var aax:Number = -mData.bullet.a*Math.sin(this.rotation/180*Math.PI)/2;
-			var aay:Number = -mData.bullet.a*Math.cos(this.rotation/180*Math.PI)/2;
-			mSpeedX += (mData.bullet.ax+aax)*dt/2;
-			mSpeedY -= (mData.bullet.ay+aay)*dt/2;
-			if (mSpeedX == 0) {
-				if (mSpeedY > 0) this.rotation = 0;
-				else if (mSpeedY < 0) this.rotation = 180;
+			
+			// out of bound
+			if (this.x < -250 || this.x >= 250 || 
+				this.y <= -400 || this.y >= 400) {
+				destroy();
+				return;
 			}
-			else {
-				var degree:Number = Math.atan2(mSpeedY, mSpeedX)*180/Math.PI-90;
-				this.rotation = degree;
+				
+			mElapsed += dt;
+			
+			//mRotation += mData.bullet.rotateSpeed*dt;
+			
+			mSpeed  += mData.bullet.a *dt;
+			mSpeedX += mData.bullet.ax*dt;
+			mSpeedY += mData.bullet.ay*dt;
+			
+			var velX:Number = mSpeedX + mSpeed * -Math.sin(mRotation/180*Math.PI);
+			var velY:Number = mSpeedY + mSpeed * -Math.cos(mRotation/180*Math.PI);
+			
+			mPosX += velX*dt;
+			mPosY += velY*dt;
+			
+			if(mData.bullet.direction == 0) // align direction with velocity
+			{
+				var degree:Number = Math.atan2(-velX, -velY)*180/Math.PI;
+				mRotation = degree;				
 			}
+			
+			mScale = mScale + mData.bullet.scalePerSec * dt;
+			
+			syncView();
 		}
 		
 		public function destroy():void {
 			mEmitter.removeBullet(this);
-			parent.removeChild(this);
 		}
 	}
 }
