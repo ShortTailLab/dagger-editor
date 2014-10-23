@@ -68,6 +68,14 @@ package emitter
 			Alert.show("英雄资源未找到，请确认资源", "图片加载错误", Alert.OK);
 		}
 		
+		public function get posX():Number {
+			return this.x*2;
+		}
+		
+		public function get posY():Number {
+			return -this.y*2;
+		}
+		
 		public function updatePosition():void {
 			this.x = mData.x/2;
 			this.y = -mData.y/2;
@@ -87,7 +95,10 @@ package emitter
 		}
 		
 		private function onMouseDown(event:MouseEvent):void {
-			this.startDrag(false, new Rectangle(-200, -320, 360, 640));
+			var Width:int = 360;
+			var Height:int = 640;
+			
+			this.startDrag(false, new Rectangle(-Width*0.5, -Height*0.5, Width, Height));
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			this.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 		}

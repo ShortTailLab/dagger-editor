@@ -24,7 +24,7 @@
 			import spark.components.NavigatorContent;
 			import spark.components.VGroup;
 			
-			import behaviorEdit.PathEditPanel;
+			import misc.PathEditPanel;
 			
 			protected var mCBComplete:Function = null;
 			protected var mCBError:Function = null;

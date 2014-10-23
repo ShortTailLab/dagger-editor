@@ -7,6 +7,10 @@ package emitter
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	
+	import misc.SceneGrid;
+	
+	import spark.components.Label;
+	
 	public class EmitterPreviewer extends Sprite
 	{
 		private var mData:Object;
@@ -15,6 +19,8 @@ package emitter
 		private var mEmitters:Vector.<Emitter>;
 		private var mContainer:Sprite;
 		private var mPanel:EmitterPanel;
+		
+		private var mHero:HeroMarker = null;
 		
 		public function EmitterPreviewer(data:Object, panel:EmitterPanel) {
 			mData = data;
@@ -63,55 +69,14 @@ package emitter
 		}
 		
 		private function init():void {
-			
+
 			var Width:int = 360;
 			var Height:int = 640;
 			
-			var s:Sprite = new Sprite();
+			var s:SceneGrid = new SceneGrid(Width, Height);
 			this.addChild(s);
 			
-			// border line
-			s.graphics.lineStyle(1, 0xAAAAAA);
-			s.graphics.moveTo(0,0);
-			s.graphics.lineTo(Width, 0);;
-			s.graphics.moveTo(0,0);
-			s.graphics.lineTo(0, -Height);
-			
-			// width marks
-			for (var i:int = 0; i <= Width; i+=60) {
-				s.graphics.moveTo(i,0);
-				s.graphics.lineTo(i, 10);
-				var tf:TextField = new TextField();
-				tf.mouseEnabled = false;
-				tf.text = (i*2-Width).toString();
-				tf.x = i-(i==Width*0.5?0:10);
-				tf.y = 15;
-				s.addChild(tf);
-			}
-			
-			// height marks
-			for (i = 0; i <= Height; i+=40) {
-				s.graphics.moveTo(0,-i);
-				s.graphics.lineTo(-10, -i);
-				
-				tf = new TextField();
-				tf.mouseEnabled = false;
-				tf.text = (i*2-Height).toString();
-				tf.x = -35;
-				tf.y = -i-8;
-				s.addChild(tf);
-			}
-			
-			// bg rect
-			s.graphics.beginFill(0xEEEEEE);
-			s.graphics.drawRect(0, -640, Width, Height);
-			s.graphics.endFill();
-			s.graphics.moveTo(Width*0.5-10, -Height*0.5);
-			s.graphics.lineTo(Width*0.5+10, -Height*0.5);
-			s.graphics.moveTo(Width*0.5, -(Height*0.5-10));
-			s.graphics.lineTo(Width*0.5, -(Height*0.5+10));
-			
-			tf = new TextField();
+			var tf:TextField = new TextField();
 			tf.mouseEnabled = false;
 			tf.text = "已启动时间：";
 			tf.x = 0; 
@@ -133,10 +98,19 @@ package emitter
 			mEmitters = new Vector.<Emitter>();
 			for (var i:int = 0; i < mData.emitters.length; i++) {
 				var emit:Emitter = new Emitter();
-				emit.setData(mData.emitters[i], this.mPanel);
+				emit.setData(mData.emitters[i], mPanel);
 				mEmitters.push(emit);
 				mContainer.addChild(emit);
 			}
+			
+			mHero = new HeroMarker();
+			mHero.setData({x: 0, y:-200}, mPanel);;
+			mContainer.addChild(mHero);
+		}
+		
+		public function getHero(): HeroMarker
+		{
+			return mHero;
 		}
 		
 		public function restart():void {

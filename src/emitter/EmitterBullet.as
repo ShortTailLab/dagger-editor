@@ -9,6 +9,8 @@ package emitter
 	import flash.net.URLRequest;
 	
 	import mx.controls.Alert;
+	
+	import spark.components.Panel;
 
 	public class EmitterBullet extends Sprite
 	{
@@ -26,6 +28,9 @@ package emitter
 		private var mPauseTime:Number;
 		
 		private var mScale:Number;
+		private var mBulletConfig:Panel = null;
+		
+		private var mPanel:EmitterPanel = null;
 		
 		public function EmitterBullet()
 		{
@@ -33,7 +38,7 @@ package emitter
 			this.mouseChildren = false;
 		}
 		
-		public function setData(data:Object, defaultRot:Number, emit:Emitter):void {
+		public function setData(data:Object, defaultRot:Number, emit:Emitter, panel:EmitterPanel):void {
 			mData = data;
 			mEmitter = emit;
 			mElapsed = 0;
@@ -55,6 +60,8 @@ package emitter
 			mScale = data.bullet.scale;
 			
 			mPauseTime = data.bullet.pauseTime;
+			
+			mPanel = panel;
 			
 			syncView();
 		}
@@ -120,7 +127,26 @@ package emitter
 				
 			mElapsed += dt;
 			
-			//mRotation += mData.bullet.rotateSpeed*dt;
+			if(mData.bullet.chase)
+			{
+				var hero:HeroMarker = mPanel.getHero();
+				var dx:Number = hero.posX - mPosX;
+				var dy:Number = hero.posY - mPosY;
+				
+				var targetAngle:Number = Math.atan2(-dx, -dy)/Math.PI*180;
+				var diffAngle = targetAngle - mRotation;
+				if(diffAngle > 180)
+					diffAngle -= 360;
+				if(diffAngle < -180)
+					diffAngle += 360;
+				var deltaAngle = Math.abs(mData.bullet.rotateSpeed)*dt;
+				deltaAngle = Utils.clamp(deltaAngle, 0, Math.abs(diffAngle));
+				mRotation +=  (diffAngle>0 ? deltaAngle : -deltaAngle);
+			}
+			else
+			{
+				mRotation += mData.bullet.rotateSpeed*dt;
+			}
 			
 			mSpeed  += mData.bullet.a *dt;
 			mSpeedX += mData.bullet.ax*dt;
@@ -128,6 +154,15 @@ package emitter
 			
 			var velX:Number = mSpeedX + mSpeed * -Math.sin(mRotation/180*Math.PI);
 			var velY:Number = mSpeedY + mSpeed * -Math.cos(mRotation/180*Math.PI);
+			
+			var speedNorm = Math.sqrt(velX*velX + velY*velY);
+			var clampedSpeedNorm = Utils.clamp(speedNorm, mData.bullet.speedMin, mData.bullet.speedMax);
+			if(clampedSpeedNorm != speedNorm)
+			{
+				var adjustScale:Number = clampedSpeedNorm / speedNorm;
+				velX = velX * adjustScale;
+				velY = velY * adjustScale;
+			}
 			
 			mPosX += velX*dt;
 			mPosY += velY*dt;

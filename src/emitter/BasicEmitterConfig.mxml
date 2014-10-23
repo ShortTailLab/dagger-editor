@@ -149,6 +149,14 @@
 						 textAlign="center"/>
 			<s:Label text="跟随" textAlign="right" verticalAlign="middle"/>
 			<s:CheckBox id="attachedIn" click="onValueChanged(event)"/>
+			<s:Label fontFamily="Arial" text="位置X/Y" textAlign="right" verticalAlign="middle"/>
+			<s:HGroup verticalAlign="middle">
+				<s:TextInput id="xIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+				<s:Label fontFamily="Arial" fontSize="14" text="/" verticalAlign="middle"/>
+				<s:TextInput id="yIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+			</s:HGroup>
 			<s:Label text="朝向速度(px/s)" textAlign="right" verticalAlign="middle"/>
 			<s:TextInput id="speedIn" enter="onTextEnterPressed(event)" text="0" textAlign="center"/>
 			<s:Label fontFamily="Arial" text="朝向加速度(px/s2)" textAlign="right" verticalAlign="middle"/>
@@ -170,24 +178,16 @@
 				<s:TextInput id="ayIn" width="60" enter="onTextEnterPressed(event)" text="0"
 							 textAlign="center"/>
 			</s:HGroup>
-			<s:Label fontFamily="Arial" text="初始角度" textAlign="right" verticalAlign="middle"/>
+			<s:Label fontFamily="Arial" text="角度" textAlign="right" verticalAlign="middle"/>
 			<s:TextInput id="rotationIn" width="80" enter="onTextEnterPressed(event)" text="0"
 						 textAlign="center"/>
-			<s:Label fontFamily="Arial" text="位置X/Y" textAlign="right" verticalAlign="middle"/>
-			<s:HGroup verticalAlign="middle">
-				<s:TextInput id="xIn" width="60" enter="onTextEnterPressed(event)" text="0"
-							 textAlign="center"/>
-				<s:Label fontFamily="Arial" fontSize="14" text="/" verticalAlign="middle"/>
-				<s:TextInput id="yIn" width="60" enter="onTextEnterPressed(event)" text="0"
-							 textAlign="center"/>
-			</s:HGroup>
-			<s:Label fontFamily="Arial" text="旋转速度(°/s)" textAlign="right" verticalAlign="middle"/>
+			<s:Label fontFamily="Arial" text="角速度(°/s)" textAlign="right" verticalAlign="middle"/>
 			<s:TextInput id="rotateSpeedIn" width="80" enter="onTextEnterPressed(event)" text="0"
 						 textAlign="center"/>
-			<s:Label fontFamily="Arial" text="旋转最小角度(°)" textAlign="right" verticalAlign="middle"/>
+			<s:Label fontFamily="Arial" text="最小角度(°)" textAlign="right" verticalAlign="middle"/>
 			<s:TextInput id="minRotationIn" width="80" enter="onTextEnterPressed(event)" text="0"
 						 textAlign="center"/>
-			<s:Label fontFamily="Arial" text="旋转最大角度(°)" textAlign="right" verticalAlign="middle"/>
+			<s:Label fontFamily="Arial" text="最大角度(°)" textAlign="right" verticalAlign="middle"/>
 			<s:TextInput id="maxRotationIn" width="80" enter="onTextEnterPressed(event)" text="0"
 						 textAlign="center"/>
 			<s:Label fontFamily="Arial" text="旋转行为" textAlign="right" verticalAlign="middle"/>
@@ -206,7 +206,7 @@
 			<s:Label fontFamily="Arial" text="单次数量" textAlign="right" verticalAlign="middle"/>
 			<s:TextInput id="numIn" width="80" enter="onTextEnterPressed(event)" text="1"
 						 textAlign="center"/>
-			<s:Label fontFamily="Arial" text="数量随机附加" textAlign="right" verticalAlign="middle"/>
+			<s:Label fontFamily="Arial" text="单次数量随机" textAlign="right" verticalAlign="middle"/>
 			<s:TextInput id="numRandomIn" width="80" enter="onTextEnterPressed(event)" text="0"
 						 textAlign="center"/>
 			<s:Label fontFamily="Arial" text="子弹间隔" textAlign="right" verticalAlign="middle"/>

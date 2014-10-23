@@ -22,20 +22,6 @@ package emitter
 		private var mData:Object;
 		private var mPanel:EmitterPanel;
 		
-		public function Emitter() {
-			this.buttonMode = true;
-			
-			addEventListener(Event.ADDED_TO_STAGE, onAdded);
-		}
-		
-		public function setData(data:Object, panel:EmitterPanel):void {
-			mData = data;
-			mPanel = panel;
-			
-			updateImage();
-			updatePosition();
-		}
-		
 		private var mBullets:Vector.<EmitterBullet>;
 		
 		private var mWait:Number;
@@ -50,6 +36,19 @@ package emitter
 		
 		private var mRotation:Number;
 		private var mRotationSpeed:Number;
+		
+		public function Emitter() {
+			this.buttonMode = true;
+			addEventListener(Event.ADDED_TO_STAGE, onAdded);
+		}
+		
+		public function setData(data:Object, panel:EmitterPanel):void {
+			mData = data;
+			mPanel = panel;
+			
+			updateImage();
+			updatePosition();
+		}
 		
 		public function reset():void {
 			if (mBullets) {
@@ -141,7 +140,7 @@ package emitter
 					// shoot bullets
 					var num:int = mData.num + int(Math.random()*(mData.numRandom+1));
 						
-					var minAngle = mRotation + -(num-1) * mData.bulletGap * 0.5;
+					var minAngle = mRotation - (num-1)*mData.bulletGap*0.5;
 					for (var i:int = 0; i < num; i++) {
 						var bullet:EmitterBullet = new EmitterBullet();
 						
@@ -155,14 +154,13 @@ package emitter
 							angle = mRotation + (Math.random()-0.5)*mData.bulletGap;
 						}
 						
-						bullet.setData(mData, angle, this);
+						bullet.setData(mData, angle, this, mPanel);
 						
 						mBullets.push(bullet);
 						this.parent.addChild(bullet);
 					}
 				}
 				else {
-					
 				}
 			}
 			else {
@@ -237,8 +235,9 @@ package emitter
 			mPanel.previewer.selectEmitter(this);
 			
 			var Width:int = 360;
+			var Height:int = 640;
 			
-			this.startDrag(false, new Rectangle(-Width*0.5, -320, Width, 640));
+			this.startDrag(false, new Rectangle(-Width*0.5, -Height*0.5, Width, Height));
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			this.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
 		}

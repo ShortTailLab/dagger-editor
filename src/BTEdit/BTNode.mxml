@@ -6,7 +6,7 @@
 				   dropShadowVisible="false">
 	<fx:Script>
 		<![CDATA[
-			import behaviorEdit.PathEditPanel;
+			import misc.PathEditPanel;
 			
 			import emitter.EmitterPanel;
 			

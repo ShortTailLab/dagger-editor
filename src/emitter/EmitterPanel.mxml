@@ -21,16 +21,20 @@
 			// DO NOT CHANGE THE KEYS
 			private static const BulletMeta:Object = {
 				Basic : {
-					type:"Basic",
+					type: "Basic",
 					res:10000,
 					pauseTime:0,
 					direction:0,
+					chase:0,
 					duration:-1,
 						
 					speed:200,
 					speedX:0,
 					speedY:0,
 					rotateSpeed:0,
+					
+					speedMin : 0,
+					speedMax : 20000,
 					
 					a:0,
 					ax:0,
@@ -45,6 +49,30 @@
 					
 					health: -1
 				}
+				/*,
+				Chase : {
+					type : "Chase",
+					res:10000,
+					pauseTime:0,
+					direction:0,
+					duration:-1,
+						
+					speed:200,
+					rotateSpeed:0,
+					speedMin:0,
+					speedMax:20000,
+					
+					a:0,
+					w:0,
+					h:0,
+					harm:0,
+					
+					offset:0,
+					scale:1,
+					scalePerSec:0,
+					
+					health: -1
+				}*/
 			};
 			
 			// DO NOT CHANGE THE KEYS
@@ -53,9 +81,9 @@
 					res: NULL_RES, 
 					wait: 0.2, 
 					speed: 0,
-					a: 0, 
 					speedX: 0, 
-					speedY: 0, 
+					speedY: 0,
+					a: 0,
 					ax: 0, 
 					ay: 0, 
 					rotation: 0, 
@@ -88,6 +116,7 @@
 			private var mPreviewer:EmitterPreviewer;
 			
 			private var mBulletTypes:ArrayCollection;
+			private var mBulletConfigPanel;
 			
 			private static var CLIPPING:Object;
 			
@@ -107,8 +136,6 @@
 
 				mBasicEmitterConfig.onChangeEmitterRes = onChangeEmitterRes;
 				mBasicEmitterConfig.onValueChanged = onValueChanged;
-				
-				mBasicBulletConfig.onValueChanged = onValueChanged;
 				
 				// create context menu
 				var menu:ContextMenu = new ContextMenu();
@@ -141,21 +168,27 @@
 				
 				mSkinsArray = Utils.getKeysAsSortedData( Data.getInstance().skins );
 				mSkinsArray.addItemAt(NULL_RES, 0);
-				//mEmitterRes.dataProvider = mSkinsArray;
 				mBasicEmitterConfig.resIn.dataProvider = mSkinsArray;
-				
-				mSkinsArray2 = Utils.getKeysAsSortedData( Data.getInstance().skins );
-				mBasicBulletConfig.resIn.dataProvider = mSkinsArray2;
-				mBasicBulletConfig.resIn.selectedIndex = 0;
-				//mBulletRes.dataProvider = mSkinsArray2;
-				//mBulletRes.selectedIndex = 0;
 				
 				mBulletTypes = Utils.getKeysAsSortedData( BulletMeta );
 
+				createBulletConfigPanel();
+				
 				mCreated = true;
 				
 				if (mData) 
 					refreshView();
+			}
+			
+			private function createBulletConfigPanel(): void
+			{
+				mBulletConfigPanel = new BasicBulletConfig;
+				mBulletConfigGroup.addElement(mBulletConfigPanel);
+				
+				mBulletConfigPanel.resIn.dataProvider = Utils.getKeysAsSortedData( Data.getInstance().skins );
+				mBulletConfigPanel.resIn.selectedIndex = 0;
+				
+				mBulletConfigPanel.onValueChanged = onValueChanged;
 			}
 			
 			private function onPressKeyboard(event:KeyboardEvent):void {
@@ -231,6 +264,16 @@
 				
 				if (mCreated) 
 					refreshView();
+			}
+			
+			private function readData():void {
+				var index:int = this.mEmitterList.selectedIndex;
+				if (index < 0) 
+					return;
+				var data:Object = mData.emitters[index];
+				
+				mBasicEmitterConfig.setData(data);
+				mBulletConfigPanel.setData(data);	
 			}
 			
 			private var mContainer:UIComponent;
@@ -315,15 +358,6 @@
 				onDeleteEmitter(event);
 			}
 			
-			private function readData():void {
-				var index:int = this.mEmitterList.selectedIndex;
-				if (index < 0) return;
-				var data:Object = mData.emitters[index];
-			
-				mBasicEmitterConfig.setData(data);
-				mBasicBulletConfig.setData(data);	
-			}
-			
 			public function onNewEmitter(event:Event):void {
 				var data:Object = Utils.cloneObjectData(DEFAULT_EMITTER);
 				this.mData.emitters.push(data);
@@ -343,6 +377,10 @@
 				mPreviewer.emitters[index].updateImage();
 			}
 			
+			private function onChangeEmitterType(event:Event): void{
+				trace("emitter type change");
+			}
+			
 			private function onValueChanged(event:Event):void {
 				var index:int = this.mEmitterList.selectedIndex;
 				if (index < 0) 
@@ -350,7 +388,8 @@
 				var data:Object = mData.emitters[index];
 								
 				mBasicEmitterConfig.applyValue(data);
-				mBasicBulletConfig.applyValue(data);
+				mBulletConfigPanel.applyValue(data);
+				
 				
 				/*
 				var none:Array = [mInput24, mInput25, mInput26, mInput27, mInput28, mInput29 ];
@@ -371,6 +410,11 @@
 //					mPreviewer.restart();
 //				}*/
 				mPreviewer.restart();
+			}
+			
+			public function getHero(): HeroMarker
+			{
+				return mPreviewer.getHero();				
 			}
 			
 			private function onPressSaveToLevel(event:Event):void {
@@ -564,9 +608,11 @@
 			<emitter:BasicEmitterConfig id="mBasicEmitterConfig">
 			</emitter:BasicEmitterConfig>
 		</s:VGroup>
-		<s:VGroup x="726" y="163">
+		<s:VGroup id="mBulletConfigGroup" x="726" y="163">
+			<!--
 			<emitter:BasicBulletConfig id="mBasicBulletConfig">
 			</emitter:BasicBulletConfig>
+			-->
 		</s:VGroup>
 	</s:HGroup>
 	
