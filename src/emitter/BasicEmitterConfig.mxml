@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  creationComplete="onCreate()">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			
+			import spark.events.IndexChangeEvent;
+			
+			public var onChangeEmitterRes:Function = null;
+			public var onValueChanged:Function = null;
+			
+			private function onCreate():void {
+				this.waitIn.toolTip = "等待一定时间后开始发射子弹";
+				this.speedXIn.toolTip = "移动速度，单位：像素/秒";
+				this.axIn.toolTip = "X移动加速度，单位：像素/秒^2";
+				this.ayIn.toolTip = "Y移动加速度，单位：像素/秒^2";
+				this.rotationIn.toolTip = "初始面对的角度，取值[-180,180]";
+				this.xIn.toolTip = "相对于发射组的X坐标";
+				this.yIn.toolTip = "相对于发射组的Y坐标";
+				this.rotateSpeedIn.toolTip = "旋转速度，单位：度/秒";
+				this.maxRotationIn.toolTip = "可以旋转到的最大角度，取值[-180,180]";
+				this.minRotationIn.toolTip = "可以旋转到的最小角度，取值[-180,180]";
+				this.durationIn.toolTip = "从开始发射到结束发射的总时间，不包括等待时间，-1为无限";
+				this.intervalIn.toolTip = "每隔一定间隔发射一次";
+				this.numIn.toolTip = "每次发射子弹的基础数量";
+				this.numRandomIn.toolTip = "每次发射子弹的额外数量";
+				this.bulletGapIn.toolTip = "取值[0,360]，若为固定，值为子弹间的角度间隔；若为随机，子弹发射随机取值[-值/2, 值/2]";
+				//				this.mInput14.toolTip = "重力X方向大小，>0为向上，<0为向下，单位：像素/秒^2";
+				//				this.mInput15.toolTip = "重力Y方向大小，>0为向右，<0为向左，单位：像素/秒^2";
+				this.wIn.toolTip = "碰撞面积的长";
+				this.hIn.toolTip = "碰撞面积的高";
+				this.rotateTypeIn0.toolTip = "摇摆旋转，当发射器旋转到最大角度时逐渐旋转回到初始角度";
+				this.rotateTypeIn1.toolTip = "循环旋转，当发射器旋转到最大角度时立即回到初始角度";
+				this.bulletGapTypeIn0.toolTip = "固定子弹间隔，发射出的子弹两两之间固定有X角度的夹角";
+				this.bulletGapTypeIn1.toolTip = "随机子弹间隔，发射出的子弹角度随机取值[0,角度值]";
+			}
+			
+			public function setData(data:Object):void
+			{
+				waitIn.text = data.wait;
+				speedIn.text  = data.speed;
+				aIn.text = data.a;
+				speedXIn.text = data.speedX;
+				speedYIn.text = data.speedY;
+				axIn.text = data.ax;
+				ayIn.text = data.ay;
+				
+				rotationIn.text = data.rotation;
+				xIn.text = data.x;
+				yIn.text = data.y;
+				rotateSpeedIn.text = data.rotateSpeed;
+				minRotationIn.text = data.minRotation;
+				maxRotationIn.text = data.maxRotation;
+				durationIn.text = data.duration;
+				intervalIn.text = data.interval;
+				numIn.text = data.num;
+				numRandomIn.text = data.numRandom;
+				bulletGapIn.text = data.bulletGap;
+				wIn.text = data.w;
+				hIn.text = data.h;
+				harmIn.text = data.harm;
+				attachedIn.selected = data.attached;
+				
+				if(data.res == "")
+					resIn.selectedIndex = 0;
+				else
+					resIn.selectedIndex = resIn.dataProvider.getItemIndex(data.res);
+
+				rotateTypeIn0.selected = data.rotateType==0;
+				rotateTypeIn1.selected = data.rotateType==1;
+				
+				bulletGapTypeIn0.selected = data.bulletGapType==0;
+				bulletGapTypeIn1.selected = data.bulletGapType==1;
+			}
+			
+			public function applyValue(data:Object)
+			{
+				data.wait = Number(waitIn.text);
+				data.speed = Number(speedIn.text);
+				data.speedX = Number(speedXIn.text);
+				data.speedY = Number(speedYIn.text);
+				data.a = Number(aIn.text);
+				data.ax = Number(axIn.text);
+				data.ay = Number(ayIn.text);
+				
+				data.rotation = Utils.clamp(Number(rotationIn.text), -180, 180);
+				if (!isNaN(data.rotation)) 
+					rotationIn.text = data.rotation;
+				
+				data.x = Number(xIn.text);
+				data.y = Number(yIn.text);
+				data.rotateSpeed = Number(rotateSpeedIn.text);
+				
+				data.minRotation = Utils.clamp(Number(minRotationIn.text), -180, 180);
+				if (!isNaN(data.minRotation)) 
+					this.minRotationIn.text = data.minRotation;
+				
+				data.maxRotation = Utils.clamp(Number(maxRotationIn.text), -180, 180);
+				if (!isNaN(data.maxRotation)) 
+					maxRotationIn.text = data.maxRotation;
+				
+				data.duration = Number(durationIn.text);
+				data.interval = Number(intervalIn.text);
+				data.num = Number(numIn.text);
+				data.numRandom = Number(numRandomIn.text);
+				
+				data.bulletGap = Utils.clamp(Number(bulletGapIn.text), 0, 360);
+				bulletGapIn.text = data.bulletGap;
+				
+				data.w = Number(wIn.text);
+				data.h = Number(hIn.text);
+				data.harm = Number(harmIn.text);
+				data.attached = attachedIn.selected ? 1 : 0;
+				
+				if (resIn.selectedIndex <= 0) 
+					data.res = EmitterPanel.NULL_RES;
+				else 
+					data.res = resIn.dataProvider.getItemAt(resIn.selectedIndex);
+				
+				data.rotateType = rotateTypeIn0.selected ? 0 : 1;
+				data.bulletGapType = bulletGapTypeIn0.selected ? 0 : 1;
+			}
+			
+			public function onTextEnterPressed(event:Event): void
+			{
+				trace("text enter");
+				if(onValueChanged != null)
+					onValueChanged(event);
+			}
+		]]>
+	</fx:Script>
+	
+	
+	<s:Panel height="100%" borderVisible="true" dropShadowVisible="false" title="发射器参数">
+		<s:TileGroup x="0" y="0" columnWidth="140" horizontalAlign="justify"
+					 requestedColumnCount="2">
+			<s:Label fontFamily="Arial" text="资源前缀" textAlign="right" verticalAlign="middle"/>
+			<s:ComboBox id="resIn" width="80" change="onChangeEmitterRes(event)"
+						textAlign="center"/>
+			<s:Label fontFamily="Arial" text="初始等待时间(s)" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="waitIn" width="80" enter="onTextEnterPressed(event)" text="0.2"
+						 textAlign="center"/>
+			<s:Label text="跟随" textAlign="right" verticalAlign="middle"/>
+			<s:CheckBox id="attachedIn" click="onValueChanged(event)"/>
+			<s:Label fontFamily="Arial" text="位置X/Y" textAlign="right" verticalAlign="middle"/>
+			<s:HGroup verticalAlign="middle">
+				<s:TextInput id="xIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+				<s:Label fontFamily="Arial" fontSize="14" text="/" verticalAlign="middle"/>
+				<s:TextInput id="yIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+			</s:HGroup>
+			<s:Label text="朝向速度(px/s)" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="speedIn" enter="onTextEnterPressed(event)" text="0" textAlign="center"/>
+			<s:Label fontFamily="Arial" text="朝向加速度(px/s2)" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="aIn" width="80" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+			<s:Label fontFamily="Arial" text="速度X/Y(px/s)" textAlign="right" verticalAlign="middle"/>
+			<s:HGroup width="100%" height="23" verticalAlign="middle">
+				<s:TextInput id="speedXIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+				<s:Label fontFamily="Arial" fontSize="14" text="/" verticalAlign="middle"/>
+				<s:TextInput id="speedYIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+			</s:HGroup>
+			<s:Label fontFamily="Arial" text="加速度X/Y(px/s2)" textAlign="right" verticalAlign="middle"/>
+			<s:HGroup verticalAlign="middle">
+				<s:TextInput id="axIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+				<s:Label fontFamily="Arial" fontSize="14" text="/" verticalAlign="middle"/>
+				<s:TextInput id="ayIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+			</s:HGroup>
+			<s:Label fontFamily="Arial" text="角度" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="rotationIn" width="80" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+			<s:Label fontFamily="Arial" text="角速度(°/s)" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="rotateSpeedIn" width="80" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+			<s:Label fontFamily="Arial" text="最小角度(°)" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="minRotationIn" width="80" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+			<s:Label fontFamily="Arial" text="最大角度(°)" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="maxRotationIn" width="80" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+			<s:Label fontFamily="Arial" text="旋转行为" textAlign="right" verticalAlign="middle"/>
+			<s:HGroup>
+				<s:RadioButton id="rotateTypeIn0" label="摇摆" click="onValueChanged(event)"
+							   groupName="radiogroup1" selected="true"/>
+				<s:RadioButton id="rotateTypeIn1" label="循环" click="onValueChanged(event)"
+							   groupName="radiogroup1"/>
+			</s:HGroup>
+			<s:Label fontFamily="Arial" text="发射持续时间" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="durationIn" width="80" enter="onTextEnterPressed(event)" text="10"
+						 textAlign="center"/>
+			<s:Label fontFamily="Arial" text="发射间隔" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="intervalIn" width="80" enter="onTextEnterPressed(event)" text="0.2"
+						 textAlign="center"/>
+			<s:Label fontFamily="Arial" text="单次数量" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="numIn" width="80" enter="onTextEnterPressed(event)" text="1"
+						 textAlign="center"/>
+			<s:Label fontFamily="Arial" text="单次数量随机" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="numRandomIn" width="80" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+			<s:Label fontFamily="Arial" text="子弹间隔" textAlign="right" verticalAlign="middle"/>
+			<s:HGroup>
+				<s:RadioButton id="bulletGapTypeIn0" label="固定" click="onValueChanged(event)"
+							   groupName="radiogroup2" selected="true"/>
+				<s:RadioButton id="bulletGapTypeIn1" label="随机" click="onValueChanged(event)"
+							   groupName="radiogroup2"/>
+			</s:HGroup>
+			<s:Label fontFamily="Arial" text="子弹间隔角度" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="bulletGapIn" width="80" enter="onTextEnterPressed(event)" text="15"
+						 textAlign="center"/>
+			<s:Label fontFamily="Arial" text="碰撞体长/高" textAlign="right" verticalAlign="middle"/>
+			<s:HGroup verticalAlign="middle">
+				<s:TextInput id="wIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+				<s:Label fontFamily="Arial" fontSize="14" text="/" verticalAlign="middle"/>
+				<s:TextInput id="hIn" width="60" enter="onTextEnterPressed(event)" text="0"
+							 textAlign="center"/>
+			</s:HGroup>
+			<s:Label fontFamily="Arial" text="伤害系数" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="harmIn" width="80" enter="onTextEnterPressed(event)" text="0"
+						 textAlign="center"/>
+		</s:TileGroup>
+	</s:Panel>
+</s:Module>

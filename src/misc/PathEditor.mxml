@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:misc="misc.*"
+			   height="740" creationComplete="onCreate()">
+	<s:layout>
+		<s:HorizontalLayout paddingBottom="5" paddingLeft="45" paddingRight="5" paddingTop="15"/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.utils.ObjectUtil;
+			
+			private var line:UIComponent = null;
+			
+			private var mOnEditDone:Function = null;
+			private var mPath:Object = null;
+			private var mRoot:UIComponent = null;
+			
+			private var dots:Array;
+			private var mTip:TextField;
+			private var mDragDot:Dot;
+			
+			public static const PathMeta:Object = {
+				isCurve : false,
+				isLoop  : true,
+				points : []
+			}
+			
+			private var mCreated:Boolean = false;
+			private var mDotColor:uint = 0xff0000;
+				
+			protected function onCreate():void {
+				mCreated = true;
+				if(mPath)
+					setData(mPath, mOnEditDone);
+			}
+			
+			public function setData(path:Object, onEditDone:Function): void
+			{
+				mPath = ObjectUtil.copy(path);
+				mOnEditDone = onEditDone;
+				
+				if(!mCreated)
+					return;
+
+				mRoot = new UIComponent();
+				mRoot.y = 640;
+				mSceneContainer.addElement(mRoot);
+				
+				var grid:SceneGrid = new SceneGrid(360, 640, false);
+				grid.addEventListener(MouseEvent.MOUSE_DOWN, onClick);
+				mRoot.addChild(grid);
+				
+				line = new UIComponent;
+				mRoot.addChild(line);
+				
+				dots = new Array;
+
+				for(var i:int = 0; i < mPath.points.length; i++)
+				{
+					makeDot(mDotColor, mPath.points[i].x*0.5, -mPath.points[i].y*0.5);
+				}
+				render();
+				
+				this.addEventListener(CloseEvent.CLOSE, onClose);
+			}
+			
+			private function onClose(e:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function onSave(e:MouseEvent):void
+			{
+				var data:Array = new Array;
+				for each(var dot:Dot in dots)
+				{
+					var p:Object = {
+						x :  dot.x*2,
+						y : -dot.y*2
+					}
+					data.push(p);
+				}
+
+				mPath.points = data;
+				if(mOnEditDone != null)
+					mOnEditDone(mPath);
+				
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function onClick(e:MouseEvent):void
+			{
+				this.makeDot(mDotColor, mRoot.mouseX, mRoot.mouseY);
+				this.render();
+			}
+			
+			private function makeDot(color:uint, px:int, py:int):Sprite
+			{
+				var dot:Dot = new Dot(color);
+				dot.addEventListener(MouseEvent.MOUSE_DOWN, onDotMouseDown);
+				dot.addEventListener(MouseEvent.MOUSE_MOVE, onDotMove);
+				dot.addEventListener(MouseEvent.MOUSE_UP, onDotMouseUp);
+				dot.addEventListener(MouseEvent.MOUSE_OVER, onDotMouseOver);
+				dot.addEventListener(MouseEvent.MOUSE_OUT, onDotMouseOut);
+				
+				var menu:ContextMenu = new ContextMenu;
+				var item:ContextMenuItem = new ContextMenuItem("删除");
+				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, onDelete);
+				menu.addItem(item);
+				dot.contextMenu = menu;
+				
+				dot.setNum(dots.length);
+				dot.x = px;
+				dot.y = py;
+				dots.push(dot);
+				
+				mRoot.addChild(dot);
+				return dot;
+			}
+			
+			private function onDotMouseOver(event:MouseEvent):void {
+				if (!mTip) {
+					mTip = new TextField();
+					mRoot.addChild(mTip);
+				}
+				mTip.visible = true;
+				mTip.x = mRoot.mouseX + 5;
+				mTip.y = mRoot.mouseY + 5;
+				var dot:Dot = event.currentTarget as Dot;
+				var xx:Number = int( dot.x*2);
+				var yy:Number = int(-dot.y*2);
+				mTip.text = "("+xx+","+yy+")";
+			}
+			
+			private function onDotMouseOut(event:MouseEvent):void {
+				mTip.visible = false;
+			}
+			
+			private function removeDot(dot:Dot):void
+			{
+				dot.removeEventListener(MouseEvent.MOUSE_DOWN, onDotMouseDown);
+				dot.removeEventListener(MouseEvent.MOUSE_MOVE, onDotMove);
+				dot.removeEventListener(MouseEvent.MOUSE_UP, onDotMouseUp);
+				dot.removeEventListener(MouseEvent.MOUSE_OVER, onDotMouseOver);
+				dot.removeEventListener(MouseEvent.MOUSE_OUT, onDotMouseOut);
+				mRoot.removeChild(dot);
+				
+				var index:int = dots.indexOf(dot);
+				dots.splice(index, 1);
+			}
+			
+			private function onDelete(event:ContextMenuEvent):void
+			{
+				removeDot(event.contextMenuOwner as Dot);
+				orderDots();
+				render();
+			}
+			
+			private function orderDots():void
+			{
+				for(var i:int = 0; i < dots.length; i++)
+				{
+					Dot(dots[i]).setNum(i);
+				}
+			}
+			
+			private function onDotMouseDown(event:MouseEvent):void
+			{
+				event.stopPropagation();
+				mDragDot = event.currentTarget as Dot;
+				mDragDot.startDrag(false, new Rectangle(0, 0, 360, -640));
+			}
+			private function onDotMove(event:MouseEvent):void
+			{
+				render();
+				if (event.currentTarget == mDragDot)
+					onDotMouseOver(event);
+			}
+			private function onDotMouseUp(event:MouseEvent):void
+			{
+				event.stopPropagation();
+				(event.currentTarget as Sprite).stopDrag();
+				mDragDot = null;
+			}
+			
+			private function render():void
+			{
+				if(dots.length > 1)
+				{
+					line.graphics.clear();
+					line.graphics.lineStyle(1);
+					line.graphics.moveTo(dots[0].x, dots[0].y);
+					for(var i:int = 1; i < dots.length; i++)
+						line.graphics.lineTo(dots[i].x, dots[i].y);
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:BorderContainer id="mSceneContainer" width="360" height="680" borderVisible="false">
+	</s:BorderContainer>
+	<s:VGroup height="400">
+		<s:Button id="mSaveExit" label="保存+关闭" click="onSave(event)"/>
+	</s:VGroup>
+</s:TitleWindow>

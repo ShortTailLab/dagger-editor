@@ -10,17 +10,7 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import mx.collections.ArrayCollection;
-			import mx.containers.TitleWindow;
-			import mx.controls.Alert;
-			import mx.controls.Text;
-			import mx.managers.PopUpManager;
-			
-			import spark.components.Group;
-			
 			import DecoEdit.DecoPanel;
-			
-			import bgedit.BgModel;
 			
 			import excel.ExcelConfigReader;
 			import excel.ExchangeManager;
@@ -28,6 +18,16 @@
 			import manager.EventManager;
 			import manager.EventType;
 			import manager.SyncManager;
+			
+			import misc.PathEditor;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.controls.Text;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Group;
 			
 			// ---------------------------------------------------------
 			
@@ -58,7 +58,6 @@
 					}
 				);
 
-				BgModel.getInstance().init();
 				this.addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
 				this.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 				
@@ -113,6 +112,7 @@
 					this.onRightClick();
 			}
 
+			var XBOOL:Boolean = false;
 			private function onDataReady(e:Event=null):void
 			{	
 				var decoList:ArrayCollection = new ArrayCollection();
@@ -120,10 +120,25 @@
 					decoList.addItem(deco);
 				}
 				this.mDeco.dataProvider = decoList;
-
 				
 				this.mEditLevel.refresh();
 				this.mEditMonster.init();
+
+				/*
+				if(!XBOOL)
+				{
+					var ed:PathEditor = new PathEditor();
+					ed.setData({
+						isCurve : false,
+						isLoop : false,
+						isArray : false,
+						points : [{ x:10, y:10}, { x:300, y:200}, {x : 700, y :900}]
+					}, function(){ trace("path editor"); });
+					PopUpManager.addPopUp(ed, this, true);
+					PopUpManager.centerPopUp(ed);
+					
+					XBOOL = true;
+				}*/
 			}
 			
 			private function exportChapterToExcel(e:MouseEvent):void
