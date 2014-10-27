@@ -25,6 +25,7 @@ package
 	import mx.core.UIComponent;
 	import mx.events.CloseEvent;
 	import mx.managers.PopUpManager;
+	import mx.utils.ObjectUtil;
 	
 	import spark.components.Button;
 	import spark.components.ComboBox;
@@ -501,6 +502,65 @@ package
 		static public function clamp(val:Number, min:Number, max:Number): Number
 		{
 			return Math.max(min, Math.min(val, max));
+		}
+		
+		// merge all keys in src object
+		static public function fatMerge(dst:Object, src:Object, ignore:Array = null): Object
+		{			
+			var keys:Array = getKeys(src);
+			
+			if(ignore)
+			{
+				keys = keys.filter(function(k:String, index:int, array:Array):Boolean { 
+					return ignore.indexOf(k) == -1; 
+				});
+			}
+			
+			for each(var key:String in keys)
+			{
+				dst[key] = src[key];
+			}
+			return dst;
+		}
+		
+		// only merge keys that exist in dst object
+		static public function thinMerge(dst:Object, src:Object, ignore:Array = null): Object
+		{
+			var keys:Array = getKeys(dst);
+			
+			if(ignore)
+			{
+				keys = keys.filter(function(k:String, index:int, array:Array):Boolean { 
+					return ignore.indexOf(k) == -1; 
+				});
+			}
+			
+			for each(var key:String in keys)
+			{
+				if(src[key])
+					dst[key] = src[key];
+			}
+			return dst;
+		}
+		
+		// only merge keys that do not exist in dst object
+		static public function xorMerge(dst:Object, src:Object, ignore:Array = null): Object
+		{
+			var keys:Array = getKeys(src);
+			
+			if(ignore)
+			{
+				keys = keys.filter(function(k:String, index:int, array:Array):Boolean { 
+					return ignore.indexOf(k) == -1; 
+				});
+			}
+			
+			for each (var key:String in keys) 
+			{
+				if(!dst.hasOwnProperty(key))
+					dst[key] = src[key];
+			}
+			return dst;
 		}
 	}
 }

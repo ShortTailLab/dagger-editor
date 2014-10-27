@@ -22,7 +22,7 @@ package emitter
 		private var mData:Object;
 		private var mPanel:EmitterPanel;
 		
-		private var mBullets:Vector.<EmitterBullet>;
+		private var mBullets:Vector.<Bullet>;
 		
 		private var mWait:Number;
 		private var mElapsed:Number;
@@ -59,7 +59,7 @@ package emitter
 			}
 			this.alpha = 1;
 			
-			mBullets = new Vector.<EmitterBullet>();
+			mBullets = new Vector.<Bullet>();
 			
 			mWait = 0;
 			mElapsed = 0;
@@ -132,17 +132,16 @@ package emitter
 				this.y = -mPosY*0.5;
 				
 				// update bullets
-				mInterval += dt;
-				if (mInterval >= mData.interval) 
+				
+				if (mInterval > mData.interval) 
 				{
 					mInterval -= mData.interval;
 					
 					// shoot bullets
 					var num:int = mData.num + int(Math.random()*(mData.numRandom+1));
 						
-					var minAngle = mRotation - (num-1)*mData.bulletGap*0.5;
+					var minAngle:Number = mRotation - (num-1)*mData.bulletGap*0.5;
 					for (var i:int = 0; i < num; i++) {
-						var bullet:EmitterBullet = new EmitterBullet();
 						
 						var angle: Number = 0;
 						if(mData.bulletGapType == 0) // fixed angle
@@ -154,13 +153,26 @@ package emitter
 							angle = mRotation + (Math.random()-0.5)*mData.bulletGap;
 						}
 						
-						bullet.setData(mData, angle, this, mPanel);
-						
-						mBullets.push(bullet);
-						this.parent.addChild(bullet);
+						if(mData.bullet.type == "Basic")
+						{
+							var basic:BasicBullet = new BasicBullet();
+							basic.setData(mData, angle, this, mPanel);
+							
+							mBullets.push(basic);
+							this.parent.addChild(basic);
+						}
+						else if(mData.bullet.type == "Chaser")
+						{
+							var chaser:ChaserBullet = new ChaserBullet();
+							chaser.setData(mData, angle, this, mPanel);
+							
+							mBullets.push(chaser);
+							this.parent.addChild(chaser);
+						}
 					}
 				}
 				else {
+					mInterval += dt;
 				}
 			}
 			else {
@@ -168,7 +180,7 @@ package emitter
 			}
 		}
 		
-		public function removeBullet(bullet:EmitterBullet):void {
+		public function removeBullet(bullet:Bullet):void {
 			parent.removeChild(bullet);
 			mBullets.splice(mBullets.indexOf(bullet), 1);
 		}

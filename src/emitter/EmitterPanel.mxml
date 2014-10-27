@@ -11,72 +11,137 @@
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
+			import mx.binding.utils.BindingUtils;
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.core.UIComponent;
 			import mx.managers.PopUpManager;
+			import mx.utils.ObjectUtil;
 			
+			import spark.components.CheckBox;
+			import spark.components.ComboBox;
 			import spark.events.IndexChangeEvent;
 			
+			//--------------------------------------
+			// parser helpers
+			//--------------------------------------
+			private static function strToComboBox(val:String, outlet:spark.components.ComboBox): void {
+				outlet.selectedIndex = outlet.dataProvider.getItemIndex(val);
+			}
+			private static function comboBoxToStr(outlet:spark.components.ComboBox):* { 
+				return outlet.selectedItem;
+			}
+			
+			private static function numberToText(val:Number, outlet:TextInput): void {
+				outlet.text = String(val);
+			}
+			private static function textToNumber(outlet:TextInput): Number {
+				return Number(outlet.text);
+			}
+			
+			private static function numberToCheck(val:Number, outlet:spark.components.CheckBox): void {
+				outlet.selected = val == 1;
+			}
+			private static function checkToNumber(outlet:CheckBox): Number{
+				return outlet.selected ? 1 : 0;
+			}
+			
+			private static function numberToCheckFlip(val:Number, outlet:spark.components.CheckBox): void {
+				outlet.selected = val == 0;
+			}
+			private static function checkToNumberFlip(outlet:spark.components.CheckBox): Number{
+				return outlet.selected ? 0 : 1;
+			}
+			
+			
+			//--------------------------------------
+			// bullet parser templates
+			//--------------------------------------
 			// DO NOT CHANGE THE KEYS
-			private static const BulletMeta:Object = {
-				Basic : {
-					type: "Basic",
-					res:10000,
-					pauseTime:0,
-					direction:0,
-					chase:0,
-					duration:-1,
-						
-					speed:200,
-					speedX:0,
-					speedY:0,
-					rotateSpeed:0,
+			private static const BaseBulletParser:Object = {
+				type        : { toIn : strToComboBox, toVal : comboBoxToStr },
+				res         : { toIn : strToComboBox, toVal : comboBoxToStr },
+				resRotation : { toIn : numberToText,  toVal : textToNumber },
+				pauseTime   : { toIn : numberToText,  toVal : textToNumber },
+				duration    : { toIn : numberToText,  toVal : textToNumber },
+				direction   : { toIn : numberToCheckFlip, toVal : checkToNumberFlip },
+				speed       : { toIn : numberToText,  toVal : textToNumber },
+				speedX      : { toIn : numberToText,  toVal : textToNumber },
+				speedY      : { toIn : numberToText,  toVal : textToNumber },
+				rotateSpeed : { toIn : numberToText,  toVal : textToNumber },
+				
+				speedMin    : { toIn : numberToText,  toVal : textToNumber },
+				speedMax    : { toIn : numberToText,  toVal : textToNumber },
+				
+				a		    : { toIn : numberToText,  toVal : textToNumber },
+				ax		    : { toIn : numberToText,  toVal : textToNumber },
+				ay		    : { toIn : numberToText,  toVal : textToNumber },
+				w		    : { toIn : numberToText,  toVal : textToNumber }, 
+				h		    : { toIn : numberToText,  toVal : textToNumber }, 
+				harm	    : { toIn : numberToText,  toVal : textToNumber },
+				
+				offset	    : { toIn : numberToText,  toVal : textToNumber },
+				scale	    : { toIn : numberToText,  toVal : textToNumber },
+				scalePerSec :{ toIn : numberToText,  toVal : textToNumber },
+				
+				health	    : { toIn : numberToText,  toVal : textToNumber }
+			};
+				
+			public static const BulletParser:Object = {
+				Basic: Utils.fatMerge({}, BaseBulletParser),
+				Chaser: Utils.fatMerge({
+					doNotTurn : { toIn : numberToCheck, toVal : checkToNumber }
+				}, BaseBulletParser)
+			}
+			
+				
+			//--------------------------------------
+			// bullet templates
+			//--------------------------------------
+			// DO NOT CHANGE THE KEYS
+			private static const BaseBullet:Object = {
+				type: "Base",
+				res:10000,
+				resRotation: 0,
+				pauseTime:0,
+				duration:-1,
+				direction:1,
 					
-					speedMin : 0,
-					speedMax : 20000,
-					
-					a:0,
-					ax:0,
-					ay:0,
-					w:0, 
-					h:0, 
-					harm:0,
-					
-					offset:0,
-					scale:1,
-					scalePerSec:0,
-					
-					health: -1
-				}
-				/*,
-				Chase : {
-					type : "Chase",
-					res:10000,
-					pauseTime:0,
-					direction:0,
-					duration:-1,
-						
-					speed:200,
-					rotateSpeed:0,
-					speedMin:0,
-					speedMax:20000,
-					
-					a:0,
-					w:0,
-					h:0,
-					harm:0,
-					
-					offset:0,
-					scale:1,
-					scalePerSec:0,
-					
-					health: -1
-				}*/
+				speed:200,
+				speedX:0,
+				speedY:0,
+				rotateSpeed:0,
+				
+				speedMin : 0,
+				speedMax : 20000,
+				
+				a:0,
+				ax:0,
+				ay:0,
+				w:0, 
+				h:0, 
+				harm:0,
+				
+				offset:0,
+				scale:1,
+				scalePerSec:0,
+				
+				health: -1
+			}
+			
+			public static const BulletMeta:Object = {
+				Basic : Utils.fatMerge({
+					type : "Basic"				
+				}, BaseBullet, ["type"]),
+
+				Chaser : Utils.fatMerge({
+					type : "Chaser",	
+					doNotTurn : 1
+				}, BaseBullet, ["type"])
 			};
 			
 			// DO NOT CHANGE THE KEYS
-			private static const EmitterMeta:Object = {
+			public static const EmitterMeta:Object = {
 				Basic : {
 					res: NULL_RES, 
 					wait: 0.2, 
@@ -115,8 +180,7 @@
 			private var mCreated:Boolean;
 			private var mPreviewer:EmitterPreviewer;
 			
-			private var mBulletTypes:ArrayCollection;
-			private var mBulletConfigPanel;
+			private var mBulletConfigPanel:BulletConfig;
 			
 			private static var CLIPPING:Object;
 			
@@ -132,11 +196,7 @@
 			private var mMonsterId:String;
 			private var mMonsterName:String;
 			
-			private function onCreate():void {
-
-				mBasicEmitterConfig.onChangeEmitterRes = onChangeEmitterRes;
-				mBasicEmitterConfig.onValueChanged = onValueChanged;
-				
+			private function onCreate():void {				
 				// create context menu
 				var menu:ContextMenu = new ContextMenu();
 				var item:ContextMenuItem = new ContextMenuItem("新建(Ctrl+N)");
@@ -169,25 +229,30 @@
 				mSkinsArray = Utils.getKeysAsSortedData( Data.getInstance().skins );
 				mSkinsArray.addItemAt(NULL_RES, 0);
 				mBasicEmitterConfig.resIn.dataProvider = mSkinsArray;
-				
-				mBulletTypes = Utils.getKeysAsSortedData( BulletMeta );
 
-				createBulletConfigPanel();
-				
 				mCreated = true;
 				
-				if (mData) 
+				if (mData)
 					refreshView();
 			}
 			
-			private function createBulletConfigPanel(): void
+			private function createBulletConfigPanel(type:String): void
 			{
-				mBulletConfigPanel = new BasicBulletConfig;
+				if(mBulletConfigPanel)
+				{
+					mBulletConfigGroup.removeElement(mBulletConfigPanel);
+					mBulletConfigPanel = null;
+				}
+				
+				switch(type)
+				{
+					case "Basic": mBulletConfigPanel = new BasicBulletConfig; break;
+					case "Chaser": mBulletConfigPanel = new ChaserBulletConfig; break;
+					default: trace("unknown type"); break;
+				}
 				mBulletConfigGroup.addElement(mBulletConfigPanel);
-				
-				mBulletConfigPanel.resIn.dataProvider = Utils.getKeysAsSortedData( Data.getInstance().skins );
-				mBulletConfigPanel.resIn.selectedIndex = 0;
-				
+
+				mBulletConfigPanel.onChangeBulletType = onChangeBulletType;
 				mBulletConfigPanel.onValueChanged = onValueChanged;
 			}
 			
@@ -229,40 +294,22 @@
 			
 			public function setData(data:Object, monsterId:String=null):void {
 				mData = data;
+				
 				if (monsterId)
 					mMonsterId = monsterId;
-				
-				var keys:Array = Utils.getKeys(EmitterMeta.Basic);
 				
 				var save:Boolean = false;
 				
 				// for any missing keys in emitter, assign the default value
-				for each (var d:Object in mData.emitters) {
-					for each (var key:Object in keys) {
-						if(!d.hasOwnProperty(key))
-						{
-							d[key] = EmitterMeta.Basic[key];
-							//save = true;
-						}
-					}
-				}
-				
-				// for any missing keys in bullet, assign the defualt value
-				var bulletKeys:Array = Utils.getKeys(BulletMeta.Basic);
-				for each (var d:Object in mData.emitters) {
-					for each (var key:Object in bulletKeys) {
-						if(!d.bullet.hasOwnProperty(key))
-						{
-							d.bullet[key] = BulletMeta.Basic[key];
-							//save = true;
-						}
-					}
+				for each (var e:Object in mData.emitters) {
+					Utils.xorMerge(e, EmitterMeta[e.type]);
+					Utils.xorMerge(e.bullet, BulletMeta[e.bullet.type]);
 				}
 				
 				if (save)
 					this.onPressSave(null);
-				
-				if (mCreated) 
+
+				if (mCreated)
 					refreshView();
 			}
 			
@@ -272,6 +319,11 @@
 					return;
 				var data:Object = mData.emitters[index];
 				
+				if(!mBulletConfigPanel || mBulletConfigPanel.configType != data.bullet.type)
+				{
+					createBulletConfigPanel(data.bullet.type);
+				}
+				
 				mBasicEmitterConfig.setData(data);
 				mBulletConfigPanel.setData(data);	
 			}
@@ -279,8 +331,9 @@
 			private var mContainer:UIComponent;
 			private function refreshView():void {
 				
-				mNamesArray.removeAll();
+				var oldSelectedIndex:int = mEmitterList.selectedIndex;
 				
+				mNamesArray.removeAll();
 				
 				for (var i:int = 0; i < mData.emitters.length; i++) {
 					mNamesArray.addItem("♢ Emitter "+(i+1));
@@ -298,7 +351,8 @@
 				mPreviewer = new EmitterPreviewer(mData, this);
 				mContainer.addChild(mPreviewer);
 				
-				mEmitterList.selectedIndex = 0;
+				mEmitterList.selectedIndex = oldSelectedIndex == -1 ? 0 : oldSelectedIndex;
+				
 				mId1.text = mMonsterId.toString();
 				if (mData.monster_name) {
 					mMonsterName = mData.monster_name;
@@ -359,12 +413,13 @@
 			}
 			
 			public function onNewEmitter(event:Event):void {
-				var data:Object = Utils.cloneObjectData(DEFAULT_EMITTER);
-				this.mData.emitters.push(data);
+				var e:Object = ObjectUtil.copy(EmitterMeta.Basic);
+				this.mData.emitters.push(e);
 				mNamesArray.addItem("♢ Emitter "+(mNamesArray.length+1));
 				mEmitterList.selectedIndex = mNamesArray.length-1;
 				readData();
-				mPreviewer.addEmitter(data);
+				
+				mPreviewer.addEmitter(e);
 				mPreviewer.selectIndex(mEmitterList.selectedIndex);
 				mPreviewer.restart();
 			}
@@ -381,6 +436,22 @@
 				trace("emitter type change");
 			}
 			
+			private function onChangeBulletType(event:Event):void {
+				
+				var index:int = this.mEmitterList.selectedIndex;
+				if (index < 0) 
+					return;
+				var data:Object = mData.emitters[index];
+				var type:String = mBulletConfigPanel.getBulletType();
+				if(type != data.bullet.type)
+				{
+					var newBullet:Object = ObjectUtil.copy(BulletMeta[type]);
+					Utils.thinMerge(newBullet, data.bullet, ["type"]);
+					data.bullet = newBullet;						
+					refreshView();
+				}
+			}
+			
 			private function onValueChanged(event:Event):void {
 				var index:int = this.mEmitterList.selectedIndex;
 				if (index < 0) 
@@ -389,26 +460,7 @@
 								
 				mBasicEmitterConfig.applyValue(data);
 				mBulletConfigPanel.applyValue(data);
-				
-				
-				/*
-				var none:Array = [mInput24, mInput25, mInput26, mInput27, mInput28, mInput29 ];
-				if (event.currentTarget == mInput5 || event.currentTarget == mInput6) {
-					mPreviewer.emitters[index].updatePosition();
-				}
-				else if (event.currentTarget == mInput4) {
-					mPreviewer.emitters[index].updatePosition();
-					mPreviewer.restart();
-				}
-				else if (none.indexOf(event.currentTarget) != -1) {
-					
-				}
-				else {
-					mPreviewer.restart();
-				}
-//				if (restart.indexOf(event.currentTarget) != -1) {
-//					mPreviewer.restart();
-//				}*/
+	
 				mPreviewer.restart();
 			}
 			

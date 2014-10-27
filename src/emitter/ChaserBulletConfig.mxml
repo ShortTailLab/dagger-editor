@@ -12,10 +12,10 @@
 		<![CDATA[
 			import mx.events.FlexEvent;
 			
-			override public function get configType():String { return EmitterPanel.BulletMeta.Basic.type; }
+			override public function get configType():String { return EmitterPanel.BulletMeta.Chaser.type; }
 			
 			private function onInit(event:Event): void
-			{	
+			{
 				resIn.dataProvider = Utils.getKeysAsSortedData( Data.getInstance().skins );
 				resIn.selectedIndex = 0;
 				
@@ -40,9 +40,8 @@
 		<s:Label text="朝向与速度相同" textAlign="right" verticalAlign="middle"/>
 		<s:CheckBox id="directionIn" click="onValueChanged(event)" enabled="true"
 					fontSize="14" selected="true"/>
-		<s:Label text="资源角度" textAlign="right" verticalAlign="middle"/>
-		<s:TextInput id="resRotationIn" enter="onTextEnterPressed(event)" text="0"
-					 textAlign="center"/>
+		<s:Label text="资源角度(°)" textAlign="right" verticalAlign="middle"/>
+		<s:TextInput id="resRotationIn" enter="onTextEnterPressed(event)" text="0" textAlign="center"/>
 		<s:Label text="初始暂停时间(s)" textAlign="right" verticalAlign="middle"/>
 		<s:TextInput id="pauseTimeIn" enter="onTextEnterPressed(event)" text="0"
 					 textAlign="center"/>
@@ -98,6 +97,8 @@
 		<s:Label width="84" height="17" text="伤害系数" textAlign="right" verticalAlign="middle"/>
 		<s:TextInput id="harmIn" width="80" enter="onTextEnterPressed(event)" text="0"
 					 textAlign="center"/>
+		<s:Label text="超过目标不再追踪" textAlign="right" verticalAlign="middle"/>
+		<s:CheckBox id="doNotTurnIn" click="onValueChanged(event)"/>
 		<s:Label text="拉伸" textAlign="right" verticalAlign="middle"/>
 		<s:TextInput id="scaleIn" enter="onTextEnterPressed(event)" text="1" textAlign="center"/>
 		<s:Label text="拉伸速率(x/s)" textAlign="right" verticalAlign="middle"/>
