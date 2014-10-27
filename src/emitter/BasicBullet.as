@@ -2,7 +2,6 @@ package emitter
 {
 	import flash.display.Bitmap;
 	import flash.display.Loader;
-	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.IOErrorEvent;
 	import flash.filesystem.File;
@@ -12,7 +11,7 @@ package emitter
 	
 	import spark.components.Panel;
 
-	public class EmitterBullet extends Sprite
+	public class BasicBullet extends Bullet
 	{
 		private var mData:Object;
 		private var mImage:Bitmap;
@@ -26,13 +25,14 @@ package emitter
 		private var mPosY:Number;
 		private var mRotation:Number;
 		private var mPauseTime:Number;
+		private var mResRotation:Number;
 		
 		private var mScale:Number;
 		private var mBulletConfig:Panel = null;
 		
 		private var mPanel:EmitterPanel = null;
 		
-		public function EmitterBullet()
+		public function BasicBullet()
 		{
 			this.mouseEnabled = false;
 			this.mouseChildren = false;
@@ -62,6 +62,7 @@ package emitter
 			mPauseTime = data.bullet.pauseTime;
 			
 			mPanel = panel;
+			mResRotation = mData.bullet.resRotation;
 			
 			syncView();
 		}
@@ -76,26 +77,15 @@ package emitter
 		
 		private function onImageLoad(event:Event):void  {
 			mImage = event.currentTarget.loader.content;
-			addChild(mImage);
-			if (mData.bullet.direction == 1) {
-				mImage.scaleY = -1;
-				mImage.x = -mImage.width/2;
-				mImage.y = mImage.height/2;
-			}
-			else {
-				mImage.x = -mImage.width/2;
-				mImage.y = -mImage.height/2;
-			}
+			mImage.rotation = mResRotation;
+			mImage.x = mImage.width*0.5;
+			mImage.y = mImage.height*0.5;
+			this.addChild(mImage);
 		}
 		
 		public function setPos(x:Number, y:Number): void {
 			mPosX = x;
 			mPosY = y;
-			syncView();
-		}
-		
-		public function setRot(r:Number): void {
-			mRotation = r;
 			syncView();
 		}
 		
@@ -106,7 +96,7 @@ package emitter
 			this.scaleX = this.scaleY = mScale;
 		}
 		
-		public function update(dt:Number):void {
+		override public function update(dt:Number):void {
 			if(mPauseTime > 0) {
 				mPauseTime -= dt;
 				return;
@@ -127,26 +117,7 @@ package emitter
 				
 			mElapsed += dt;
 			
-			if(mData.bullet.chase)
-			{
-				var hero:HeroMarker = mPanel.getHero();
-				var dx:Number = hero.posX - mPosX;
-				var dy:Number = hero.posY - mPosY;
-				
-				var targetAngle:Number = Math.atan2(-dx, -dy)/Math.PI*180;
-				var diffAngle = targetAngle - mRotation;
-				if(diffAngle > 180)
-					diffAngle -= 360;
-				if(diffAngle < -180)
-					diffAngle += 360;
-				var deltaAngle = Math.abs(mData.bullet.rotateSpeed)*dt;
-				deltaAngle = Utils.clamp(deltaAngle, 0, Math.abs(diffAngle));
-				mRotation +=  (diffAngle>0 ? deltaAngle : -deltaAngle);
-			}
-			else
-			{
-				mRotation += mData.bullet.rotateSpeed*dt;
-			}
+			mRotation += mData.bullet.rotateSpeed*dt;
 			
 			mSpeed  += mData.bullet.a *dt;
 			mSpeedX += mData.bullet.ax*dt;
@@ -155,8 +126,8 @@ package emitter
 			var velX:Number = mSpeedX + mSpeed * -Math.sin(mRotation/180*Math.PI);
 			var velY:Number = mSpeedY + mSpeed * -Math.cos(mRotation/180*Math.PI);
 			
-			var speedNorm = Math.sqrt(velX*velX + velY*velY);
-			var clampedSpeedNorm = Utils.clamp(speedNorm, mData.bullet.speedMin, mData.bullet.speedMax);
+			var speedNorm:Number = Math.sqrt(velX*velX + velY*velY);
+			var clampedSpeedNorm:Number = Utils.clamp(speedNorm, mData.bullet.speedMin, mData.bullet.speedMax);
 			if(clampedSpeedNorm != speedNorm)
 			{
 				var adjustScale:Number = clampedSpeedNorm / speedNorm;
@@ -178,7 +149,7 @@ package emitter
 			syncView();
 		}
 		
-		public function destroy():void {
+		override public function destroy():void {
 			mEmitter.removeBullet(this);
 		}
 	}

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import flashx.textLayout.debug.assert;
+			
+			import mx.events.FlexEvent;
+			public var onValueChanged:Function = null;
+			public var onChangeBulletType:Function = null;
+			
+			public function setData(data:Object):void
+			{
+				var type:String = data.bullet.type;
+				var parser:Object = EmitterPanel.BulletParser[type];
+				var keys:Array = Utils.getKeys(EmitterPanel.BulletMeta[type]);
+				
+				for each(var key:String in keys)
+				{
+					var outletKey:String = key + "In";
+					trace("key is " + key + ", key in is " + outletKey + ", val " + data.bullet[key]);
+					parser[key].toIn(data.bullet[key], this[outletKey]);
+				}
+			}
+			
+			public function applyValue(data:Object): void
+			{
+				var type:String = data.bullet.type;
+				var keys:Array = Utils.getKeys(EmitterPanel.BulletMeta[type]);
+				var parser:Object = EmitterPanel.BulletParser[type];
+				
+				for each(var key:String in keys)
+				{
+					var outletKey:String = key + "In";
+					if(!data.bullet.hasOwnProperty(key))
+					{
+						trace("missing property on bullet: " + key);
+						continue;
+					}
+					data.bullet[key] = parser[key].toVal(this[outletKey]);
+				}
+			}
+			
+			
+			public function getBulletType(): String
+			{
+				return this["typeIn"].selectedItem;
+			}
+			
+			// define config type
+			public function get configType():String { assert(); return ""; }
+		]]>
+	</fx:Script>
+</s:Panel>
