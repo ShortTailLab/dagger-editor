@@ -169,6 +169,14 @@ package emitter
 							mBullets.push(chaser);
 							this.parent.addChild(chaser);
 						}
+						else if(mData.bullet.type == "Pather")
+						{
+							var pather:PatherBullet = new PatherBullet();
+							pather.setData(mData, angle, this, mPanel);
+							
+							mBullets.push(pather);
+							this.parent.addChild(pather);
+						}
 					}
 				}
 				else {

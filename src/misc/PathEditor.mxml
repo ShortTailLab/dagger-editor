@@ -23,6 +23,7 @@
 			private var mOnEditDone:Function = null;
 			private var mPath:Object = null;
 			private var mRoot:UIComponent = null;
+			private var mSceneGrid:SceneGrid = null;
 			
 			private var dots:Array;
 			private var mTip:TextField;
@@ -31,6 +32,7 @@
 			public static const PathMeta:Object = {
 				isCurve : false,
 				isLoop  : true,
+				isRelative : true,
 				points : []
 			}
 			
@@ -45,19 +47,35 @@
 			
 			public function setData(path:Object, onEditDone:Function): void
 			{
-				mPath = ObjectUtil.copy(path);
+				mPath = Utils.xorMerge(ObjectUtil.copy(path), PathMeta);
 				mOnEditDone = onEditDone;
 				
 				if(!mCreated)
 					return;
 
-				mRoot = new UIComponent();
-				mRoot.y = 640;
-				mSceneContainer.addElement(mRoot);
+				isRelativeIn.selected = mPath.isRelative;
+				isLoopIn.selected = mPath.isLoop;
 				
-				var grid:SceneGrid = new SceneGrid(360, 640, false);
-				grid.addEventListener(MouseEvent.MOUSE_DOWN, onClick);
-				mRoot.addChild(grid);
+				mSceneGrid = new SceneGrid(360, 640, false);
+				mSceneGrid.addEventListener(MouseEvent.MOUSE_DOWN, onClick);
+				var temp:UIComponent = new UIComponent;
+				temp.addChild(mSceneGrid);
+				temp.y = 640;
+				mSceneContainer.addElement(temp);
+				
+				if(mPath.isRelative)
+				{
+					mRoot = new UIComponent();
+					mRoot.x = 160;
+					mRoot.y = 320;
+					mSceneContainer.addElement(mRoot);
+				}
+				else
+				{
+					mRoot = new UIComponent();
+					mRoot.y = 640;
+					mSceneContainer.addElement(mRoot);
+				}
 				
 				line = new UIComponent;
 				mRoot.addChild(line);
@@ -68,7 +86,7 @@
 				{
 					makeDot(mDotColor, mPath.points[i].x*0.5, -mPath.points[i].y*0.5);
 				}
-				render();
+				renderLine();
 				
 				this.addEventListener(CloseEvent.CLOSE, onClose);
 			}
@@ -99,8 +117,15 @@
 			
 			private function onClick(e:MouseEvent):void
 			{
-				this.makeDot(mDotColor, mRoot.mouseX, mRoot.mouseY);
-				this.render();
+				makeDot(mDotColor, mRoot.mouseX, mRoot.mouseY);
+				renderLine();
+			}
+			
+			private function onChangeValue(e:Event):void
+			{
+				mPath.isRelative = isRelativeIn.selected;
+				mPath.isLoop = isLoopIn.selected;
+				renderLine();
 			}
 			
 			private function makeDot(color:uint, px:int, py:int):Sprite
@@ -162,7 +187,7 @@
 			{
 				removeDot(event.contextMenuOwner as Dot);
 				orderDots();
-				render();
+				renderLine();
 			}
 			
 			private function orderDots():void
@@ -177,11 +202,14 @@
 			{
 				event.stopPropagation();
 				mDragDot = event.currentTarget as Dot;
-				mDragDot.startDrag(false, new Rectangle(0, 0, 360, -640));
+				if(mPath.isRelative)
+					mDragDot.startDrag(false, new Rectangle(-180, 320, 360, -640));
+				else
+					mDragDot.startDrag(false, new Rectangle(0, 0, 360, -640));
 			}
 			private function onDotMove(event:MouseEvent):void
 			{
-				render();
+				renderLine();
 				if (event.currentTarget == mDragDot)
 					onDotMouseOver(event);
 			}
@@ -192,7 +220,7 @@
 				mDragDot = null;
 			}
 			
-			private function render():void
+			private function renderLine():void
 			{
 				if(dots.length > 1)
 				{
@@ -201,6 +229,10 @@
 					line.graphics.moveTo(dots[0].x, dots[0].y);
 					for(var i:int = 1; i < dots.length; i++)
 						line.graphics.lineTo(dots[i].x, dots[i].y);
+					if(isLoopIn.selected)
+					{
+						line.graphics.lineTo(dots[0].x, dots[0].y);
+					}
 				}
 			}
 		]]>
@@ -209,5 +241,7 @@
 	</s:BorderContainer>
 	<s:VGroup height="400">
 		<s:Button id="mSaveExit" label="保存+关闭" click="onSave(event)"/>
+		<s:CheckBox id="isLoopIn" label="是否循环" click="onChangeValue(event)"/>
+		<s:CheckBox id="isRelativeIn" label="相对坐标" click="onChangeValue(event)"/>
 	</s:VGroup>
 </s:TitleWindow>
