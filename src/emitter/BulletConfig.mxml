@@ -24,7 +24,10 @@
 				{
 					var outletKey:String = key + "In";
 					trace("key is " + key + ", key in is " + outletKey + ", val " + data.bullet[key]);
-					parser[key].toIn(data.bullet[key], this[outletKey]);
+					if(!this.hasOwnProperty(outletKey))
+						trace("ignored attrs " + key);
+					else
+						parser[key].toIn(data.bullet[key], this[outletKey]);
 				}
 			}
 			
@@ -37,7 +40,7 @@
 				for each(var key:String in keys)
 				{
 					var outletKey:String = key + "In";
-					if(!data.bullet.hasOwnProperty(key))
+					if(!data.bullet.hasOwnProperty(key) || !this.hasOwnProperty(outletKey))
 					{
 						trace("missing property on bullet: " + key);
 						continue;
