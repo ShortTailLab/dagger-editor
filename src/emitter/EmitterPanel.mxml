@@ -179,7 +179,8 @@
 			public static const EmitterMeta:Object = {
 				Basic : {
 					res: NULL_RES, 
-					wait: 0.2, 
+					wait: 0.2,
+					resRotation: 0,
 					speed: 0,
 					speedX: 0, 
 					speedY: 0,
@@ -341,8 +342,15 @@
 				
 				// for any missing keys in emitter, assign the default value
 				for each (var e:Object in mData.emitters) {
-					Utils.xorMerge(e, EmitterMeta[e.type]);
-					Utils.xorMerge(e.bullet, BulletMeta[e.bullet.type]);
+					if(!e.type)
+						Utils.xorMerge(e, EmitterMeta.Basic);
+					else
+						Utils.xorMerge(e, EmitterMeta[e.type]);
+					
+					if(!e.bullet.type)
+						Utils.xorMerge(e.bullet, BulletMeta.Basic);
+					else
+						Utils.xorMerge(e.bullet, BulletMeta[e.bullet.type]);
 				}
 				
 				if (save)

@@ -67,6 +67,7 @@
 				hIn.text = data.h;
 				harmIn.text = data.harm;
 				attachedIn.selected = data.attached;
+				resRotationIn.text = data.resRotation;
 				
 				if(data.res == "")
 					resIn.selectedIndex = 0;
@@ -97,6 +98,7 @@
 				data.x = Number(xIn.text);
 				data.y = Number(yIn.text);
 				data.rotateSpeed = Number(rotateSpeedIn.text);
+				data.resRotation = Number(resRotationIn.text);
 				
 				data.minRotation = Utils.clamp(Number(minRotationIn.text), -180, 180);
 				if (!isNaN(data.minRotation)) 
@@ -144,6 +146,8 @@
 			<s:Label fontFamily="Arial" text="资源前缀" textAlign="right" verticalAlign="middle"/>
 			<s:ComboBox id="resIn" width="80" change="onChangeEmitterRes(event)"
 						textAlign="center"/>
+			<s:Label text="资源角度" textAlign="right" verticalAlign="middle"/>
+			<s:TextInput id="resRotationIn" enter="onTextEnterPressed(event)" textAlign="center"/>
 			<s:Label fontFamily="Arial" text="初始等待时间(s)" textAlign="right" verticalAlign="middle"/>
 			<s:TextInput id="waitIn" width="80" enter="onTextEnterPressed(event)" text="0.2"
 						 textAlign="center"/>
