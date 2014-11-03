@@ -22,8 +22,8 @@ package emitter
 		private var mSpeed: Number;
 		private var mSpeedX:Number;
 		private var mSpeedY:Number;
-		private var mPosX:Number;
-		private var mPosY:Number;
+		private var mPosX:Number = 0;
+		private var mPosY:Number = 0;
 		private var mRotation:Number;
 		private var mPauseTime:Number;
 		private var mResRotation:Number;
@@ -43,6 +43,7 @@ package emitter
 		
 		public function setData(data:Object, defaultRot:Number, emit:Emitter, panel:EmitterPanel):void {
 			mData = data;
+			mPanel = panel;
 			mEmitter = emit;
 			mElapsed = 0;
 			
@@ -52,21 +53,27 @@ package emitter
 			loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, onLoadError);
 			loader.load(new URLRequest(file.url+"/"+mData.bullet.res+".png"));
 			
+			mPauseTime = mData.bullet.pauseTime;
+			mScale = mData.bullet.scale;
+			mResRotation = mData.bullet.resRotation;
+			
 			mSpeed  = data.bullet.speed;
 			mSpeedX = data.bullet.speedX;
 			mSpeedY = data.bullet.speedY;
-						
-			mRotation = defaultRot;
+			
+			if(mData.bullet.faceTarget)
+			{
+				var hero:HeroMarker = mPanel.getHero();
+				var dx:Number = hero.posX;
+				var dy:Number = hero.posY;				
+				mRotation = Math.atan2(-dx, -dy)/Math.PI*180;
+			}
+			else
+				mRotation = defaultRot;
+			
 			mPosX = emit.sPosX + mData.bullet.offset * -Math.sin(mRotation/180*Math.PI);
 			mPosY = emit.sPosY + mData.bullet.offset * -Math.cos(mRotation/180*Math.PI);
-			
-			mScale = data.bullet.scale;
-			
-			mPauseTime = data.bullet.pauseTime;
-			
-			mPanel = panel;
-			mResRotation = mData.bullet.resRotation;
-			
+
 			syncView();
 		}
 		
@@ -130,9 +137,9 @@ package emitter
 			if(mFollow)
 			{
 				var dx:Number = hero.posX - mPosX;
-				var dy:Number = hero.posY - mPosY;
-				
+				var dy:Number = hero.posY - mPosY;				
 				var targetAngle:Number = Math.atan2(-dx, -dy)/Math.PI*180;
+				
 				var diffAngle:Number = targetAngle - mRotation;
 				if(diffAngle > 180)
 					diffAngle -= 360;
@@ -171,9 +178,19 @@ package emitter
 				mRotation = degree;				
 			}
 			
-			mScale = mScale + mData.bullet.scalePerSec * dt;
+			mScale = Utils.clamp(mScale + mData.bullet.scalePerSec * dt, mData.bullet.scaleMin, mData.bullet.scaleMax);
 			
 			syncView();
+		}
+		
+		private function getTargetFacingAngle(): Number {
+			
+			var hero:HeroMarker = mPanel.getHero();
+			var dx:Number = hero.posX - mPosX;
+			var dy:Number = hero.posY - mPosY;				
+			var targetAngle:Number = Math.atan2(-dx, -dy)/Math.PI*180;
+			
+			return targetAngle;
 		}
 		
 		override public function destroy():void {

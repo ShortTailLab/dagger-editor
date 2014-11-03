@@ -151,7 +151,7 @@ package emitter
 				mRotation = degree;				
 			}
 			
-			mScale = mScale + mData.bullet.scalePerSec * dt;
+			mScale = Utils.clamp(mScale + mData.bullet.scalePerSec * dt, mData.bullet.scaleMin, mData.bullet.scaleMax);
 			
 			syncView();
 		}

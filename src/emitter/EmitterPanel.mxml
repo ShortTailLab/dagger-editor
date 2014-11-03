@@ -65,56 +65,104 @@
 				return out ? out : ObjectUtil.copy(PathEditor.PathMeta); 
 			}
 			
+			private static function getBulletTypeAsDataSrc(): ArrayCollection
+			{
+				return Utils.getKeysAsSortedData( EmitterPanel.BulletMeta );
+			}
+			
+			private static function getResAsDataSrc(): ArrayCollection
+			{
+				return Utils.getKeysAsSortedData( Data.getInstance().skins );
+			}
+			
+			private static function onChangeValue(event:Event): void
+			{
+				mInstance.onValueChanged(event);
+			}
+			
+			private static function onEnterText(event:Event): void
+			{
+				mInstance.onValueChanged(event);
+			}
+			
+			private static function onEditPath(event:Event): void
+			{
+				var self:TextInput = event.target as TextInput
+					
+				var pathEditor:PathEditor = new PathEditor;
+				PopUpManager.addPopUp(pathEditor, self.parent, true);
+				PopUpManager.centerPopUp(pathEditor);
+				
+				
+				pathEditor.setData(JSON.parse(self.text), function(path:Object):void {
+					self.text = JSON.stringify(path);
+					onChangeValue(event);
+				});
+			}
+			
+			private static function onChangeBulletType(event:Event): void
+			{
+				mInstance.onChangeBulletType(event);
+			}
+			private static function onChangeBulletRes(event:Event): void
+			{
+				mInstance.onValueChanged(event);
+			}
+			
 			//--------------------------------------
 			// bullet parser templates
 			//--------------------------------------
 			// DO NOT CHANGE THE KEYS
 			private static const BaseBulletParser:Object = {
-				type        : { toIn : strToComboBox, toVal : comboBoxToStr },
-				res         : { toIn : strToComboBox, toVal : comboBoxToStr },
-				resRotation : { toIn : numberToText,  toVal : textToNumber },
-				pauseTime   : { toIn : numberToText,  toVal : textToNumber },
-				duration    : { toIn : numberToText,  toVal : textToNumber },
-				direction   : { toIn : numberToCheckFlip, toVal : checkToNumberFlip },
-				speed       : { toIn : numberToText,  toVal : textToNumber },
+				type        : { n: 1, toIn : strToComboBox, toVal : comboBoxToStr, label: "子弹类型", controlType: ComboBox, dataSrcGen : getBulletTypeAsDataSrc, handleEvent : { change: onChangeBulletType} },
+				res         : { n: 2, toIn : strToComboBox, toVal : comboBoxToStr, label: "资源",    controlType: ComboBox, dataSrcGen : getResAsDataSrc,        handleEvent : { change: onChangeBulletRes}  },
+				resRotation : { n: 3, toIn : numberToText,  toVal : textToNumber,  label: "资源角度", controlType: TextInput, handleEvent: {enter: onEnterText} },
 				
-				speedMin    : { toIn : numberToText,  toVal : textToNumber },
-				speedMax    : { toIn : numberToText,  toVal : textToNumber },
+				pauseTime   : { n: 4, toIn : numberToText,  toVal : textToNumber,  label: "暂停时间(s)",  controlType: TextInput, handleEvent: {enter: onEnterText} },
+				duration    : { n: 5, toIn : numberToText,  toVal : textToNumber,  label: "持续时间", controlType: TextInput, handleEvent: {enter: onEnterText} },
 				
-				a		    : { toIn : numberToText,  toVal : textToNumber },
+				direction   : { n: 6, toIn : numberToCheckFlip, toVal : checkToNumberFlip, label: "朝向与速度相同", controlType: CheckBox, handleEvent: {click: onEnterText} },
+				speed       : { n: 7, toIn : numberToText,  toVal : textToNumber,  label: "朝向速度(px/s)",  controlType: TextInput, handleEvent: {enter: onEnterText} },
 				
-				w		    : { toIn : numberToText,  toVal : textToNumber }, 
-				h		    : { toIn : numberToText,  toVal : textToNumber }, 
-				harm	    : { toIn : numberToText,  toVal : textToNumber },
+				speedMin    : { n: 8, toIn : numberToText,  toVal : textToNumber,  label: "最小速度(px/s)",  controlType: TextInput, handleEvent: {enter: onEnterText} },
+				speedMax    : { n: 9, toIn : numberToText,  toVal : textToNumber,  label: "最大速度(px/s)",  controlType: TextInput, handleEvent: {enter: onEnterText} },
 				
-				scale	    : { toIn : numberToText,  toVal : textToNumber },
-				scalePerSec :{ toIn : numberToText,  toVal : textToNumber },
+				a		    : { n: 10, toIn : numberToText,  toVal : textToNumber,  label: "朝向加速度(px/s2)", controlType: TextInput, handleEvent: {enter: onEnterText} },
+				w		    : { n: 11, toIn : numberToText,  toVal : textToNumber,  label: "碰撞体/宽(px)",  controlType: TextInput, handleEvent: {enter: onEnterText} }, 
+				h		    : { n: 12, toIn : numberToText,  toVal : textToNumber,  label: "碰撞体/高(px)",  controlType: TextInput, handleEvent: {enter: onEnterText} }, 
+
+				scale	    : { n: 20, toIn : numberToText,  toVal : textToNumber,  label: "拉伸",    controlType: TextInput, handleEvent: {enter: onEnterText} },
+				scalePerSec : { n: 21, toIn : numberToText,  toVal : textToNumber,   label: "拉伸速度", controlType: TextInput, handleEvent: {enter: onEnterText} },
+				scaleMin    : { n: 22, toIn : numberToText,  toVal : textToNumber,   label: "最小拉伸", controlType: TextInput, handleEvent: {enter: onEnterText} },
+				scaleMax    : { n: 22, toIn : numberToText,  toVal : textToNumber,   label: "最大拉伸", controlType: TextInput, handleEvent: {enter: onEnterText} },
 				
-				health	    : { toIn : numberToText,  toVal : textToNumber }
+				harm	    : { n: 30, toIn : numberToText,  toVal : textToNumber,  label: "伤害系数", controlType: TextInput, handleEvent: {enter: onEnterText} },				
+				health	    : { n: 31, toIn : numberToText,  toVal : textToNumber,  label: "生命", controlType: TextInput, handleEvent: {enter: onEnterText} }
 			};
 				
 			public static const BulletParser:Object = {
 				Basic: Utils.fatMerge({
-					offset	    : { toIn : numberToText,  toVal : textToNumber },
-					speedX      : { toIn : numberToText,  toVal : textToNumber },
-					speedY      : { toIn : numberToText,  toVal : textToNumber },
-					ax		    : { toIn : numberToText,  toVal : textToNumber },
-					ay		    : { toIn : numberToText,  toVal : textToNumber },
-					rotateSpeed : { toIn : numberToText,  toVal : textToNumber }
+					offset	    : { n:7.1, toIn : numberToText,  toVal : textToNumber, label: "方向偏移", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					speedX      : { n:7.2, toIn : numberToText,  toVal : textToNumber, label: "速度X",   controlType: TextInput, handleEvent: {enter: onEnterText} },
+					speedY      : { n:7.3, toIn : numberToText,  toVal : textToNumber, label: "速度Y",   controlType: TextInput, handleEvent: {enter: onEnterText} },
+					ax		    : { n:7.4, toIn : numberToText,  toVal : textToNumber, label: "加速度X", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					ay		    : { n:7.5, toIn : numberToText,  toVal : textToNumber, label: "加速度Y", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					rotateSpeed : { n:7.6, toIn : numberToText,  toVal : textToNumber, label: "角速度",  controlType: TextInput, handleEvent: {enter: onEnterText} }
 				}, BaseBulletParser),
 					
 				Chaser: Utils.fatMerge({
-					offset	    : { toIn : numberToText,  toVal : textToNumber },
-					speedX      : { toIn : numberToText,  toVal : textToNumber },
-					speedY      : { toIn : numberToText,  toVal : textToNumber },
-					ax		    : { toIn : numberToText,  toVal : textToNumber },
-					ay		    : { toIn : numberToText,  toVal : textToNumber },
-					rotateSpeed : { toIn : numberToText,  toVal : textToNumber },
-					doNotTurn   : { toIn : numberToCheck, toVal : checkToNumber }
+					offset	    : { n:7.1, toIn : numberToText,  toVal : textToNumber,  label: "方向偏移", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					speedX      : { n:7.2, toIn : numberToText,  toVal : textToNumber,  label: "速度X", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					speedY      : { n:7.3, toIn : numberToText,  toVal : textToNumber,  label: "速度Y", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					ax		    : { n:7.4, toIn : numberToText,  toVal : textToNumber,  label: "加速度X", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					ay		    : { n:7.5, toIn : numberToText,  toVal : textToNumber,  label: "加速度Y", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					rotateSpeed : { n:7.6, toIn : numberToText,  toVal : textToNumber,  label: "角速度", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					doNotTurn   : { n:7.7, toIn : numberToCheck, toVal : checkToNumber, label: "超过目标不再追踪", controlType: CheckBox, handleEvent: {click: onEnterText} },
+					faceTarget  : { n:7.8, toIn : numberToCheck, toVal : checkToNumber, label: "初始朝向目标", controlType: CheckBox, handleEvent: {click: onEnterText} }
 				}, BaseBulletParser),
 				
 				Pather: Utils.fatMerge({
-					path : { toIn : pathToText, toVal : textToPath }
+					path : { n: 13, toIn : pathToText, toVal : textToPath, label: "路径", controlType: TextInput, handleEvent : { click : onEditPath } }
 				}, BaseBulletParser)
 			}
 			
@@ -145,6 +193,8 @@
 				offset:0,
 				scale:1,
 				scalePerSec:0,
+				scaleMin: 0,
+				scaleMax: 5,
 				
 				health: -1
 			}
@@ -166,7 +216,8 @@
 					ax:0,
 					ay:0,
 					rotateSpeed:0,
-					doNotTurn : 1
+					doNotTurn : 1,
+					faceTarget : 0
 				}, BaseBullet, ["type"]),
 				
 				Pather : Utils.fatMerge({
@@ -232,7 +283,11 @@
 			private var mMonsterId:String;
 			private var mMonsterName:String;
 			
+			private static var mInstance:EmitterPanel = null;
+			
 			private function onCreate():void {				
+				
+				mInstance = this;
 				// create context menu
 				var menu:ContextMenu = new ContextMenu();
 				var item:ContextMenuItem = new ContextMenuItem("新建(Ctrl+N)");
@@ -283,17 +338,19 @@
 					mBulletConfigPanel = null;
 				}
 				
+				/*
 				switch(type)
 				{
 					case "Basic": mBulletConfigPanel = new BasicBulletConfig; break;
 					case "Chaser": mBulletConfigPanel = new ChaserBulletConfig; break;
 					case "Pather": mBulletConfigPanel = new PatherBulletConfig; break;
 					default: trace("unknown type"); break;
-				}
+				}*/
+				mBulletConfigPanel = new BulletConfig;
 				mBulletConfigGroup.addElement(mBulletConfigPanel);
 
-				mBulletConfigPanel.onChangeBulletType = onChangeBulletType;
-				mBulletConfigPanel.onValueChanged = onValueChanged;
+				//mBulletConfigPanel.onChangeBulletType = onChangeBulletType;
+				//mBulletConfigPanel.onValueChanged = onValueChanged;
 			}
 			
 			private function onPressKeyboard(event:KeyboardEvent):void {
@@ -388,8 +445,8 @@
 				
 				if (!mContainer) {
 					var mContainer:UIComponent = new UIComponent();
-					mContainer.x = 100;
-					mContainer.y = mPreviewerContainer.height-100;
+					mContainer.x = 50;
+					mContainer.y = mPreviewerContainer.height-150;
 					mPreviewerContainer.addElement(mContainer);
 				}
 				if (mPreviewer) 
@@ -669,34 +726,29 @@
 		]]>
 	</fx:Script>
 	<s:HGroup x="0" y="0" width="100%" height="100%" gap="0">
-		<s:VGroup width="560" height="900" gap="0">
-			<s:Group width="100%" height="110">
-				<s:Label x="10" y="10" width="60" color="#969696" fontSize="14" text="标识ID"
-						 textAlign="right"/>
-				<s:Label id="mId1" x="78" y="11" width="130" color="#000000" fontSize="14"
+		<s:VGroup width="450" height="900" gap="0">
+			<s:Group width="100%" height="90">
+				<s:Label x="10" y="10" color="#969696" text="标识ID" textAlign="right"/>
+				<s:Label id="mId1" x="54" y="10" width="130" color="#000000" fontSize="12"
 						 text="标识ID" textAlign="left"/>
-				<s:Label x="30" y="37" width="40" color="#969696" fontSize="14" text="名称"
-						 textAlign="right"/>
-				<s:TextInput id="mId2" x="77" y="32" width="130" change="onNameChanged(event)" toolTip="发射器组合的名称"
-							 color="#000000" fontSize="14" text="名称" textAlign="left"/>
-				<s:Label x="13" y="68" width="58" color="#969696" fontSize="14" text="库列表"
-						 textAlign="right"/>
-				<s:ComboBox id="mFileList" x="77" y="64" width="130" height="25"
-							change="onSelectFile(event)" contentBackgroundColor="#C8C8C8"
-							fontSize="14"/>
-				<s:Button x="275" y="28" width="100" height="30" label="重启(F5/R)"
+				<s:Label x="22" y="36" color="#969696" text="名称" textAlign="right"/>
+				<s:TextInput id="mId2" x="54" y="30" width="130" change="onNameChanged(event)"
+							 color="#000000" text="名称" textAlign="left" toolTip="发射器组合的名称"/>
+				<s:Label x="12" y="64" color="#969696" text="库列表" textAlign="right"/>
+				<s:ComboBox id="mFileList" x="54" y="59" width="130" change="onSelectFile(event)"
+							contentBackgroundColor="#C8C8C8"/>
+				<s:Button x="232" y="8" width="100" height="30" label="重启(F5/R)"
 						  click="onPressRestart(event)" fontSize="12" toolTip="重启模拟，F5或者Ctrl+R"/>
-				<s:Button x="397" y="28" width="100" height="30" label="保存到库(S)"
+				<s:Button x="340" y="8" width="100" height="30" label="保存到库(S)"
 						  click="onPressSave(event)" fontSize="12"
 						  toolTip="保存到本地库，并同时将数据写入关卡，Ctrl+S"/>
-				<s:Button x="274" y="67" width="100" height="30" label="另存为库.."
+				<s:Button x="232" y="46" width="100" height="30" label="另存为库.."
 						  click="onPressSaveAs(event)" fontSize="12" toolTip="Ctrl+Shift+S"/>
-				<s:Button id="mSaveToLevel" x="398" y="66" width="100" height="30" toolTip="只将数据写入关卡，不保存到库。Ctrl+L"
+				<s:Button id="mSaveToLevel" x="340" y="46" width="100" height="30" toolTip="只将数据写入关卡，不保存到库。Ctrl+L"
 						  label="保存到关卡(L)" click="onPressSaveToLevel(event)" fontSize="12"/>
 			</s:Group>
-			<s:BorderContainer id="mPreviewerContainer" width="100%" height="100%"
-							   borderVisible="false">
-			</s:BorderContainer>
+			<s:Group id="mPreviewerContainer" width="100%" height="100%">
+			</s:Group>
 		</s:VGroup>
 		<s:VGroup height="100%" gap="1" paddingLeft="8">
 			<s:Panel width="100%" height="150" borderVisible="true" dropShadowVisible="false"
@@ -708,10 +760,6 @@
 			</emitter:BasicEmitterConfig>
 		</s:VGroup>
 		<s:VGroup id="mBulletConfigGroup" x="726" y="163">
-			<!--
-			<emitter:BasicBulletConfig id="mBasicBulletConfig">
-			</emitter:BasicBulletConfig>
-			-->
 		</s:VGroup>
 	</s:HGroup>
 	
