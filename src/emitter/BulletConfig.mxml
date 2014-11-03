@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
-		 xmlns:mx="library://ns.adobe.com/flex/mx">
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 initialize="onInit(event)" borderVisible="true" dropShadowVisible="false" title="子弹参数">
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
@@ -10,24 +11,89 @@
 		<![CDATA[
 			import flashx.textLayout.debug.assert;
 			
-			import mx.events.FlexEvent;
-			public var onValueChanged:Function = null;
-			public var onChangeBulletType:Function = null;
+			import mx.core.UIComponent;
+			
+			import spark.components.ComboBox;
+			import spark.components.Label;
+			import spark.components.TextInput;
+			
+			private var mControlMap:Object = {};
+			private var mBulletType:String = null;
+			
+			private function onInit(event:Event): void
+			{
+			}
+			
+			private function initControls():void
+			{	
+				var parser:Object = EmitterPanel.BulletParser[mBulletType];
+				
+				var presort:Array = [];
+				
+				for(var key:String in parser)
+				{
+					var entry:Object = parser[key];
+					
+					var label:Label = new Label;
+					label.text = entry.label;
+					label.setStyle("textAlign", "right");
+					label.setStyle("verticalAlign", "middle");
+					
+					var control:UIComponent = (new (entry.controlType)()) as UIComponent;
+					control.id = key+"In";
+					control.name = key+"In";
+					
+					if(control is ComboBox && entry.dataSrcGen)
+					{
+						(control as ComboBox).dataProvider = entry.dataSrcGen();
+					}
+					
+					if(control is TextInput)
+					{
+						control.setStyle("textAlign", "center");
+						control.setStyle("verticalAlign", "middle");
+					}
+					
+					// add event handlers
+					if(entry.handleEvent)
+					{
+						for(var eventKey:String in entry.handleEvent)
+						{
+							control.addEventListener(eventKey, entry.handleEvent[eventKey]);
+						}
+					}
+					
+					presort.push({ n: entry.n, key: key, label: label, control: control});
+				}
+				
+				presort.sortOn("n", Array.NUMERIC);
+				for each(var entry:* in presort)
+				{
+					mTile.addElement(entry.label);
+					mTile.addElement(entry.control);
+					mControlMap[entry.key+"In"] = entry.control;
+				}
+				trace("config panel init done");	
+			}
 			
 			public function setData(data:Object):void
 			{
-				var type:String = data.bullet.type;
-				var parser:Object = EmitterPanel.BulletParser[type];
-				var keys:Array = Utils.getKeys(EmitterPanel.BulletMeta[type]);
+				mBulletType = data.bullet.type;
+				
+				initControls();
+
+				var parser:Object = EmitterPanel.BulletParser[mBulletType];
+				var keys:Array = Utils.getKeys(EmitterPanel.BulletMeta[mBulletType]);
 				
 				for each(var key:String in keys)
 				{
 					var outletKey:String = key + "In";
-					trace("key is " + key + ", key in is " + outletKey + ", val " + data.bullet[key]);
-					if(!this.hasOwnProperty(outletKey))
+					//trace("key is " + key + ", key in is " + outletKey + ", val " + data.bullet[key]);
+					var outlet:* = mControlMap[outletKey];
+					if(!outlet)
 						trace("ignored attrs " + key);
 					else
-						parser[key].toIn(data.bullet[key], this[outletKey]);
+						parser[key].toIn(data.bullet[key], outlet);
 				}
 			}
 			
@@ -40,23 +106,26 @@
 				for each(var key:String in keys)
 				{
 					var outletKey:String = key + "In";
-					if(!data.bullet.hasOwnProperty(key) || !this.hasOwnProperty(outletKey))
+					var outlet:* = mControlMap[outletKey];
+					if(!data.bullet.hasOwnProperty(key) || !outlet)
 					{
 						trace("missing property on bullet: " + key);
 						continue;
 					}
-					data.bullet[key] = parser[key].toVal(this[outletKey]);
+					data.bullet[key] = parser[key].toVal(outlet);
 				}
 			}
 			
-			
 			public function getBulletType(): String
 			{
-				return this["typeIn"].selectedItem;
+				return mControlMap["typeIn"].selectedItem;
 			}
 			
 			// define config type
-			public function get configType():String { assert(); return ""; }
+			public function get configType():String { return mBulletType; }
 		]]>
 	</fx:Script>
+	
+	<s:TileGroup id="mTile" columnWidth="120" requestedColumnCount="2" verticalGap="3">
+	</s:TileGroup>
 </s:Panel>

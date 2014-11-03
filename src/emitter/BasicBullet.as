@@ -2,6 +2,7 @@ package emitter
 {
 	import flash.display.Bitmap;
 	import flash.display.Loader;
+	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.IOErrorEvent;
 	import flash.filesystem.File;
@@ -14,7 +15,7 @@ package emitter
 	public class BasicBullet extends Bullet
 	{
 		private var mData:Object;
-		private var mImage:Bitmap;
+		private var mImageBox:Sprite;
 		private var mEmitter:Emitter;
 		private var mElapsed:Number;
 		
@@ -76,11 +77,17 @@ package emitter
 		}
 		
 		private function onImageLoad(event:Event):void  {
-			mImage = event.currentTarget.loader.content;
-			mImage.rotation = mResRotation;
-			mImage.x = mImage.width*0.5;
-			mImage.y = mImage.height*0.5;
-			this.addChild(mImage);
+			
+			var image:Bitmap = event.currentTarget.loader.content;
+
+			image.x -= image.width*0.5;
+			image.y -= image.height*0.5;
+			
+			mImageBox = new Sprite;
+			mImageBox.addChild(image);
+			mImageBox.rotation = mResRotation;
+			
+			this.addChild(mImageBox);
 		}
 		
 		public function setPos(x:Number, y:Number): void {
@@ -144,7 +151,7 @@ package emitter
 				mRotation = degree;				
 			}
 			
-			mScale = mScale + mData.bullet.scalePerSec * dt;
+			mScale = Utils.clamp(mScale + mData.bullet.scalePerSec * dt, mData.bullet.scaleMin, mData.bullet.scaleMax);
 			
 			syncView();
 		}

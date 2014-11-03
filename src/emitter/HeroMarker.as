@@ -58,8 +58,8 @@ package emitter
 			}
 			
 			mImage = new ICON_EMITTER();
-			mImage.x = -mImage.width/2;
-			mImage.y = -mImage.height/2;
+			mImage.x -= mImage.width*0.5;
+			mImage.y -= mImage.height*0.5;
 			addChild(mImage);
 		}
 		

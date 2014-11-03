@@ -13,12 +13,15 @@ package emitter
 	
 	import mx.controls.Alert;
 	
+	import spark.utils.BitmapUtil;
+	
 	public class Emitter extends Sprite
 	{
 		[Embed(source="assets/emitter.png")] 
 		public static const ICON_EMITTER:Class;
 		
 		private var mImage:Bitmap;
+		private var mImageBox:Sprite;
 		private var mData:Object;
 		private var mPanel:EmitterPanel;
 		
@@ -74,6 +77,7 @@ package emitter
 			mRotationSpeed = mData.rotateSpeed;
 			mRotation = mData.rotation;
 
+			this.updateImage();
 			this.updatePosition();
 		}
 		
@@ -204,32 +208,58 @@ package emitter
 				this.filters = [];
 			}
 		}
-		
-		public function updateImage():void {
-			if (mImage) {
-				removeChild(mImage);
+
+		private function useImage(image:Bitmap):void  {
+			
+			if(mImage)
+			{
+				mImage.parent.removeChild(mImage);
 				mImage = null;
 			}
-			if (mData.res != EmitterPanel.NULL_RES) {
-				var file:File = Data.getInstance().resolvePath("skins");
-				var loader:Loader = new Loader();
-				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onImageLoad);
-				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, onLoadError);
-				loader.load(new URLRequest(file.url+"/"+mData.res+".png"));
+			
+			if(mImageBox)
+			{
+				mImageBox.parent.removeChild(mImageBox);
+				mImageBox = null;
 			}
-			else {
-				mImage = new ICON_EMITTER();
-				addChild(mImage);
-				mImage.x = -mImage.width/2;
-				mImage.y = -mImage.height/2;
-			}
+			
+			mImage = image;
+			
+			mImage.x -= mImage.width*0.5;
+			mImage.y -= mImage.height*0.5;
+			
+			mImageBox = new Sprite;
+			mImageBox.addChild(mImage);
+			mImageBox.rotation = mData.resRotation;
+			
+			this.addChild(mImageBox);
 		}
 		
 		private static var ERROR_IMAGE:Object = {};
-		private function onLoadError(event:IOErrorEvent):void {
-			if (!ERROR_IMAGE[mData.res]) {
-				ERROR_IMAGE[mData.res] = true;
-				Alert.show("发射器资源"+mData.res+".png未找到，请确认资源", "图片加载错误", Alert.OK);
+
+		public function updateImage():void {
+			if(mData.res == EmitterPanel.NULL_RES)
+			{
+				var image:Bitmap = new ICON_EMITTER();
+				useImage(image);
+			}
+			else
+			{
+				var file:File = Data.getInstance().resolvePath("skins");
+				var loader:Loader = new Loader();
+				
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, function(event:Event):void { 
+					useImage(event.currentTarget.loader.content); 
+				});
+				
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function onLoadError(event:IOErrorEvent):void {
+					if (!ERROR_IMAGE[mData.res]) {
+						ERROR_IMAGE[mData.res] = true;
+						Alert.show("发射器资源"+mData.res+".png未找到，请确认资源", "图片加载错误", Alert.OK);
+					}
+				});
+				
+				loader.load(new URLRequest(file.url+"/"+mData.res+".png"));
 			}
 		}
 		
@@ -237,13 +267,6 @@ package emitter
 			this.x =  mData.x*0.5;
 			this.y = -mData.y*0.5;
 			this.rotation = mData.rotation;
-		}
-		
-		private function onImageLoad(event:Event):void  {
-			mImage = event.currentTarget.loader.content;
-			addChild(mImage);
-			mImage.x = -mImage.width/2;
-			mImage.y = -mImage.height/2;
 		}
 		
 		private function onAdded(event:Event):void {
