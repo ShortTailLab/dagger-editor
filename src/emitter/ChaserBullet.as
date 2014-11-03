@@ -61,6 +61,12 @@ package emitter
 			mSpeedX = data.bullet.speedX;
 			mSpeedY = data.bullet.speedY;
 			
+			mRotation = defaultRot;
+			
+			mPosX = emit.sPosX + mData.bullet.offset * -Math.sin(mRotation/180*Math.PI);
+			mPosY = emit.sPosY + mData.bullet.offset * -Math.cos(mRotation/180*Math.PI);
+			
+			// readjust rotation to face target
 			if(mData.bullet.faceTarget)
 			{
 				var hero:HeroMarker = mPanel.getHero();
@@ -68,11 +74,6 @@ package emitter
 				var dy:Number = hero.posY;				
 				mRotation = Math.atan2(-dx, -dy)/Math.PI*180;
 			}
-			else
-				mRotation = defaultRot;
-			
-			mPosX = emit.sPosX + mData.bullet.offset * -Math.sin(mRotation/180*Math.PI);
-			mPosY = emit.sPosY + mData.bullet.offset * -Math.cos(mRotation/180*Math.PI);
 
 			syncView();
 		}
