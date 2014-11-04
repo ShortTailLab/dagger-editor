@@ -423,7 +423,7 @@
 					return;
 				var data:Object = mData.emitters[index];
 				
-				if(!mBulletConfigPanel || mBulletConfigPanel.configType != data.bullet.type)
+				//if(!mBulletConfigPanel || mBulletConfigPanel.configType != data.bullet.type)
 				{
 					createBulletConfigPanel(data.bullet.type);
 				}

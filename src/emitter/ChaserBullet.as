@@ -70,8 +70,8 @@ package emitter
 			if(mData.bullet.faceTarget)
 			{
 				var hero:HeroMarker = mPanel.getHero();
-				var dx:Number = hero.posX;
-				var dy:Number = hero.posY;				
+				var dx:Number = hero.posX - mPosX;
+				var dy:Number = hero.posY - mPosY;				
 				mRotation = Math.atan2(-dx, -dy)/Math.PI*180;
 			}
 
