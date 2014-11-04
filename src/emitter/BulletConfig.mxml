@@ -72,8 +72,7 @@
 					mTile.addElement(entry.label);
 					mTile.addElement(entry.control);
 					mControlMap[entry.key+"In"] = entry.control;
-				}
-				trace("config panel init done");	
+				}	
 			}
 			
 			public function setData(data:Object):void
