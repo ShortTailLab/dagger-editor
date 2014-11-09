@@ -87,7 +87,7 @@
 			
 			private static function onEditPath(event:Event): void
 			{
-				var self:TextInput = event.target as TextInput
+				var self:TextInput = event.currentTarget as TextInput
 					
 				var pathEditor:PathEditor = new PathEditor;
 				PopUpManager.addPopUp(pathEditor, self.parent, true);
