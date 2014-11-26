@@ -44,8 +44,10 @@ package
 			var self:Data = this;
 			self.start( function(m1:String):void
 			{
+				onError("本地配置完成...\n");
 				self.syncClient( function(m2:String):void
 				{
+					onError("同步服务器配置完成...\n");
 					self.parseLocalData( function(m3:String):void
 					{
 						onComplete( m1+"\n"+m2+"\n"+m3 );
@@ -64,10 +66,16 @@ package
 		public function start(onComplete:Function, onError:Function):void 
 		{
 			var config:File = File.applicationStorageDirectory.resolvePath("conf.json");
-			this.mEditorConfigs = this.loadJson(config, false);
 			
-			if( !this.mEditorConfigs ) 
+			if(config.exists)
+			{
+				onError("加载 " + config.nativePath + "\n");
+				this.mEditorConfigs = this.loadJson(config);
+			}
+			
+			if( !this.mEditorConfigs )
 				this.mEditorConfigs = { mapSpeed: 32 };
+			
 			
 			if( !this.mEditorConfigs.projectPath ) {
 				var self:* = this;
@@ -133,10 +141,11 @@ package
 		{
 			// download all the configs of client from oss
 			var self:Data = this, counter:Number = 0, error:Boolean = false;
-			var alldone:Function = function(item:Object):Function
+			var onItemDoneGen:Function = function(item:Object):Function
 			{
 				var handleTEXT:Function = function(e:Event):void
 				{
+					onError("下载"+item.suffix+"完成.\n");
 					MapEditor.getInstance().addLog("下载"+item.suffix+"成功");
 					Utils.WriteRawFile(
 						File.applicationStorageDirectory.resolvePath(item.suffix),
@@ -158,13 +167,15 @@ package
 			
 			kSYNC_TARGETS.forEach(function(item:Object, ...args):void
 			{
+				onError("正在下载"+item.suffix+"...\n");
+				MapEditor.getInstance().addLog("正在下载"+item.suffix+"..");
+				
 				var loader:URLLoader = new URLLoader;
 				loader.dataFormat = item.type;
-				loader.addEventListener(Event.COMPLETE, alldone(item));
+				loader.addEventListener(Event.COMPLETE, onItemDoneGen(item));
 				loader.addEventListener(IOErrorEvent.IO_ERROR, anyerror);
 				loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, anyerror);
 				loader.load( new URLRequest(item.src) );
-				MapEditor.getInstance().addLog("正在下载"+item.suffix+"..");
 			}, null);
 		}
 		

@@ -263,7 +263,8 @@ package
 				stream.open(file, FileMode.READ);
 				//trace( file.url );
 				//trace( stream.bytesAvailable ) ;
-				result = JSON.parse(stream.readUTFBytes(stream.bytesAvailable));
+				var bytes:String = stream.readUTFBytes(stream.bytesAvailable);
+				result = JSON.parse(bytes);
 				stream.close();
 			}
 			return result;
@@ -337,6 +338,10 @@ package
 					throw "Unkown type";
 				}
 			}
+			
+			// escape all back slashes
+			var pattern:RegExp = /\\/g;
+			str = str.replace(pattern, "\\\\");
 			
 			return str;
 		}
