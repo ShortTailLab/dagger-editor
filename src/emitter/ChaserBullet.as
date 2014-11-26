@@ -6,6 +6,7 @@ package emitter
 	import flash.events.Event;
 	import flash.events.IOErrorEvent;
 	import flash.filesystem.File;
+	import flash.geom.Point;
 	import flash.net.URLRequest;
 	
 	import mx.controls.Alert;
@@ -107,8 +108,8 @@ package emitter
 		}
 		
 		private function syncView(): void{
-			this.x = mPosX*0.5;
-			this.y = -mPosY*0.5;
+			this.x = mPosX;
+			this.y = -mPosY;
 			this.rotation = mRotation;
 			this.scaleX = this.scaleY = mScale;
 		}
@@ -125,9 +126,9 @@ package emitter
 				return;
 			}
 			
-			// out of bound
-			if (this.x < -250 || this.x >= 250 || 
-				this.y <= -400 || this.y >= 400) {
+			var center:Point = EmitterPreviewer.SceneCenter; 
+			if(!EmitterPreviewer.SceneBound.contains(mPosX+center.x, mPosY+center.y))
+			{
 				destroy();
 				return;
 			}

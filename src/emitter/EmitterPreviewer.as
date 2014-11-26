@@ -3,6 +3,8 @@ package emitter
 	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
+	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	import flash.text.TextField;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
@@ -21,6 +23,16 @@ package emitter
 		private var mPanel:EmitterPanel;
 		
 		private var mHero:HeroMarker = null;
+		
+		public static const SceneWidth:Number = 720;
+		public static const SceneHeight:Number = 1280;
+		
+		public static const ScenePadding:Number = 200;
+		
+		public static const SceneCenter:Point = new Point(SceneWidth*0.5, SceneHeight*0.5);
+		
+		public static const SceneBound:Rectangle = new Rectangle(-ScenePadding, -ScenePadding, 
+			SceneWidth+ScenePadding*2, SceneHeight+ScenePadding*2);
 		
 		public function EmitterPreviewer(data:Object, panel:EmitterPanel) {
 			mData = data;
@@ -70,29 +82,26 @@ package emitter
 		
 		private function init():void {
 
-			var Width:int = 360;
-			var Height:int = 640;
-			
-			var s:SceneGrid = new SceneGrid(Width, Height);
+			var s:SceneGrid = new SceneGrid(SceneWidth, SceneHeight);
 			this.addChild(s);
 			
 			var tf:TextField = new TextField();
 			tf.mouseEnabled = false;
 			tf.text = "已启动时间：";
 			tf.x = 0; 
-			tf.y = -Height-20;
+			tf.y = -SceneHeight-20;
 			s.addChild(tf);
 			
 			mElapsedTf = new TextField();
 			mElapsedTf.mouseEnabled = false;
 			mElapsedTf.text = "0.0s";
 			mElapsedTf.x = 70; 
-			mElapsedTf.y = -Height-20;
+			mElapsedTf.y = -SceneHeight-20;
 			s.addChild(mElapsedTf);
 			
 			mContainer = new Sprite();
-			mContainer.x = Width*0.5; 
-			mContainer.y = -Height*0.5;
+			mContainer.x = SceneWidth*0.5; 
+			mContainer.y = -SceneHeight*0.5;
 			this.addChild(mContainer);
 			
 			mEmitters = new Vector.<Emitter>();
@@ -104,8 +113,10 @@ package emitter
 			}
 			
 			mHero = new HeroMarker();
-			mHero.setData({x: 0, y:-200}, mPanel);;
+			mHero.setData({x: 0, y:-400}, mPanel);;
 			mContainer.addChild(mHero);
+			
+			this.scaleX = this.scaleY = 0.5;
 		}
 		
 		public function getHero(): HeroMarker

@@ -69,16 +69,16 @@ package emitter
 		}
 		
 		public function get posX():Number {
-			return this.x*2;
+			return this.x;
 		}
 		
 		public function get posY():Number {
-			return -this.y*2;
+			return -this.y;
 		}
 		
 		public function updatePosition():void {
-			this.x = mData.x/2;
-			this.y = -mData.y/2;
+			this.x = mData.x;
+			this.y = -mData.y;
 			this.rotation = mData.rotation;
 		}
 		
@@ -95,8 +95,8 @@ package emitter
 		}
 		
 		private function onMouseDown(event:MouseEvent):void {
-			var Width:int = 360;
-			var Height:int = 640;
+			var Width:Number = EmitterPreviewer.SceneWidth;
+			var Height:Number = EmitterPreviewer.SceneHeight;
 			
 			this.startDrag(false, new Rectangle(-Width*0.5, -Height*0.5, Width, Height));
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
@@ -110,8 +110,8 @@ package emitter
 		}
 		
 		private function onMouseMove(event:MouseEvent):void {
-			mData.x = this.x*2;
-			mData.y = -this.y*2;
+			mData.x = this.x;
+			mData.y = -this.y;
 		}
 		
 		public function destroy():void {

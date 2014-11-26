@@ -4,13 +4,18 @@ package
 	
 	import by.blooddy.crypto.MD5;
 	
+	import flash.display.Bitmap;
 	import flash.display.DisplayObject;
+	import flash.display.Loader;
+	import flash.display.LoaderInfo;
 	import flash.events.Event;
+	import flash.events.IOErrorEvent;
 	import flash.events.MouseEvent;
 	import flash.filesystem.File;
 	import flash.filesystem.FileMode;
 	import flash.filesystem.FileStream;
 	import flash.geom.Point;
+	import flash.net.URLRequest;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.utils.ByteArray;
@@ -261,8 +266,6 @@ package
 			{
 				var stream:FileStream = new FileStream;
 				stream.open(file, FileMode.READ);
-				//trace( file.url );
-				//trace( stream.bytesAvailable ) ;
 				var bytes:String = stream.readUTFBytes(stream.bytesAvailable);
 				result = JSON.parse(bytes);
 				stream.close();
@@ -603,6 +606,60 @@ package
 					dst[key] = src[key];
 			}
 			return dst;
+		}
+		
+		static public function batchLoadImages(files:Array, onComplete:Function):void
+		{
+			var length:Number = 0; 
+			var counter:Number = 0;
+			var loadedImages:Object = {};
+			
+			var onDoneLoading:Function = function(e:Event):void
+			{
+				var loader:Loader = (e.target as LoaderInfo).loader;
+				loadedImages[loader.contentLoaderInfo.url] = Bitmap(loader.content).bitmapData;
+				
+				if( ++counter >= length ) {
+					MapEditor.getInstance().addLog("全部skin加载完成");
+					onComplete(loadedImages);
+				}
+			};
+			
+			var onError:Function = function(index:int):void
+			{
+				if( ++counter >= length ) {
+					MapEditor.getInstance().addLog("全部skin加载完成");
+					onComplete(loadedImages);
+				}
+			};
+
+			if(files.length == 0)
+				onComplete(loadedImages);
+			
+			for(var i:int=0; i<files.length; i++)
+			{
+				var file:File = files[i];
+				
+				var loader:Loader = new Loader;
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onDoneLoading);
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, onError);
+				loader.load(new URLRequest(file.nativePath));
+				length++;
+			}
+		}
+		
+		
+		public static function loadJsonFilesAsNameMap(files:Array):Object
+		{
+			var nameMap:Object = {};
+			for each( var file:File in files )
+			{
+				if( file.name.split(".")[1] != "json" )
+					continue;
+				var name:String = file.name.split(".")[0];
+				nameMap[name] = Utils.LoadJSONToObject( file );
+			}
+			return nameMap;
 		}
 	}
 }

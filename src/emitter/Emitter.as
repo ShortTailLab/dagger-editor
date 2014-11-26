@@ -132,8 +132,8 @@ package emitter
 				
 				// set display object
 				this.rotation = mRotation;
-				this.x =  mPosX*0.5;
-				this.y = -mPosY*0.5;
+				this.x =  mPosX;
+				this.y = -mPosY;
 				
 				// update bullets
 				
@@ -264,8 +264,8 @@ package emitter
 		}
 		
 		public function updatePosition():void {
-			this.x =  mData.x*0.5;
-			this.y = -mData.y*0.5;
+			this.x =  mData.x;
+			this.y = -mData.y;
 			this.rotation = mData.rotation;
 		}
 		
@@ -277,8 +277,8 @@ package emitter
 		private function onMouseDown(event:MouseEvent):void {
 			mPanel.previewer.selectEmitter(this);
 			
-			var Width:int = 360;
-			var Height:int = 640;
+			var Width:Number = EmitterPreviewer.SceneWidth;
+			var Height:Number = EmitterPreviewer.SceneHeight;
 			
 			this.startDrag(false, new Rectangle(-Width*0.5, -Height*0.5, Width, Height));
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
@@ -292,8 +292,8 @@ package emitter
 		}
 		
 		private function onMouseMove(event:MouseEvent):void {
-			mData.x = mPosX = this.x*2;
-			mData.y = mPosY = -this.y*2;
+			mData.x = mPosX = this.x;
+			mData.y = mPosY = -this.y;
 			mPanel.updateCurrentEmitter();
 		}
 		
