@@ -1,6 +1,6 @@
 package 
 {
-	import behaviorEdit.BType;
+	import BTEdit.BType;
 	
 	import by.blooddy.crypto.MD5;
 	
@@ -14,6 +14,8 @@ package
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.utils.ByteArray;
+	
+	import flashx.textLayout.debug.assert;
 	
 	import mx.collections.ArrayCollection;
 	import mx.collections.ArrayList;
@@ -85,154 +87,137 @@ package
 		
 		static public function genBTreeJS(sourceData:Object):String
 		{
-			var result:String = "";
-			if(sourceData)
+			if(!sourceData)
+				return "";
+			
+			// if this is a subtree reference, replace itself with the actual subtree
+			if (sourceData.subTree)
+				sourceData = Utils.deepCopy(Data.getInstance().behaviorSet[sourceData.subTree]);
+			
+			var children:Array = sourceData.children as Array;
+			var childrenJS:Array = new Array;
+			for each(var childData:Object in children)
 			{
-				if (sourceData.subTree) {
-					sourceData = Utils.cloneObjectData(Data.getInstance().behaviorSet[sourceData.subTree]);
-				}
-				var children:Array = sourceData.children as Array;
-				var childrenJS:Array = new Array;
-				for each(var childData:Object in children)
-				{
-					var js:String = genBTreeJS(childData);
-					//if any child return "", the whole tree is invalid and should be ""
-					if(js == "")
-						return "";
-					childrenJS.push(js);
-				}
-				
-				if(sourceData.type == BType.BTYPE_EXEC)
-				{
-					result += sourceData.data.execType+"(";
-					//the format of data refer to execNode.exportData()
-					var parms:Array = sourceData.data.parm as Array
-					for(var i:int = 0; i < parms.length; i++)
-					{
-						if(parms[i].hasOwnProperty("value") && parms[i].value == "")
-							return "";
-						
-						if(i!=0) result += ",";
-						if(parms[i].type == "ccp")
-						{
-							result += "cc.p("+parms[i].value+","+parms[++i].value+")";
-						}
-						else if(parms[i].type == "ccsize")
-						{
-							result += "cc.size("+parms[i].value+","+parms[++i].value+")";
-						}
-						else if(parms[i].type == "node")
-						{
-							//the parms ask for a node while node array is empty.
-							if(children.length == 0)
-							{
-								trace("genBtTree error:invalid node: a node parm is missing!");
-								return "";
-							}
-							result += childrenJS.shift();
-						}
-						else if(parms[i].type == "array_ccp" || parms[i].type == "array_ccp_curve")
-						{
-							var path:Array = parms[i].path as Array;
-							result += "[";
-							for(var j:int = 0; j < path.length; j++)
-							{
-								//path*2 to make it compatible to the old edition
-								result += "cc.p("+(path[j].x)+","+(path[j].y)+")";
-								if(j < path.length-1)
-									result += ","
-							}
-							result += "]";
-						}
-						else
-							result += parms[i].value;
-						
-					}
-					result += ")";
-				}
-					//except for exec node, others should have child nodes.
-				else if(children.length == 0)
-				{
-					trace("genBtTree error: children is empty.");
+				var js:String = genBTreeJS(childData);
+				//if any child return "", the whole tree is invalid and should be ""
+				if(js == "")
 					return "";
-				}
-				else
-				{
-					if(sourceData.type == BType.BTYPE_SEQ)
-						result += "BT.seq(";
-					else if(sourceData.type == BType.BTYPE_PAR)
-						result += "BT.par(";
-					else if(sourceData.type == BType.BTYPE_SEL)
-						result += "BT.sel(";
-					else if(sourceData.type == BType.BTYPE_LOOP)
-					{
-						if(sourceData.times == "")
-						{
-							trace("genBtTree error: times is empty.");
-							return "";
-						}
-						result += "BT.loop("+sourceData.times+",";
-					}
-					else if(sourceData.type == BType.BTYPE_COND)
-					{
-						if(sourceData.data.cond == "")
-						{
-							trace("genBtTree error: cond is empty.");
-							return "";
-						}
-						result += "BT.cond("+sourceData.data.cond+",";
-					}
-					else if(sourceData.type == BType.BTYPE_ONCE) {
-						result += "BT.once(";
-					}
-					else if(sourceData.type == BType.BTYPE_EVERY)
-					{
-						if(sourceData.interval == "" || sourceData.skip == "") {
-							trace("genBtTree error: interval/skip is empty.");
-							return "";
-						}
-						result += "BT.every("+sourceData.interval+",";
-					}
-					else if (sourceData.type == BType.BTYPE_RANDOM) {
-						result += "BT.randomSelect(";
-						result += "[";
-						for(var k:int = 0; k < sourceData.weights.length; k++) {
-							result += sourceData.weights[k];
-							if(k < sourceData.weights.length-1)
-								result += ","
-						}
-						result += "],[";
-						while(childrenJS.length > 0)
-						{
-							result += childrenJS.shift();
-							if(childrenJS.length > 0)
-								result += ",";
-						}
-						result += "])";
-						return result;
-					}
-					else
-						return "";
-					
-					while(childrenJS.length > 0)
-					{
-						result += childrenJS.shift();
-						if(childrenJS.length > 0)
-							result += ",";
-					}
-					if (sourceData.type == BType.BTYPE_EVERY) {
-						result += ","+sourceData.skip;
-					}
-					result += ")";
-				}
+				childrenJS.push(js);
 			}
 			
-			return result;
-		}
-		
-		static public function comp2BNode(node1:Object, node2:Object):Boolean
-		{
-			return genBTreeJS(node1) == genBTreeJS(node2);
+			if(sourceData.type == BType.BTYPE_EXEC)
+			{
+				//the format of data refer to execNode.exportData()
+				var parms:Array = sourceData.data.parm as Array;
+				var paramStrs:Array = [];
+				
+				for(var i:int = 0; i < parms.length; i++)
+				{
+					if(parms[i].hasOwnProperty("value") && parms[i].value == "")
+						return "";
+					
+					if(parms[i].type == "ccp")
+					{
+						var str:String = "cc.p("+parms[i].value+","+parms[++i].value+")";
+						paramStrs.push(str);
+					}
+					else if(parms[i].type == "ccsize")
+					{
+						var str:String = "cc.size("+parms[i].value+","+parms[++i].value+")";
+						paramStrs.push(str);
+					}
+					else if(parms[i].type == "node")
+					{
+						//the parms ask for a node while node array is empty.
+						if(children.length == 0)
+						{
+							trace("genBtTree error:invalid node: a node parm is missing!");
+							return "";
+						}
+						var str:String = childrenJS.shift();
+						paramStrs.push(str);
+					}
+					else if(parms[i].type == "array_ccp" || parms[i].type == "array_ccp_curve")
+					{
+						var path:Array = parms[i].path as Array;
+						var pointStrs:Array = path.map(function(p:*, i:int, arr:Array):String { return "cc.p("+p.x+","+p.y+")"; });
+						var pathStr:String = "[" + pointStrs.join(",") + "]";
+						paramStrs.push(pathStr);
+					}
+					else if(parms[i].type == "string")
+					{
+						var str:String = "";
+						if(parms[i].value.indexOf("'") == 0)
+							str = parms[i].value;
+						else
+							str = "'" + parms[i].value + "'";
+						paramStrs.push(str);
+					}
+					else
+					{
+						var str:String = parms[i].value;
+						paramStrs.push(str);
+					}
+				}
+				var pStr:String = paramStrs.join(",");
+				return printf("%s(%s)", sourceData.data.execType, pStr);
+			}
+			else if(children.length == 0)
+			{
+				//except for exec node, others should always have child nodes.
+				trace("genBtTree error: children is empty.");
+				return "";
+			}
+			else if(sourceData.type == BType.BTYPE_SEQ)
+			{
+				return printf("BT.seq(%s)", childrenJS.join(","));
+			}
+			else if(sourceData.type == BType.BTYPE_PAR)
+			{
+				return printf("BT.par(%s)", childrenJS.join(","));
+			}
+			else if(sourceData.type == BType.BTYPE_SEL)
+			{
+				return printf("BT.sel(%s)", childrenJS.join(","));
+			}
+			else if(sourceData.type == BType.BTYPE_LOOP)
+			{
+				if(sourceData.times == "")
+				{
+					trace("genBtTree error: times is empty.");
+					return "";
+				}
+				return printf("BT.sel(%s,%s)", sourceData.times, childrenJS.join(","));
+			}
+			else if(sourceData.type == BType.BTYPE_COND)
+			{
+				if(sourceData.data.cond == "")
+				{
+					trace("genBtTree error: cond is empty.");
+					return "";
+				}
+				return printf("BT.cond(%s,%s)", sourceData.data.cond, childrenJS.join(","));
+			}
+			else if(sourceData.type == BType.BTYPE_ONCE) 
+			{
+				return printf("BT.once(%s)", childrenJS.join(","));
+			}
+			else if(sourceData.type == BType.BTYPE_EVERY)
+			{
+				if(sourceData.interval == "" || sourceData.skip == "") {
+					trace("genBtTree error: interval/skip is empty.");
+					return "";
+				}
+				return printf("BT.every(%f,%s,%d)", sourceData.interval, childrenJS.join(","), sourceData.skip);
+			}
+			else if (sourceData.type == BType.BTYPE_RANDOM) 
+			{
+				var weightStr:String = sourceData.weights.join(",");
+				var childrenStr:String = childrenJS.join(",");
+				return printf("BT.randomSelect([%s],[%s])", weightStr,  childrenStr);
+			}
+			else
+				return "";
 		}
 		
 		static public function arrayStr2ccpStr(str:String):String
@@ -249,38 +234,25 @@ package
 				arr = JSON.parse(str) as Array;
 			return "@@cc.size("+arr[0]+","+arr[1]+")@@";
 		}
-		
-		static public function deepCopy(obj:Object):Object
-		{
-			var objByte:ByteArray = new ByteArray;
-			objByte.writeObject(obj);
-			objByte.position = 0;
-			return objByte.readObject();
-		}
-		
-		static public function write(src:String, path:String):Boolean
-		{
-			var file:File = new File(path);
-			
-			var stream:FileStream = new FileStream;
-			stream.open(file, FileMode.WRITE);
-			stream.writeUTFBytes( src );
-			stream.close();
-			return true;
-		}
-		
+
 		static public function WriteRawFile( file:File, str:String ):void
 		{
 			var stream:FileStream = new FileStream;
 			stream.open( file, FileMode.WRITE );
 			stream.writeUTFBytes( str );
 			stream.close();
+			
+			trace("raw file: \n", str);
 		}
 		
 		static public function projectRoot():String
 		{
 			return File.desktopDirectory.resolvePath("editor").nativePath + "/";			
 		}
+		
+		//--------------------------------
+		// Json helpers
+		//--------------------------------
 		
 		static public function LoadJSONToObject( file:File ):Object
 		{
@@ -301,15 +273,72 @@ package
 		{
 			var stream:FileStream = new FileStream;
 			stream.open( file, FileMode.WRITE );
-			stream.writeUTFBytes( JSON.stringify(item, null, "\t") );
+			//stream.writeUTFBytes( JSON.stringify(item, null, "\t") );
+			stream.writeUTFBytes( toJsonSorted(item) );
 			stream.close();
 		}
 		
-		static public function copyDirectoryTo(from:String, to:String):void
+		static public function toJsonSorted(item:Object):String
 		{
-			var f:File = File.desktopDirectory.resolvePath(from);
-			var t:File = File.desktopDirectory.resolvePath(to);
-			f.copyTo(t, true);
+			var str:String = "";
+			str += "{\n";
+			str += toJsonSortedRev(item, 1);
+			str += "}\n";
+			
+			return str;
+		}
+		
+		static private function toJsonSortedRev(item:Object, level:int):String 
+		{
+			var keys:Array = getKeys(item);
+			keys.sort();
+			
+			var str:String = "";
+			
+			var space:String = "";
+			for(var i:int=0; i<level; i++)
+				space += "    ";
+			
+			var isArray:Boolean = item is Array;
+
+			for each(var key:String in keys)
+			{
+				var val:* = item[key];
+				
+				// last element does not have ending comma
+				var comma:String = (key == keys[keys.length-1]) ? "" : ",";
+
+				var keyStr:String = isArray ? "" : printf("\"%s\": ", key);
+				
+				if(val is String){
+					str += printf("%s%s\"%s\"%s\n", space, keyStr, val, comma);
+				}
+				else if(val is Boolean) {
+					str += printf("%s%s%s%s\n", space, keyStr, val?"true":"false", comma);
+				}
+				else if(val is Number){
+					str += printf("%s%s%s%s\n", space, keyStr, val, comma);
+				}
+				else if(val is Array) {
+					str += printf("%s%s[\n", space, keyStr);
+					str += toJsonSortedRev(val, level+1);
+					str += printf("%s]%s\n", space, comma);
+				}
+				else if(val is Object) {
+					str += printf("%s%s{\n", space, keyStr);
+					str += toJsonSortedRev(val, level+1);
+					str += printf("%s}%s\n", space, comma);
+				}
+				else if(val == null)
+				{
+					str += printf("%s%s%s%s\n", space, keyStr, "null", comma);
+				}
+				else {
+					throw "Unkown type";
+				}
+			}
+			
+			return str;
 		}
 		
 		static public function parseObjToXML(obj:Object):XML
@@ -319,25 +348,7 @@ package
 				xml.appendChild(new XML("<parm label='"+b+"'></parm>"));
 			return xml;
 		}
-		
-		static public function getObjectLength(obj:Object):uint
-		{
-			var length:uint = 0;
-			for( var s:* in obj )
-				length ++;
-			return length;
-		}
-		
-		static public function merge2Object(left:Object, right:Object):Object
-		{
-			var ret:Object = {};
-			for( var key:String in left )
-				ret[key] = left[key];
-			for( var key:String in right )
-				ret[key] = right[key];
-			return ret;
-		}
-		
+
 		static public function dumpObject( obj : *, level : int = 0 ) : void{
 			trace(" ------------------------ " );
 			Utils.dumpObject2(obj, level);
@@ -471,6 +482,15 @@ package
 			return s+"s";
 		}
 		
+		
+		static public function deepCopy(obj:Object):Object
+		{
+			var objByte:ByteArray = new ByteArray;
+			objByte.writeObject(obj);
+			objByte.position = 0;
+			return objByte.readObject();
+		}
+		
 		static public function cloneObjectData(data:Object):Object {
 			return JSON.parse(JSON.stringify(data));
 		}
@@ -502,6 +522,23 @@ package
 		static public function clamp(val:Number, min:Number, max:Number): Number
 		{
 			return Math.max(min, Math.min(val, max));
+		}
+		
+		
+		
+		//-----------------------------------
+		// Object merge helpers
+		//-----------------------------------
+		
+		// merge all keys and return them as a new object
+		static public function unionMerge(left:Object, right:Object):Object
+		{
+			var ret:Object = {};
+			for( var key:String in left )
+				ret[key] = left[key];
+			for( var key:String in right )
+				ret[key] = right[key];
+			return ret;
 		}
 		
 		// merge all keys in src object

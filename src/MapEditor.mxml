@@ -10,8 +10,6 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import DecoEdit.DecoPanel;
-			
 			import excel.ExcelConfigReader;
 			import excel.ExchangeManager;
 			
@@ -86,6 +84,15 @@
 					else self.statusText.alpha -= 0.05;
 				});
 				this.mStatusTimer.start();
+				
+				var serverTypes:ArrayCollection = new ArrayCollection(["test", "release"]);
+				mServerType.dataProvider = serverTypes;
+				mServerType.selectedIndex = 0;
+			}
+			
+			public function onSwitchServerType(event:Event):void
+			{
+				SyncManager.getInstance().switchServer(mServerType.selectedItem);
 			}
 			
 			public function writeToStatusBar(str:String):void
@@ -112,15 +119,8 @@
 					this.onRightClick();
 			}
 
-			var XBOOL:Boolean = false;
 			private function onDataReady(e:Event=null):void
-			{	
-				var decoList:ArrayCollection = new ArrayCollection();
-				for (var deco:String in Data.getInstance().decoSet) {
-					decoList.addItem(deco);
-				}
-				this.mDeco.dataProvider = decoList;
-				
+			{
 				this.mEditLevel.refresh();
 				this.mEditMonster.init();
 
@@ -152,7 +152,7 @@
 			
 			private function importChapterFromExcel(e:MouseEvent):void
 			{
-				ExchangeManager.unserializeChapterFromFile(function(){
+				ExchangeManager.unserializeChapterFromFile(function():void{
 					trace("done loading chapter file");
 				});
 			}
@@ -275,29 +275,6 @@
 			public function addLog(content:String):void {
 				_log = _log+(_log==""?"":"\n")+content;
 			}
-			
-			private function onDecoSelected(event:Event):void {
-				
-			}
-			
-			private function onPressDeco(event:Event):void {
-				var deco:DecoPanel = new DecoPanel();
-				deco.init(this.mDeco.textInput.text, this.stage.stageWidth, this.stage.stageHeight);
-				EventManager.getInstance().addEventListener(EventType.DECO_PANEL_CLOSE, onDecoClose);
-				PopUpManager.addPopUp(deco, MapEditor.getInstance());
-			}
-			
-			private function onDecoClose(event:Event):void {
-				EventManager.getInstance().removeEventListener(EventType.DECO_PANEL_CLOSE, onDecoClose);
-				var decoList:ArrayCollection = new ArrayCollection();
-				for (var deco:String in Data.getInstance().decoSet) {
-					decoList.addItem(deco);
-				}
-				this.mDeco.dataProvider = decoList;
-				if (!Data.getInstance().decoSet[this.mDeco.textInput.text]) {
-					this.mDeco.textInput.text = "";
-				}
-			}
 		]]>
 	</fx:Script>
 	
@@ -310,9 +287,7 @@
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="left">
 				<s:Button id="saveLevelBtn" label="保存关卡" click="saveLevel(event)"/>
 				<s:Button id="sendBtn2" label="关卡上传" click="sendToStaticServer(event)"/>
-				<s:Label visible="false" text="地图装饰" color="0x777777"/>
-				<s:ComboBox visible="true" id="mDeco" width="80" change="onDecoSelected(event)"/>
-				<s:Button visible="true" label="装饰编辑" click="onPressDeco(event)"/>
+				<s:ComboBox id="mServerType" change="onSwitchServerType(event)"/>
 			</s:HGroup>
 			
 			<s:HGroup height="100%" width="100%" verticalAlign="top" horizontalAlign="right">
