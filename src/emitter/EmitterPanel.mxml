@@ -75,6 +75,13 @@
 				return Utils.getKeysAsSortedData( Data.getInstance().skins );
 			}
 			
+			private static function getResAsDataSrcWithNull(): ArrayCollection
+			{
+				var arr:ArrayCollection = Utils.getKeysAsSortedData( Data.getInstance().skins );
+				arr.addItemAt(NULL_RES, 0);
+				return arr;
+			}
+			
 			private static function onChangeValue(event:Event): void
 			{
 				mInstance.onValueChanged(event);
@@ -105,6 +112,11 @@
 				mInstance.onChangeBulletType(event);
 			}
 			private static function onChangeBulletRes(event:Event): void
+			{
+				mInstance.onValueChanged(event);
+			}
+			
+			private static function onChangeEmitterRes(event:Event): void
 			{
 				mInstance.onValueChanged(event);
 			}
@@ -226,37 +238,92 @@
 				}, BaseBullet, ["type"])
 			};
 			
+			///--------------------------------------
+			public static const EmitterParser:Object = {
+				Basic : {
+					res         : { n: 2, toIn : strToComboBox, toVal : comboBoxToStr, label: "资源",    controlType: ComboBox, dataSrcGen : getResAsDataSrcWithNull,        handleEvent : { change: onChangeEmitterRes }  },
+					resRotation : { n: 2.1, toIn : numberToText,  toVal : textToNumber,  label: "资源角度", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					wait        : { n: 2.2, toIn : numberToText,  toVal : textToNumber,  label: "暂停时间(s)",  controlType: TextInput, handleEvent: {enter: onEnterText} },
+					duration    : { n: 2.3, toIn : numberToText,  toVal : textToNumber,  label: "持续时间", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					
+					isCameraPos : { n: 3, toIn : numberToCheck, toVal : checkToNumber, label: "屏幕坐标", controlType: CheckBox, handleEvent: {click: onEnterText} }, 
+					attached    : { n: 3.1, toIn : numberToCheck, toVal : checkToNumber, label: "跟随/静止", controlType: CheckBox, handleEvent: {click: onEnterText} },
+					x           : { n: 3.2, toIn : numberToText,  toVal : textToNumber, label: "X", controlType: TextInput, handleEvent: {enter: onEnterText} }, 
+					y           : { n: 3.3, toIn : numberToText,  toVal : textToNumber, label: "Y", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					
+					speed       : { n: 4, toIn : numberToText,  toVal : textToNumber,  label: "朝向速度(px/s)",  controlType: TextInput, handleEvent: {enter: onEnterText} },
+					speedX      : { n: 4.1, toIn : numberToText,  toVal : textToNumber, label: "速度X",   controlType: TextInput, handleEvent: {enter: onEnterText} },
+					speedY      : { n: 4.2, toIn : numberToText,  toVal : textToNumber, label: "速度Y",   controlType: TextInput, handleEvent: {enter: onEnterText} },
+					
+					a		    : { n: 4.3, toIn : numberToText,  toVal : textToNumber,  label: "朝向加速度(px/s2)", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					ax		    : { n: 4.4, toIn : numberToText,  toVal : textToNumber, label: "加速度X", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					ay		    : { n: 4.5, toIn : numberToText,  toVal : textToNumber, label: "加速度Y", controlType: TextInput, handleEvent: {enter: onEnterText} },
+	
+					rotateType  : { n: 5, toIn : numberToCheck, toVal : checkToNumber, label: "摇摆/循环", controlType: CheckBox, handleEvent: {click: onEnterText} },
+					rotation    : { n: 5.1, toIn : numberToText,  toVal : textToNumber, label: "角度", controlType: TextInput, handleEvent: {enter: onEnterText} },	
+					rotateSpeed : { n: 5.2, toIn : numberToText,  toVal : textToNumber, label: "角速度",  controlType: TextInput, handleEvent: {enter: onEnterText} },
+					minRotation : { n: 5.3, toIn : numberToText,  toVal : textToNumber, label: "最小角度", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					maxRotation : { n: 5.4, toIn : numberToText,  toVal : textToNumber, label: "最大角度", controlType: TextInput, handleEvent: {enter: onEnterText} },
+
+					bulletGapType: { n: 6, toIn : numberToCheck, toVal : checkToNumber, label: "固定/随机", controlType: CheckBox, handleEvent: {click: onEnterText} },
+					bulletGap   : { n: 6.1, toIn : numberToText,  toVal : textToNumber, label: "子弹间隔", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					
+					interval    : { n: 7, toIn : numberToText,  toVal : textToNumber,  label: "间隔时间", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					num         : { n: 8, toIn : numberToText,  toVal : textToNumber,  label: "子弹数量", controlType: TextInput, handleEvent: {enter: onEnterText} }, 
+					numRandom   : { n: 9, toIn : numberToText,  toVal : textToNumber,  label: "子弹数量随机", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					
+					/*
+					scale	    : { n: 10, toIn : numberToText,  toVal : textToNumber,  label: "拉伸",    controlType: TextInput, handleEvent: {enter: onEnterText} },
+					scalePerSec : { n: 10.1, toIn : numberToText,  toVal : textToNumber,   label: "拉伸速度", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					scaleMin    : { n: 10.2, toIn : numberToText,  toVal : textToNumber,   label: "最小拉伸", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					scaleMax    : { n: 10.3, toIn : numberToText,  toVal : textToNumber,   label: "最大拉伸", controlType: TextInput, handleEvent: {enter: onEnterText} },
+					 */
+					w		    : { n: 11, toIn : numberToText,  toVal : textToNumber,  label: "碰撞体/宽(px)",  controlType: TextInput, handleEvent: {enter: onEnterText} }, 
+					h		    : { n: 12, toIn : numberToText,  toVal : textToNumber,  label: "碰撞体/高(px)",  controlType: TextInput, handleEvent: {enter: onEnterText} },
+					harm	    : { n: 13, toIn : numberToText,  toVal : textToNumber,  label: "伤害系数", controlType: TextInput, handleEvent: {enter: onEnterText} }
+				}
+			}
+			
 			// DO NOT CHANGE THE KEYS
 			public static const EmitterMeta:Object = {
 				Basic : {
-					res: NULL_RES, 
-					wait: 0.2,
+					type : "Basic",
+					res: NULL_RES,
 					resRotation: 0,
+					
+					wait: 0.2,
+					duration: -1,
+						
+					attached: true,
+					isCameraPos: 0,
+					x: 0, 
+					y: 0, 
+						
 					speed: 0,
 					speedX: 0, 
 					speedY: 0,
+					
 					a: 0,
 					ax: 0, 
-					ay: 0, 
+					ay: 0,
+					
+					rotateType: 0,
 					rotation: 0, 
-					x: 0, 
-					y: 0, 
 					rotateSpeed: 0, 
 					minRotation: -180,
 					maxRotation: 180, 
-					rotateType: 0, 
-					duration: -1,
+					 
 					interval: 1, 
 					num: 1, 
-					numRandom: 0, 
+					numRandom: 0,
+					
 					bulletGapType: 0,
-					isCameraPos: 0,
+					bulletGap: 15, 
+					bullet: BulletMeta.Basic,
+					
 					w: 0, 
 					h: 0, 
-					harm: 0,
-					attached: true,
-					bulletGap: 15, 
-					bullet: BulletMeta.Basic
+					harm: 0
 				}
 			}
 
@@ -320,10 +387,10 @@
 				
 				mSkinsArray = Utils.getKeysAsSortedData( Data.getInstance().skins );
 				mSkinsArray.addItemAt(NULL_RES, 0);
-				mBasicEmitterConfig.resIn.dataProvider = mSkinsArray;
-
-				mBasicEmitterConfig.onValueChanged = onValueChanged;
-				mBasicEmitterConfig.onChangeEmitterRes = onChangeEmitterRes;
+				
+				//mBasicEmitterConfig.resIn.dataProvider = mSkinsArray;
+				//mBasicEmitterConfig.onValueChanged = onValueChanged;
+				//mBasicEmitterConfig.onChangeEmitterRes = onChangeEmitterRes;
 				
 				mCreated = true;
 				
@@ -447,7 +514,7 @@
 				if (!mContainer) {
 					var mContainer:UIComponent = new UIComponent();
 					mContainer.x = 50;
-					mContainer.y = mPreviewerContainer.height-150;
+					mContainer.y = mPreviewerContainer.height-50;
 					mPreviewerContainer.addElement(mContainer);
 				}
 				if (mPreviewer) 
@@ -531,9 +598,10 @@
 			
 			private function onChangeEmitterRes(event:IndexChangeEvent):void {
 				var index:int = this.mEmitterList.selectedIndex;
-				if (index < 0) return;
+				if (index < 0) 
+					return;
 				var data:Object = mData.emitters[index];
-				data.res = mSkinsArray.getItemAt(mBasicEmitterConfig.resIn.selectedIndex);
+				data.res = mSkinsArray.getItemAt(mBasicEmitterConfig.controls.resIn.selectedIndex);
 				mPreviewer.emitters[index].updateImage();
 			}
 			
@@ -713,11 +781,12 @@
 			
 			public function updateCurrentEmitter():void {
 				var index:int = this.mEmitterList.selectedIndex;
-				if (index < 0) return;
+				if (index < 0) 
+					return;
 				var data:Object = mData.emitters[index];
 				
-				mBasicEmitterConfig.xIn.text = data.x;
-				mBasicEmitterConfig.yIn.text = data.y;				
+				mBasicEmitterConfig.controls.xIn.text = data.x;
+				mBasicEmitterConfig.controls.yIn.text = data.y;				
 				//this.mInput5.text = data.x;
 				//this.mInput6.text = data.y;
 			}
@@ -727,7 +796,7 @@
 		]]>
 	</fx:Script>
 	<s:HGroup x="0" y="0" width="100%" height="100%" gap="0">
-		<s:VGroup width="450" height="900" gap="0">
+		<s:VGroup width="450" height="800" gap="0">
 			<s:Group width="100%" height="90">
 				<s:Label x="10" y="10" color="#969696" text="标识ID" textAlign="right"/>
 				<s:Label id="mId1" x="54" y="10" width="130" color="#000000" fontSize="12"
