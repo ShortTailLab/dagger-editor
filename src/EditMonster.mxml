@@ -178,9 +178,10 @@
 				if( !profile || !level ) 
 					return;
 				
-				if (profile.type == EmitterPanel.PROFILE_EMITTER_TYPE) {
+				if (profile.type == EmitterPanel.PROFILE_EMITTER_TYPE) 
+				{
 					var nextId:int = Data.getInstance().getMaxMonsterId( Runtime.getInstance().currentLevelID )+1;
-					var data:Object = Utils.cloneObjectData(profile);
+					var data:Object = Utils.deepCopy(profile);
 					data.monster_id = nextId.toString();
 					Data.getInstance().makeMonster(Runtime.getInstance().currentLevelID, data);
 					
@@ -260,7 +261,7 @@
 					return ;
 				
 				var nextId:int = Data.getInstance().getMaxMonsterId( Runtime.getInstance().currentLevelID )+1;
-				var data:Object = Utils.cloneObjectData(EmitterPanel.DEFAULT_EMITTER);
+				var data:Object = Utils.deepCopy(EmitterPanel.DEFAULT_EMITTER);
 				data.monster_id = nextId.toString();
 				data.monster_name = "发射器组合";
 				Data.getInstance().makeMonster(Runtime.getInstance().currentLevelID, data);

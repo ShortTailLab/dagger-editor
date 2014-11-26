@@ -1,4 +1,4 @@
-package behaviorEdit
+package BTEdit
 {
 	public class BType
 	{

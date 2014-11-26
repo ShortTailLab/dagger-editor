@@ -1,5 +1,9 @@
 package
 {
+	import emitter.EmitterPanel;
+	
+	import excel.ExcelReader;
+	
 	import flash.display.Bitmap;
 	import flash.display.Loader;
 	import flash.display.LoaderInfo;
@@ -17,15 +21,11 @@ package
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
-	import mx.controls.Alert;
-	import mx.utils.object_proxy;
-	
-	import emitter.EmitterPanel;
-	
-	import excel.ExcelReader;
-	
 	import mapEdit.Entity;
 	import mapEdit.SectionManager;
+	
+	import mx.controls.Alert;
+	import mx.utils.object_proxy;
 	
 	public class Data extends EventDispatcher
 	{
@@ -659,7 +659,7 @@ package
 		}
 		
 		// HACK: some data is corrupted. id mismatches. 
-		private function CORRECT_MONSTER_ID_MISMATCH(chapters)
+		private function CORRECT_MONSTER_ID_MISMATCH(chapters:Object):void
 		{
 			for each(var chapter:* in chapters)
 			{
@@ -1044,6 +1044,7 @@ package
 					}
 				}
 			}
+			
 			var IMAGE:File = this.resolvePath( "skins" );
 			if( IMAGE.exists && IMAGE.isDirectory )
 			{
@@ -1067,7 +1068,8 @@ package
 				}
 			}
 			
-			if( length == 0 ) callback();
+			if( length == 0 ) 
+				callback();
 		}
 		
 		private function validityCheckAndCleanUp():String
@@ -1148,11 +1150,11 @@ package
 		public function exportLevelJS(lid:String, suffix:String):String
 		{	
 			var profile:Object = this.getLevelProfileById( lid );
-			if( !(lid in this.mLevelInstancesTable ) || !profile  ) return "【失败】无相关地图数据存在";
+			if( !(lid in this.mLevelInstancesTable ) || !profile  ) 
+				return "【失败】无相关地图数据存在";
 			
 			function adjust( name:String, itype:String, item:Object ):Array 
 			{
-				
 				var monsters:Object = Data.getInstance().getMonstersByLevelId( lid );
 				var bullets:Object = Data.getInstance().getBulletsByLevelId( lid );
 				var traps:Object = Data.getInstance().getTrapsByLevelId( lid );
@@ -1258,10 +1260,14 @@ package
 					
 				var kernal:String = null;
 					
-				if( this.isMonster( item.type ) )		kernal = "MonsterProfile"; 
-				else if( this.isBullet( item.type ) ) 	kernal = "BulletProfile";
-				else if( this.isTrap( item.type ) )		kernal = "TrapProfile";
-				else return "【失败】未知的怪物类型"+item.type;
+				if( isMonster( item.type ) )		
+					kernal = "MonsterProfile"; 
+				else if( isBullet( item.type ) ) 	
+					kernal = "BulletProfile";
+				else if( isTrap( item.type ) )		
+					kernal = "TrapProfile";
+				else 
+					return "【失败】未知的怪物类型"+item.type;
 				
 				if( kernal in Data.getInstance().dynamicArgs )
 				{
@@ -1276,9 +1282,10 @@ package
 						var adj:Array = adjust( 
 							export.profile[index].monster_id, iType, export.profile[index][iKey] 
 						);
-						if( !adj[0] ) return adj[1];
-						if( adj[1] ) export.profile[index][iKey] = adj[1];
-						
+						if( !adj[0] ) 
+							return adj[1];
+						if( adj[1] ) 
+							export.profile[index][iKey] = adj[1];
 					}
 					
 					var type:String = export.profile[index].type;
@@ -1308,20 +1315,18 @@ package
 				if( !this.mBehaviorSet.hasOwnProperty(index) ) {
 					return "【失败】试图导出不存在的行为"+index;
 				}
-				var raw:String = Utils.genBTreeJS(Utils.cloneObjectData(this.mBehaviorSet[index]));
-				export.behavior[index] = String("@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return " +
-					""+raw+";}@@");
-			} 
+				var treeJS:String = Utils.genBTreeJS(Utils.deepCopy(this.mBehaviorSet[index]));
+				export.behavior[index] = "@@function(actor){var BT = namespace('Behavior','BT_Node','Gameplay');return "+treeJS+";}@@";
+			}
 			
-			var content:String = JSON.stringify(export, null, "\t");
-			var wrap:String = "function MAKE_LEVEL(){ var level = " + 
-				adjustJS(content) + "; return level; }"; 
+			var levelJS:String = Utils.toJsonSorted(export);
+			var fullJS:String = printf("function MAKE_LEVEL(){ var level = %s; return level; }", filterCodeBlock(levelJS)); 
 			
-			Utils.WriteRawFile( this.resolvePath("export/level/"+suffix+".js"), wrap );
+			Utils.WriteRawFile( this.resolvePath("export/level/"+suffix+".js"), fullJS );
 			return null;
 		}
 		
-		private function adjustJS(js:String):String
+		private function filterCodeBlock(js:String):String
 		{
 			var reg1:RegExp = /"@@|@@"/g;
 			var result:String = "";

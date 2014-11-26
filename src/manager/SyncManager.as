@@ -1,5 +1,8 @@
 package manager
 {
+	import by.blooddy.crypto.Base64;
+	import by.blooddy.crypto.MD5;
+	
 	import com.hurlant.crypto.Crypto;
 	import com.probertson.utils.GZIPBytesEncoder;
 	
@@ -17,25 +20,47 @@ package manager
 	import flash.net.URLRequestMethod;
 	import flash.utils.ByteArray;
 	
-	import mx.controls.Alert;
+	import flashx.textLayout.debug.assert;
 	
-	import by.blooddy.crypto.Base64;
-	import by.blooddy.crypto.MD5;
+	import mx.controls.Alert;
 
 	public class SyncManager
 	{
+		private static var _intance:SyncManager;
+		
+		private var kGAMELEVEL_API_ADDRESS:String = "https://sh-test.shorttaillab.com/api/gameLevel";
+		private var CONFIG_TAG:String = "dagger-configs";
+		private var LEVEL_TAG:String  = "dagger-levels";
 		
 		public function SyncManager() {}
 		
-		private static var _intance:SyncManager;
 		public static function getInstance():SyncManager 
 		{
-			if (!_intance) _intance = new SyncManager();
+			if (!_intance) 
+				_intance = new SyncManager();
 			return _intance;
 		}
 		
+		public function switchServer(server:String): void
+		{
+			if(server == "release")
+			{
+				kGAMELEVEL_API_ADDRESS = "https://sh.shorttaillab.com/api/gameLevel";
+				CONFIG_TAG = "dagger-release-configs";
+				LEVEL_TAG  = "dagger-release-levels";
+			}
+			else if(server == "test")
+			{
+				kGAMELEVEL_API_ADDRESS = "https://sh-test.shorttaillab.com/api/gameLevel";
+				CONFIG_TAG = "dagger-configs";
+				LEVEL_TAG  = "dagger-levels";
+			}
+			else
+			{
+				assert();
+			}
+		}
 		
-		private const kGAMELEVEL_API_ADDRESS:String = "https://sh-test.shorttaillab.com/api/gameLevel";
 		public function uploadLevelToGameServer( lid:String, data:Object, onComplete:Function):void
 		{
 			var details:String = "";
@@ -129,7 +154,7 @@ package manager
 			fstream.writeBytes( file.data );
 			fstream.close();
 				
-			this.oss_upload( path, "dagger-configs", "CONFIG-VERSION.json", 
+			this.oss_upload( path, CONFIG_TAG, "CONFIG-VERSION.json", 
 				function(msg:String):void
 				{
 					if( path.isDirectory ) path.deleteDirectory(true);
@@ -158,7 +183,7 @@ package manager
 				
 				var self:SyncManager = this;
 				// may dismath between oss and gameserver
-				this.oss_upload( export, "dagger-levels", "LEVEL-VERSION.json", 
+				this.oss_upload( export, LEVEL_TAG, "LEVEL-VERSION.json", 
 					function(m:String) : void {
 						if( export.exists && export.isDirectory )
 							export.deleteDirectory(true);

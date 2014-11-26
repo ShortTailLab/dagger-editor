@@ -96,8 +96,8 @@ package excel
 			];
 			var enum_key:Array  = ["chapter_id", "level_id", "monster_id"];
 			var enum_configs:Array = [
-				Utils.merge2Object(struct[enum_type[0]], enum_must[0]),
-				Utils.merge2Object(struct[enum_type[1]], enum_must[1])
+				Utils.unionMerge(struct[enum_type[0]], enum_must[0]),
+				Utils.unionMerge(struct[enum_type[1]], enum_must[1])
 			];
 			
 			var raw:Object = {}; // ret
@@ -158,7 +158,7 @@ package excel
 						onComplete(null, String(iterLine)+"怪物未定义id");
 						return;
 					}
-					var items:Object = Utils.merge2Object(struct[type], enum_must[2]);
+					var items:Object = Utils.unionMerge(struct[type], enum_must[2]);
 					configs = this.loadItems(sheet, key2indices, type, items, iterLine);
 					
 					if( !configs ) 

@@ -11,8 +11,6 @@
 		<![CDATA[
 			import BTEdit.BTPanel;
 			
-			import Trigger.EditTriggers;
-			
 			import flash.net.dns.AAAARecord;
 			
 			import manager.EventManager;
@@ -124,15 +122,6 @@
 					}
 				);
 				
-				this.mEditTrigger.addEventListener(MouseEvent.CLICK, 
-					function(evt:MouseEvent):void
-					{
-						evt.stopPropagation();
-						if(self.mSelection) 
-							MonsterList.OpenTriggerEditor( self.mSelection as Entity );
-					}
-				);
-				
 				this.mEraseSelf.addEventListener(MouseEvent.CLICK,
 					function(evt:MouseEvent):void
 					{
@@ -170,7 +159,6 @@
 				
 				this.mEditData.enabled 		= false;
 				this.mEditBehavior.enabled 	= false;
-				this.mEditTrigger.enabled 	= false;
 				this.mEraseSelf.enabled 	= false;
 				this.mCopy.enabled 			= false;
 			}
@@ -220,7 +208,6 @@
 				
 				this.mEditData.enabled 		= false;
 				this.mEditBehavior.enabled 	= false;
-				this.mEditTrigger.enabled 	= false;
 				this.mEraseSelf.enabled 	= false;
 				this.mCopy.enabled 			= false;
 				
@@ -242,7 +229,6 @@
 				this.mEraseSelf.enabled 	= true;
 				this.mCopy.enabled 			= true;
 				
-				this.mEditTrigger.enabled = Data.getInstance().isMonster( profile.type );
 				this.mEditBehavior.enabled = EditMonster.isCustomBehaviorType(profile.type);
 				
 				this.mSelection.setSize( 70 );
@@ -299,16 +285,7 @@
 			
 			//---------------------
 			// actions
-			//---------------------
-			static private function OpenTriggerEditor(target:Entity):void
-			{
-				var win:EditTriggers = new EditTriggers(target);
-				PopUpManager.addPopUp(win, MapEditor.getInstance());
-				PopUpManager.centerPopUp(win);
-				win.x = FlexGlobals.topLevelApplication.stage.stageWidth/2-win.width/2;
-				win.y = FlexGlobals.topLevelApplication.stage.stageHeight/2-win.height/2;
-			}
-			
+			//---------------------			
 			static private var selectedTarget:Entity;
 			static private var btEdit:BTPanel;
 			static private function OpenBehaviorEditor(target:Entity):void
@@ -347,7 +324,6 @@
 		<s:VGroup left="100" right="5" top="2" bottom="2">
 			<s:Button id="mEditData" label="编辑数据"/>
 			<s:Button id="mEditBehavior" label="修改行为"/>
-			<s:Button id="mEditTrigger" label="触发事件"/>
 			<s:Button id="mCopy" width="69" label="复制对象"/>
 			<s:Button id="mEraseSelf" label="删除对象" chromeColor="#FDB9B9"/>
 		</s:VGroup>

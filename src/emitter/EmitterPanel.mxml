@@ -249,7 +249,8 @@
 					interval: 1, 
 					num: 1, 
 					numRandom: 0, 
-					bulletGapType: 0, 
+					bulletGapType: 0,
+					isCameraPos: 0,
 					w: 0, 
 					h: 0, 
 					harm: 0,
@@ -475,7 +476,7 @@
 				var index:int = this.mEmitterList.selectedIndex;
 				if (index < 0) return;
 				var data:Object = mData.emitters[index];
-				CLIPPING = Utils.cloneObjectData(data);
+				CLIPPING = Utils.deepCopy(data);
 			}
 			
 			public function onDeleteEmitter(event:Event):void {
@@ -501,7 +502,7 @@
 			public function onPasteEmitter(event:Event):void {
 				if (!CLIPPING) 
 					return;
-				var data:Object = Utils.cloneObjectData(CLIPPING);
+				var data:Object = Utils.deepCopy(CLIPPING);
 				this.mData.emitters.push(data);
 				mNamesArray.addItem("♢ Emitter "+(mNamesArray.length+1));
 				mEmitterList.selectedIndex = mNamesArray.length-1;
