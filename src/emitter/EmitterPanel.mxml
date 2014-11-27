@@ -97,7 +97,7 @@
 				var self:TextInput = event.currentTarget as TextInput
 					
 				var pathEditor:PathEditor = new PathEditor;
-				PopUpManager.addPopUp(pathEditor, self.parent, true);
+				PopUpManager.addPopUp(pathEditor, MapEditor.getInstance(), true);
 				PopUpManager.centerPopUp(pathEditor);
 				
 				
@@ -272,12 +272,11 @@
 					num         : { n: 8, toIn : numberToText,  toVal : textToNumber,  label: "子弹数量", controlType: TextInput, handleEvent: {enter: onEnterText} }, 
 					numRandom   : { n: 9, toIn : numberToText,  toVal : textToNumber,  label: "子弹数量随机", controlType: TextInput, handleEvent: {enter: onEnterText} },
 					
-					/*
 					scale	    : { n: 10, toIn : numberToText,  toVal : textToNumber,  label: "拉伸",    controlType: TextInput, handleEvent: {enter: onEnterText} },
 					scalePerSec : { n: 10.1, toIn : numberToText,  toVal : textToNumber,   label: "拉伸速度", controlType: TextInput, handleEvent: {enter: onEnterText} },
 					scaleMin    : { n: 10.2, toIn : numberToText,  toVal : textToNumber,   label: "最小拉伸", controlType: TextInput, handleEvent: {enter: onEnterText} },
 					scaleMax    : { n: 10.3, toIn : numberToText,  toVal : textToNumber,   label: "最大拉伸", controlType: TextInput, handleEvent: {enter: onEnterText} },
-					 */
+					 
 					w		    : { n: 11, toIn : numberToText,  toVal : textToNumber,  label: "碰撞体/宽(px)",  controlType: TextInput, handleEvent: {enter: onEnterText} }, 
 					h		    : { n: 12, toIn : numberToText,  toVal : textToNumber,  label: "碰撞体/高(px)",  controlType: TextInput, handleEvent: {enter: onEnterText} },
 					harm	    : { n: 13, toIn : numberToText,  toVal : textToNumber,  label: "伤害系数", controlType: TextInput, handleEvent: {enter: onEnterText} }
@@ -320,6 +319,11 @@
 					bulletGapType: 0,
 					bulletGap: 15, 
 					bullet: BulletMeta.Basic,
+
+					scale:1,
+					scalePerSec:0,
+					scaleMin: 0,
+					scaleMax: 5,					
 					
 					w: 0, 
 					h: 0, 
