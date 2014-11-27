@@ -82,22 +82,16 @@ package emitter
 		
 		private function init():void {
 
-			var s:SceneGrid = new SceneGrid(SceneWidth, SceneHeight);
-			this.addChild(s);
-			
-			var tf:TextField = new TextField();
-			tf.mouseEnabled = false;
-			tf.text = "已启动时间：";
-			tf.x = 0; 
-			tf.y = -SceneHeight-20;
-			s.addChild(tf);
+			var grid:SceneGrid = new SceneGrid(SceneWidth, SceneHeight, false);
+			this.addChild(grid);
 			
 			mElapsedTf = new TextField();
 			mElapsedTf.mouseEnabled = false;
-			mElapsedTf.text = "0.0s";
+			mElapsedTf.text = "启动时间: 0.0s";
 			mElapsedTf.x = 70; 
-			mElapsedTf.y = -SceneHeight-20;
-			s.addChild(mElapsedTf);
+			mElapsedTf.y = -SceneHeight-30;
+			mElapsedTf.scaleX = mElapsedTf.scaleY = 2;
+			grid.addChild(mElapsedTf);
 			
 			mContainer = new Sprite();
 			mContainer.x = SceneWidth*0.5; 
@@ -113,7 +107,7 @@ package emitter
 			}
 			
 			mHero = new HeroMarker();
-			mHero.setData({x: 0, y:-400}, mPanel);;
+			mHero.setData({x: 0, y:-400}, mPanel);
 			mContainer.addChild(mHero);
 			
 			this.scaleX = this.scaleY = 0.5;
@@ -138,7 +132,7 @@ package emitter
 		private static const DELTA:Number = 1/30;
 		private function onEnterFrame(event:Event):void {
 			mElapsed += DELTA;
-			this.mElapsedTf.text = mElapsed.toFixed(2)+"s";
+			this.mElapsedTf.text = "启动时间:" + mElapsed.toFixed(2) + "s";
 			for (var i:int = 0; i < mEmitters.length; i++) {
 				mEmitters[i].update(DELTA);
 			}
