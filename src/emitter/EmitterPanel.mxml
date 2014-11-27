@@ -387,11 +387,7 @@
 				
 				mSkinsArray = Utils.getKeysAsSortedData( Data.getInstance().skins );
 				mSkinsArray.addItemAt(NULL_RES, 0);
-				
-				//mBasicEmitterConfig.resIn.dataProvider = mSkinsArray;
-				//mBasicEmitterConfig.onValueChanged = onValueChanged;
-				//mBasicEmitterConfig.onChangeEmitterRes = onChangeEmitterRes;
-				
+
 				mCreated = true;
 				
 				if (mData)
@@ -406,19 +402,8 @@
 					mBulletConfigPanel = null;
 				}
 				
-				/*
-				switch(type)
-				{
-					case "Basic": mBulletConfigPanel = new BasicBulletConfig; break;
-					case "Chaser": mBulletConfigPanel = new ChaserBulletConfig; break;
-					case "Pather": mBulletConfigPanel = new PatherBulletConfig; break;
-					default: trace("unknown type"); break;
-				}*/
 				mBulletConfigPanel = new BulletConfig;
 				mBulletConfigGroup.addElement(mBulletConfigPanel);
-
-				//mBulletConfigPanel.onChangeBulletType = onChangeBulletType;
-				//mBulletConfigPanel.onValueChanged = onValueChanged;
 			}
 			
 			private function onPressKeyboard(event:KeyboardEvent):void {
@@ -491,10 +476,7 @@
 					return;
 				var data:Object = mData.emitters[index];
 				
-				//if(!mBulletConfigPanel || mBulletConfigPanel.configType != data.bullet.type)
-				{
-					createBulletConfigPanel(data.bullet.type);
-				}
+				createBulletConfigPanel(data.bullet.type);
 				
 				mBasicEmitterConfig.setData(data);
 				mBulletConfigPanel.setData(data);	
@@ -778,7 +760,6 @@
 				this.updateFileIndex();
 			}
 			
-			
 			public function updateCurrentEmitter():void {
 				var index:int = this.mEmitterList.selectedIndex;
 				if (index < 0) 
@@ -786,9 +767,7 @@
 				var data:Object = mData.emitters[index];
 				
 				mBasicEmitterConfig.controls.xIn.text = data.x;
-				mBasicEmitterConfig.controls.yIn.text = data.y;				
-				//this.mInput5.text = data.x;
-				//this.mInput6.text = data.y;
+				mBasicEmitterConfig.controls.yIn.text = data.y;
 			}
 			
 			public function get previewer():EmitterPreviewer { return mPreviewer; }
@@ -826,8 +805,8 @@
 				<s:List id="mEmitterList" x="0" y="0" width="100%" height="100%"
 						borderVisible="false" change="onEmitterSelected(event)"></s:List>
 			</s:Panel>
-			<emitter:BasicEmitterConfig id="mBasicEmitterConfig">
-			</emitter:BasicEmitterConfig>
+			<emitter:EmitterConfig id="mBasicEmitterConfig">
+			</emitter:EmitterConfig>
 		</s:VGroup>
 		<s:VGroup id="mBulletConfigGroup" x="726" y="163">
 		</s:VGroup>

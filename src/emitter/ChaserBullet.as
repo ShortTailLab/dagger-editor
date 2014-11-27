@@ -19,10 +19,10 @@ package emitter
 		private var mImageBox:Sprite;
 		private var mEmitter:Emitter;
 		private var mElapsed:Number;
+	
+		private var mVelX: Number;
+		private var mVelY: Number;
 		
-		private var mSpeed: Number;
-		private var mSpeedX:Number;
-		private var mSpeedY:Number;
 		private var mPosX:Number = 0;
 		private var mPosY:Number = 0;
 		private var mRotation:Number;
@@ -57,15 +57,11 @@ package emitter
 			mPauseTime = mData.bullet.pauseTime;
 			mScale = mData.bullet.scale;
 			mResRotation = mData.bullet.resRotation;
-			
-			mSpeed  = data.bullet.speed;
-			mSpeedX = data.bullet.speedX;
-			mSpeedY = data.bullet.speedY;
-			
+
 			mRotation = defaultRot;
 			
-			mPosX = emit.sPosX + mData.bullet.offset * -Math.sin(mRotation/180*Math.PI);
-			mPosY = emit.sPosY + mData.bullet.offset * -Math.cos(mRotation/180*Math.PI);
+			mPosX = emit.sPosX + mData.bullet.offset * -Math.sin(defaultRot/180*Math.PI);
+			mPosY = emit.sPosY + mData.bullet.offset * -Math.cos(defaultRot/180*Math.PI);
 			
 			// readjust rotation to face target
 			if(mData.bullet.faceTarget)
@@ -75,6 +71,9 @@ package emitter
 				var dy:Number = hero.posY - mPosY;				
 				mRotation = Math.atan2(-dx, -dy)/Math.PI*180;
 			}
+			
+			mVelX = data.bullet.speedX + data.bullet.speed * -Math.sin(mRotation/180*Math.PI);
+			mVelY = data.bullet.speedY + data.bullet.speed * -Math.cos(mRotation/180*Math.PI);
 
 			syncView();
 		}
@@ -154,29 +153,34 @@ package emitter
 			
 			if(mData.bullet.doNotTurn &&  mPosY < hero.posY)
 				mFollow = false;
+						
+			var radian:Number = mRotation/180*Math.PI;
+			var rX:Number = -Math.sin(radian);
+			var rY:Number = -Math.cos(radian);
 			
-			mSpeed  += mData.bullet.a *dt;
-			mSpeedX += mData.bullet.ax*dt;
-			mSpeedY += mData.bullet.ay*dt;
+			mVelX += (mData.bullet.a*rX  + mData.bullet.ax) * dt;
+			mVelY += (mData.bullet.a*rY  + mData.bullet.ay) * dt;
 			
-			var velX:Number = mSpeedX + mSpeed * -Math.sin(mRotation/180*Math.PI);
-			var velY:Number = mSpeedY + mSpeed * -Math.cos(mRotation/180*Math.PI);
-			
-			var speedNorm:Number = Math.sqrt(velX*velX + velY*velY);
-			var clampedSpeedNorm:Number = Utils.clamp(speedNorm, mData.bullet.speedMin, mData.bullet.speedMax);
-			if(clampedSpeedNorm != speedNorm)
+			//-------------------------------------- 
+			// calc min speed in vel direction
+			var velNorm:Number = Math.sqrt(mVelX*mVelX + mVelY*mVelY);
+			if(velNorm != 0)
 			{
-				var adjustScale:Number = clampedSpeedNorm / speedNorm;
-				velX = velX * adjustScale;
-				velY = velY * adjustScale;
+				var clampedNorm:Number = Utils.clamp(velNorm, mData.bullet.speedMin, mData.bullet.speedMax);
+				if(clampedNorm != velNorm)
+				{
+					mVelX = mVelX/velNorm * clampedNorm;
+					mVelY = mVelY/velNorm * clampedNorm;
+				}
 			}
+			//----------------------------------------
 			
-			mPosX += velX*dt;
-			mPosY += velY*dt;
+			mPosX += mVelX*dt;
+			mPosY += mVelY*dt;
 			
 			if(mData.bullet.direction == 0) // align direction with velocity
 			{
-				var degree:Number = Math.atan2(-velX, -velY)*180/Math.PI;
+				var degree:Number = Math.atan2(-mVelX, -mVelY)*180/Math.PI;
 				mRotation = degree;				
 			}
 			

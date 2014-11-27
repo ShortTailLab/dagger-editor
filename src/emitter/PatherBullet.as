@@ -177,20 +177,14 @@ package emitter
 			}
 			
 			mElapsed += dt;
+			
 			mSpeed  += mData.bullet.a *dt;
+			mSpeed = Utils.clamp(mSpeed, mData.bullet.speedMin, mData.bullet.speedMax);
 			
 			var velX:Number = mSpeed * dirX;
 			var velY:Number = mSpeed * dirY;
 			
-			var speedNorm:Number = Math.sqrt(velX*velX + velY*velY);
-			var clampedSpeedNorm:Number = Utils.clamp(speedNorm, mData.bullet.speedMin, mData.bullet.speedMax);
-			if(clampedSpeedNorm != speedNorm)
-			{
-				var adjustScale:Number = clampedSpeedNorm / speedNorm;
-				velX = velX * adjustScale;
-				velY = velY * adjustScale;
-			}
-			
+			// pass through, do not turn around and chase
 			if(target && (Math.pow(velX*dt, 2) + Math.pow(velY*dt, 2) > Math.pow(dirNorm, 2)))
 			{
 				mPosX = target.x;
