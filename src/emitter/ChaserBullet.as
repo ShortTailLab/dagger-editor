@@ -179,14 +179,13 @@ package emitter
 			
 			mPosX += velX*dt;
 			mPosY += velY*dt;
+			mScale = Utils.clamp(mScale + mData.bullet.scalePerSec * dt, mData.bullet.scaleMin, mData.bullet.scaleMax);
 			
 			if(mData.bullet.direction == 0) // align direction with velocity
 			{
 				var degree:Number = Math.atan2(-velX, -velY)*180/Math.PI;
 				mRotation = degree;				
 			}
-			
-			mScale = Utils.clamp(mScale + mData.bullet.scalePerSec * dt, mData.bullet.scaleMin, mData.bullet.scaleMax);
 			
 			syncView();
 		}
