@@ -6,6 +6,7 @@ package emitter
 	import flash.events.Event;
 	import flash.events.IOErrorEvent;
 	import flash.filesystem.File;
+	import flash.geom.Point;
 	import flash.net.URLRequest;
 	
 	import mx.controls.Alert;
@@ -120,8 +121,8 @@ package emitter
 		}
 		
 		private function syncView(): void{
-			this.x = mPosX*0.5;
-			this.y = -mPosY*0.5;
+			this.x = mPosX;
+			this.y = -mPosY;
 			this.rotation = mRotation;
 			this.scaleX = this.scaleY = mScale;
 		}
@@ -138,9 +139,9 @@ package emitter
 				return;
 			}
 			
-			// out of bound
-			if (this.x < -250 || this.x >= 250 || 
-				this.y <= -400 || this.y >= 400) {
+			var center:Point = EmitterPreviewer.SceneCenter; 
+			if(!EmitterPreviewer.SceneBound.contains(mPosX+center.x, mPosY+center.y))
+			{
 				destroy();
 				return;
 			}
@@ -176,20 +177,14 @@ package emitter
 			}
 			
 			mElapsed += dt;
+			
 			mSpeed  += mData.bullet.a *dt;
+			mSpeed = Utils.clamp(mSpeed, mData.bullet.speedMin, mData.bullet.speedMax);
 			
 			var velX:Number = mSpeed * dirX;
 			var velY:Number = mSpeed * dirY;
 			
-			var speedNorm:Number = Math.sqrt(velX*velX + velY*velY);
-			var clampedSpeedNorm:Number = Utils.clamp(speedNorm, mData.bullet.speedMin, mData.bullet.speedMax);
-			if(clampedSpeedNorm != speedNorm)
-			{
-				var adjustScale:Number = clampedSpeedNorm / speedNorm;
-				velX = velX * adjustScale;
-				velY = velY * adjustScale;
-			}
-			
+			// pass through, do not turn around and chase
 			if(target && (Math.pow(velX*dt, 2) + Math.pow(velY*dt, 2) > Math.pow(dirNorm, 2)))
 			{
 				mPosX = target.x;

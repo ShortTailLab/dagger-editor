@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 initialize="onInit(event)" borderVisible="true" dropShadowVisible="false" title="发射器参数">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+
+	<fx:Script>
+		<![CDATA[
+			import flashx.textLayout.debug.assert;
+			
+			import mx.core.UIComponent;
+			
+			import spark.components.ComboBox;
+			import spark.components.Label;
+			import spark.components.TextInput;
+			
+			private var mControlMap:Object = {};
+			private var mEmitterType:String = null;
+			
+			private function onInit(event:Event): void
+			{
+			}
+			
+			public function get controls(): Object { return mControlMap; }
+			
+			private function initControls(type:String):void
+			{	
+				var parser:Object = EmitterPanel.EmitterParser[type];
+				
+				var presort:Array = [];
+				
+				for(var key:String in parser)
+				{
+					var entry:Object = parser[key];
+					
+					var label:Label = new Label;
+					label.text = entry.label;
+					label.setStyle("textAlign", "right");
+					label.setStyle("verticalAlign", "middle");
+					
+					var control:UIComponent = (new (entry.controlType)()) as UIComponent;
+					control.id = key+"In";
+					control.name = key+"In";
+					
+					if(control is ComboBox && entry.dataSrcGen)
+					{
+						(control as ComboBox).dataProvider = entry.dataSrcGen();
+					}
+					
+					if(control is TextInput)
+					{
+						control.setStyle("textAlign", "center");
+						control.setStyle("verticalAlign", "middle");
+					}
+					
+					// add event handlers
+					if(entry.handleEvent)
+					{
+						for(var eventKey:String in entry.handleEvent)
+						{
+							control.addEventListener(eventKey, entry.handleEvent[eventKey]);
+						}
+					}
+					
+					presort.push({ n: entry.n, key: key, label: label, control: control});
+				}
+				
+				presort.sortOn("n", Array.NUMERIC);
+				for each(var entry:* in presort)
+				{
+					mTile.addElement(entry.label);
+					mTile.addElement(entry.control);
+					mControlMap[entry.key+"In"] = entry.control;
+				}	
+			}
+			
+			public function setData(data:Object):void
+			{
+				var type:String = data.type;
+				mEmitterType = type;
+				
+				initControls(type);
+				
+				var parser:Object = EmitterPanel.EmitterParser[type];
+				var keys:Array = Utils.getKeys(EmitterPanel.EmitterMeta[type]);
+				
+				for each(var key:String in keys)
+				{
+					var outletKey:String = key + "In";
+					//trace("key is " + key + ", key in is " + outletKey + ", val " + data[key]);
+					var outlet:* = mControlMap[outletKey];
+					if(!outlet)
+						trace("ignored attrs " + key);
+					else
+						parser[key].toIn(data[key], outlet);
+				}
+			}
+			
+			public function applyValue(data:Object): void
+			{
+				var type:String = data.type;
+				var keys:Array = Utils.getKeys(EmitterPanel.EmitterMeta[type]);
+				var parser:Object = EmitterPanel.EmitterParser[type];
+				
+				for each(var key:String in keys)
+				{
+					var outletKey:String = key + "In";
+					var outlet:* = mControlMap[outletKey];
+					if(!data.hasOwnProperty(key) || !outlet)
+					{
+						trace("missing property: " + key);
+						continue;
+					}
+					data[key] = parser[key].toVal(outlet);
+				}
+			}
+			
+			// define config type
+			public function get configType():String { return mEmitterType; }
+		]]>
+	</fx:Script>
+	
+	
+	<s:Scroller x="0" y="0" width="265" height="600">
+		<s:VGroup width="100%" height="100%">
+			<s:TileGroup id="mTile" columnWidth="120" requestedColumnCount="2" verticalGap="3">
+			</s:TileGroup>
+		</s:VGroup>
+	</s:Scroller>
+</s:Panel>

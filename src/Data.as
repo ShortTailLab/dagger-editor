@@ -42,10 +42,14 @@ package
 		
 		public function init(onComplete:Function, onError:Function):void {
 			var self:Data = this;
+			
+			onError("加载个人配置...\n");
 			self.start( function(m1:String):void
 			{
+				onError("同步编辑器配置...\n");
 				self.syncClient( function(m2:String):void
 				{
+					onError("解析编辑器配置...\n");
 					self.parseLocalData( function(m3:String):void
 					{
 						onComplete( m1+"\n"+m2+"\n"+m3 );
@@ -54,20 +58,27 @@ package
 			}, onError);
 		}
 		
-		///////////////////////////////////////////////////////////////////////
-		////// editor configs 
+		//--------------------------------------------------------
+		// editor configs 
 		// projectPath 	-> root directroy of data
 		// speed 		-> speed & scale factor of map view
 		private var mEditorConfigs:Object = null;
 		private var mProjectRoot:File = null;
+		
 		// --------------------------------------------------------------------------
 		public function start(onComplete:Function, onError:Function):void 
 		{
 			var config:File = File.applicationStorageDirectory.resolvePath("conf.json");
-			this.mEditorConfigs = this.loadJson(config, false);
 			
-			if( !this.mEditorConfigs ) 
+			if(config.exists)
+			{
+				onError("加载 " + config.nativePath + "\n");
+				this.mEditorConfigs = this.loadJson(config);
+			}
+			
+			if( !this.mEditorConfigs )
 				this.mEditorConfigs = { mapSpeed: 32 };
+			
 			
 			if( !this.mEditorConfigs.projectPath ) {
 				var self:* = this;
@@ -133,10 +144,11 @@ package
 		{
 			// download all the configs of client from oss
 			var self:Data = this, counter:Number = 0, error:Boolean = false;
-			var alldone:Function = function(item:Object):Function
+			var onItemDoneGen:Function = function(item:Object):Function
 			{
 				var handleTEXT:Function = function(e:Event):void
 				{
+					onError("下载"+item.suffix+"完成.\n");
 					MapEditor.getInstance().addLog("下载"+item.suffix+"成功");
 					Utils.WriteRawFile(
 						File.applicationStorageDirectory.resolvePath(item.suffix),
@@ -158,13 +170,15 @@ package
 			
 			kSYNC_TARGETS.forEach(function(item:Object, ...args):void
 			{
+				onError("正在下载"+item.suffix+"...\n");
+				MapEditor.getInstance().addLog("正在下载"+item.suffix+"..");
+				
 				var loader:URLLoader = new URLLoader;
 				loader.dataFormat = item.type;
-				loader.addEventListener(Event.COMPLETE, alldone(item));
+				loader.addEventListener(Event.COMPLETE, onItemDoneGen(item));
 				loader.addEventListener(IOErrorEvent.IO_ERROR, anyerror);
 				loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, anyerror);
 				loader.load( new URLRequest(item.src) );
-				MapEditor.getInstance().addLog("正在下载"+item.suffix+"..");
 			}, null);
 		}
 		
@@ -473,13 +487,7 @@ package
 		////// level data
 		// the validity of data below is responsible to upper class
 		private var mLevelInstancesTable:Object = null;
-		
 		private var mBehaviorSet:Object 		= null;
-		private var mFormationSet:Object 		= null;
-		private var mDecoSet:Object				= null;
-		private var mDecoCellSet:Object 		= null;
-		private var mDecoBgSet:Object			= null;
-		private var mDecoGroupSet:Object	= null;
 		
 		// --------------------------------------------------------------------------
 		public function getFirstLevelId():String
@@ -553,19 +561,6 @@ package
 			return list;
 		}
 		
-		public function getEnemyTriggersById( lid:String, eid:String ):Object
-		{
-			var level:Object = this.getLevelById( lid );
-			if( !(eid in level.trigger) ) level.trigger[eid] = {};
-			return level.trigger[eid];
-		}
-		
-		public function updateEnemyTriggersById( lid:String, eid:String, triggers:Object ):void
-		{
-			this.getLevelById( lid ).trigger[eid] = triggers;
-			this.writeToLevel( lid );
-		}
-		
 		private function writeToLevel( lid:String ):void
 		{
 			Utils.WriteObjectToJSON( // persistence
@@ -575,37 +570,6 @@ package
 		}
 		
 		public function get behaviorSet():Object { return this.mBehaviorSet; }
-		public function get decoSet():Object { return this.mDecoSet; }
-		public function get decoGroupSet():Object { return this.mDecoGroupSet; }
-		public function get decoBgSet():Object { return this.mDecoBgSet; }
-		public function get decoCellSet():Object { return this.mDecoCellSet; }
-		
-		public function eraseDecoSetById(id:String):void {
-			delete this.mDecoSet[id];
-			var file:File = this.resolvePath( "saved/deco/"+id+".json" );
-			if( file.exists ) 
-				file.deleteFile();
-		}
-		public function updateDecoSetById(id:String, data:Object):void {
-			this.mDecoSet[id] = data;
-			Utils.WriteObjectToJSON( // persistence
-				this.resolvePath( "saved/deco/"+id+".json" ),
-				this.mDecoSet[id]
-			);
-		}
-		public function eraseDecoGroupSetById(id:String):void {
-			delete this.mDecoGroupSet[id];
-			var file:File = this.resolvePath( "saved/deco/group/"+id+".json" );
-			if( file.exists ) 
-				file.deleteFile();
-		}
-		public function updateDecoGroupSetById(id:String, data:Object):void {
-			this.mDecoGroupSet[id] = data;
-			Utils.WriteObjectToJSON( // persistence
-				this.resolvePath( "saved/deco/group/"+id+".json" ),
-				this.mDecoGroupSet[id]
-			);
-		}
 		
 		public function getBehaviorById( bid:String ):Object
 		{
@@ -627,33 +591,12 @@ package
 			);
 		}
 		
-		public function get formationSet():Object { return this.mFormationSet; }
-		public function getFormationById( fid:String ):Object
-		{
-			return this.mFormationSet[fid];
-		}
-		public function eraseFormationById( fid:String ):void
-		{
-			delete this.mFormationSet[fid];
-			var file:File = this.resolvePath( "saved/format/"+fid+".json" );
-			if( file.exists ) file.deleteFile();
-			Runtime.getInstance().onFormationDataChange();
-		}
-		public function updateFormationSetById( fid:String, data:Object):void
-		{
-			this.mFormationSet[fid] = data;
-			Utils.WriteObjectToJSON( // persistence
-				this.resolvePath("saved/format/"+fid+".json"),
-				this.mFormationSet[fid]
-			);
-			Runtime.getInstance().onFormationDataChange();
-		}
-		
 		private function merge(to:Object, from:Object):void
 		{
 			for( var key:* in from )
 			{
-				if( key in to ) trace(" collision happened at "+key );
+				if( key in to ) 
+					trace("collision happened at "+key );
 				to[key] = from[key];
 			}
 		}
@@ -689,178 +632,52 @@ package
 				File.applicationStorageDirectory.resolvePath("bt_node_format.json"), false
 			) as Object || {};
 			
-			
-			var error:String = "";
-			
-			this.mChapterProfiles = {};
-			var PROFILE:File = this.resolvePath("saved/profile");
-			if( PROFILE.exists && PROFILE.isDirectory )
+			try
 			{
-				var profiles:Array = PROFILE.getDirectoryListing();
-				for each(var file:File in profiles)
+				this.mChapterProfiles = {};
+				var profileDir:File = this.resolvePath("saved/profile");
+				if( profileDir.exists && profileDir.isDirectory )
 				{
-					if( file.name.split(".")[1] != "json" )
-						continue;
-					var name:String = file.name.split(".")[0];
-					
-					try{
-						var to:Object = Utils.LoadJSONToObject( file );
-						
-						if( !(to.chapter_id in this.mChapterProfiles) )
-							this.makeChapter( to.chapter_id, to.chapter_name );
-						
-						this.mChapterProfiles[to.chapter_id].levels[to.level_id] 
-							= Utils.LoadJSONToObject( file );
-					}
-					catch(e:*)
+					var profiles:Array = profileDir.getDirectoryListing();
+					var profileMap:Object = Utils.loadJsonFilesAsNameMap(profiles);
+					for each(var o:Object in profileMap)
 					{
-						error += (file.nativePath + " " + e + "\n");
-						trace(e);
+						if( !(o.chapter_id in this.mChapterProfiles) )
+							this.makeChapter( o.chapter_id, o.chapter_name );
+						this.mChapterProfiles[o.chapter_id].levels[o.level_id] = o;
 					}
 				}
+				
+				// compatibility code
+				CORRECT_MONSTER_ID_MISMATCH(this.mChapterProfiles);
+				
+				this.mLevelInstancesTable = {};
+				var levelDir:File = this.resolvePath("saved/level");
+				if( levelDir.exists && levelDir.isDirectory )
+				{
+					var levels:Array = levelDir.getDirectoryListing();
+					var levelMap:Object = Utils.loadJsonFilesAsNameMap(levels);
+					this.merge(this.mLevelInstancesTable, levelMap);
+				}
+	
+				this.mBehaviorSet = {};
+				var behaviorDir:File = this.resolvePath( "saved/behavior" );
+				if( behaviorDir.exists && behaviorDir.isDirectory )
+				{
+					var bhs:Array = behaviorDir.getDirectoryListing();
+					var bhsMap:Object = Utils.loadJsonFilesAsNameMap(bhs);
+					this.merge(this.mBehaviorSet, bhsMap);
+				}
+				
+				this.loadSkins( onComplete );
 			}
-			if(error.length)
+			catch(e:*)
 			{
-				onError(error);
+				onError(e);
 				return;
 			}
-			
-			CORRECT_MONSTER_ID_MISMATCH(this.mChapterProfiles);
-			
-			// chapter profiles
-			this.mLevelInstancesTable = {};
-			var LEVEL:File = this.resolvePath("saved/level");
-			if( LEVEL.exists && LEVEL.isDirectory )
-			{
-				var levels:Array = LEVEL.getDirectoryListing();
-				for each( file in levels )
-				{
-					if( file.name.split(".")[1] != "json" )
-						continue;
-					
-					try{
-						name = file.name.split(".")[0];
-						to = {}; 
-						to[name] = Utils.LoadJSONToObject( file );
-						
-						this.merge( this.mLevelInstancesTable,  to );
-					}
-					catch(e:*)
-					{
-						error += (file.nativePath + " " + e + "\n");
-						trace(e);
-					}
-				}
-			}
-
-			if(error.length)
-			{
-				onError(error);
-				return;
-			}
-			
-			this.mBehaviorSet = {};
-			var BEHAVIOR:File = this.resolvePath( "saved/behavior" );
-			if( BEHAVIOR.exists && BEHAVIOR.isDirectory )
-			{
-				var bhs:Array = BEHAVIOR.getDirectoryListing();
-				for each( file in bhs )
-				{
-					if( file.name.split(".")[1] != "json" )
-						continue;
-					try{
-						name = file.name.split(".")[0];
-						to = {};
-						to[name] = Utils.LoadJSONToObject( file );
-						
-						this.merge( this.mBehaviorSet, to );
-					}
-					catch(e:*)
-					{
-						error += (file.nativePath + " " + e + "\n");
-						trace(e);
-					}
-				}
-			}
-			
-			if(error.length)
-			{
-				onError(error);
-				return;
-			}
-			
-			this.mFormationSet = {};
-			var FORMAT:File = this.resolvePath( "saved/format" );
-			if( FORMAT.exists && FORMAT.isDirectory )
-			{
-				var formats:Array = FORMAT.getDirectoryListing();
-				for each( file in formats )
-				{
-					if( file.name.split(".")[1] != "json" )
-						continue;
-					try{
-						name = file.name.split(".")[0];
-						to = {};
-						to[name] = Utils.LoadJSONToObject( file );
-					
-						this.merge( this.mFormationSet, to );
-					}
-					catch(e:*)
-					{
-						error += (file.nativePath + " " + e + "\n");
-						trace(e);
-					}
-				}
-			}
-			
-			if(error.length)
-			{
-				onError(error);
-				return;
-			}
-			
-			this.mDecoSet = {};
-			this.mDecoCellSet = {};
-			this.mDecoBgSet = {};
-			this.mDecoGroupSet = {};
-			var decoBg:File = this.resolvePath( "images/bg" );
-			var decoCell:File = this.resolvePath( "images" );
-			var decoSet:File = this.resolvePath( "saved/deco" );
-			var decoGroup:File = this.resolvePath("saved/deco/group");
-			if (decoBg.exists && decoBg.isDirectory) {
-				var list:Array = decoBg.getDirectoryListing();
-				for each (file in list) {
-					if (file.name.split(".")[1] == "png") {
-						this.mDecoBgSet[file.name.split(".")[0]] = 1;
-					}
-				}
-			}
-			if (decoCell.exists && decoCell.isDirectory) {
-				list = decoCell.getDirectoryListing();
-				for each (file in list) {
-					if (file.name.split(".")[1] == "png") {
-						this.mDecoCellSet[file.name.split(".")[0]] = 1;
-					}
-				}
-			}
-			if (decoSet.exists && decoSet.isDirectory) {
-				list = decoSet.getDirectoryListing();
-				for each (file in list) {
-					if (file.name.split(".")[1] == "json") {
-						this.mDecoSet[file.name.split(".")[0]] = Utils.LoadJSONToObject(file);
-					}
-				}
-			}
-			if (decoGroup.exists && decoGroup.isDirectory) {
-				list = decoGroup.getDirectoryListing();
-				for each (file in list) {
-					if (file.name.split(".")[1] == "json") {
-						this.mDecoGroupSet[file.name.split(".")[0]] = Utils.LoadJSONToObject(file);
-					}
-				}
-			}
-			this.loadImage( onComplete );
 		}
+		
 		
 		///////////////////////////////////////////////////////////////////////
 		////// second-hand data of editor
@@ -875,9 +692,11 @@ package
 		
 		public function getEnemyProfileById( lid:String, mid:String ):Object
 		{
-			if( !lid || !mid ) return null;
+			if( !lid || !mid ) 
+				return null;
 			var profile:Object = this.getLevelProfileById( lid );
-			if( !profile ) return null;
+			if( !profile )
+				return null;
 			return profile.monsters[mid];
 		}
 		
@@ -1017,59 +836,24 @@ package
 			}
 			return nextId;
 		}
-		
-		private function loadImage(onComplete:Function):void
+
+		private function loadSkins(onComplete:Function):void
 		{
 			var self:Data = this;
-			var length:Number = 0, countor:Number = 0; 
-			var callback:Function = function():void
+			var IMAGE:File = this.resolvePath( "skins" );
+			Utils.batchLoadImages(IMAGE.getDirectoryListing(), function(urlImageMap:Object):void
 			{
+				for(var path:String in urlImageMap)
+				{
+					var file:File = new File(path);
+					var name:String = file.name.split(".")[0];
+					self.mEnemySkins[name] = urlImageMap[path];
+				}
+				
+				MapEditor.getInstance().addLog("全部skin加载完成");
 				var msg:String = self.validityCheckAndCleanUp();
 				onComplete( msg + "\n【成功】载入"+length+"个图像资源\n");
-			}
-			
-			var alldone:Function = function(face:String, done:Boolean):Function
-			{
-				return function(e:Event):void
-				{
-					if( done )
-					{
-						MapEditor.getInstance().addLog("加载"+face+"成功");
-						var loader:Loader = (e.target as LoaderInfo).loader; 
-						self.mEnemySkins[face] = Bitmap(loader.content).bitmapData;
-					}
-					if( ++countor >= length ) {
-						MapEditor.getInstance().addLog("全部skin加载完成");
-						callback();
-					}
-				}
-			}
-			
-			var IMAGE:File = this.resolvePath( "skins" );
-			if( IMAGE.exists && IMAGE.isDirectory )
-			{
-				var formats:Array = IMAGE.getDirectoryListing();
-				for each( var file:File in formats )
-				{
-					var name:String = file.name.split(".")[0];
-					var bytes:ByteArray = new ByteArray;
-					
-					var stream:FileStream = new FileStream();
-					stream.open(file, FileMode.READ);
-					stream.readBytes(bytes);
-					stream.close();
-					
-					var loader:Loader = new Loader;
-					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, alldone(name, true));
-					loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, alldone(name, false));
-					loader.loadBytes(bytes);
-					
-					length ++;
-				}
-			}
-			
-			if( length == 0 ) 
-				callback();
+			});
 		}
 		
 		private function validityCheckAndCleanUp():String

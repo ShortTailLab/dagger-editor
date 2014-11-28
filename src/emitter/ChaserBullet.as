@@ -6,6 +6,7 @@ package emitter
 	import flash.events.Event;
 	import flash.events.IOErrorEvent;
 	import flash.filesystem.File;
+	import flash.geom.Point;
 	import flash.net.URLRequest;
 	
 	import mx.controls.Alert;
@@ -18,10 +19,11 @@ package emitter
 		private var mImageBox:Sprite;
 		private var mEmitter:Emitter;
 		private var mElapsed:Number;
-		
+	
 		private var mSpeed: Number;
-		private var mSpeedX:Number;
-		private var mSpeedY:Number;
+		private var mSpeedX: Number;
+		private var mSpeedY: Number;
+		
 		private var mPosX:Number = 0;
 		private var mPosY:Number = 0;
 		private var mRotation:Number;
@@ -56,15 +58,11 @@ package emitter
 			mPauseTime = mData.bullet.pauseTime;
 			mScale = mData.bullet.scale;
 			mResRotation = mData.bullet.resRotation;
-			
-			mSpeed  = data.bullet.speed;
-			mSpeedX = data.bullet.speedX;
-			mSpeedY = data.bullet.speedY;
-			
+
 			mRotation = defaultRot;
 			
-			mPosX = emit.sPosX + mData.bullet.offset * -Math.sin(mRotation/180*Math.PI);
-			mPosY = emit.sPosY + mData.bullet.offset * -Math.cos(mRotation/180*Math.PI);
+			mPosX = emit.sPosX + mData.bullet.offset * -Math.sin(defaultRot/180*Math.PI);
+			mPosY = emit.sPosY + mData.bullet.offset * -Math.cos(defaultRot/180*Math.PI);
 			
 			// readjust rotation to face target
 			if(mData.bullet.faceTarget)
@@ -74,6 +72,17 @@ package emitter
 				var dy:Number = hero.posY - mPosY;				
 				mRotation = Math.atan2(-dx, -dy)/Math.PI*180;
 			}
+			
+			// set initial speed
+			var radian:Number = mRotation/180*Math.PI;
+			var rX:Number = -Math.sin(radian);
+			var rY:Number = -Math.cos(radian);
+			
+			//mVelX = mData.bullet.speed * rX + mData.bullet.speedX;
+			//mVelY = mData.bullet.speed * rY + mData.bullet.speedY;
+			mSpeed = mData.bullet.speed;
+			mSpeedX = mData.bullet.speedX;
+			mSpeedY = mData.bullet.speedY;
 
 			syncView();
 		}
@@ -107,28 +116,30 @@ package emitter
 		}
 		
 		private function syncView(): void{
-			this.x = mPosX*0.5;
-			this.y = -mPosY*0.5;
+			this.x = mPosX;
+			this.y = -mPosY;
 			this.rotation = mRotation;
 			this.scaleX = this.scaleY = mScale;
 		}
 		
-		override public function update(dt:Number):void {
+		override public function update(dt:Number):void {			
+			// expired
+			if (mData.bullet.duration >= 0 && 
+				mElapsed >= mData.bullet.duration) 
+			{
+				destroy();
+				return;
+			}
+			
+			var center:Point = EmitterPreviewer.SceneCenter; 
+			if(!EmitterPreviewer.SceneBound.contains(mPosX+center.x, mPosY+center.y))
+			{
+				destroy();
+				return;
+			}
+			
 			if(mPauseTime > 0) {
 				mPauseTime -= dt;
-				return;
-			}
-			
-			// expired
-			if (mData.bullet.duration >= 0 && mElapsed >= mData.bullet.duration) {
-				destroy();
-				return;
-			}
-			
-			// out of bound
-			if (this.x < -250 || this.x >= 250 || 
-				this.y <= -400 || this.y >= 400) {
-				destroy();
 				return;
 			}
 				
@@ -153,33 +164,28 @@ package emitter
 			
 			if(mData.bullet.doNotTurn &&  mPosY < hero.posY)
 				mFollow = false;
+
+			mSpeed += mData.bullet.a*dt;
+			mSpeed = Utils.clamp(mSpeed, mData.bullet.speedMin, mData.bullet.speedMax);
+			mSpeedX += mData.bullet.ax * dt;
+			mSpeedY += mData.bullet.ay * dt;
 			
-			mSpeed  += mData.bullet.a *dt;
-			mSpeedX += mData.bullet.ax*dt;
-			mSpeedY += mData.bullet.ay*dt;
+			var radian:Number = mRotation/180*Math.PI;
+			var rX:Number = -Math.sin(radian);
+			var rY:Number = -Math.cos(radian);
 			
-			var velX:Number = mSpeedX + mSpeed * -Math.sin(mRotation/180*Math.PI);
-			var velY:Number = mSpeedY + mSpeed * -Math.cos(mRotation/180*Math.PI);
-			
-			var speedNorm:Number = Math.sqrt(velX*velX + velY*velY);
-			var clampedSpeedNorm:Number = Utils.clamp(speedNorm, mData.bullet.speedMin, mData.bullet.speedMax);
-			if(clampedSpeedNorm != speedNorm)
-			{
-				var adjustScale:Number = clampedSpeedNorm / speedNorm;
-				velX = velX * adjustScale;
-				velY = velY * adjustScale;
-			}
+			var velX:Number = mSpeedX + mSpeed*rX;
+			var velY:Number = mSpeedY + mSpeed*rY;
 			
 			mPosX += velX*dt;
 			mPosY += velY*dt;
+			mScale = Utils.clamp(mScale + mData.bullet.scalePerSec * dt, mData.bullet.scaleMin, mData.bullet.scaleMax);
 			
 			if(mData.bullet.direction == 0) // align direction with velocity
 			{
 				var degree:Number = Math.atan2(-velX, -velY)*180/Math.PI;
 				mRotation = degree;				
 			}
-			
-			mScale = Utils.clamp(mScale + mData.bullet.scalePerSec * dt, mData.bullet.scaleMin, mData.bullet.scaleMax);
 			
 			syncView();
 		}

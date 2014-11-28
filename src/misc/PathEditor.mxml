@@ -56,7 +56,8 @@
 				isRelativeIn.selected = mPath.isRelative;
 				isLoopIn.selected = mPath.isLoop;
 				
-				mSceneGrid = new SceneGrid(360, 640, false);
+				mSceneGrid = new SceneGrid(720, 1280, false);
+				mSceneGrid.scaleX = mSceneGrid.scaleY = 0.5;
 				mSceneGrid.addEventListener(MouseEvent.MOUSE_DOWN, onClick);
 				var temp:UIComponent = new UIComponent;
 				temp.addChild(mSceneGrid);

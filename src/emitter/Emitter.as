@@ -33,9 +33,11 @@ package emitter
 		
 		private var mPosX:Number;
 		private var mPosY:Number;
-		private var mSpeed:Number;
-		private var mSpeedX:Number;
-		private var mSpeedY:Number;
+		
+		private var mVelX:Number;
+		private var mVelY:Number;
+		
+		private var mScale:Number;
 		
 		private var mRotation:Number;
 		private var mRotationSpeed:Number;
@@ -49,8 +51,7 @@ package emitter
 			mData = data;
 			mPanel = panel;
 			
-			updateImage();
-			updatePosition();
+			this.reset();
 		}
 		
 		public function reset():void {
@@ -70,15 +71,17 @@ package emitter
 			
 			mPosX = mData.x;
 			mPosY = mData.y;
-			mSpeed = mData.speed;
-			mSpeedX = mData.speedX;
-			mSpeedY = mData.speedY;
-			
+
 			mRotationSpeed = mData.rotateSpeed;
 			mRotation = mData.rotation;
+			
+			mVelX = mData.speedX + mData.speed * -Math.sin(mRotation/180*Math.PI);
+			mVelY = mData.speedY + mData.speed * -Math.cos(mRotation/180*Math.PI);
+			
+			mScale = mData.scale;
 
 			this.updateImage();
-			this.updatePosition();
+			this.syncView();
 		}
 		
 		public function get sPosX():Number { return mPosX; }
@@ -120,76 +123,82 @@ package emitter
 				}
 				
 				// movement
-				mSpeed  += mData.a*dt;
-				mSpeedX += mData.ax*dt;
-				mSpeedY += mData.ay*dt;
+				var radian:Number = mRotation/180*Math.PI;
+				var rX:Number = -Math.sin(radian);
+				var rY:Number = -Math.cos(radian);
 				
-				var velX:Number = mSpeedX + mSpeed * -Math.sin(mRotation/180*Math.PI)
-				var velY:Number = mSpeedY + mSpeed * -Math.cos(mRotation/180*Math.PI);
+				mVelX += (mData.a*rX  + mData.ax) * dt;
+				mVelY += (mData.a*rY  + mData.ay) * dt;
 				
-				mPosX += velX * dt;
-				mPosY += velY * dt;
+				mPosX += mVelX * dt;
+				mPosY += mVelY * dt;
+					
+				mScale = Utils.clamp(mScale + mData.scalePerSec * dt, mData.scaleMin, mData.scaleMax);
+			
+				this.syncView();
 				
-				// set display object
-				this.rotation = mRotation;
-				this.x =  mPosX*0.5;
-				this.y = -mPosY*0.5;
-				
-				// update bullets
-				
+				// spawn bullets
 				if (mInterval > mData.interval) 
 				{
 					mInterval -= mData.interval;
-					
-					// shoot bullets
-					var num:int = mData.num + int(Math.random()*(mData.numRandom+1));
-						
-					var minAngle:Number = mRotation - (num-1)*mData.bulletGap*0.5;
-					for (var i:int = 0; i < num; i++) {
-						
-						var angle: Number = 0;
-						if(mData.bulletGapType == 0) // fixed angle
-						{
-							angle = minAngle + i*mData.bulletGap; 
-						}
-						else if(mData.bulletGapType == 1) // random angle
-						{
-							angle = mRotation + (Math.random()-0.5)*mData.bulletGap;
-						}
-						
-						if(mData.bullet.type == "Basic")
-						{
-							var basic:BasicBullet = new BasicBullet();
-							basic.setData(mData, angle, this, mPanel);
-							
-							mBullets.push(basic);
-							this.parent.addChild(basic);
-						}
-						else if(mData.bullet.type == "Chaser")
-						{
-							var chaser:ChaserBullet = new ChaserBullet();
-							chaser.setData(mData, angle, this, mPanel);
-							
-							mBullets.push(chaser);
-							this.parent.addChild(chaser);
-						}
-						else if(mData.bullet.type == "Pather")
-						{
-							var pather:PatherBullet = new PatherBullet();
-							pather.setData(mData, angle, this, mPanel);
-							
-							mBullets.push(pather);
-							this.parent.addChild(pather);
-						}
-					}
+					this.spawnBullet();					
 				}
-				else {
+				else 
+				{
 					mInterval += dt;
 				}
 			}
 			else {
 				mWait += dt;
 			}
+		}
+		
+		private function spawnBullet(): void
+		{
+			// shoot bullets
+			var num:int = mData.num + int(Math.random()*(mData.numRandom+1));
+			
+			var minAngle:Number = mRotation - (num-1)*mData.bulletGap*0.5;
+			for (var i:int = 0; i < num; i++) {
+				
+				var angle: Number = 0;
+				if(mData.bulletGapType == 0) // fixed angle
+					angle = minAngle + i*mData.bulletGap; 
+				else if(mData.bulletGapType == 1) // random angle
+					angle = mRotation + (Math.random()-0.5)*mData.bulletGap;
+				
+				if(mData.bullet.type == "Basic")
+				{
+					var basic:BasicBullet = new BasicBullet();
+					basic.setData(mData, angle, this, mPanel);
+					
+					mBullets.push(basic);
+					this.parent.addChild(basic);
+				}
+				else if(mData.bullet.type == "Chaser")
+				{
+					var chaser:ChaserBullet = new ChaserBullet();
+					chaser.setData(mData, angle, this, mPanel);
+					
+					mBullets.push(chaser);
+					this.parent.addChild(chaser);
+				}
+				else if(mData.bullet.type == "Pather")
+				{
+					var pather:PatherBullet = new PatherBullet();
+					pather.setData(mData, angle, this, mPanel);
+					
+					mBullets.push(pather);
+					this.parent.addChild(pather);
+				}
+			}
+		}
+		
+		private function syncView(): void{
+			this.x = mPosX;
+			this.y = -mPosY;
+			this.rotation = mRotation;
+			this.scaleX = this.scaleY = mScale;
 		}
 		
 		public function removeBullet(bullet:Bullet):void {
@@ -263,12 +272,6 @@ package emitter
 			}
 		}
 		
-		public function updatePosition():void {
-			this.x =  mData.x*0.5;
-			this.y = -mData.y*0.5;
-			this.rotation = mData.rotation;
-		}
-		
 		private function onAdded(event:Event):void {
 			removeEventListener(Event.ADDED_TO_STAGE, onAdded);
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
@@ -277,8 +280,8 @@ package emitter
 		private function onMouseDown(event:MouseEvent):void {
 			mPanel.previewer.selectEmitter(this);
 			
-			var Width:int = 360;
-			var Height:int = 640;
+			var Width:Number = EmitterPreviewer.SceneWidth;
+			var Height:Number = EmitterPreviewer.SceneHeight;
 			
 			this.startDrag(false, new Rectangle(-Width*0.5, -Height*0.5, Width, Height));
 			this.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
@@ -292,8 +295,8 @@ package emitter
 		}
 		
 		private function onMouseMove(event:MouseEvent):void {
-			mData.x = mPosX = this.x*2;
-			mData.y = mPosY = -this.y*2;
+			mData.x = mPosX = this.x;
+			mData.y = mPosY = -this.y;
 			mPanel.updateCurrentEmitter();
 		}
 		

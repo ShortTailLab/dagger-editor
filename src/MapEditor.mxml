@@ -52,7 +52,7 @@
 					function(errorMsg:String):void
 					{
 						var text:Text = mask.getElementAt(0) as Text;
-						text.text = errorMsg;
+						text.text += errorMsg;
 					}
 				);
 
