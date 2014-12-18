@@ -79,6 +79,7 @@
 				this.mCopySection.addEventListener(MouseEvent.CLICK, this.copyCurrentSection);
 				this.mPasteSection.addEventListener(MouseEvent.CLICK, this.pasteToCurrentSection);
 				this.mEraseSection.addEventListener(MouseEvent.CLICK, this.eraseCurrentSection);
+				this.mHideSection.addEventListener(MouseEvent.CLICK, this.hideCurrentSection);
 				this.mEditSection.addEventListener(MouseEvent.CLICK, this.editCurrentSection);
 				
 				this.mEditLevel.addEventListener(MouseEvent.CLICK, this.editCurrentLevel);
@@ -92,6 +93,8 @@
 				this.mTeamNumberInput.restrict = "0-9a-z";
 				this.mTeamNumberInput.addEventListener(FlexEvent.ENTER, this.onMonsterInfoUpdate);
 				
+				this.mMainNavigator.addEventListener(Event.CHANGE, this.onTabChange);
+				
 				Runtime.getInstance().addEventListener( 
 					Runtime.SELECT_DATA_CHANGE, this.onSelectedTypeChange
 				);
@@ -103,7 +106,7 @@
 					{
 						self.reset( Runtime.getInstance().currentLevelID );	
 					}
-				)
+				);
 				
 				this.addEventListener(Event.ENTER_FRAME, this.update);
 				this.addEventListener(MouseEvent.MOUSE_DOWN, this.onMouseDown);
@@ -140,7 +143,7 @@
 					this.appendSection( section, String(this.mSectionCountor++) );
 				
 				this.mSelectedList.labelField = "label";
-				this.stage.focus = this;
+				this.stage.focus = this; 
 			}
 			
 			public function appendSection( section:Object, ind:String ):void 
@@ -193,9 +196,7 @@
 					secList.push( section );
 				}
 				
-				Data.getInstance().updateLevelDataById( 
-					lid, secList
-				);
+				Data.getInstance().updateLevelDataById( lid, secList );
 				MapEditor.getInstance().writeToStatusBar("保存关卡"+lid);
 			}
 			
@@ -246,6 +247,12 @@
 						
 					MapEditor.getInstance().writeToStatusBar("更改怪物基本信息");
 				}catch ( err:Error ) { return; }
+			}
+			
+			public function onTabChange(e:Event):void
+			{
+				Utils.dumpObject( this.currentInfo );
+				this.mHideSection.selected = this.currentInfo.isHidden;
 			}
 			
 			public function onCancelEvent(e:Event=null):void
@@ -761,6 +768,14 @@
 				}, "【删除】是否删除本回合?" );
 			}
 			
+			
+			public function hideCurrentSection(e:Event=null):void
+			{
+				if( !this.mMainNavigator.selectedChild ) return;
+
+				this.currentInfo.isHidden = (e.target as CheckBox).selected;
+			}
+			
 			public function copyCurrentSection(e:Event=null):void
 			{
 				if( !this.mMainNavigator.selectedChild ) return;
@@ -1019,6 +1034,8 @@
 				<s:Button id="mPasteSection" right="5" bottom="55" width="85" label="粘贴回合"
 						  chromeColor="#FDB9B9" enabled="false"/>
 				<s:Button id="mEraseSection" right="5" bottom="30" width="85" label="删除回合"
+						  chromeColor="#FDB9B9"/>
+				<s:CheckBox id="mHideSection" right="5" bottom="5" width="85" label="隐藏回合"
 						  chromeColor="#FDB9B9"/>
 				<s:Label id="mInfoMousePos" left="5" top="5" text="鼠标位置：(0, 0)"/>
 				<s:Label id="mInfoNumComponents" left="5" top="25" text="实体数量：0"/>

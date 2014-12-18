@@ -10,6 +10,8 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import emitter.EmitterPanel;
+			
 			import excel.ExcelConfigReader;
 			import excel.ExchangeManager;
 			
@@ -18,11 +20,13 @@
 			import manager.SyncManager;
 			
 			import misc.PathEditor;
+			import misc.SceneGrid;
 			
 			import mx.collections.ArrayCollection;
 			import mx.containers.TitleWindow;
 			import mx.controls.Alert;
 			import mx.controls.Text;
+			import mx.core.UIComponent;
 			import mx.managers.PopUpManager;
 			
 			import spark.components.Group;
@@ -42,8 +46,24 @@
 				gMapEditorInstance = this;
 				var self:MapEditor = this;
 				
+				/*
+				var grid:SceneGrid = new SceneGrid(720, 1280, false);
+				var cs:UIComponent = new UIComponent;
+				grid.x = 100  + 100;
+				grid.y = 1280 + 100;
+				//grid.y = 1280;
+				cs.addChild(grid);
+				cs.scaleX = cs.scaleY = 0.5;
+				PopUpManager.addPopUp(cs, this, true);
+				
+				return;
+				*/
+
+				
+				
 				// address project path
 				var mask:TitleWindow = Utils.makeManualPanel("正在初始化数据（需要联网）...", this);
+				
 				Data.getInstance().init(
 					function():void {
 						Utils.releaseManualPanel( mask );
@@ -139,6 +159,26 @@
 					
 					XBOOL = true;
 				}*/
+				
+				
+				//-------------------
+				/*
+				var level:Object = Data.getInstance().getLevelProfileById( "303011" );
+				if( !level ) 
+					return ;
+				
+				var nextId:int = Data.getInstance().getMaxMonsterId( Runtime.getInstance().currentLevelID )+1;
+				var data:Object = Utils.deepCopy(EmitterPanel.DEFAULT_EMITTER);
+				data.monster_id = nextId.toString();
+				data.monster_name = "发射器组合";
+				Data.getInstance().makeMonster(Runtime.getInstance().currentLevelID, data);
+				
+				var panel:EmitterPanel = new EmitterPanel();
+				PopUpManager.addPopUp(panel, MapEditor.getInstance(), false);
+				panel.setData(data, nextId.toString());
+				PopUpManager.centerPopUp(panel);
+				*/
+				//-------------------
 			}
 			
 			private function exportChapterToExcel(e:MouseEvent):void

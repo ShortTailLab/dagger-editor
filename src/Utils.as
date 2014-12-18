@@ -358,9 +358,9 @@ package
 		}
 
 		static public function dumpObject( obj : *, level : int = 0 ) : void{
-			trace(" ------------------------ " );
+			trace(" --------OBJ DUMP-------- " );
 			Utils.dumpObject2(obj, level);
-			trace(" ^^^^^^^^^^^^^^^^^^^^^^^^ " );
+			trace(" ------END OBJ DUMP------ " );
 		}
 		
 		static protected function dumpObject2( obj:*, level:int = 0 ):void
